@@ -13,6 +13,9 @@ dependencies:
   drift: ^2.28.0
   foundation:
     path: ../foundation
+  application:
+    path: ../application
+  uuid: ^4.5.0
 
 dev_dependencies:
   test: ^1.25.0

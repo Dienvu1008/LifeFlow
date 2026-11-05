@@ -20,7 +20,13 @@ jobs:
           dart pub get
           dart analyze
           dart test
-      - name: Infrastructure analyze + test (Drift store, FTS, governance schema)
+      - name: Application analyze + test (command gateway contract)
+        working-directory: packages/application
+        run: |
+          dart pub get
+          dart analyze
+          dart test
+      - name: Infrastructure analyze + test (Drift store, FTS, governance kernel)
         working-directory: packages/infrastructure
         run: |
           dart pub get

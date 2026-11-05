@@ -7,3 +7,4 @@ library infrastructure;
 
 export 'src/app_database.dart';
 export 'src/schema.dart';
+export 'src/command_gateway.dart';
