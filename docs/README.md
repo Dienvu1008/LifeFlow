@@ -137,6 +137,12 @@ Every non-trivial statement carries one of these labels.
 | [spikes/spike-plan.md](spikes/spike-plan.md) | All spikes, time-boxed, escalate-as-Open |
 
 The design phase is complete. The next step is implementation starting at P01, gated by the preconditions in [FINAL-REPORT.md](FINAL-REPORT.md) section 19.
+
+## Spike phase (MVP-blocking spikes)
+Results: [spikes/spike-results.md](spikes/spike-results.md). Throwaway POC code lives on `spike/*` and `scaffold/p01-skeleton` branches (not merged to `main`).
+- **S-03a (auth):** PASS on Windows — Supabase Auth, GitHub, PKCE S256, offline session. ADR-0003 auth half Accepted. Android/email follow-up.
+- **S-01 (Flutter + Drift):** PASS on Windows — CRUD + transaction + persistence + rollback. Finding OQ-STACK-2 (resolved stack is sqlite3 2.x, not 3.x hooks). Android follow-up.
+- **S-02 (migrations + FTS5 + encryption):** plain build PASS (FTS5 + migrations); **encryption-at-rest on Windows is Open, escalated to an early P01 task** (both SQLCipher/OpenSSL and sqlite3mc/3.x-hook failed to build on Windows). Risk R-ENCRYPTION-WINDOWS.
 | 4 | Invariant catalog, policy catalog, invariant test matrix, fitness functions, test strategy, golden scenarios, definition of done |
 | 5 | Master roadmap, phase breakdown, dependency map, spike plan, effort estimation, risk register |
 
