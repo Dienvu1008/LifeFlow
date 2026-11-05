@@ -1,0 +1,30 @@
+name: s03a_auth_spike
+description: >-
+  THROWAWAY proof-of-concept for spike S-03a (auth + Windows flow + offline
+  session). Not part of the LifeFlow app. Do not merge to main as a feature.
+publish_to: "none"
+version: 0.0.1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # Supabase Auth (primary candidate for S-03a). Fallbacks if this fails:
+  # Firebase Auth or self-hosted GoTrue (see spike-plan.md).
+  supabase_flutter: ^2.8.0
+  # Secure storage for the cached session (SR-02/SR-07). BSD-3 (VS-31).
+  flutter_secure_storage: ^9.2.2
+  # Opens the system browser for the OAuth authorization step on desktop.
+  url_launcher: ^6.3.0
+  # sha256 for PKCE S256.
+  crypto: ^3.0.6
+  # Connectivity is NOT used to gate access; offline behavior is derived from
+  # the cached session only (see runbook "offline-restart" definition).
+
+dev_dependencies:
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
