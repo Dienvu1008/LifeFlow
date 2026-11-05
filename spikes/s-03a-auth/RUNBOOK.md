@@ -7,7 +7,7 @@
 ## 0. What this proves (success criteria)
 1. Email + GitHub sign-in work on **Windows** and **Android**.
 2. The session is cached in secure storage and **survives an offline restart** (see §5 for the exact definition).
-3. Windows uses PKCE **S256** (not plain) via a fixed loopback port.
+3. Windows uses PKCE **S256** (not plain) via a fixed loopback port. The Supabase SDK generates and stores the PKCE verifier + state itself (`authFlowType: pkce`); the POC must not supply its own PKCE/state. The loopback only captures the `code` and calls `exchangeCodeForSession`.
 4. No access/refresh token appears in logs.
 
 If any fails or setup exceeds the sub-cap (see §7) → record Open + escalate.

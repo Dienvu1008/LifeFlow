@@ -16,7 +16,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'config.dart';
 import 'desktop_loopback.dart';
-import 'pkce.dart';
 
 enum AuthStatus { signedOut, signedIn, signedInReadOnlyOffline }
 
@@ -62,28 +61,22 @@ class AuthService {
   }
 
   Future<void> _desktopGitHub() async {
-    final pkce = Pkce.generate();
-
-    // Build the Supabase authorize URL for GitHub with our PKCE + loopback
-    // redirect. Supabase will 302 to GitHub and back to its /callback, then to
-    // our redirectTo with ?code=...&state=...
-    final authorizeUrl = Uri.parse('${SpikeConfig.supabaseUrl}/auth/v1/authorize')
-        .replace(queryParameters: {
-      'provider': 'github',
-      'redirect_to': SpikeConfig.desktopRedirect,
-      'code_challenge': pkce.challenge,
-      'code_challenge_method': 's256',
-      'state': pkce.state,
-    });
-
-    final result = await DesktopLoopback.capture(
-      authorizeUrl: authorizeUrl,
-      expectedState: pkce.state,
+    // Let the SDK build the authorize URL; it generates and stores the PKCE
+    // code_verifier (and its own state) internally. We must NOT supply our own
+    // PKCE or state — that caused the earlier "State mismatch".
+    final res = await _c.auth.getOAuthSignInUrl(
+      provider: OAuthProvider.github,
+      redirectTo: SpikeConfig.desktopRedirect,
     );
 
-    // Exchange the authorization code for a session using the SAME verifier.
+    // Capture the redirect (?code=...) on the fixed loopback port.
+    final result = await DesktopLoopback.capture(
+      authorizeUrl: Uri.parse(res.url),
+    );
+
+    // The SDK reads the stored verifier and exchanges the code for a session,
+    // which it then persists via the configured secure async storage.
     await _c.auth.exchangeCodeForSession(result.code);
-    // supabase_flutter persists the session via the configured async storage.
   }
 
   Future<void> signOut() => _c.auth.signOut();

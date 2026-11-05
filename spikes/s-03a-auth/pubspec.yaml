@@ -18,8 +18,8 @@ dependencies:
   flutter_secure_storage: ^9.2.2
   # Opens the system browser for the OAuth authorization step on desktop.
   url_launcher: ^6.3.0
-  # sha256 for PKCE S256.
-  crypto: ^3.0.6
+  # Note: PKCE (incl. the S256 challenge and state) is generated and stored by
+  # the Supabase SDK; we do not implement PKCE ourselves (no crypto dep needed).
   # Connectivity is NOT used to gate access; offline behavior is derived from
   # the cached session only (see runbook "offline-restart" definition).
 

@@ -17,12 +17,14 @@ class LoopbackResult {
 }
 
 class DesktopLoopback {
-  /// Runs the loopback capture. [authorizeUrl] must already include our
-  /// redirect_uri (desktopRedirect), code_challenge (S256), state and scope.
-  /// Times out after [timeout]. Throws on state mismatch or timeout.
+  /// Runs the loopback capture. [authorizeUrl] is the Supabase-generated OAuth
+  /// URL (the SDK owns PKCE + state). We only capture the `code` from the
+  /// redirect to /callback; we do NOT validate state here, because Supabase
+  /// manages its own state and does not echo back a caller-supplied one
+  /// (validating it ourselves is what caused the earlier "State mismatch").
+  /// Times out after [timeout].
   static Future<LoopbackResult> capture({
     required Uri authorizeUrl,
-    required String expectedState,
     Duration timeout = const Duration(minutes: 5),
   }) async {
     final server = await HttpServer.bind(
@@ -40,7 +42,6 @@ class DesktopLoopback {
         return;
       }
       final code = uri.queryParameters['code'];
-      final state = uri.queryParameters['state'];
       final error = uri.queryParameters['error'];
 
       req.response.headers.contentType = ContentType.html;
@@ -49,15 +50,6 @@ class DesktopLoopback {
         await req.response.close();
         if (!completer.isCompleted) {
           completer.completeError(StateError('OAuth error: $error'));
-        }
-        return;
-      }
-      if (state != expectedState) {
-        req.response.statusCode = 400;
-        req.response.write(_html('State mismatch. You can close this tab.'));
-        await req.response.close();
-        if (!completer.isCompleted) {
-          completer.completeError(StateError('State mismatch (possible CSRF)'));
         }
         return;
       }
