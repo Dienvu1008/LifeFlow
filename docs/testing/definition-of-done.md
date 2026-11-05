@@ -18,7 +18,8 @@ A phase is done only when all its DoD items hold. Phases beyond P03 use the temp
 - Status: this is the current design work (Batches 1–5). Exit gate: product scope, domain model, governance, invariants catalog, test strategy, fitness-function IDs, roadmap and spikes exist and are internally consistent; the owner has confirmed the MVP boundary and the key ADRs. (Done when Batch 5 completes.)
 
 ## P01 — Core Foundation & Personal Workspace
-- Scope: guest-first LocalProfile + Workspace, Task + hierarchy + lists, measurable target capability, local encrypted Drift store, outbox/event-log/audit/dedupe atomic set, command gateway, basic adaptive UI, optional sign-in (auth provider from spike S-03a).
+- Scope: guest-first LocalProfile + Workspace, Task + hierarchy + lists, measurable target capability, local Drift store, outbox/event-log/audit/dedupe atomic set, command gateway, basic adaptive UI, optional sign-in (auth provider from spike S-03a).
+- **Encryption-at-rest (LF-INV-SEC-011) is an explicit P01 task, not assumed done** (spike S-02 found it does not build cleanly on Flutter Windows; risk R-ENCRYPTION-WINDOWS). P01 must either confirm a Windows-clean encryption path or ship Windows on a plain DB as a tracked exception with encryption on Android; the choice is a P01 exit-gate decision.
 - Invariants enforced-and-tested by exit: LF-INV-ID-001/002, WA-001, TASK-001/002/003/004/010/011, GOV-001/002/003, OUTBOX-001/002, AUDIT-001, VER-001, SEC-001/002/010/011, SYNC-004 (tombstone write).
 - Golden scenarios passing: GS-06, GS-07, GS-11, GS-12, GS-18, GS-19, GS-20, GS-22.
 - Fitness functions: all static + FF-ARCH-06 (atomic set) + FF-ARCH-09 (authorize-before-domain).

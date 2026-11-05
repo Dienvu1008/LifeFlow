@@ -178,7 +178,8 @@ Harvest note (Batch 4): 60 invariants were found across the docs and are all cat
 ### LF-INV-SEC-010 — Export completeness
 - Scope: Data/export. Enforcement: export includes all user-owned entities + tombstones + audit. Verification: round-trip test (GS: export). Severity: high. Depends: —.
 ### LF-INV-SEC-011 — At-rest encryption (introduced in Batch 4)
-- Statement: the local database is encrypted at rest and the app verifies the cipher at startup. Rationale: data-architecture §4 decided this but it had no named invariant for the test matrix. Scope: storage. Enforcement: SQLite3MultipleCiphers + `PRAGMA cipher` assert. Failure: refuse to run unencrypted in release. Verification: security test (`PRAGMA cipher`, file-at-rest inspection). Severity: critical. Depends: LF-INV-SEC-001.
+- Statement: the local database is encrypted at rest and the app verifies the cipher at startup. Rationale: data-architecture §4 decided this but it had no named invariant for the test matrix. Scope: storage. Enforcement: SQLite3MultipleCiphers + `PRAGMA cipher` assert. Failure: refuse to run unencrypted in release. Verification: security test (`PRAGMA cipher`, file-at-rest inspection; spike S-02 check app). Severity: critical. Depends: LF-INV-SEC-001.
+- **Timing note (spike S-02, 2026-11-04):** the enforcement mechanism does not yet build on Flutter Windows (OQ-STACK-2, risk R-ENCRYPTION-WINDOWS). This invariant remains a target; its MVP timing is "as soon as a Windows-clean encryption path is confirmed in P01". Until then the app may run on a plain local DB on Windows (an explicit, tracked exception, not a silent downgrade), with Android encryption verified in P01.
 ### LF-INV-PRIV-001 — Default-deny egress
 - Scope: classification. Enforcement: egress matrix (ADR-0016). Verification: egress tests (GS-12 cloud-AI analogue, FF-ARCH-08). Severity: critical. Depends: —.
 ### LF-INV-PRIV-002 — Restricted never to cloud AI / not shared implicitly
