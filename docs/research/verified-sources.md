@@ -1,0 +1,63 @@
+# Verified Sources
+
+- Status: Draft (Batch 1)
+- Check date: 2026-11-04 (all rows unless stated otherwise)
+- Method: official pages fetched with a web tool; only content actually read is recorded. Quotes are paraphrased.
+
+Label legend: **[Verified]** read in the cited source on the check date, **[Open]** not verified, **[Assumption]**.
+
+## 1. Verified claims
+
+| ID | Topic | Claim (paraphrased) | Source | Version / date seen | Used by |
+|---|---|---|---|---|---|
+| VS-01 | Flutter | Flutter can compile native Windows, macOS and Linux desktop apps; existing plugins that support those platforms can be used, and `flutter run -d windows` launches the app. Plugin support must be checked per plugin. | https://docs.flutter.dev/platform-integration/desktop | Page undated; fetched 2026-11-04 | product-scope, ADR-0004 |
+| VS-02 | Drift | `NativeDatabase` (`package:drift/native.dart`, dart:ffi) runs on Android, iOS, Windows, Linux and macOS and is the recommended implementation for new projects. | https://drift.simonbinder.eu/platforms/ | Page notes drift 2.32.0 with sqlite3 3.x | ADR-0002, product-scope |
+| VS-03 | Drift | With drift 2.32.0+ on `sqlite3` 3.x, a current SQLite is bundled automatically via build hooks; `sqlite3_flutter_libs` and `sqlcipher_flutter_libs` are no longer needed. | same | same | Technical stack (later batch) |
+| VS-04 | Drift | Drift provides `dart run drift_dev make-migrations`, generating per-version schema files, step-by-step migration code and migration tests. | https://drift.simonbinder.eu/migrations/ | fetched 2026-11-04 | Replace of legacy migration ladder |
+| VS-05 | Drift (Android) | Complex queries on Android may hit out-of-memory errors unless the SQLite temp directory is set explicitly. | https://drift.simonbinder.eu/platforms/ | same | Spike S-01 |
+| VS-06 | Supabase RLS | RLS policies run in the database for every access, behave like an added `WHERE` clause, and protect data even when reached via third-party tooling. | https://supabase.com/docs/guides/database/postgres/row-level-security | fetched 2026-11-04 | ADR-0003 |
+| VS-07 | Supabase RLS | Table grants and policies are two separate checks. On existing projects a new table in `public` can start with all privileges granted to `anon` and `authenticated`, so grants must be reduced explicitly. Views bypass RLS by default unless created safely. `service_role` bypasses RLS and must stay server-side. | same | same | ADR-0003, security (later batch) |
+| VS-08 | Supabase RLS | Official procedure includes per-table SQL tests (`supabase test db`) asserting allow/deny for each operation and role. | same | same | Fitness functions (later batch) |
+| VS-09 | Supabase Auth | A session is a short-lived JWT access token plus a single-use refresh token; default JWT expiry guidance is 1 hour; sessions last indefinitely unless time-box/inactivity/single-session options are set; refresh-token reuse detection exists with a 10 s default reuse interval. | https://supabase.com/docs/guides/auth/sessions | fetched 2026-11-04 | ADR-0003 |
+| VS-10 | Supabase Realtime | Free plan limits: 200 concurrent connections, 100 messages/s, 100 channel joins/s; Pro: 500 connections, 500 messages/s. Postgres change payload limit 1,024 KB; above it, large fields are dropped from the payload. | https://supabase.com/docs/guides/realtime/limits | fetched 2026-11-04; limits can change | ADR-0003, estimation (later batch) |
+| VS-11 | Health Connect | Health Connect is an Android API and part of the Android framework from Android 14 (API 34); on Android 13 and lower, the Health Connect app must be installed from Google Play. | https://developer.android.com/health-and-fitness/health-connect/get-started | fetched 2026-11-04 | Health integration (later batch) |
+| VS-12 | Health Connect | Permissions are declared per data type (for example `READ_STEPS`) in the manifest, requested at runtime, and can be granted or revoked by the user at any time, so the app must re-check before each use. | same | same | Health integration (later batch) |
+| VS-13 | Health Connect | Apps can read only while in the foreground unless the user grants the Background Read permission. The app cannot be notified of new data; check on foreground and periodically. | https://developer.android.com/health-and-fitness/health-connect/sync-data | fetched 2026-11-04 | Health integration (later batch) |
+| VS-14 | Health Connect | Changes tokens expire; on expiry the documented approach is to re-read from the last timestamp or the last 30 days and de-duplicate by identifiers (Client IDs are required for updates). Use separate Changes tokens per independently consumed data type. | same | same | Health integration (later batch) |
+| VS-15 | Health Connect | Jetpack library `androidx.health.connect:connect-client` reached 1.1.0 stable; versions 1.1.0+ need `compileSdk = 36` and AGP 8.9.1+. | get-started page and landing page | landing page announces 1.1.0 stable; sample shows 1.2.0-alpha06 | Spike S-13 |
+| VS-16 | License | AppFlowy Editor is dual-licensed under **AGPL-3.0 and MPL-2.0** (repository `LICENSE`). | https://raw.githubusercontent.com/AppFlowy-IO/appflowy-editor/main/LICENSE | `main` branch, fetched 2026-11-04 | Document engine decision (later batch), risk register |
+| VS-17 | License | `table_calendar` is Apache-2.0. | https://raw.githubusercontent.com/aleksanderwozniak/table_calendar/master/LICENSE | `master`, fetched 2026-11-04 | legacy matrix |
+| VS-18 | License | `llama_cpp_dart` is MIT. | https://raw.githubusercontent.com/netdur/llama_cpp_dart/main/LICENSE | `main`, fetched 2026-11-04 | legacy matrix |
+| VS-19 | uuid package | The `uuid` package (4.x, example `^4.6.0`) generates RFC 9562 version 7 UUIDs and runs on web, server and Flutter. | https://pub.dev/packages/uuid | fetched 2026-11-04 | ADR-0009 |
+| VS-20 | timezone package | The `timezone` package provides the IANA database and a `TZDateTime` class; initialize with `initializeTimeZones()`; works in non-browser Dart. Current DB version seen: 2025c. Getting the device's current zone is out of scope for the package (use a plugin). | https://pub.dev/packages/timezone | fetched 2026-11-04 | ADR-0010, ADR-0013 |
+| VS-21 | Drift encryption | Drift recommends, for new apps, a `NativeDatabase` with **SQLite3MultipleCiphers** (SQLCipher-compatible) bundled via the `sqlite3` package build hooks, configured by `hooks: user_defines: sqlite3: source: sqlite3mc`. Set the key in the `NativeDatabase` `setup` with `PRAGMA key`. | https://drift.simonbinder.eu/platforms/encryption/ | fetched 2026-11-04 | ADR-0016 note, data-architecture |
+| VS-22 | sqlcipher_flutter_libs obsolete | `sqlcipher_flutter_libs` relates to `sqlite3` 2.x and is obsolete after upgrading to 3.x; from 0.7.0 it does nothing and should be removed. Encryption is now via SQLite3MultipleCiphers build hooks (VS-21). | https://pub.dev/packages/sqlcipher_flutter_libs | fetched 2026-11-04 | data-architecture (corrects the owner's default to the current mechanism) |
+| VS-23 | FTS5 availability | FTS5 is part of the SQLite amalgamation since 3.9.0 and is enabled when `SQLITE_ENABLE_FTS5` is defined; Drift supports FTS5 virtual tables in `.drift` files when the bundled `sqlite3` has it (the `sqlite3` package usually bundles a build with json1 and fts5). | https://sqlite.org/fts5.html ; https://drift.simonbinder.eu/sql_api/extensions/ | fetched 2026-11-04 | data-architecture |
+| VS-24 | flutter_secure_storage | `flutter_secure_storage` stores key-value secrets using platform secure storage (Keychain on iOS/macOS, RSA OAEP + AES-GCM on Android, platform mechanisms on Windows/Linux). | https://pub.dev/packages/flutter_secure_storage | fetched 2026-11-04 | security-requirements |
+| OQ-V10 | FTS5 under SQLite3MultipleCiphers | Not verified on an official page that the SQLite3MultipleCiphers build bundled by `sqlite3` 3.x has FTS5 compiled in. SQLCipher-family builds require the FTS5 compile-time option to be enabled explicitly (community sources). | — | Open; confirm by `PRAGMA compile_options` in spike S-02 before relying on FTS5 on the encrypted DB |
+| VS-25 | License: SQLite3MultipleCiphers | MIT. | https://raw.githubusercontent.com/utelle/SQLite3MultipleCiphers/main/LICENSE | `main`, fetched 2026-11-04 | ADR-0018, technical-stack (encryption) |
+| VS-26 | License: Drift | MIT. | https://pub.dev/packages/drift/license | fetched 2026-11-04 | technical-stack |
+| VS-27 | License: go_router | BSD-3-Clause (Flutter Authors). | https://pub.dev/packages/go_router/license | fetched 2026-11-04 | technical-stack, ADR-0019 |
+| VS-28 | License: flutter_riverpod | MIT. | https://pub.dev/packages/flutter_riverpod/license | fetched 2026-11-04 | technical-stack, ADR-0019 |
+| VS-29 | License: flutter_quill | MIT. | https://pub.dev/packages/flutter_quill/license | fetched 2026-11-04 | ADR-0020 (editor) |
+| VS-30 | License: super_editor | MIT. | https://pub.dev/packages/super_editor/license | fetched 2026-11-04 | ADR-0020 (editor) |
+| VS-31 | License: flutter_secure_storage | BSD-3-Clause. | https://pub.dev/packages/flutter_secure_storage (License section) | fetched 2026-11-04; confirm exact SPDX in T2 | technical-stack |
+
+## 2. Not verified (Open)
+
+| ID | Topic | Why not verified | Next step |
+|---|---|---|---|
+| OQ-V1 | Health Connect availability on Windows | Health Connect is an Android API (VS-11). No source was read describing any Windows equivalent. | State in the health batch that Windows receives data only via sync or import; confirm no official Windows API exists. |
+| OQ-V2 | Flutter Windows plugin maturity for each planned plugin (notifications, background, file picker, TTS, PDF) | VS-01 only says plugins must support the platform. | Spike S-05 per plugin. |
+| OQ-V3 | Drift encryption at rest options on Windows and Android | The Drift pages fetched did not cover encryption. VS-03 only says `sqlcipher_flutter_libs` is no longer needed as a dependency. | Spike S-01/S-02. |
+| OQ-V4 | Supabase pricing, Storage limits, Edge Function limits, backup/retention | Only Auth sessions, RLS and Realtime limits were read. | Estimation batch. |
+| OQ-V5 | Supabase multi-tenant RLS patterns for shared workspaces (membership tables, helper functions, performance) | Only the general RLS guide was read. | Spike S-03. |
+| OQ-V6 | AppFlowy Editor: practical effect of AGPL-3.0 vs MPL-2.0 choice on a closed-source app | The license text states the dual license; legal interpretation was not researched. | Decision in the document-engine batch; not legal advice. |
+| OQ-V7 | Dictionary datasets and their licenses | Out of Batch 1 scope. | Spike S-10. |
+| OQ-V8 | Apple HealthKit background delivery | Out of Batch 1 scope. | Spike S-14 (post-MVP). |
+| OQ-V9 | Health Connect data types, history window defaults and aggregation APIs for steps | Two attempted pages returned 404 (data-access, data-types). | Re-fetch correct URLs in the health batch. |
+
+## 3. Notes
+
+- [Verified] All URLs above were reachable on 2026-11-04, except the two 404s recorded in OQ-V9.
+- [Assumption] The legacy repo's pinned versions (`pubspec.lock`) were not compared to current stable versions; version selection happens in the technical-stack batch.
