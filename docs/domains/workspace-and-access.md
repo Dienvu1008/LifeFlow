@@ -62,7 +62,11 @@ No method exposes another profile's workspace to a query that is not scoped by i
 - OQ-S8 (P04): binding to an account that already has cloud data.
 - OQ-WA-1: is the auth provider's `accountId` stored in plain local storage or secure storage? Proposal: secure storage for tokens, plain storage for the non-secret `accountId`. Security batch confirms.
 
-## 11. Self-check
+## 11. Implementation status (P01)
+- **T4 (done, 2026-11-04):** domain `LocalProfile`/`Workspace`/`AccountBinding` + `ProfileBinder`; application `AuthGateway` **port**; infrastructure `ProfileStore` (bootstrap `CreateLocalProfile` + offline read path) and `ProfileCommandHandler` (`bind`/`signOut`/`switch`) on the governance gateway. Headless tests tie to WA-001, ID-001/002 (GS-22), GS-11, SEC-001/002, OQ-S7.
+- **Real `SupabaseAuthGateway` adapter is deferred to T6 (adaptive UI).** Rationale: the Supabase adapter is an infrastructure concern that needs the app shell (go_router redirect + loopback OAuth) to be tested end-to-end; folding it into T4 would weaken the deterministic port-level tests and force a T6 rewrite. T4 ships the `AuthGateway` port + a deterministic `FakeAuthGateway` (guest→bind, session state, offline read path, error cases). T6 implements `SupabaseAuthGateway` using spike S-03a (SDK-managed PKCE + `exchangeCodeForSession`, email + GitHub, session in secure storage) as the reference. S-03a already proved the live flow, so it is not re-litigated.
+
+## 12. Self-check
 - [x] Every command lists events, idempotency and concurrency.
 - [x] Every invariant has an enforcement point.
 - [x] No query returns cross-profile data unscoped.

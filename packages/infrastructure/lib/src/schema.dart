@@ -22,6 +22,10 @@ class Profiles extends Table {
   TextColumn get activeWorkspaceId => text()();
   TextColumn get accountId => text().nullable()(); // bound account, if any
   TextColumn get accountProvider => text().nullable()();
+  // Optimistic-concurrency version for BindAccount (workspace-and-access.md §6).
+  IntColumn get version => integer().withDefault(const Constant(1))();
+  // True for the single active profile on the device (SwitchProfile toggles it).
+  BoolColumn get isActive => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt => dateTime()();
   @override
   Set<Column> get primaryKey => {id};

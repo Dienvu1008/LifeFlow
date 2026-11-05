@@ -9,3 +9,5 @@ export 'src/app_database.dart';
 export 'src/schema.dart';
 export 'src/command_gateway.dart';
 export 'src/task_command_handler.dart';
+export 'src/profile_store.dart';
+export 'src/profile_command_handler.dart';
