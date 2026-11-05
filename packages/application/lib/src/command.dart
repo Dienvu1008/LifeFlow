@@ -56,3 +56,14 @@ class DomainEvent {
   final String type;
   final Map<String, Object?> payload;
 }
+
+/// Thrown by a [CommandHandler] when a domain rule rejects the command (e.g. an
+/// invalid status transition, a hierarchy cycle, or exceeding max depth). The
+/// gateway catches it, rolls back the transaction, and returns a
+/// [CommandFailure] with kind [CommandFailureKind.validationFailed].
+class DomainRejection implements Exception {
+  DomainRejection(this.reason);
+  final String reason;
+  @override
+  String toString() => 'DomainRejection: $reason';
+}
