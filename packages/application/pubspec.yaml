@@ -1,0 +1,20 @@
+name: application
+description: >-
+  LifeFlow application layer: command envelope, command gateway contract,
+  authorization port, query ports. Depends on domain + foundation (+ time_kernel
+  later); never on infrastructure or Flutter. P01.
+publish_to: "none"
+version: 0.0.1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  foundation:
+    path: ../foundation
+  domain:
+    path: ../domain
+
+dev_dependencies:
+  test: ^1.25.0
+  lints: ^5.0.0

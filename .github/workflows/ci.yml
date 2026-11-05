@@ -20,6 +20,19 @@ jobs:
           dart pub get
           dart analyze
           dart test
+      - name: Application analyze + test (command gateway contract)
+        working-directory: packages/application
+        run: |
+          dart pub get
+          dart analyze
+          dart test
+      - name: Infrastructure analyze + test (Drift store, FTS, governance kernel)
+        working-directory: packages/infrastructure
+        run: |
+          dart pub get
+          dart run build_runner build
+          dart analyze
+          dart test
       - name: FF-ARCH-01 (pure domain import scan)
         run: dart run tools/fitness/ff_arch_01_pure_domain.dart
 
