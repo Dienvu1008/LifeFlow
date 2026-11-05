@@ -18,15 +18,18 @@ Fixed entry format: **Question / Hypothesis / What was done / Measured result / 
 - **Question:** Does Flutter + Drift `NativeDatabase` run cleanly on Windows and Android with bundled sqlite3 3.x (no manual native setup), supporting CRUD + an atomic transaction (+ rollback)?
 - **Hypothesis:** drift 2.28 + sqlite3 3.x via `drift_flutter` bundles sqlite3 through build hooks on both platforms; a transaction commits atomically and rolls back fully on error (the ADR-0014 foundation).
 - **What was done (agent, in this environment):** Wrote a disposable Flutter+Drift POC (two tables with a FK; `createDeckWithCards` in one transaction; a rollback test). Generated Windows + Android platforms. Drift codegen succeeds; `flutter analyze` = **No issues found**; `flutter test` on `NativeDatabase.memory()` = **2/2 passed** (CRUD+transaction, and full rollback). Wrote `RUNBOOK.md`. **Platform build/run not executed here** — owner verifies Windows + Android.
-- **Measured result (owner to fill per RUNBOOK §3/§4):**
-  - [ ] Windows: builds + runs; Create/Read/Rollback behave as specified: ___
-  - [ ] Android: builds + runs; same: ___
-  - [ ] No manual native sqlite setup needed (bundled): ___
-  - [ ] Rollback test shows "rollback OK" (never "ROLLBACK FAILED"): ___
-- **Success or Failure:** _pending owner platform run_ (headless logic already PASS)
-- **Decision:** _pending_
-- **ADR update or Open+escalation:** on success → confirms the Drift/NativeDatabase stack rows (technical-stack) and ADR-0013; **then create the `scaffold/p01-skeleton` branch** (Task C) on which S-02 runs. On failure → Open + escalate (reconsider local store).
-- **Human gate date:** _pending_
+- **Measured result (owner run on Windows, 2026-11-04):**
+  - Windows builds + runs: **PASS**.
+  - CRUD + transaction: **PASS** — first session created decks/cards; a later session read `5 decks, 10 cards` (exact 1:2 ratio), proving the transaction wrote all rows and **data persisted to the on-disk SQLite file across restarts**.
+  - Rollback: **PASS** — `rollback OK: tx-fail not persisted`.
+  - No manual native sqlite setup: **PASS** — ran without adding any native config.
+  - Android: **not run** (follow-up).
+  - Note: the owner initially saw `UNIQUE constraint failed: decks.id` on Create — this was a POC bug (the id counter reset to 0 each launch and clashed with persisted data), which actually *confirmed* persistence. Fixed: ids now use a timestamp; added a "Reset DB" button. Headless tests remain 2/2.
+- **Success or Failure:** **SUCCESS on Windows** (persistence + transaction + rollback proven on-device; headless 2/2). Android is a follow-up.
+- **Finding (important):** the resolved stack is **sqlite3 2.9.4 + sqlite3_flutter_libs 0.5.42** (the older CMake-bundling mechanism), NOT sqlite3 3.x build hooks. Per the official sqlite3.dart issue #336 (2026-11), the 3.x build-hooks path "is not a smooth experience" on Flutter yet, so `drift_flutter` still resolves to 2.x. **Consequence for S-02/encryption:** the ADR-0016/VS-21 assumption (SQLite3MultipleCiphers via `sqlite3` 3.x build hooks) may not apply as-is on current Flutter; S-02 must verify the actual encryption path (likely the older `sqlcipher_flutter_libs` CMake mechanism, or a 3.x opt-in) and record which works. Raised as OQ-STACK-2.
+- **Decision:** proceed. Confirms Drift/NativeDatabase on Windows; create `scaffold/p01-skeleton` (Task C); S-02 runs there and must resolve the encryption-mechanism question above.
+- **ADR update or Open+escalation:** confirms Drift stack rows + ADR-0013. New open question **OQ-STACK-2** (encryption mechanism under current Flutter sqlite3 bundling) for S-02. Android run is a follow-up before P01.
+- **Human gate date:** 2026-11-04 — passed for Windows; Android a follow-up.
 
 ---
 

@@ -56,4 +56,10 @@ class SpikeDb extends _$SpikeDb {
   Future<List<Deck>> allDecks() => select(decks).get();
 
   Future<int> countCards() async => (await select(cards).get()).length;
+
+  /// Clears all rows (test convenience).
+  Future<void> clearAll() => transaction(() async {
+        await delete(cards).go();
+        await delete(decks).go();
+      });
 }

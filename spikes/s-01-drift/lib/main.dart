@@ -20,7 +20,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final _db = SpikeDb();
   String _log = '';
-  int _seq = 0;
 
   void _append(String m) => setState(() => _log = '$m\n$_log');
 
@@ -38,7 +37,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _createTx() async {
-    final id = 'deck-${_seq++}';
+    // Unique id per tap (and across app restarts) so re-running never clashes
+    // with data persisted from a previous session.
+    final id = 'deck-${DateTime.now().microsecondsSinceEpoch}';
     await _run('create deck + 2 cards in one transaction',
         () => _db.createDeckWithCards(id, 'Deck $id'));
     await _refresh();
@@ -85,6 +86,13 @@ class _HomePageState extends State<HomePage> {
               ElevatedButton(onPressed: _createTx, child: const Text('Create (tx)')),
               ElevatedButton(onPressed: _refresh, child: const Text('Read')),
               ElevatedButton(onPressed: _failingTx, child: const Text('Rollback test')),
+              OutlinedButton(
+                onPressed: () async {
+                  await _run('clear all', _db.clearAll);
+                  await _refresh();
+                },
+                child: const Text('Reset DB'),
+              ),
             ]),
             const SizedBox(height: 12),
             const Text('Log (newest first):'),
