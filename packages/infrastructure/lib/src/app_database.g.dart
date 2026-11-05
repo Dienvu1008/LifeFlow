@@ -39,6 +39,24 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
   late final GeneratedColumn<String> accountProvider = GeneratedColumn<String>(
       'account_provider', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _versionMeta =
+      const VerificationMeta('version');
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+      'version', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
+  static const VerificationMeta _isActiveMeta =
+      const VerificationMeta('isActive');
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+      'is_active', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_active" IN (0, 1))'),
+      defaultValue: const Constant(false));
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -52,6 +70,8 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
         activeWorkspaceId,
         accountId,
         accountProvider,
+        version,
+        isActive,
         createdAt
       ];
   @override
@@ -93,6 +113,14 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
           accountProvider.isAcceptableOrUnknown(
               data['account_provider']!, _accountProviderMeta));
     }
+    if (data.containsKey('version')) {
+      context.handle(_versionMeta,
+          version.isAcceptableOrUnknown(data['version']!, _versionMeta));
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(_isActiveMeta,
+          isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta));
+    }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
@@ -118,6 +146,10 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
           .read(DriftSqlType.string, data['${effectivePrefix}account_id']),
       accountProvider: attachedDatabase.typeMapping.read(
           DriftSqlType.string, data['${effectivePrefix}account_provider']),
+      version: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}version'])!,
+      isActive: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
     );
@@ -135,6 +167,8 @@ class Profile extends DataClass implements Insertable<Profile> {
   final String activeWorkspaceId;
   final String? accountId;
   final String? accountProvider;
+  final int version;
+  final bool isActive;
   final DateTime createdAt;
   const Profile(
       {required this.id,
@@ -142,6 +176,8 @@ class Profile extends DataClass implements Insertable<Profile> {
       required this.activeWorkspaceId,
       this.accountId,
       this.accountProvider,
+      required this.version,
+      required this.isActive,
       required this.createdAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -155,6 +191,8 @@ class Profile extends DataClass implements Insertable<Profile> {
     if (!nullToAbsent || accountProvider != null) {
       map['account_provider'] = Variable<String>(accountProvider);
     }
+    map['version'] = Variable<int>(version);
+    map['is_active'] = Variable<bool>(isActive);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -170,6 +208,8 @@ class Profile extends DataClass implements Insertable<Profile> {
       accountProvider: accountProvider == null && nullToAbsent
           ? const Value.absent()
           : Value(accountProvider),
+      version: Value(version),
+      isActive: Value(isActive),
       createdAt: Value(createdAt),
     );
   }
@@ -183,6 +223,8 @@ class Profile extends DataClass implements Insertable<Profile> {
       activeWorkspaceId: serializer.fromJson<String>(json['activeWorkspaceId']),
       accountId: serializer.fromJson<String?>(json['accountId']),
       accountProvider: serializer.fromJson<String?>(json['accountProvider']),
+      version: serializer.fromJson<int>(json['version']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -195,6 +237,8 @@ class Profile extends DataClass implements Insertable<Profile> {
       'activeWorkspaceId': serializer.toJson<String>(activeWorkspaceId),
       'accountId': serializer.toJson<String?>(accountId),
       'accountProvider': serializer.toJson<String?>(accountProvider),
+      'version': serializer.toJson<int>(version),
+      'isActive': serializer.toJson<bool>(isActive),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -205,6 +249,8 @@ class Profile extends DataClass implements Insertable<Profile> {
           String? activeWorkspaceId,
           Value<String?> accountId = const Value.absent(),
           Value<String?> accountProvider = const Value.absent(),
+          int? version,
+          bool? isActive,
           DateTime? createdAt}) =>
       Profile(
         id: id ?? this.id,
@@ -214,6 +260,8 @@ class Profile extends DataClass implements Insertable<Profile> {
         accountProvider: accountProvider.present
             ? accountProvider.value
             : this.accountProvider,
+        version: version ?? this.version,
+        isActive: isActive ?? this.isActive,
         createdAt: createdAt ?? this.createdAt,
       );
   Profile copyWithCompanion(ProfilesCompanion data) {
@@ -228,6 +276,8 @@ class Profile extends DataClass implements Insertable<Profile> {
       accountProvider: data.accountProvider.present
           ? data.accountProvider.value
           : this.accountProvider,
+      version: data.version.present ? data.version.value : this.version,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -240,6 +290,8 @@ class Profile extends DataClass implements Insertable<Profile> {
           ..write('activeWorkspaceId: $activeWorkspaceId, ')
           ..write('accountId: $accountId, ')
           ..write('accountProvider: $accountProvider, ')
+          ..write('version: $version, ')
+          ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -247,7 +299,7 @@ class Profile extends DataClass implements Insertable<Profile> {
 
   @override
   int get hashCode => Object.hash(id, displayName, activeWorkspaceId, accountId,
-      accountProvider, createdAt);
+      accountProvider, version, isActive, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -257,6 +309,8 @@ class Profile extends DataClass implements Insertable<Profile> {
           other.activeWorkspaceId == this.activeWorkspaceId &&
           other.accountId == this.accountId &&
           other.accountProvider == this.accountProvider &&
+          other.version == this.version &&
+          other.isActive == this.isActive &&
           other.createdAt == this.createdAt);
 }
 
@@ -266,6 +320,8 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
   final Value<String> activeWorkspaceId;
   final Value<String?> accountId;
   final Value<String?> accountProvider;
+  final Value<int> version;
+  final Value<bool> isActive;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
   const ProfilesCompanion({
@@ -274,6 +330,8 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     this.activeWorkspaceId = const Value.absent(),
     this.accountId = const Value.absent(),
     this.accountProvider = const Value.absent(),
+    this.version = const Value.absent(),
+    this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -283,6 +341,8 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     required String activeWorkspaceId,
     this.accountId = const Value.absent(),
     this.accountProvider = const Value.absent(),
+    this.version = const Value.absent(),
+    this.isActive = const Value.absent(),
     required DateTime createdAt,
     this.rowid = const Value.absent(),
   })  : id = Value(id),
@@ -294,6 +354,8 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     Expression<String>? activeWorkspaceId,
     Expression<String>? accountId,
     Expression<String>? accountProvider,
+    Expression<int>? version,
+    Expression<bool>? isActive,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
   }) {
@@ -303,6 +365,8 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
       if (activeWorkspaceId != null) 'active_workspace_id': activeWorkspaceId,
       if (accountId != null) 'account_id': accountId,
       if (accountProvider != null) 'account_provider': accountProvider,
+      if (version != null) 'version': version,
+      if (isActive != null) 'is_active': isActive,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -314,6 +378,8 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
       Value<String>? activeWorkspaceId,
       Value<String?>? accountId,
       Value<String?>? accountProvider,
+      Value<int>? version,
+      Value<bool>? isActive,
       Value<DateTime>? createdAt,
       Value<int>? rowid}) {
     return ProfilesCompanion(
@@ -322,6 +388,8 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
       activeWorkspaceId: activeWorkspaceId ?? this.activeWorkspaceId,
       accountId: accountId ?? this.accountId,
       accountProvider: accountProvider ?? this.accountProvider,
+      version: version ?? this.version,
+      isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
     );
@@ -345,6 +413,12 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     if (accountProvider.present) {
       map['account_provider'] = Variable<String>(accountProvider.value);
     }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -362,6 +436,8 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
           ..write('activeWorkspaceId: $activeWorkspaceId, ')
           ..write('accountId: $accountId, ')
           ..write('accountProvider: $accountProvider, ')
+          ..write('version: $version, ')
+          ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -3846,6 +3922,8 @@ typedef $$ProfilesTableCreateCompanionBuilder = ProfilesCompanion Function({
   required String activeWorkspaceId,
   Value<String?> accountId,
   Value<String?> accountProvider,
+  Value<int> version,
+  Value<bool> isActive,
   required DateTime createdAt,
   Value<int> rowid,
 });
@@ -3855,6 +3933,8 @@ typedef $$ProfilesTableUpdateCompanionBuilder = ProfilesCompanion Function({
   Value<String> activeWorkspaceId,
   Value<String?> accountId,
   Value<String?> accountProvider,
+  Value<int> version,
+  Value<bool> isActive,
   Value<DateTime> createdAt,
   Value<int> rowid,
 });
@@ -3884,6 +3964,12 @@ class $$ProfilesTableFilterComposer
   ColumnFilters<String> get accountProvider => $composableBuilder(
       column: $table.accountProvider,
       builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+      column: $table.isActive, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
@@ -3915,6 +4001,12 @@ class $$ProfilesTableOrderingComposer
       column: $table.accountProvider,
       builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+      column: $table.isActive, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
 }
@@ -3942,6 +4034,12 @@ class $$ProfilesTableAnnotationComposer
 
   GeneratedColumn<String> get accountProvider => $composableBuilder(
       column: $table.accountProvider, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -3975,6 +4073,8 @@ class $$ProfilesTableTableManager extends RootTableManager<
             Value<String> activeWorkspaceId = const Value.absent(),
             Value<String?> accountId = const Value.absent(),
             Value<String?> accountProvider = const Value.absent(),
+            Value<int> version = const Value.absent(),
+            Value<bool> isActive = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -3984,6 +4084,8 @@ class $$ProfilesTableTableManager extends RootTableManager<
             activeWorkspaceId: activeWorkspaceId,
             accountId: accountId,
             accountProvider: accountProvider,
+            version: version,
+            isActive: isActive,
             createdAt: createdAt,
             rowid: rowid,
           ),
@@ -3993,6 +4095,8 @@ class $$ProfilesTableTableManager extends RootTableManager<
             required String activeWorkspaceId,
             Value<String?> accountId = const Value.absent(),
             Value<String?> accountProvider = const Value.absent(),
+            Value<int> version = const Value.absent(),
+            Value<bool> isActive = const Value.absent(),
             required DateTime createdAt,
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -4002,6 +4106,8 @@ class $$ProfilesTableTableManager extends RootTableManager<
             activeWorkspaceId: activeWorkspaceId,
             accountId: accountId,
             accountProvider: accountProvider,
+            version: version,
+            isActive: isActive,
             createdAt: createdAt,
             rowid: rowid,
           ),

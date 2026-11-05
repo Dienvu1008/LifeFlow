@@ -4,3 +4,4 @@
 library domain;
 
 export 'src/task.dart';
+export 'src/workspace.dart';
