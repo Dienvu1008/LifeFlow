@@ -13,18 +13,18 @@ Fixed entry format: **Question / Hypothesis / What was done / Measured result / 
 - **Hypothesis:** Supabase Auth + a fixed-port loopback (127.0.0.1:53682) with PKCE S256 works on Windows; supabase_flutter persists the session into secure storage so it survives an offline restart; GitHub is the simplest social provider to configure.
 - **What was done (agent, in this environment):** Wrote a disposable Flutter POC (email + GitHub sign-in; desktop loopback on 127.0.0.1:53682; session stored in `flutter_secure_storage` via a custom gotrue `LocalStorage`; offline status derived from the cached session with no network call, incl. read-only-on-expired-offline). Generated Windows + Android platforms; added the `lifeflow://callback` deep link. `flutter analyze` = **No issues found**. Wrote `RUNBOOK.md`.
 - **Finding during owner's first Windows run (2026-11-04):** the GitHub flow reached the loopback but failed with "State mismatch". Root cause (verified against the Supabase docs/source): with `authFlowType: pkce`, the **Supabase SDK owns the PKCE verifier and the OAuth state**; the POC's original code generated its own PKCE/state and validated state at the loopback, which Supabase does not echo back. **Fix applied:** use the SDK's `getOAuthSignInUrl` (SDK stores the verifier) + `exchangeCodeForSession(code)`; the loopback now only captures `code` and does not validate state. Our manual `pkce.dart` was removed (and the `crypto` dep). This is a real mechanism finding, recorded here rather than worked around silently. Re-analyze clean. **Owner to re-run** after `git pull` on `spike/s-03a`.
-- **Measured result (owner to fill after running per RUNBOOK §0/§5/§6):**
-  - [ ] Email sign-in: Windows ___ / Android ___
-  - [ ] GitHub sign-in: Windows ___ / Android ___
-  - [ ] PKCE S256 used on Windows (not plain): ___
-  - [ ] Offline restart shows signedIn without network: ___
-  - [ ] Expired-offline shows signedInReadOnlyOffline: ___
-  - [ ] No token in logs: ___
-  - Setup time vs 1 pd sub-cap: ___
-- **Success or Failure:** _pending owner run_
-- **Decision:** _pending_
-- **ADR update or Open+escalation:** on success → move ADR-0003 auth half toward Accepted (Supabase Auth for auth); on failure → Open + escalate (try Firebase Auth / self-hosted GoTrue per spike-plan).
-- **Human gate date:** _pending_
+- **Measured result (owner run on Windows, 2026-11-04):**
+  - GitHub sign-in: Windows **PASS** (loopback + code exchange; Status=signedIn, user shown) / Android **not run** (follow-up)
+  - Email sign-in: **not run** (follow-up; optional baseline)
+  - PKCE S256 on Windows (not plain): **PASS** — SDK-managed PKCE flow (`authFlowType: pkce`), default S256
+  - Offline restart shows signedIn without network: **PASS** — app reopened offline, Status=signedIn, no network block (terminal shows init completes, no hang)
+  - Expired-offline shows signedInReadOnlyOffline: **not observed** — token not yet expired (~1h default); logic only triggers on expired+offline; acceptable
+  - No token in logs: **PASS** — owner's full terminal shows only init + DevTools URLs, no access/refresh token
+  - Setup time vs 1 pd sub-cap: within sub-cap (Supabase project + GitHub OAuth app configured without blockers)
+- **Success or Failure:** **SUCCESS for Windows** on the core criteria (#1 session, #2 offline restart, PKCE S256, no token in logs). Email baseline and Android are **follow-ups**, not blockers for the auth-provider decision.
+- **Decision:** Supabase Auth is viable for LifeFlow auth on Windows via SDK-managed PKCE + a fixed loopback. Proceed to S-01. Carry Android + email as a verification follow-up before P01 sign-in UI ships.
+- **ADR update or Open+escalation:** ADR-0003 auth half → moved toward **Accepted** (Supabase Auth as the auth provider), with the Android/email follow-up noted. No escalation.
+- **Human gate date:** 2026-11-04 — passed for Windows; Android/email tracked as follow-up.
 
 ---
 

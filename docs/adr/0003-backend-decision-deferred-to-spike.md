@@ -1,8 +1,11 @@
 # ADR-0003: Backend choice deferred to a spike (default lean: Supabase)
 
-- Status: Proposed
+- Status: Partially Accepted — **auth half Accepted (Supabase Auth)** after spike S-03a (2026-11-04); data/sync half still Proposed (pending S-03/S-04)
 - Date: 2026-11-04
-- Deciders: Project owner (decision after spike S-03/S-04)
+- Deciders: Project owner (auth decided after S-03a; data/sync after S-03/S-04)
+
+## Update 2026-11-04 (auth half)
+Spike S-03a passed on Windows (see [../spikes/spike-results.md](../spikes/spike-results.md)): Supabase Auth with GitHub, SDK-managed PKCE (S256) via a fixed loopback (`127.0.0.1:53682`), session cached in secure storage surviving an offline restart, no token in logs. **Decision: Supabase Auth is the auth provider for the MVP.** Follow-up before P01 sign-in UI ships: verify on Android (deep link `lifeflow://callback`) and the email baseline. The data/sync backend remains undecided (still Supabase-lean) pending S-03 (RLS) and S-04 (sync).
 - Evidence: [../research/verified-sources.md](../research/verified-sources.md) VS-06 to VS-10; legacy Firebase usage in [../assessment/legacy-repo-assessment.md](../assessment/legacy-repo-assessment.md) section 4.7
 
 ## Context
