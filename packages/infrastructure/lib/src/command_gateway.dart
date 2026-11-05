@@ -72,8 +72,15 @@ class DriftCommandGateway implements CommandGateway {
         final newVersion =
             current == null ? Version.initial : current.next;
 
-        // Apply the domain method within the transaction.
-        final outcome = await handler.apply(tx, cmd, newVersion);
+        // Apply the domain method within the transaction. A domain rule
+        // rejection aborts the transaction and surfaces as validationFailed.
+        final HandlerOutcome outcome;
+        try {
+          outcome = await handler.apply(tx, cmd, newVersion);
+        } on DomainRejection catch (e) {
+          result = CommandFailure(CommandFailureKind.validationFailed, reason: e.reason);
+          throw _AbortTx();
+        }
 
         final now = DateTime.now().toUtc();
 

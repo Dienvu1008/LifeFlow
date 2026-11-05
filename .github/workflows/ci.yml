@@ -20,6 +20,12 @@ jobs:
           dart pub get
           dart analyze
           dart test
+      - name: Domain analyze + test (Task rules, hierarchy, transitions)
+        working-directory: packages/domain
+        run: |
+          dart pub get
+          dart analyze
+          dart test
       - name: Application analyze + test (command gateway contract)
         working-directory: packages/application
         run: |
