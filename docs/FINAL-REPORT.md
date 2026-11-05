@@ -55,7 +55,7 @@ Ranges with assumptions + confidence for dev + agent; MVP critical path ≈ 55�
 Scope explosion, offline-sync complexity, data loss, permission errors, AI hallucination/leak, dictionary licensing, Flutter plugin maturity, FTS-under-encryption. Each has mitigation + contingency + validation. [roadmap/risk-register.md](roadmap/risk-register.md).
 
 ## 17. Unresolved decisions
-Backend (ADR-0003, via S-03a/S-03/S-04); editor final pick (S-07); dictionary sources (S-10); FTS5-under-encryption (S-02/OQ-V10); sign-out behavior (OQ-S7); encryption key derivation (OQ-DATA-1); legal/export-crypto (OQ-SEC-1). Full list in [README.md](README.md).
+Backend (ADR-0003, via S-03a/S-03/S-04); editor final pick (S-07); dictionary sources (S-10); FTS5-under-encryption (S-02/OQ-V10); key/data backup (OQ-DATA-3, non-blocking); legal/export-crypto (OQ-SEC-1). Resolved pre-spike: sign-out (OQ-S7) and key derivation (OQ-DATA-1). Full list in [README.md](README.md).
 
 ## 18. Answers to the brief's final questions
 
@@ -74,7 +74,7 @@ Backend (ADR-0003, via S-03a/S-03/S-04); editor final pick (S-07); dictionary so
 1. Owner confirms the design corpus (this report + README) and the key ADRs (0002, 0005–0008, 0009–0020).
 2. MVP-blocking spikes pass or are escalated: **S-01** (Flutter+Drift on both platforms), **S-02** (migrations + FTS5-under-encryption, OQ-V10), **S-03a** (auth provider + Windows flow + offline session).
 3. Backend auth provider chosen from S-03a (ADR-0003 moves from Proposed toward Accepted for the auth half).
-4. Answer the few P01-relevant open questions or accept their proposals: OQ-S7 (sign-out), OQ-DATA-1 (key derivation). Others are later-phase.
+4. OQ-S7 (sign-out) and OQ-DATA-1 (key derivation) are resolved; OQ-DATA-3 (key/data backup) is non-blocking and decided before P01 UX is finalized. Others are later-phase.
 5. Repository scaffolded per [architecture/repository-structure.md](architecture/repository-structure.md) with the fitness-function skeleton (FF-ARCH-01..09) and CI stage order.
 
 ## 20. Documents produced

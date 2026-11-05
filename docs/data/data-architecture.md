@@ -37,7 +37,8 @@ Local-first: the device holds a usable, authoritative copy of the active profile
 [Decision] **Field-level encryption is rejected** for the MVP: it does not protect metadata (table shape, row counts, timestamps, foreign keys), it breaks or greatly complicates FTS5 and range queries, and it adds key-management complexity per field. Whole-file encryption protects the data and metadata at rest with one key and keeps FTS and queries working on the decrypted in-memory database. This supersedes the owner's wording "SQLCipher via `sqlcipher_flutter_libs`": the library is obsolete (VS-22); the equivalent, current mechanism is SQLite3MultipleCiphers via build hooks, which is SQLCipher-compatible. See [ADR-0016](../adr/0016-data-classification-and-egress-policy.md) for the egress side and the security-requirements doc for key handling.
 
 - The encryption key lives in platform secure storage (`flutter_secure_storage`, VS-24), never in the database or plain files (LF-INV-SEC-001).
-- [Open] OQ-DATA-1: key derivation (random per-install key in secure storage vs key derived from a user secret). Proposal: random 256-bit key generated on first launch, stored in secure storage; no user passphrase in MVP. Security batch confirms.
+- [Decision, owner 2026-11-04] OQ-DATA-1 resolved: a **random 256-bit key generated on first launch per profile, stored in platform secure storage; no user passphrase in the MVP**. Consequence (recorded): if the device is lost or secure storage is wiped and there is **no backup of the key or of a decrypted export**, the encrypted database is **unrecoverable** — the data is lost. This is acceptable for the MVP because the local export (UC-20a) is the user-controlled backup path. See the new OQ-DATA-3 on key backup.
+- [Open] OQ-DATA-3 (new, non-blocking for P01): should the MVP offer a key/data backup so a lost device does not mean lost data? Options: (a) rely only on the user-initiated decrypted export (UC-20a) as the backup — simplest, MVP default; (b) optional passphrase-wrapped key export; (c) cloud key escrow (needs backend, P04+). Proposal: ship (a) for the MVP and surface a clear warning that losing the device without an export loses the data; revisit (b)/(c) at P04. Decide before P01 UX is finalized.
 - Caveat to verify: FTS5 availability under the encrypted build (OQ-V10, spike S-02).
 
 ## 5. Backup and restore
@@ -49,7 +50,8 @@ Local-first: the device holds a usable, authoritative copy of the active profile
 [Decision] Each `LocalProfile` (ADR-0008) uses a **separate database file** (and its own encryption key) rather than profile-scoped rows in one shared database. Reason: strong isolation (LF-INV-ID-002) with no risk of a query leaking across profiles, and per-profile export/delete is a file operation. Trade-off: switching profiles reopens a database; acceptable (profile switching is infrequent, AS-07). See local-storage.md section 4.
 
 ## 7. Open questions
-- OQ-DATA-1: encryption key derivation (section 4).
+- OQ-DATA-1: **resolved** (section 4) — random 256-bit key in secure storage, no passphrase.
+- OQ-DATA-3 (new, non-blocking): key/data backup so a lost device is not a total loss (section 4).
 - OQ-V10: FTS5 under the encrypted build (verified-sources; spike S-02).
 - OQ-DATA-2: attachment encryption approach (section 2); security batch.
 

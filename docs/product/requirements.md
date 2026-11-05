@@ -97,7 +97,7 @@ Priority: **M** = MVP, **P** = post-MVP (phase in brackets). Each requirement ca
 | FR-AUTH-03 | When a profile with existing data signs in, the app asks whether to move that data to the account. "Yes" binds the current profile; "No" creates a new profile (new session) bound to the account, leaving the previous profile and its data on the device. | M | Decision (ADR-0008) |
 | FR-AUTH-04 | User content (tasks, habits, goals, events) is **not** synced to the cloud in the MVP; sign-in provides identity only. | M | Decision |
 | FR-AUTH-05 | The account enables no feature beyond identity in the MVP (no cloud backup). | M | Decision |
-| FR-AUTH-06 | At sign-out, behavior (return to a profile chooser, which profile becomes active) is defined. | Open (OQ-S7) | Open Question |
+| FR-AUTH-06 | At sign-out, the app returns to a profile chooser; profiles and their data stay on the device (OQ-S7 resolved). | M | Decision |
 | FR-AUTH-07 | A device can hold more than one LocalProfile (guest and/or one per account); each profile's data is isolated from the others. | M | Decision (ADR-0008) |
 
 ### Data (FR-DATA)

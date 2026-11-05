@@ -76,7 +76,7 @@
 | OQ-S4 | Cloud login in MVP? | **Yes, sign-in must exist** (refined by OQ-S6: it is optional to use). Auth provider choice is made before the sign-in work package; see [ADR-0003](../adr/0003-backend-decision-deferred-to-spike.md). | Decision |
 | OQ-S5 | What does the account do in MVP beyond identity? | **Authentication only.** No cloud backup, no content sync in MVP. | Decision |
 | OQ-S6 | May the app be used before sign-in? | **Yes.** Guest-first. On sign-in with existing data the app asks whether to move the data to the account; if not, a new session (profile) is created. See [ADR-0008](../adr/0008-guest-first-with-optional-account-binding.md). | Decision |
-| OQ-S7 | What happens at sign-out? Return to the guest profile? Is the account's data kept on the device? Can a different account sign in on the same profile? | Not decided. Proposal: sign-out returns to a profile chooser; profiles and their data stay on the device; one profile is bound to at most one account. | Open Question |
+| OQ-S7 | What happens at sign-out? | **Resolved (owner 2026-11-04):** sign-out returns to a profile chooser; profiles and their data stay on the device; one profile is bound to at most one account; a different account may sign in on a new profile. P04 refinements (once content syncs) remain a Proposal. | Decision |
 | OQ-S8 | In P04, what if a profile with local data is bound to an account that already has cloud data? | Deferred to the sync batch. | Open Question (P04) |
 
 ## 7. Effect on a solo developer

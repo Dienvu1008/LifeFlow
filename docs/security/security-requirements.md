@@ -12,7 +12,7 @@ Each requirement is testable. Priority M = MVP.
 | SR-01 | The local database is encrypted at rest with SQLite3MultipleCiphers (whole-file); the app asserts `PRAGMA cipher` at startup. | M | Decision | VS-21, data-architecture §4 |
 | SR-02 | The DB encryption key and auth tokens are stored only in platform secure storage (`flutter_secure_storage`); never in the DB, plain files, logs, exports, sync or AI context. | M | Decision | VS-24, LF-INV-SEC-001 |
 | SR-03 | Each LocalProfile has its own DB file and its own key. | M | Decision | data-architecture §6 |
-| SR-04 | A random 256-bit key is generated on first launch per profile; no user passphrase in MVP. | M | Proposal (OQ-DATA-1) | data-architecture §4 |
+| SR-04 | A random 256-bit key is generated on first launch per profile; no user passphrase in MVP (OQ-DATA-1 resolved). Losing the device without an export means the data is unrecoverable (see OQ-DATA-3). | M | Decision | data-architecture §4 |
 | SR-05 | Attachments stored outside the DB are protected consistently with the DB (approach per OQ-DATA-2). | M | Proposal | data-architecture §2 |
 
 ## 2. Authentication and session

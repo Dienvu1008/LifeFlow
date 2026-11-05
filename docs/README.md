@@ -152,11 +152,13 @@ Conventions for later batches:
 
 Resolved in Batch 2: OQ-B1 (Time Kernel package, ADR-0013), OQ-R1 (subtask depth 4), OQ-R2 (time model, ADR-0010), OQ-R3 (explicit parent-completion choice), OQ-B4 (reminder is an owner capability).
 
+Resolved 2026-11-04 (pre-spike): OQ-S7 (sign-out → profile chooser, data stays on device), OQ-DATA-1 (random 256-bit key in secure storage, no passphrase). New non-blocking: OQ-DATA-3 (key/data backup).
+
 ## Unresolved decisions (summary)
 
 | ID | Question | Doc |
 |---|---|---|
-| OQ-S7 | Sign-out behavior and profile chooser | product-scope |
+| OQ-DATA-3 | Key/data backup so a lost device is not total loss (non-blocking) | data-architecture |
 | OQ-S8 | Binding a profile to an account that already has cloud data (P04) | product-scope |
 | OQ-R4 | Encryption at rest | requirements (security/data batch) |
 | ADR-0003 | Backend choice (auth before P01 exit via spike S-03a; data/sync P04) | adr |

@@ -37,7 +37,7 @@ Decide who owns and may touch data, and provide the guest-first profile and opti
 | `SignOut` | local owner | — | bound profile | session cleared | `SignedOut` | idempotent | — |
 | `SwitchProfile` | local owner | profileId | profile exists on device | active profile changed | — | idempotent | — |
 
-[Open] `SignOut` post-state (profile chooser vs stay) is OQ-S7.
+[Decision, owner 2026-11-04] OQ-S7 resolved: on `SignOut`, the app returns to a **profile chooser**; all profiles and their data **stay on the device** (nothing is deleted); each profile is bound to **at most one account**; a different account may sign in on a new profile. This is a Decision for the MVP. The P04 refinements (what sign-out means once content is synced to a backend) remain a Proposal pending P04.
 
 ## 7. Queries / read ports
 - `AuthorizationService.check(actor, action, resourceRef) → Allow | Deny(reason)` — the only authority port other contexts and the Governance Kernel use. MVP policy: allow if `actor` is the owner of `resourceRef.workspaceId`; deny otherwise. See [authorization-model.md](../governance/authorization-model.md).
@@ -58,7 +58,7 @@ WorkspaceRepository:
 No method exposes another profile's workspace to a query that is not scoped by it.
 
 ## 10. Open questions
-- OQ-S7: sign-out behavior and the profile chooser.
+- OQ-S7: **resolved** (see the Decision above the commands table).
 - OQ-S8 (P04): binding to an account that already has cloud data.
 - OQ-WA-1: is the auth provider's `accountId` stored in plain local storage or secure storage? Proposal: secure storage for tokens, plain storage for the non-secret `accountId`. Security batch confirms.
 
