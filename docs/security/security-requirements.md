@@ -9,11 +9,20 @@ Each requirement is testable. Priority M = MVP.
 ## 1. Storage and keys
 | ID | Requirement | Pri | Label | Source |
 |---|---|---|---|---|
-| SR-01 | The local database is encrypted at rest with SQLite3MultipleCiphers (whole-file); the app asserts `PRAGMA cipher` at startup. | M | Decision | VS-21, data-architecture §4 |
+| SR-01 | The local database is encrypted at rest with SQLite3MultipleCiphers (whole-file); the app asserts `PRAGMA cipher` at startup. **Platform posture (ADR-0021, T5):** enforced on **Android**. On **Windows MVP** the DB runs **plain** as an explicit tracked exception (S-02: no Windows-clean build) — the startup self-check emits a warning and records `atRestEncrypted=false` in diagnostics (non-silent). Promote Windows to encrypted when a Windows-clean path ships. | M | Decision | VS-21, data-architecture §4, ADR-0021 |
 | SR-02 | The DB encryption key and auth tokens are stored only in platform secure storage (`flutter_secure_storage`); never in the DB, plain files, logs, exports, sync or AI context. | M | Decision | VS-24, LF-INV-SEC-001 |
 | SR-03 | Each LocalProfile has its own DB file and its own key. | M | Decision | data-architecture §6 |
 | SR-04 | A random 256-bit key is generated on first launch per profile; no user passphrase in MVP (OQ-DATA-1 resolved). Losing the device without an export means the data is unrecoverable (see OQ-DATA-3). | M | Decision | data-architecture §4 |
 | SR-05 | Attachments stored outside the DB are protected consistently with the DB (approach per OQ-DATA-2). | M | Proposal | data-architecture §2 |
+
+### 1a. Windows MVP plain-DB mitigations (ADR-0021)
+While Windows runs on a plain DB (tracked exception, T5), these mitigations apply and are surfaced to the user rather than left implicit:
+| ID | Requirement | Pri | Label |
+|---|---|---|---|
+| SR-01a | The startup storage self-check (`StorageSecurity.evaluate`) runs on every launch; when at-rest encryption is off it emits a local warning and sets `atRestEncrypted=false` + `trackedException=true` in the diagnostic bundle. Never silent. | M | Decision (ADR-0021) |
+| SR-01b | The Windows app recommends enabling OS full-disk encryption (BitLocker) and documents that the local DB is not encrypted at rest in the MVP. | M | Decision (ADR-0021) |
+| SR-01c | The UI warns the user before storing Restricted data (e.g. health) on a Windows device while at-rest encryption is off, and advises using the local export as the controlled backup. | M | Decision (ADR-0021) |
+| SR-01d | Auth tokens and the DB key remain in `flutter_secure_storage` regardless of DB encryption (LF-INV-SEC-001), so the plain DB never exposes secrets. | M | Decision |
 
 ## 2. Authentication and session
 | ID | Requirement | Pri | Label |

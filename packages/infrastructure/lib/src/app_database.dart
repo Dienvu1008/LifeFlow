@@ -48,6 +48,23 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  /// Reports the active at-rest cipher, or null if the DB is plain (T5,
+  /// LF-INV-SEC-011). On an encrypted SQLite3MultipleCiphers build `PRAGMA
+  /// cipher` returns the cipher name; on a plain SQLite it returns no row / an
+  /// empty value. Used by StorageSecurity.evaluate as the CipherProbe.
+  Future<String?> activeCipher() async {
+    try {
+      final rows = await customSelect('PRAGMA cipher').get();
+      if (rows.isEmpty) return null;
+      final value = rows.first.data.values.first;
+      final s = value?.toString() ?? '';
+      return s.isEmpty ? null : s;
+    } catch (_) {
+      // Plain SQLite does not know this pragma; treat as not encrypted.
+      return null;
+    }
+  }
+
   /// Full-text search over task titles (active, non-deleted) in a workspace.
   Future<List<String>> searchTaskIds(String workspaceId, String query) async {
     final rows = await customSelect(
