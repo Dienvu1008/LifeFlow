@@ -28,8 +28,12 @@ class _HomePageState extends State<HomePage> {
     try {
       await action();
       _append('OK: $label');
-    } catch (e) {
-      _append('ERR: $label -> $e');
+    } catch (e, st) {
+      // Print the full error + stack to the terminal for diagnosis, and show
+      // the runtime type + message on screen (not just toString()).
+      // ignore: avoid_print
+      print('SPIKE ERR [$label]: ${e.runtimeType}: $e\n$st');
+      _append('ERR: $label -> ${e.runtimeType}: $e');
     }
   }
 

@@ -33,6 +33,15 @@ class SpikeDb extends _$SpikeDb {
   @override
   int get schemaVersion => 1;
 
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) => m.createAll(),
+        beforeOpen: (details) async {
+          // Enforce foreign keys (off by default in sqlite). P01 will need this.
+          await customStatement('PRAGMA foreign_keys = ON');
+        },
+      );
+
   /// Creates a deck and two cards in ONE transaction (atomicity check).
   Future<void> createDeckWithCards(String deckId, String title) {
     return transaction(() async {
