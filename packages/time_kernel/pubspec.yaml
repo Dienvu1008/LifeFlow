@@ -1,0 +1,19 @@
+name: time_kernel
+description: >-
+  Stateless time rules for LifeFlow: ScheduleSpec, RecurrenceRule,
+  OccurrenceException, occurrence window query, DST resolution, overlap.
+  Pure Dart (ADR-0013). Depends only on foundation + timezone. Scaffold skeleton.
+publish_to: "none"
+version: 0.0.1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  foundation:
+    path: ../foundation
+  timezone: ^0.9.0
+
+dev_dependencies:
+  test: ^1.25.0
+  lints: ^5.0.0

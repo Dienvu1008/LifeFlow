@@ -1,0 +1,20 @@
+name: domain
+description: >-
+  LifeFlow domain models, commands, queries, ports per bounded context.
+  Depends only on foundation + time_kernel (no Flutter, no database). Scaffold
+  skeleton (P01). See docs/domains/ and docs/architecture/domain-model.md.
+publish_to: "none"
+version: 0.0.1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  foundation:
+    path: ../foundation
+  time_kernel:
+    path: ../time_kernel
+
+dev_dependencies:
+  test: ^1.25.0
+  lints: ^5.0.0

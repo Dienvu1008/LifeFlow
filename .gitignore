@@ -1,0 +1,8 @@
+# Dart/Flutter build artifacts (scaffold)
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/android/.gradle/
+**/windows/flutter/ephemeral/
+*.log
