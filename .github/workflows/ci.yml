@@ -1,0 +1,31 @@
+# CI stage order per docs/testing/architecture-fitness-functions.md section 5.
+# Scaffold skeleton: runs what exists now (pure-package analyze/test + FF-ARCH-01).
+# P01 fills in the remaining stages (integration + behavioral FFs + golden
+# scenarios, migration/sync, Windows+Android builds).
+name: ci
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  static-and-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dart-lang/setup-dart@v1
+      - name: Foundation analyze + test
+        working-directory: packages/foundation
+        run: |
+          dart pub get
+          dart analyze
+          dart test
+      - name: FF-ARCH-01 (pure domain import scan)
+        run: dart run tools/fitness/ff_arch_01_pure_domain.dart
+
+  # P01 adds:
+  # - flutter analyze/test for ui + integration
+  # - behavioral fitness functions FF-ARCH-06/08/09
+  # - golden scenarios
+  # - migration + sync tests
+  # - Windows + Android builds
