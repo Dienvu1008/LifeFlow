@@ -1,9 +1,9 @@
-/// LifeFlow infrastructure (scaffold skeleton, P01). Drift database,
-/// repositories, outbox/sync and platform adapters are implemented in P01+
-/// (they implement ports defined in domain/application). See
-/// docs/architecture/repository-structure.md and docs/data/.
-///
-/// The S-02 spike (migrations + FTS5 + encryption) proved these mechanisms;
-/// its throwaway code is on the spike branches, its results in
-/// docs/spikes/spike-results.md. P01 builds the real database here.
+/// LifeFlow infrastructure (P01). The local Drift store with the
+/// governance-ready schema (ADR-0009 shared columns; ADR-0011/0014 audit,
+/// outbox, event log, dedupe) and an FTS5 index over task titles.
+/// The domain layer never imports this; it reaches persistence via ports
+/// (added in T2/T3). See docs/architecture/repository-structure.md, docs/data/.
 library infrastructure;
+
+export 'src/app_database.dart';
+export 'src/schema.dart';

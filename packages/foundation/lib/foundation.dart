@@ -8,3 +8,4 @@ library foundation;
 export 'src/ids.dart';
 export 'src/result.dart';
 export 'src/time.dart';
+export 'src/versioning.dart';
