@@ -23,6 +23,14 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
+            <!-- Flutter's built-in deep linking (on by default since 3.27)
+                 would hand lifeflow://callback?code=... to go_router as the
+                 location "/", replacing the app with "Page Not Found" during
+                 sign-in. The app does not navigate by deep link; the auth
+                 callback is consumed by supabase_flutter via app_links. -->
+            <meta-data
+              android:name="flutter_deeplinking_enabled"
+              android:value="false" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>

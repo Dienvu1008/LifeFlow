@@ -9,8 +9,21 @@ import 'shell.dart';
 
 /// One route table for every layout class (ui-ux-architecture.md §3). The
 /// shell (bottom bar vs rail) differs; the routes do not.
+/// Top-level destinations. Anything else (for example "/" or an OS-delivered
+/// link such as an OAuth callback) is redirected to the task list, so the app
+/// never replaces itself with a "Page Not Found" screen.
+const _knownRoots = ['/tasks', '/profiles'];
+
+String? _redirectUnknown(GoRouterState state) {
+  final path = state.uri.path;
+  final known = _knownRoots
+      .any((root) => path == root || path.startsWith('$root/'));
+  return known ? null : '/tasks';
+}
+
 GoRouter createRouter({String initialLocation = '/tasks'}) => GoRouter(
       initialLocation: initialLocation,
+      redirect: (context, state) => _redirectUnknown(state),
       routes: [
         StatefulShellRoute.indexedStack(
           builder: (context, state, shell) => Consumer(
