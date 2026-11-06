@@ -15,12 +15,17 @@ dependencies:
     path: ../../packages/ui
   application:
     path: ../../packages/application
+  foundation:
+    path: ../../packages/foundation
   infrastructure:
     path: ../../packages/infrastructure
   flutter_riverpod: ^2.6.1
   drift: ^2.28.0
-  drift_flutter: ^0.3.1
   path_provider: ^2.1.6
+  # Database key storage (BSD-3, ADR-0018 OK). Pinned.
+  flutter_secure_storage: 11.2.0
+  supabase_flutter: 2.18.3
+  url_launcher: 6.3.3
 
 dev_dependencies:
   flutter_test:
@@ -29,3 +34,11 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+# SQLite3MultipleCiphers on every platform (prebuilt, hash-pinned by the
+# sqlite3 hook). Encryption is applied only where ADR-0021 requires it
+# (Android); Windows MVP opens the same binary without a key = plain.
+hooks:
+  user_defines:
+    sqlite3:
+      source: sqlite3mc

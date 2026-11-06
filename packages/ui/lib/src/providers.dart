@@ -13,6 +13,8 @@ final taskServiceProvider =
     Provider<TaskService>((ref) => _notWired('taskServiceProvider'));
 final profileServiceProvider =
     Provider<ProfileService>((ref) => _notWired('profileServiceProvider'));
+final accountServiceProvider =
+    Provider<AccountService>((ref) => _notWired('accountServiceProvider'));
 
 /// Startup at-rest encryption result (ADR-0021). Null = nothing to show.
 final storageNoticeProvider = Provider<StorageNotice?>((ref) => null);

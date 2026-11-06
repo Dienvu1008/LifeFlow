@@ -90,6 +90,19 @@ void main() {
     });
   });
 
+  test('a different account on a bound profile gets a NEW profile (OQ-S7)',
+      () {
+    final d = binder.decide(
+      profile: guest(binding: bind()),
+      hasData: true,
+      moveData: false,
+      binding: AccountBinding(
+          accountId: 'other', provider: AccountProvider.email, boundAt: Instant.now()),
+    );
+    expect(d, isA<CreateNewBoundProfile>());
+    expect((d as CreateNewBoundProfile).newProfileId, isNot(const EntityId('p1')));
+  });
+
   test('boundTo does not change profile/workspace ids (LF-INV-ID-001)', () {
     final before = guest();
     final after = before.boundTo(bind());

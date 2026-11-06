@@ -11,6 +11,7 @@ environment:
 
 dependencies:
   drift: ^2.28.0
+  sqlite3: ^3.5.2
   foundation:
     path: ../foundation
   application:
@@ -24,3 +25,12 @@ dev_dependencies:
   lints: ^5.0.0
   drift_dev: ^2.28.0
   build_runner: ^2.4.13
+
+# SQLite3MultipleCiphers (MIT, VS-25) instead of plain SQLite, so the headless
+# tests exercise real at-rest encryption (ADR-0021, GS-19). Prebuilt binaries
+# with pinned hashes are downloaded by the sqlite3 build hook; nothing is
+# compiled locally. Without a key sqlite3mc behaves like plain SQLite.
+hooks:
+  user_defines:
+    sqlite3:
+      source: sqlite3mc
