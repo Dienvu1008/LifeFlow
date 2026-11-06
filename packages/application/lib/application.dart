@@ -3,6 +3,7 @@
 /// and the handler/transaction abstractions. No Flutter, no database.
 library application;
 
+export 'src/app_services.dart';
 export 'src/auth.dart';
 export 'src/command.dart';
 export 'src/ports.dart';
