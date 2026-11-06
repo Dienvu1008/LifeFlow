@@ -30,8 +30,12 @@ flutter test
 ```
 
 ## Storage
-- The local database lives in the app-private support directory
-  (Windows: `%APPDATA%\app.lifeflow\lifeflow_app\lifeflow.sqlite`).
+- Everything lives in the app-private support directory
+  (Windows: `%APPDATA%\app.lifeflow\lifeflow_app\`). Per
+  [ADR-0023](../../docs/adr/0023-per-profile-stores-and-registry.md):
+  `profiles/<profileId>.sqlite` (one file and one key per profile) and
+  `lifeflow.registry.sqlite` (the encrypted list of profiles). A pre-SR-03
+  shared `lifeflow.sqlite` is split once and kept as `lifeflow.sqlite.pre-sr03`.
 - SQLite3MultipleCiphers is linked on every platform. Per
   [ADR-0022](../../docs/adr/0022-windows-encryption-at-rest.md),
   **Android and Windows are both encrypted** (random 256-bit key in secure

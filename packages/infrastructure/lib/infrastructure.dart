@@ -14,4 +14,6 @@ export 'src/profile_command_handler.dart';
 export 'src/storage_security.dart';
 export 'src/local_store.dart';
 export 'src/account_service.dart';
+export 'src/registry_database.dart';
+export 'src/profile_directory.dart';
 export 'src/app_service_impl.dart';

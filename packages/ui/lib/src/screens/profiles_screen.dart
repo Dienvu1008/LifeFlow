@@ -90,6 +90,10 @@ class _ProfileTile extends ConsumerWidget {
       }
       return;
     }
+    // In the app the whole provider scope is rebuilt for the new profile's
+    // store (SR-03), which unmounts this widget; then there is nothing left
+    // to refresh and `ref` must not be used.
+    if (!context.mounted) return;
     // Re-scope everything to the newly active profile.
     ref.invalidate(activeProfileProvider);
     ref.invalidate(profilesProvider);

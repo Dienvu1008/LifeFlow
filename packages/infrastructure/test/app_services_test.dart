@@ -1,7 +1,7 @@
 // P01 T6a: the services the UI consumes, on the REAL store + gateway + the
 // production authorization policy (no fakes for authz).
 //   GS-11 / LF-INV-GOV-002  non-owner / unknown workspace / non-owner actor denied
-//   LF-INV-ID-002           the task stream follows the ACTIVE profile only
+//   (profile switching + isolation across stores: profile_directory_test)
 //   LF-INV-TASK-011         trashed tasks leave the stream
 //   OQ-R3                   complete with / without descendants
 //   LF-INV-TASK-002         depth rejection is returned, not thrown
@@ -26,7 +26,6 @@ void main() {
   late DriftCommandGateway gw;
   late DriftTaskService tasks;
   late DriftTaskQueries queries;
-  late DriftProfileService profiles;
   late ProfileStore store;
   final subs = <StreamSubscription<Object?>>[];
 
@@ -35,7 +34,6 @@ void main() {
     gw = DriftCommandGateway(db, WorkspaceOwnerAuthorization(db));
     tasks = DriftTaskService(db, gw);
     queries = DriftTaskQueries(db);
-    profiles = DriftProfileService(db, gw);
     store = ProfileStore(db);
     await store.ensureFirstProfile(displayName: 'A');
   });
@@ -150,61 +148,6 @@ void main() {
 
     test('renaming a task that does not exist returns notFound', () async {
       final r = await tasks.rename('missing', 'x');
-      expect((r as CommandFailure).kind, CommandFailureKind.notFound);
-    });
-  });
-
-  group('profile chooser + isolation (LF-INV-ID-002, OQ-S7)', () {
-    test('the stream follows the ACTIVE profile and never mixes data',
-        () async {
-      // Profile A has one task.
-      final a = (await store.getActiveProfile())!;
-      await tasks.create('A-task');
-
-      // Create profile B through the real bind(new session) path.
-      final bind = await gw.execute(
-        Command(
-          operationId: 'bind-b',
-          actor: ActorRef(ActorKind.owner, a.profileId.value),
-          workspaceId: a.activeWorkspaceId.value,
-          type: 'BindAccount',
-          payload: {
-            'op': 'bind',
-            'id': a.profileId.value,
-            'accountId': 'acc-b',
-            'provider': 'github',
-            'hasData': true,
-            'moveData': false,
-          },
-          expectedVersion: Version.initial,
-          issuedAt: Instant.now(),
-        ),
-        const ProfileCommandHandler(),
-      );
-      expect(bind, isA<CommandOk>(), reason: '$bind');
-      final bId = (bind as CommandOk).entityId;
-
-      // B is active now: it must see none of A's tasks.
-      expect((await profiles.active())!.id, bId);
-      expect(await current(), isEmpty);
-      await tasks.create('B-task');
-      expect((await current()).map((t) => t.title), ['B-task']);
-
-      // Switch back to A: only A's task is visible.
-      final sw = await profiles.switchTo(a.profileId.value);
-      expect(sw, isA<CommandOk>(), reason: '$sw');
-      expect((await profiles.active())!.id, a.profileId.value);
-      expect((await current()).map((t) => t.title), ['A-task']);
-
-      final list = await profiles.list();
-      expect(list.length, 2);
-      expect(list.where((p) => p.isActive).single.id, a.profileId.value);
-      expect(list.firstWhere((p) => p.id == bId).isBound, isTrue);
-      expect(list.firstWhere((p) => p.id == bId).provider, 'github');
-    });
-
-    test('switching to an unknown profile returns notFound', () async {
-      final r = await profiles.switchTo('nope');
       expect((r as CommandFailure).kind, CommandFailureKind.notFound);
     });
   });

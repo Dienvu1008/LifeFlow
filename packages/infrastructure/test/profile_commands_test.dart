@@ -103,10 +103,9 @@ void main() {
     expect((await db.select(db.profiles).get()).length, 1); // still one profile
   });
 
-  test('guest -> bind (new session) isolates a fresh profile; old data stays (GS-22, ID-002)',
+  test('a "new space" can never be created inside this store (SR-03)',
       () async {
     final guest = await store.ensureFirstProfile(displayName: 'Guest');
-    // Give the guest some data so "hasData" is real.
     final taskGw = DriftCommandGateway(db, OwnerPolicy(guest.profileId.value));
     await taskGw.execute(
       Command(
@@ -119,41 +118,37 @@ void main() {
       ),
       TaskCommandHandler(),
     );
+    gw = DriftCommandGateway(db, OwnerPolicy(guest.profileId.value));
 
-    policy = OwnerPolicy(guest.profileId.value);
-    gw = DriftCommandGateway(db, policy);
-    final auth = FakeAuthGateway();
-    final session = await auth.signIn(const OAuthSignIn('github'));
-
-    // User declined move -> a NEW isolated profile+workspace.
+    // Declined move with data -> ProfileBinder decides on a NEW profile. In a
+    // per-profile store that must be refused, not written next to the guest.
     final r = await gw.execute(
       c(guest.profileId.value, 'bind', {
-        'accountId': session.accountId,
-        'provider': session.provider,
+        'accountId': 'acc-123',
+        'provider': 'github',
         'hasData': true,
         'moveData': false,
       }, expected: Version.initial),
       handler,
     );
-    expect(r, isA<CommandOk>(), reason: '$r');
-    final newId = (r as CommandOk).entityId;
-    expect(newId, isNot(guest.profileId.value)); // a NEW id
-
-    // Two profiles now exist; the guest's and the new bound one.
-    final profiles = await store.listProfiles();
-    expect(profiles.length, 2);
-    // The new profile is active and bound; the guest is untouched + not bound.
-    final active = await store.getActiveProfile();
-    expect(active!.profileId.value, newId);
-    expect(active.isBound, isTrue);
-    // The guest's data is still there, under the guest's workspace (ID-002).
-    final guestTasks = await db.searchTaskIds(guest.activeWorkspaceId.value, 'guest');
-    expect(guestTasks, contains('task1'));
-    // The new profile's workspace is a different id (isolation).
-    final newWs = await store.getPersonalWorkspace(newId);
-    expect(newWs!.workspaceId, isNot(guest.activeWorkspaceId));
+    expect(r, isA<CommandFailure>());
+    expect((r as CommandFailure).kind, CommandFailureKind.validationFailed);
+    expect(r.reason, contains('own store'));
+    // Nothing written: still one profile, one workspace, guest unbound.
+    expect(await db.select(db.profiles).get(), hasLength(1));
+    expect(await db.select(db.workspaces).get(), hasLength(1));
+    expect((await store.getActiveProfile())!.isBound, isFalse);
   });
 
+  test('the removed "switch" op is rejected (switching is device-level now)',
+      () async {
+    final a = await store.ensureFirstProfile();
+    gw = DriftCommandGateway(db, OwnerPolicy(a.profileId.value));
+    final r = await gw.execute(
+        c(a.profileId.value, 'switch', const {}, expected: Version.initial),
+        handler);
+    expect((r as CommandFailure).kind, CommandFailureKind.validationFailed);
+  });
   test('cross-profile command is denied; no data crosses (GS-11, ID-002)', () async {
     final a = await store.ensureFirstProfile(); // profile A owns workspace A
     policy = OwnerPolicy(a.profileId.value);
@@ -225,38 +220,6 @@ void main() {
         reason: 'the data read path must never call AuthGateway');
     // And the cached session is still readable with no network (offline-safe).
     expect(await auth.currentSession(), isNotNull);
-  });
-
-  test('switch profile toggles the active one (profile chooser, OQ-S7)',
-      () async {
-    final a = await store.ensureFirstProfile(displayName: 'A');
-    policy = OwnerPolicy(a.profileId.value);
-    gw = DriftCommandGateway(db, policy);
-    final auth = FakeAuthGateway();
-    final s = await auth.signIn(const OAuthSignIn('github'));
-    // Create a second profile via a declined-move bind.
-    final r = await gw.execute(
-      c(a.profileId.value, 'bind', {
-        'accountId': s.accountId, 'provider': s.provider,
-        'hasData': true, 'moveData': false,
-      }, expected: Version.initial),
-      handler,
-    );
-    final bId = (r as CommandOk).entityId;
-    expect((await store.getActiveProfile())!.profileId.value, bId);
-
-    // Switch back to A.
-    policy.ownerId = a.profileId.value;
-    final aVersion = (await (db.select(db.profiles)
-              ..where((p) => p.id.equals(a.profileId.value)))
-            .getSingle())
-        .version;
-    final sw = await gw.execute(
-      c(a.profileId.value, 'switch', const {}, expected: Version(aVersion)),
-      handler,
-    );
-    expect(sw, isA<CommandOk>(), reason: '$sw');
-    expect((await store.getActiveProfile())!.profileId, a.profileId);
   });
 }
 

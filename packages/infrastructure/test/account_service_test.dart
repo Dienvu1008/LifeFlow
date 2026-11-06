@@ -1,206 +1,229 @@
-// P01 T6b: sign-in / bind / sign-out on the real store, gateway and the
-// production authorization policy; only the identity provider is faked.
+// P01 T6b/T6c: sign-in / bind / sign-out over per-profile stores, with the
+// real stores, gateway and authorization policy; only the provider is faked.
 //   ADR-0008       empty guest binds without asking; guest with data must choose
 //   LF-INV-ID-001  "move" keeps every profile, workspace and task id (GS-22)
-//   LF-INV-ID-002  "new session" isolates; guest data stays, not visible (GS-22)
-//   OQ-S7          sign-out keeps data; a different account gets its own profile;
-//                  the same account returns to its own profile, never bound twice
-//   LF-INV-SEC-001 no token in the DB
+//   LF-INV-ID-002  "new space" is a NEW FILE with its own key (SR-03); the
+//                  guest's data stays in the guest's file (GS-22)
+//   OQ-S7          sign-out keeps data; a different account gets its own
+//                  profile; the same account returns to its profile
+//   LF-INV-SEC-001 no token in any store
 //   LF-INV-SEC-002 sign-in failure leaves local data fully usable
+import 'dart:io';
+
 import 'package:application/application.dart';
-import 'package:drift/native.dart';
 import 'package:infrastructure/infrastructure.dart';
 import 'package:test/test.dart';
 
 import 'fake_auth.dart';
+import 'profile_harness.dart';
 
 void main() {
-  late AppDatabase db;
-  late DriftCommandGateway gw;
+  late Directory base;
+  late MemoryKeys keys;
+  late ProfileDirectory dir;
+  late TestHost host;
   late FakeAuthGateway auth;
-  late DriftAccountService accounts;
-  late DriftTaskService tasks;
-  late DriftTaskQueries queries;
-  late DriftProfileService profiles;
 
   setUp(() async {
-    db = AppDatabase(NativeDatabase.memory());
-    gw = DriftCommandGateway(db, WorkspaceOwnerAuthorization(db));
+    base = Directory.systemTemp.createTempSync('lifeflow_acct_');
+    keys = MemoryKeys();
+    dir = await openDirectory(base, keys);
+    host = TestHost(dir);
+    await host.openActive();
     auth = FakeAuthGateway();
-    accounts = DriftAccountService(db, gw, auth);
-    tasks = DriftTaskService(db, gw);
-    queries = DriftTaskQueries(db);
-    profiles = DriftProfileService(db, gw);
-    await ProfileStore(db).ensureFirstProfile(displayName: 'Guest');
   });
-  tearDown(() => db.close());
+  tearDown(() async {
+    await host.close();
+    await dir.close();
+    if (base.existsSync()) base.deleteSync(recursive: true);
+  });
 
-  Future<List<String>> titles() async =>
-      (await queries.watchTasks().first).map((t) => t.title).toList();
-
+  Services s() => Services(host, auth);
   const github = OAuthSignIn('github');
 
   test('empty guest binds in place without asking (ADR-0008)', () async {
-    final before = (await profiles.active())!;
-    final r = await accounts.signIn(github);
+    final before = host.currentId!;
+    final r = await s().accounts.signIn(github);
     expect(r, isA<SignedIn>());
-    final s = r as SignedIn;
-    expect(s.profile.id, before.id); // same profile
-    expect(s.profile.isBound, isTrue);
-    expect(s.profile.provider, 'github');
-    expect(s.switchedProfile, isFalse);
-    expect((await profiles.list()), hasLength(1));
+    final p = (r as SignedIn).profile;
+    expect(p.id, before);
+    expect(p.isBound, isTrue);
+    expect(p.provider, 'github');
+    expect(r.switchedProfile, isFalse);
+    expect(host.activations, isEmpty);
+    expect(await dir.list(), hasLength(1));
+    expect((await dir.active())!.accountId, 'acc-123'); // registry in sync
   });
 
   test('guest with data must choose; "move" keeps every id (GS-22, ID-001)',
       () async {
-    final guest = (await profiles.active())!;
-    await tasks.create('Guest task');
-    final taskIdsBefore =
-        (await queries.watchTasks().first).map((t) => t.id).toList();
-    final wsBefore = (await db.select(db.workspaces).get()).single.id;
+    final svc = s();
+    final guest = host.currentId!;
+    await svc.tasks.create('Guest task');
+    final taskIds = (await svc.queries.watchTasks().first).map((t) => t.id).toList();
+    final ws = (await host.db.select(host.db.workspaces).get()).single.id;
 
-    final r = await accounts.signIn(github);
-    expect(r, isA<NeedsBindChoice>());
-    // Nothing is bound until the user decides.
-    expect((await profiles.active())!.isBound, isFalse);
+    expect(await svc.accounts.signIn(github), isA<NeedsBindChoice>());
+    expect((await dir.active())!.isBound, isFalse); // nothing bound yet
 
-    final done = await accounts.completeBind(moveData: true);
-    expect(done, isA<SignedIn>());
-    final after = (await profiles.active())!;
-    expect(after.id, guest.id);
-    expect(after.isBound, isTrue);
-    expect((await db.select(db.workspaces).get()).single.id, wsBefore);
-    expect((await queries.watchTasks().first).map((t) => t.id), taskIdsBefore);
+    expect(await svc.accounts.completeBind(moveData: true), isA<SignedIn>());
+    expect(host.currentId, guest);
+    expect((await dir.active())!.isBound, isTrue);
+    expect((await host.db.select(host.db.workspaces).get()).single.id, ws);
+    expect((await svc.queries.watchTasks().first).map((t) => t.id), taskIds);
   });
 
-  test('"new session" isolates; the guest and its data stay (GS-22, ID-002)',
+  test('"new space" is a new file + key; the guest file keeps its data (SR-03)',
       () async {
-    final guest = (await profiles.active())!;
-    await tasks.create('Guest task');
+    final svc = s();
+    final guest = host.currentId!;
+    await svc.tasks.create('Guest task');
 
-    expect(await accounts.signIn(github), isA<NeedsBindChoice>());
-    final r = await accounts.completeBind(moveData: false);
+    expect(await svc.accounts.signIn(github), isA<NeedsBindChoice>());
+    final r = await svc.accounts.completeBind(moveData: false);
     expect(r, isA<SignedIn>());
-    final s = r as SignedIn;
-    expect(s.switchedProfile, isTrue);
-    expect(s.profile.id, isNot(guest.id));
-    expect(s.profile.isBound, isTrue);
+    final created = (r as SignedIn).profile;
+    expect(r.switchedProfile, isTrue);
+    expect(created.id, isNot(guest));
+    expect(host.activations, [created.id]); // the app switched stores
 
-    // The new account profile sees none of the guest's data.
-    expect(await titles(), isEmpty);
-    // The guest is still there, unbound, with its data.
-    final all = await profiles.list();
+    // Separate file and separate key.
+    expect(dir.profileFile(created.id).existsSync(), isTrue);
+    expect(keys.values[ProfileDirectory.profileKeyName(created.id)],
+        isNot(keys.values[ProfileDirectory.profileKeyName(guest)]));
+    // The new store holds exactly its own bound profile and no guest data.
+    final now = s();
+    expect(await now.titles(), isEmpty);
+    expect((await host.db.select(host.db.profiles).get()).single.accountId, 'acc-123');
+    expect(await host.db.select(host.db.auditLog).get(), hasLength(1)); // its bind
+
+    // The guest is still listed, unbound, and its file still has its task.
+    final all = await dir.list();
     expect(all, hasLength(2));
-    final g = all.firstWhere((p) => p.id == guest.id);
-    expect(g.isBound, isFalse);
-    await profiles.switchTo(guest.id);
-    expect(await titles(), ['Guest task']);
+    expect(all.firstWhere((e) => e.id == guest).isBound, isFalse);
+    await now.profiles.switchTo(guest);
+    expect(await s().titles(), ['Guest task']);
   });
 
   test('cancelling the choice signs out and binds nothing', () async {
-    await tasks.create('Guest task');
-    expect(await accounts.signIn(github), isA<NeedsBindChoice>());
-    await accounts.cancelPendingBind();
+    final svc = s();
+    await svc.tasks.create('Guest task');
+    expect(await svc.accounts.signIn(github), isA<NeedsBindChoice>());
+    await svc.accounts.cancelPendingBind();
     expect(auth.calls.last, 'signOut');
-    expect((await profiles.active())!.isBound, isFalse);
-    expect(await accounts.completeBind(moveData: true), isA<SignInFailed>());
-    expect(await titles(), ['Guest task']);
+    expect((await dir.active())!.isBound, isFalse);
+    expect(await svc.accounts.completeBind(moveData: true), isA<SignInFailed>());
+    expect(await dir.list(), hasLength(1));
   });
 
   test('sign-out keeps the profile and its data (OQ-S7)', () async {
-    await accounts.signIn(github);
-    await tasks.create('Mine');
-    final r = await accounts.signOut();
-    expect(r, isA<CommandOk>(), reason: '$r');
+    final svc = s();
+    await svc.accounts.signIn(github);
+    await svc.tasks.create('Mine');
+    expect(await svc.accounts.signOut(), isA<CommandOk>());
     expect(auth.calls.last, 'signOut');
-    final p = (await profiles.active())!;
-    expect(p.isBound, isFalse);
-    expect(await titles(), ['Mine']);
-    expect(await profiles.list(), hasLength(1));
+    expect((await dir.active())!.isBound, isFalse);
+    expect(await svc.titles(), ['Mine']);
+    expect(await dir.list(), hasLength(1));
   });
 
   test('signing out a guest profile is refused, nothing changes', () async {
-    final r = await accounts.signOut();
-    expect(r, isA<CommandFailure>());
+    expect(await s().accounts.signOut(), isA<CommandFailure>());
     expect(auth.calls, isEmpty);
   });
 
   test('the same account returns to its own profile, never bound twice',
       () async {
-    final guest = (await profiles.active())!;
-    await tasks.create('Guest task');
-    await accounts.signIn(github);
+    final guest = host.currentId!;
+    var svc = s();
+    await svc.tasks.create('Guest task');
+    await svc.accounts.signIn(github);
     final created =
-        (await accounts.completeBind(moveData: false) as SignedIn).profile;
+        (await svc.accounts.completeBind(moveData: false) as SignedIn).profile;
 
-    // Back on the guest, the same account signs in again.
-    await profiles.switchTo(guest.id);
-    final r = await accounts.signIn(github);
+    svc = s();
+    await svc.profiles.switchTo(guest);
+    svc = s();
+    final r = await svc.accounts.signIn(github);
     expect(r, isA<SignedIn>());
     expect((r as SignedIn).profile.id, created.id);
     expect(r.switchedProfile, isTrue);
-    final bound = (await profiles.list()).where((p) => p.isBound);
-    expect(bound, hasLength(1)); // still exactly one profile for the account
+    expect(host.currentId, created.id);
+    expect((await dir.list()).where((e) => e.isBound), hasLength(1));
   });
 
   test('a different account on a bound profile gets its own profile (OQ-S7)',
       () async {
-    final first = (await accounts.signIn(github) as SignedIn).profile;
-    await tasks.create('First account task');
+    var svc = s();
+    final first = (await svc.accounts.signIn(github) as SignedIn).profile;
+    await svc.tasks.create('First account task');
 
     auth.accountId = 'acc-other';
-    final r = await accounts.signIn(const EmailPasswordSignIn('b@example.com', 'pw'));
+    final r = await svc.accounts
+        .signIn(const EmailPasswordSignIn('b@example.com', 'pw'));
     expect(r, isA<SignedIn>());
     final second = (r as SignedIn).profile;
     expect(second.id, isNot(first.id));
     expect(second.provider, 'email');
-    expect(await titles(), isEmpty); // isolated from the first account
-
-    final all = await profiles.list();
-    expect(all.firstWhere((p) => p.id == first.id).provider, 'github');
+    svc = s();
+    expect(await svc.titles(), isEmpty); // isolated store
+    expect((await dir.list()).firstWhere((e) => e.id == first.id).provider, 'github');
   });
 
   test('a provider failure is reported; local data stays usable (SEC-002)',
       () async {
-    await tasks.create('Offline task');
+    final svc = s();
+    await svc.tasks.create('Offline task');
     auth.failNext =
         const AuthFailure(AuthFailureKind.network, 'You appear to be offline.');
-    final r = await accounts.signIn(github);
-    expect(r, isA<SignInFailed>());
+    final r = await svc.accounts.signIn(github);
     expect((r as SignInFailed).kind, AuthFailureKind.network);
-    // Nothing bound, and reads/writes still work.
-    expect((await profiles.active())!.isBound, isFalse);
-    expect(await tasks.create('Still works'), isA<CommandOk>());
-    expect(await titles(), ['Offline task', 'Still works']);
+    expect((await dir.active())!.isBound, isFalse);
+    expect(await svc.tasks.create('Still works'), isA<CommandOk>());
+    expect(await svc.titles(), ['Offline task', 'Still works']);
   });
 
   test('an unconfigured build refuses sign-in without calling the provider',
       () async {
-    final off = DriftAccountService(db, gw, FakeAuthGateway(isConfigured: false));
-    expect(off.signInAvailable, isFalse);
-    final r = await off.signIn(github);
+    final off = Services(host, FakeAuthGateway(isConfigured: false));
+    expect(off.accounts.signInAvailable, isFalse);
+    final r = await off.accounts.signIn(github);
     expect((r as SignInFailed).kind, AuthFailureKind.notConfigured);
   });
 
-  test('no token ever reaches the database (SEC-001)', () async {
-    await tasks.create('x');
-    await accounts.signIn(github);
-    await accounts.completeBind(moveData: true);
+  test('no token ever reaches any store or the registry file (SEC-001)',
+      () async {
+    final svc = s();
+    await svc.tasks.create('x');
+    await svc.accounts.signIn(github);
+    await svc.accounts.completeBind(moveData: false); // two stores now
     final token = auth.secretToken!;
-    final dump = StringBuffer()
-      ..write(await db.select(db.profiles).get())
-      ..write(await db.select(db.auditLog).get())
-      ..write(await db.select(db.outbox).get())
-      ..write(await db.select(db.eventLog).get())
-      ..write(await db.select(db.opDedupe).get());
-    expect(dump.toString().contains(token), isFalse);
+    await host.close();
+    await dir.close();
+    // Reopen everything plain-readable via the stores and dump all rows.
+    dir = await openDirectory(base, keys);
+    final buf = StringBuffer();
+    for (final e in await dir.list()) {
+      final db = (await dir.openProfile(e.id)).db;
+      buf
+        ..write(await db.select(db.profiles).get())
+        ..write(await db.select(db.auditLog).get())
+        ..write(await db.select(db.outbox).get())
+        ..write(await db.select(db.eventLog).get())
+        ..write(await db.select(db.opDedupe).get());
+      await db.close();
+    }
+    buf.write(await dir.list());
+    expect(buf.toString().contains(token), isFalse);
+    host = TestHost(dir);
+    await host.openActive();
   });
 
-  test('every account change is audited (ADR-0011)', () async {
-    await accounts.signIn(github);
-    await accounts.signOut();
-    final actions = (await db.select(db.auditLog).get()).map((a) => a.action);
+  test('every account change is audited in that profile\'s store', () async {
+    final svc = s();
+    await svc.accounts.signIn(github);
+    await svc.accounts.signOut();
+    final actions = (await host.db.select(host.db.auditLog).get()).map((a) => a.action);
     expect(actions, containsAll(['BindAccount', 'SignOut']));
   });
 }

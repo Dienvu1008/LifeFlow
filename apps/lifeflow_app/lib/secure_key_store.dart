@@ -1,18 +1,25 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:infrastructure/infrastructure.dart';
 
-/// The database key in platform secure storage (Android Keystore-backed;
-/// Windows Credential Manager). Never the DB, files or logs (LF-INV-SEC-001,
-/// SR-02). One key for the local store (single-file layout, see T6b notes).
+/// One named key in platform secure storage (Android: Keystore-backed;
+/// Windows: flutter_secure_storage_windows 4.x keeps a DPAPI-protected file,
+/// `flutter_secure_storage.dat`, bound to the current Windows user). Never the
+/// DB, plain files or logs (LF-INV-SEC-001, SR-02).
+/// Since SR-03 every profile store and the registry have their own key
+/// (see ProfileDirectory for the names).
 class SecureDatabaseKeyStore implements DatabaseKeyStore {
-  const SecureDatabaseKeyStore([this._storage = const FlutterSecureStorage()]);
+  const SecureDatabaseKeyStore(this.name,
+      [this._storage = const FlutterSecureStorage()]);
 
+  final String name;
   final FlutterSecureStorage _storage;
-  static const _name = 'lifeflow.db.key.v1';
 
   @override
-  Future<String?> read() => _storage.read(key: _name);
+  Future<String?> read() => _storage.read(key: name);
 
   @override
-  Future<void> write(String key) => _storage.write(key: _name, value: key);
+  Future<void> write(String key) => _storage.write(key: name, value: key);
 }
+
+/// Key slots for [ProfileDirectory.open].
+DatabaseKeyStore secureKeyStoreFor(String name) => SecureDatabaseKeyStore(name);

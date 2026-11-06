@@ -57,6 +57,41 @@ class ProfileStore {
     );
   }
 
+  /// Initializes an EMPTY store as the store of one profile with the given ids
+  /// (SR-03: one profile per store). Used when the directory creates a new
+  /// profile, including a "new space" whose ids [ProfileBinder] chose.
+  /// Throws [StateError] if the store already holds a profile.
+  Future<LocalProfile> createProfile({
+    required EntityId profileId,
+    required EntityId workspaceId,
+    String displayName = '',
+  }) async {
+    final now = DateTime.now().toUtc();
+    await db.transaction(() async {
+      final existing = await db.select(db.profiles).get();
+      if (existing.isNotEmpty) {
+        throw StateError('this store already belongs to a profile');
+      }
+      await db.into(db.workspaces).insert(WorkspacesCompanion.insert(
+            id: workspaceId.value,
+            ownerId: profileId.value,
+            createdAt: now,
+          ));
+      await db.into(db.profiles).insert(ProfilesCompanion.insert(
+            id: profileId.value,
+            activeWorkspaceId: workspaceId.value,
+            displayName: Value(displayName),
+            isActive: const Value(true),
+            createdAt: now,
+          ));
+    });
+    return LocalProfile(
+      profileId: profileId,
+      activeWorkspaceId: workspaceId,
+      displayName: displayName,
+    );
+  }
+
   /// The active profile (the one the UI is showing), or null before bootstrap.
   Future<LocalProfile?> getActiveProfile() async {
     final row = await (db.select(db.profiles)

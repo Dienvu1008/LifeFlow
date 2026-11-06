@@ -18,6 +18,7 @@ Harvest note (Batch 4): 60 invariants were found across the docs and are all cat
 ### LF-INV-ID-002 — Profile isolation
 - Statement: data of one LocalProfile is never visible to another.
 - Rationale: privacy on a shared device (ADR-0008). Scope: Workspace and Access + storage. Enforcement: one encrypted DB file per profile; all queries scoped by `workspaceId`. Failure: deny/empty. Verification: isolation integration test (GS-22), architecture scan. Severity: critical. Depends: LF-INV-SEC-001.
+- **T6c (ADR-0023):** the per-profile file + key layout is implemented; isolation is physical. Tested: in a plain build A's data is absent from B's file, switching swaps the store, and the profile handler refuses to put a second profile into a store.
 
 ### LF-INV-WA-001 — One active workspace (MVP)
 - Statement: a profile has exactly one active Personal Workspace in the MVP. Rationale: MVP simplicity. Scope: Workspace. Enforcement: profile invariant. Failure: reject. Verification: unit. Severity: medium. Depends: —.
@@ -149,6 +150,7 @@ Harvest note (Batch 4): 60 invariants were found across the docs and are all cat
 - Scope: Governance. Enforcement: pipeline step 2. Verification: integration (GS-11) + unit. Severity: critical. Depends: —.
 ### LF-INV-GOV-003 — Atomic command side effects
 - Statement: aggregate change, audit, outbox, event log and dedupe commit in one transaction. Scope: Governance. Enforcement: one DB transaction (ADR-0014). Failure: full rollback. Verification: crash/fault-injection test (GS-06, GS-07) + FF-ARCH-06. Severity: critical. Depends: —.
+- **Controlled exception (ADR-0023, T6c):** the atomic set holds per profile store. The device registry (profile index + active pointer) is updated after the store commits, guarded by a `pending_sync` intent and reconciled from the store on the next open. Registry data is derived, so no data or audit is lost if the app stops between the two writes.
 ### LF-INV-OUTBOX-001 — Outbox iff committed
 - Scope: Governance. Enforcement: same transaction. Verification: crash test (GS-07). Severity: critical. Depends: LF-INV-GOV-003.
 ### LF-INV-OUTBOX-002 — Event log iff committed
