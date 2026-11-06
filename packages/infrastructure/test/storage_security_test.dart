@@ -72,22 +72,15 @@ void main() {
     });
   });
 
-  group('AppDatabase.activeCipher() on a plain build', () {
-    test('a plain in-memory DB reports no cipher (null)', () async {
+  group('PRAGMA cipher is NOT an encryption signal (T6b finding)', () {
+    test('an unkeyed sqlite3mc database still reports a cipher', () async {
+      // Pins the finding: sqlite3mc answers PRAGMA cipher with its configured
+      // scheme even when no key is applied and the file is plain. Detection
+      // must use the file header (fileCipherProbe), never this pragma.
       final db = AppDatabase(NativeDatabase.memory());
       addTearDown(db.close);
-      // The bundled sqlite in tests is plain; PRAGMA cipher yields nothing.
-      final cipher = await db.activeCipher();
-      expect(cipher, isNull);
-
-      // Wiring it through StorageSecurity on Windows -> tracked exception.
-      final warnings = <String>[];
-      final status =
-          await StorageSecurity(platform: StoragePlatform.windows, onWarning: warnings.add)
-              .evaluate(db.activeCipher);
-      expect(status.encrypted, isFalse);
-      expect(status.isTrackedException, isTrue);
-      expect(warnings, isNotEmpty);
+      final rows = await db.customSelect('PRAGMA cipher').get();
+      expect(rows, isNotEmpty);
     });
   });
 }

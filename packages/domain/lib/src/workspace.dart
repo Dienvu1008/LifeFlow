@@ -142,8 +142,9 @@ class ProfileBinder {
   ///   the answer. true -> bind in place (keep every id); false -> a new
   ///   isolated profile, generating [newProfileId]/[newWorkspaceId].
   ///
-  /// Throws [ArgumentError] if a profile is already bound (at most one account
-  /// per profile, ADR-0008) — the caller should start a new profile instead.
+  /// A profile holds at most one account (ADR-0008). For an already-bound
+  /// profile, a different account may only sign in on a NEW profile (OQ-S7):
+  /// [moveData] false creates it; [moveData] true throws [ArgumentError].
   BindDecision decide({
     required LocalProfile profile,
     required bool hasData,
@@ -153,7 +154,14 @@ class ProfileBinder {
     EntityId? newWorkspaceId,
   }) {
     if (profile.isBound) {
-      throw ArgumentError('profile already bound to an account');
+      if (moveData) {
+        throw ArgumentError('profile already bound to an account');
+      }
+      return CreateNewBoundProfile(
+        newProfileId: newProfileId ?? EntityId.generate(),
+        newWorkspaceId: newWorkspaceId ?? EntityId.generate(),
+        binding: binding,
+      );
     }
     if (!hasData || moveData) {
       return BindInPlace(binding);

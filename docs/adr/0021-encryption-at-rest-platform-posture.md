@@ -34,7 +34,14 @@ C. Accept a system OpenSSL dependency for SQLCipher on every Windows build.
 - Con: Restricted data (health, secrets other than the keys/tokens that already live in secure storage) is **not** encrypted at rest on Windows MVP. Recorded in data-classification §2a. Auth tokens and keys remain in `flutter_secure_storage` regardless (LF-INV-SEC-001), so they are not exposed by the plain DB.
 - The exit gate records the Windows posture explicitly; GS-19 (encryption at rest) is verified on Android for P01 and marked as a tracked exception on Windows.
 
+## Update — P01 T6b (2026-11-06)
+- **Mechanism implemented.** The app links **SQLite3MultipleCiphers on every platform** via the `sqlite3` 3.x build hook (`hooks: user_defines: sqlite3: source: sqlite3mc`). The hook downloads **prebuilt, hash-pinned** binaries (sqlite3 3.5.2 ships `sqlite3mc.x64.windows.dll` and `libsqlite3mc.*.android.so`); nothing is compiled locally, so the S-02 CMake `INSTALL` failure does not occur. Whether a database is encrypted depends only on whether a key is applied, so one binary serves both postures: Android applies a random 256-bit key from secure storage (OQ-DATA-1); Windows MVP opens it without a key (plain, tracked exception, unchanged).
+- **Detection corrected.** `PRAGMA cipher` is **not** an encryption signal: sqlite3mc reports its configured cipher (`chacha20`) even for an unkeyed, plain file. T5's `activeCipher()` would have reported "encrypted" for a plain DB, which is exactly the silent downgrade this ADR forbids. The startup self-check now reads the **file header** (`fileCipherProbe`); a regression test pins the finding.
+- **Upgrade path.** An existing plain DB (from T6a builds) is encrypted in place on Android (`PRAGMA rekey`); the key is persisted before any byte is encrypted, and an interrupted upgrade resumes. A lost key or an encrypted file opened by a plain-policy build is reported and the file is never rewritten or deleted.
+- **Verified headless on Windows** with the real sqlite3mc binary: encrypted file is not a plain SQLite file, contains no plaintext, rejects a wrong key, and **FTS5 + MATCH work under encryption** (OQ-V10 resolved for the encrypted build). `flutter build windows` with sqlite3mc succeeds.
+- **Consequence for option A.** A Windows-clean encrypted path now appears to exist: enabling Windows encryption is a one-line policy change (`atRestPolicyFor`). Per this ADR it is **not** switched on here; it needs the owner's decision, Windows device verification, and a follow-up ADR making A primary with B as the controlled fallback.
+
 ## Follow-ups
-- A (stretch): time-boxed Windows-clean encryption attempt after B merges. Outcome recorded in spike-results.md (S-02 final).
+- A (stretch): time-boxed Windows-clean encryption attempt after B merges. Outcome recorded in spike-results.md (S-02 final). **T6b: the mechanism builds and passes headless on Windows; awaiting owner decision.**
 - Revisit Windows encryption each time the sqlite3/drift build-hook toolchain is upgraded.
 - OQ-DATA-3 (key/data backup) remains non-blocking for P01.

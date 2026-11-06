@@ -13,6 +13,8 @@ import 'package:foundation/foundation.dart';
 import 'package:infrastructure/infrastructure.dart';
 import 'package:test/test.dart';
 
+import 'fake_auth.dart';
+
 /// Owner-of-workspace policy (MVP): allow only the workspace owner.
 class OwnerPolicy implements AuthorizationService {
   OwnerPolicy(this.ownerId);
@@ -20,41 +22,6 @@ class OwnerPolicy implements AuthorizationService {
   @override
   Future<String?> denyReason(ActorRef a, String action, ResourceRef r) async =>
       (a.kind == ActorKind.owner && a.id == ownerId) ? null : 'not the owner';
-}
-
-/// A fake AuthGateway standing in for Supabase. The session lives in memory
-/// (= "secure storage"); currentSession() never does network I/O so it is safe
-/// offline. [calls] records every invocation so a test can assert the read
-/// path never touched it (LF-INV-SEC-002). The secret token is kept here only,
-/// never handed to persistence (LF-INV-SEC-001).
-class FakeAuthGateway implements AuthGateway {
-  AuthSession? _session;
-  String? _secretToken; // the thing that must never reach the DB
-  final List<String> calls = [];
-
-  @override
-  Future<AuthSession> signIn(String provider) async {
-    calls.add('signIn:$provider');
-    _secretToken = 'tok_${DateTime.now().microsecondsSinceEpoch}';
-    _session = AuthSession(
-        accountId: 'acc-123', provider: provider, issuedAt: Instant.now());
-    return _session!;
-  }
-
-  @override
-  Future<AuthSession?> currentSession() async {
-    calls.add('currentSession');
-    return _session; // from cache, no network -> works offline
-  }
-
-  @override
-  Future<void> signOut() async {
-    calls.add('signOut');
-    _session = null;
-    _secretToken = null;
-  }
-
-  String? get secretToken => _secretToken;
 }
 
 void main() {
@@ -107,7 +74,7 @@ void main() {
     gw = DriftCommandGateway(db, policy);
 
     final auth = FakeAuthGateway();
-    final session = await auth.signIn('github'); // interactive sign-in
+    final session = await auth.signIn(const OAuthSignIn('github')); // interactive sign-in
 
     // Bind in place (user chose "move my data"): preserves ids (LF-INV-ID-001).
     final r = await gw.execute(
@@ -156,7 +123,7 @@ void main() {
     policy = OwnerPolicy(guest.profileId.value);
     gw = DriftCommandGateway(db, policy);
     final auth = FakeAuthGateway();
-    final session = await auth.signIn('github');
+    final session = await auth.signIn(const OAuthSignIn('github'));
 
     // User declined move -> a NEW isolated profile+workspace.
     final r = await gw.execute(
@@ -211,7 +178,7 @@ void main() {
     policy = OwnerPolicy(guest.profileId.value);
     gw = DriftCommandGateway(db, policy);
     final auth = FakeAuthGateway();
-    await auth.signIn('github');
+    await auth.signIn(const OAuthSignIn('github'));
     await gw.execute(
       c(guest.profileId.value, 'bind',
           {'accountId': 'acc-123', 'provider': 'github', 'hasData': false, 'moveData': false},
@@ -241,7 +208,7 @@ void main() {
   test('read path works offline and never calls the AuthGateway (SEC-002)',
       () async {
     final auth = FakeAuthGateway();
-    await auth.signIn('github');
+    await auth.signIn(const OAuthSignIn('github'));
     auth.calls.clear(); // forget the sign-in call; watch only the read path
 
     final p = await store.ensureFirstProfile();
@@ -266,7 +233,7 @@ void main() {
     policy = OwnerPolicy(a.profileId.value);
     gw = DriftCommandGateway(db, policy);
     final auth = FakeAuthGateway();
-    final s = await auth.signIn('github');
+    final s = await auth.signIn(const OAuthSignIn('github'));
     // Create a second profile via a declined-move bind.
     final r = await gw.execute(
       c(a.profileId.value, 'bind', {

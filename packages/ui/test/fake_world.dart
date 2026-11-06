@@ -9,7 +9,8 @@ import 'package:ui/ui.dart';
 /// In-memory stand-in for the application ports. Like the real implementation
 /// the task stream is bound to the profile that is active when it subscribes
 /// (LF-INV-ID-002), so a UI that forgets to re-subscribe after a switch fails.
-class FakeWorld implements TaskQueries, TaskService, ProfileService {
+class FakeWorld
+    implements TaskQueries, TaskService, ProfileService, AccountService {
   FakeWorld({
     required Map<String, List<TaskView>> tasks,
     required this.profiles,
@@ -113,6 +114,79 @@ class FakeWorld implements TaskQueries, TaskService, ProfileService {
     return CommandOk(profileId, Version.initial, const []);
   }
 
+  // --- AccountService (mirrors DriftAccountService's rules) -----------------
+
+  @override
+  bool signInAvailable = true;
+
+  /// When set, the next sign-in fails with this message.
+  String? signInFailure;
+  String? _pendingProvider;
+
+  String _providerOf(SignInRequest r) => switch (r) {
+        EmailPasswordSignIn() => 'email',
+        OAuthSignIn(:final provider) => provider,
+      };
+
+  @override
+  Future<SignInOutcome> signIn(SignInRequest request) async {
+    final provider = _providerOf(request);
+    calls.add('signIn:$provider');
+    final f = signInFailure;
+    if (f != null) {
+      signInFailure = null;
+      return SignInFailed(f);
+    }
+    if (_mine().isEmpty) return _bind(provider, move: true);
+    _pendingProvider = provider;
+    return NeedsBindChoice(provider: provider);
+  }
+
+  @override
+  Future<SignInOutcome> completeBind({required bool moveData}) async {
+    calls.add('completeBind:$moveData');
+    final provider = _pendingProvider!;
+    _pendingProvider = null;
+    return _bind(provider, move: moveData);
+  }
+
+  @override
+  Future<void> cancelPendingBind() async {
+    calls.add('cancelPendingBind');
+    _pendingProvider = null;
+  }
+
+  @override
+  Future<CommandResult> signOut() async {
+    calls.add('signOut');
+    _setProfile(activeId, bound: false, provider: null);
+    return CommandOk(activeId, Version.initial, const []);
+  }
+
+  SignInOutcome _bind(String provider, {required bool move}) {
+    if (move) {
+      _setProfile(activeId, bound: true, provider: provider);
+      return SignedIn(profiles.firstWhere((p) => p.id == activeId).asActive(true));
+    }
+    final id = 'acct${_n++}';
+    profiles.add(ProfileView(
+        id: id, displayName: '', isActive: false, isBound: true, provider: provider));
+    _tasks[id] = [];
+    activeId = id;
+    return SignedIn(profiles.last.asActive(true), switchedProfile: true);
+  }
+
+  void _setProfile(String id, {required bool bound, String? provider}) {
+    final i = profiles.indexWhere((p) => p.id == id);
+    final p = profiles[i];
+    profiles[i] = ProfileView(
+        id: p.id,
+        displayName: p.displayName,
+        isActive: p.isActive,
+        isBound: bound,
+        provider: provider);
+  }
+
   void _replace(String id, TaskView Function(TaskView) f) {
     final list = _mine();
     final i = list.indexWhere((t) => t.id == id);
@@ -165,6 +239,7 @@ Widget appWith(FakeWorld world, {StorageNotice? notice}) => ProviderScope(
         taskQueriesProvider.overrideWithValue(world),
         taskServiceProvider.overrideWithValue(world),
         profileServiceProvider.overrideWithValue(world),
+        accountServiceProvider.overrideWithValue(world),
         storageNoticeProvider.overrideWithValue(notice),
       ],
       child: const LifeFlowApp(),

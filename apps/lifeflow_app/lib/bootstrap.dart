@@ -32,15 +32,24 @@ StoragePlatform storagePlatformFor(TargetPlatform p) => switch (p) {
 ///  2. the startup at-rest encryption self-check; a warning is emitted through
 ///     [onWarning] and surfaced in the UI, never silent (ADR-0021, SR-01a),
 ///  3. drains events a crash left undispatched (transactional outbox, ADR-0014).
+///
+/// [cipherProbe] must reflect the real file on disk (use `fileCipherProbe`);
+/// `PRAGMA cipher` is not a valid signal with sqlite3mc (T6b finding).
+///
+/// [auth] is only used for interactive sign-in/out, never while starting up
+/// or reading data (LF-INV-SEC-002): this function makes no auth call.
 Future<AppWiring> bootstrap(
   AppDatabase db, {
   required StoragePlatform platform,
+  required CipherProbe cipherProbe,
+  required AuthGateway auth,
   void Function(String message)? onWarning,
 }) async {
+  // Writes the first page, so the header check below sees the real file.
   await ProfileStore(db).ensureFirstProfile();
 
   final status = await StorageSecurity(platform: platform, onWarning: onWarning)
-      .evaluate(db.activeCipher);
+      .evaluate(cipherProbe);
 
   final gateway = DriftCommandGateway(db, WorkspaceOwnerAuthorization(db));
   await gateway.dispatchPendingEvents();
@@ -53,6 +62,8 @@ Future<AppWiring> bootstrap(
       taskQueriesProvider.overrideWithValue(DriftTaskQueries(db)),
       taskServiceProvider.overrideWithValue(DriftTaskService(db, gateway)),
       profileServiceProvider.overrideWithValue(DriftProfileService(db, gateway)),
+      accountServiceProvider
+          .overrideWithValue(DriftAccountService(db, gateway, auth)),
       storageNoticeProvider.overrideWithValue(notice),
     ],
   );

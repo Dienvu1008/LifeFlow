@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../messages.dart';
 import '../providers.dart';
+import 'account_card.dart';
 
 /// Profile chooser (OQ-S7): every profile on the device stays listed and its
 /// data stays on the device. Switching re-scopes the whole app to that
@@ -21,9 +22,20 @@ class ProfilesScreen extends ConsumerWidget {
           child: CircularProgressIndicator(semanticsLabel: 'Loading profiles'),
         ),
         error: (e, _) => const Center(child: Text('Could not load profiles.')),
-        data: (list) => ListView(
-          children: [for (final p in list) _ProfileTile(profile: p)],
-        ),
+        data: (list) {
+          final active = list.where((p) => p.isActive).firstOrNull;
+          return ListView(
+            children: [
+              if (active != null) AccountCard(profile: active),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                child: Text('Profiles on this device',
+                    style: Theme.of(context).textTheme.titleSmall),
+              ),
+              for (final p in list) _ProfileTile(profile: p),
+            ],
+          );
+        },
       ),
     );
   }
