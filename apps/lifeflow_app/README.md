@@ -33,9 +33,13 @@ flutter test
 - The local database lives in the app-private support directory
   (Windows: `%APPDATA%\app.lifeflow\lifeflow_app\lifeflow.sqlite`).
 - SQLite3MultipleCiphers is linked on every platform. Per
-  [ADR-0021](../../docs/adr/0021-encryption-at-rest-platform-posture.md),
-  **Android is encrypted** (random 256-bit key in secure storage) and
-  **Windows MVP is plain** (a tracked exception shown in a banner).
-- An existing plain database on Android is encrypted in place on first launch
-  of an encrypting build. If the key is ever missing, the app explains and
-  leaves the file untouched.
+  [ADR-0022](../../docs/adr/0022-windows-encryption-at-rest.md),
+  **Android and Windows are both encrypted** (random 256-bit key in secure
+  storage).
+- An existing plain database is encrypted in place on first launch of an
+  encrypting build. If the key is ever missing, the app explains and leaves
+  the file untouched.
+- Fallback (ADR-0021 option B, kept under control): build with
+  `--dart-define=LIFEFLOW_WINDOWS_PLAIN_DB=true` to keep a plain database on
+  Windows; the app then shows it as a tracked exception. Fresh installs only:
+  an encrypted database is never downgraded.

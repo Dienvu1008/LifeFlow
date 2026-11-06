@@ -60,7 +60,9 @@ class _MemoryKeys implements DatabaseKeyStore {
 }
 
 void main() {
-  testWidgets('Android: a real encrypted file on disk shows no banner (GS-19)',
+  for (final platform in [StoragePlatform.android, StoragePlatform.windows]) {
+  testWidgets(
+      '${platform.name}: a real encrypted file on disk shows no banner (GS-19)',
       (tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1;
@@ -76,13 +78,13 @@ void main() {
       file = File('${dir.path}${Platform.pathSeparator}lifeflow.sqlite');
       final store = await openLocalStore(
         file: file,
-        policy: atRestPolicyFor(StoragePlatform.android),
+        policy: atRestPolicyFor(platform),
         keys: _MemoryKeys(),
         background: false,
       );
       wiring = await bootstrap(
         store.db,
-        platform: StoragePlatform.android,
+        platform: platform,
         cipherProbe: fileCipherProbe(file),
         auth: auth,
         onWarning: warnings.add,
@@ -114,6 +116,7 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(Duration.zero);
   });
+  }
 
   testWidgets('guest first launch, add a task in the UI, it is persisted',
       (tester) async {
@@ -129,12 +132,13 @@ void main() {
         platform: StoragePlatform.windows,
         cipherProbe: plainProbe,
         auth: noAuth,
+        windowsPlainFallback: true, // explicit fallback build (ADR-0022)
         onWarning: warnings.add,
       );
     });
     addTearDown(() async => tester.runAsync(wiring.db.close));
 
-    // ADR-0021: Windows plain DB warned through the log AND the notice.
+    // Fallback build: Windows plain DB warned through the log AND the notice.
     expect(warnings, hasLength(1));
     expect(wiring.notice.trackedException, isTrue);
     expect(wiring.notice.atRestEncrypted, isFalse);

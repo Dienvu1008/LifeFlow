@@ -64,19 +64,25 @@ typedef CipherProbe = Future<String?> Function();
 /// diagnostics). Must NOT include any secret (LF-INV-SEC-001 / SR-08).
 typedef WarningSink = void Function(String message);
 
-/// Runs the at-rest self-check at startup and enforces the ADR-0021 policy.
+/// Runs the at-rest self-check at startup and enforces the at-rest policy
+/// (ADR-0021, ADR-0022).
 class StorageSecurity {
   const StorageSecurity({
     required this.platform,
+    this.windowsPlainFallback = false,
     this.onWarning,
   });
 
   final StoragePlatform platform;
+
+  /// ADR-0022: Windows is encrypted by default. A build may opt into the
+  /// ADR-0021 plain fallback explicitly; only then is a plain Windows DB the
+  /// sanctioned, tracked exception.
+  final bool windowsPlainFallback;
   final WarningSink? onWarning;
 
-  /// On Windows the MVP accepts a plain DB (tracked exception); everywhere else
-  /// encryption is required and an unencrypted DB is a genuine problem.
-  bool get _plainIsAcceptedHere => platform == StoragePlatform.windows;
+  bool get _plainIsAcceptedHere =>
+      platform == StoragePlatform.windows && windowsPlainFallback;
 
   /// Evaluate the open database. [probe] returns the active cipher or null.
   ///
@@ -100,11 +106,10 @@ class StorageSecurity {
     }
 
     final warning = _plainIsAcceptedHere
-        ? 'At-rest encryption is OFF on Windows (MVP tracked exception, '
-            'ADR-0021). The local database is NOT encrypted at rest. Mitigate '
-            'with OS full-disk encryption (BitLocker) and avoid storing '
-            'Restricted data on this device until a Windows-clean encryption '
-            'path ships.'
+        ? 'At-rest encryption is OFF on Windows (plain-database fallback build, '
+            'ADR-0021/0022). The local database is NOT encrypted at rest. '
+            'Mitigate with OS full-disk encryption (BitLocker) and avoid storing '
+            'Restricted data on this device.'
         : 'At-rest encryption is OFF on ${platform.name} but the DB was '
             'expected to be encrypted (LF-INV-SEC-011). This is NOT an accepted '
             'configuration.';

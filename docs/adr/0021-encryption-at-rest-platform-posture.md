@@ -1,6 +1,6 @@
 # ADR-0021: Encryption-at-rest platform posture (Android encrypted, Windows MVP plain + tracked exception)
 
-- Status: Accepted (owner decision, 2026-11-04, P01 task T5)
+- Status: Accepted (owner decision, 2026-11-04, P01 task T5). **Amended by [ADR-0022](0022-windows-encryption-at-rest.md) (2026-11-06): Windows is now encrypted by default; the plain Windows posture below survives only as an explicit fallback build flag.**
 - Date: 2026-11-04
 - Deciders: Project owner
 - Evidence: [../spikes/spike-results.md](../spikes/spike-results.md) (S-02), [../data/data-architecture.md](../data/data-architecture.md) §4, [../security/security-requirements.md](../security/security-requirements.md) SR-01/03, [../invariants/invariant-catalog.md](../invariants/invariant-catalog.md) LF-INV-SEC-011, risk R-ENCRYPTION-WINDOWS

@@ -178,7 +178,7 @@ void main() {
 
       // StorageSecurity then reports the tracked exception (non-silent).
       final status = await const StorageSecurity(
-              platform: StoragePlatform.windows)
+              platform: StoragePlatform.windows, windowsPlainFallback: true)
           .evaluate(fileCipherProbe(file));
       expect(status.encrypted, isFalse);
       expect(status.isTrackedException, isTrue);
@@ -196,10 +196,15 @@ void main() {
     });
   });
 
-  test('atRestPolicyFor follows ADR-0021', () {
+  test('atRestPolicyFor follows ADR-0022 (encrypt everywhere by default)', () {
     expect(atRestPolicyFor(StoragePlatform.android), AtRestPolicy.encrypt);
-    expect(atRestPolicyFor(StoragePlatform.windows), AtRestPolicy.plain);
+    expect(atRestPolicyFor(StoragePlatform.windows), AtRestPolicy.encrypt);
     expect(atRestPolicyFor(StoragePlatform.other), AtRestPolicy.encrypt);
+    // The controlled fallback only affects Windows, and only when asked for.
+    expect(atRestPolicyFor(StoragePlatform.windows, windowsPlainFallback: true),
+        AtRestPolicy.plain);
+    expect(atRestPolicyFor(StoragePlatform.android, windowsPlainFallback: true),
+        AtRestPolicy.encrypt);
   });
 
   test('isPlainSqliteFile treats a missing or empty file as plain', () {
