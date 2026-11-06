@@ -26,6 +26,9 @@ class Profiles extends Table {
   IntColumn get version => integer().withDefault(const Constant(1))();
   // True for the single active profile on the device (SwitchProfile toggles it).
   BoolColumn get isActive => boolean().withDefault(const Constant(false))();
+  // ADR-0024: the user signed out. The binding is kept; the profile is locked
+  // until the same account signs in again. Schema v2.
+  BoolColumn get signedOut => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt => dateTime()();
   @override
   Set<Column> get primaryKey => {id};

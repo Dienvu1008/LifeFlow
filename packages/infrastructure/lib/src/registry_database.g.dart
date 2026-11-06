@@ -44,6 +44,16 @@ class $RegistryProfilesTable extends RegistryProfiles
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('CHECK ("is_active" IN (0, 1))'),
       defaultValue: const Constant(false));
+  static const VerificationMeta _signedOutMeta =
+      const VerificationMeta('signedOut');
+  @override
+  late final GeneratedColumn<bool> signedOut = GeneratedColumn<bool>(
+      'signed_out', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("signed_out" IN (0, 1))'),
+      defaultValue: const Constant(false));
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -51,8 +61,15 @@ class $RegistryProfilesTable extends RegistryProfiles
       'created_at', aliasedName, false,
       type: DriftSqlType.dateTime, requiredDuringInsert: true);
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, displayName, accountId, accountProvider, isActive, createdAt];
+  List<GeneratedColumn> get $columns => [
+        id,
+        displayName,
+        accountId,
+        accountProvider,
+        isActive,
+        signedOut,
+        createdAt
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -88,6 +105,10 @@ class $RegistryProfilesTable extends RegistryProfiles
       context.handle(_isActiveMeta,
           isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta));
     }
+    if (data.containsKey('signed_out')) {
+      context.handle(_signedOutMeta,
+          signedOut.isAcceptableOrUnknown(data['signed_out']!, _signedOutMeta));
+    }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
@@ -113,6 +134,8 @@ class $RegistryProfilesTable extends RegistryProfiles
           DriftSqlType.string, data['${effectivePrefix}account_provider']),
       isActive: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
+      signedOut: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}signed_out'])!,
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
     );
@@ -130,6 +153,7 @@ class RegistryProfile extends DataClass implements Insertable<RegistryProfile> {
   final String? accountId;
   final String? accountProvider;
   final bool isActive;
+  final bool signedOut;
   final DateTime createdAt;
   const RegistryProfile(
       {required this.id,
@@ -137,6 +161,7 @@ class RegistryProfile extends DataClass implements Insertable<RegistryProfile> {
       this.accountId,
       this.accountProvider,
       required this.isActive,
+      required this.signedOut,
       required this.createdAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -150,6 +175,7 @@ class RegistryProfile extends DataClass implements Insertable<RegistryProfile> {
       map['account_provider'] = Variable<String>(accountProvider);
     }
     map['is_active'] = Variable<bool>(isActive);
+    map['signed_out'] = Variable<bool>(signedOut);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -165,6 +191,7 @@ class RegistryProfile extends DataClass implements Insertable<RegistryProfile> {
           ? const Value.absent()
           : Value(accountProvider),
       isActive: Value(isActive),
+      signedOut: Value(signedOut),
       createdAt: Value(createdAt),
     );
   }
@@ -178,6 +205,7 @@ class RegistryProfile extends DataClass implements Insertable<RegistryProfile> {
       accountId: serializer.fromJson<String?>(json['accountId']),
       accountProvider: serializer.fromJson<String?>(json['accountProvider']),
       isActive: serializer.fromJson<bool>(json['isActive']),
+      signedOut: serializer.fromJson<bool>(json['signedOut']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -190,6 +218,7 @@ class RegistryProfile extends DataClass implements Insertable<RegistryProfile> {
       'accountId': serializer.toJson<String?>(accountId),
       'accountProvider': serializer.toJson<String?>(accountProvider),
       'isActive': serializer.toJson<bool>(isActive),
+      'signedOut': serializer.toJson<bool>(signedOut),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -200,6 +229,7 @@ class RegistryProfile extends DataClass implements Insertable<RegistryProfile> {
           Value<String?> accountId = const Value.absent(),
           Value<String?> accountProvider = const Value.absent(),
           bool? isActive,
+          bool? signedOut,
           DateTime? createdAt}) =>
       RegistryProfile(
         id: id ?? this.id,
@@ -209,6 +239,7 @@ class RegistryProfile extends DataClass implements Insertable<RegistryProfile> {
             ? accountProvider.value
             : this.accountProvider,
         isActive: isActive ?? this.isActive,
+        signedOut: signedOut ?? this.signedOut,
         createdAt: createdAt ?? this.createdAt,
       );
   RegistryProfile copyWithCompanion(RegistryProfilesCompanion data) {
@@ -221,6 +252,7 @@ class RegistryProfile extends DataClass implements Insertable<RegistryProfile> {
           ? data.accountProvider.value
           : this.accountProvider,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      signedOut: data.signedOut.present ? data.signedOut.value : this.signedOut,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -233,14 +265,15 @@ class RegistryProfile extends DataClass implements Insertable<RegistryProfile> {
           ..write('accountId: $accountId, ')
           ..write('accountProvider: $accountProvider, ')
           ..write('isActive: $isActive, ')
+          ..write('signedOut: $signedOut, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
-      id, displayName, accountId, accountProvider, isActive, createdAt);
+  int get hashCode => Object.hash(id, displayName, accountId, accountProvider,
+      isActive, signedOut, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -250,6 +283,7 @@ class RegistryProfile extends DataClass implements Insertable<RegistryProfile> {
           other.accountId == this.accountId &&
           other.accountProvider == this.accountProvider &&
           other.isActive == this.isActive &&
+          other.signedOut == this.signedOut &&
           other.createdAt == this.createdAt);
 }
 
@@ -259,6 +293,7 @@ class RegistryProfilesCompanion extends UpdateCompanion<RegistryProfile> {
   final Value<String?> accountId;
   final Value<String?> accountProvider;
   final Value<bool> isActive;
+  final Value<bool> signedOut;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
   const RegistryProfilesCompanion({
@@ -267,6 +302,7 @@ class RegistryProfilesCompanion extends UpdateCompanion<RegistryProfile> {
     this.accountId = const Value.absent(),
     this.accountProvider = const Value.absent(),
     this.isActive = const Value.absent(),
+    this.signedOut = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -276,6 +312,7 @@ class RegistryProfilesCompanion extends UpdateCompanion<RegistryProfile> {
     this.accountId = const Value.absent(),
     this.accountProvider = const Value.absent(),
     this.isActive = const Value.absent(),
+    this.signedOut = const Value.absent(),
     required DateTime createdAt,
     this.rowid = const Value.absent(),
   })  : id = Value(id),
@@ -286,6 +323,7 @@ class RegistryProfilesCompanion extends UpdateCompanion<RegistryProfile> {
     Expression<String>? accountId,
     Expression<String>? accountProvider,
     Expression<bool>? isActive,
+    Expression<bool>? signedOut,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
   }) {
@@ -295,6 +333,7 @@ class RegistryProfilesCompanion extends UpdateCompanion<RegistryProfile> {
       if (accountId != null) 'account_id': accountId,
       if (accountProvider != null) 'account_provider': accountProvider,
       if (isActive != null) 'is_active': isActive,
+      if (signedOut != null) 'signed_out': signedOut,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -306,6 +345,7 @@ class RegistryProfilesCompanion extends UpdateCompanion<RegistryProfile> {
       Value<String?>? accountId,
       Value<String?>? accountProvider,
       Value<bool>? isActive,
+      Value<bool>? signedOut,
       Value<DateTime>? createdAt,
       Value<int>? rowid}) {
     return RegistryProfilesCompanion(
@@ -314,6 +354,7 @@ class RegistryProfilesCompanion extends UpdateCompanion<RegistryProfile> {
       accountId: accountId ?? this.accountId,
       accountProvider: accountProvider ?? this.accountProvider,
       isActive: isActive ?? this.isActive,
+      signedOut: signedOut ?? this.signedOut,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
     );
@@ -337,6 +378,9 @@ class RegistryProfilesCompanion extends UpdateCompanion<RegistryProfile> {
     if (isActive.present) {
       map['is_active'] = Variable<bool>(isActive.value);
     }
+    if (signedOut.present) {
+      map['signed_out'] = Variable<bool>(signedOut.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -354,6 +398,7 @@ class RegistryProfilesCompanion extends UpdateCompanion<RegistryProfile> {
           ..write('accountId: $accountId, ')
           ..write('accountProvider: $accountProvider, ')
           ..write('isActive: $isActive, ')
+          ..write('signedOut: $signedOut, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -573,6 +618,7 @@ typedef $$RegistryProfilesTableCreateCompanionBuilder
   Value<String?> accountId,
   Value<String?> accountProvider,
   Value<bool> isActive,
+  Value<bool> signedOut,
   required DateTime createdAt,
   Value<int> rowid,
 });
@@ -583,6 +629,7 @@ typedef $$RegistryProfilesTableUpdateCompanionBuilder
   Value<String?> accountId,
   Value<String?> accountProvider,
   Value<bool> isActive,
+  Value<bool> signedOut,
   Value<DateTime> createdAt,
   Value<int> rowid,
 });
@@ -611,6 +658,9 @@ class $$RegistryProfilesTableFilterComposer
 
   ColumnFilters<bool> get isActive => $composableBuilder(
       column: $table.isActive, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get signedOut => $composableBuilder(
+      column: $table.signedOut, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
@@ -641,6 +691,9 @@ class $$RegistryProfilesTableOrderingComposer
   ColumnOrderings<bool> get isActive => $composableBuilder(
       column: $table.isActive, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<bool> get signedOut => $composableBuilder(
+      column: $table.signedOut, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
 }
@@ -668,6 +721,9 @@ class $$RegistryProfilesTableAnnotationComposer
 
   GeneratedColumn<bool> get isActive =>
       $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<bool> get signedOut =>
+      $composableBuilder(column: $table.signedOut, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -706,6 +762,7 @@ class $$RegistryProfilesTableTableManager extends RootTableManager<
             Value<String?> accountId = const Value.absent(),
             Value<String?> accountProvider = const Value.absent(),
             Value<bool> isActive = const Value.absent(),
+            Value<bool> signedOut = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -715,6 +772,7 @@ class $$RegistryProfilesTableTableManager extends RootTableManager<
             accountId: accountId,
             accountProvider: accountProvider,
             isActive: isActive,
+            signedOut: signedOut,
             createdAt: createdAt,
             rowid: rowid,
           ),
@@ -724,6 +782,7 @@ class $$RegistryProfilesTableTableManager extends RootTableManager<
             Value<String?> accountId = const Value.absent(),
             Value<String?> accountProvider = const Value.absent(),
             Value<bool> isActive = const Value.absent(),
+            Value<bool> signedOut = const Value.absent(),
             required DateTime createdAt,
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -733,6 +792,7 @@ class $$RegistryProfilesTableTableManager extends RootTableManager<
             accountId: accountId,
             accountProvider: accountProvider,
             isActive: isActive,
+            signedOut: signedOut,
             createdAt: createdAt,
             rowid: rowid,
           ),

@@ -103,6 +103,33 @@ void main() {
     expect((d as CreateNewBoundProfile).newProfileId, isNot(const EntityId('p1')));
   });
 
+  group('signed-out lock (ADR-0024)', () {
+    LocalProfile signedOut() => LocalProfile(
+          profileId: const EntityId('p1'),
+          activeWorkspaceId: const EntityId('w1'),
+          binding: bind(),
+          signedOut: true,
+        );
+
+    test('a signed-out bound profile is locked and keeps its account', () {
+      final p = signedOut();
+      expect(p.isLocked, isTrue);
+      expect(p.isBound, isTrue);
+      expect(p.binding!.accountId, 'acc-123');
+    });
+
+    test('only the SAME account can resume it', () {
+      expect(signedOut().canResumeWith('acc-123'), isTrue);
+      expect(signedOut().canResumeWith('someone-else'), isFalse);
+    });
+
+    test('a guest or a signed-in profile is never locked', () {
+      expect(guest().isLocked, isFalse);
+      expect(guest(binding: bind()).isLocked, isFalse);
+      expect(guest().canResumeWith('acc-123'), isFalse);
+    });
+  });
+
   test('boundTo does not change profile/workspace ids (LF-INV-ID-001)', () {
     final before = guest();
     final after = before.boundTo(bind());

@@ -17,7 +17,8 @@ import 'command_gateway.dart';
 ///
 /// Supported ops (payload['op']):
 ///   bind     : id (profileId), accountId, provider, moveData(bool), hasData(bool)
-///   signOut  : id (profileId)
+///   signOut  : id (profileId)            — keeps the binding, locks (ADR-0024)
+///   resume   : id (profileId), accountId — unlock; only the owning account
 ///
 /// Switching profiles is a device-level registry change (ProfileDirectory),
 /// not a mutation of profile data.
@@ -55,6 +56,8 @@ class ProfileCommandHandler implements CommandHandler {
         return _bind(db, cmd, row, newVersion, now);
       case 'signOut':
         return _signOut(db, row, newVersion);
+      case 'resume':
+        return _resume(db, cmd, row, newVersion);
       default:
         throw DomainRejection('unknown op: $op');
     }
@@ -110,13 +113,17 @@ class ProfileCommandHandler implements CommandHandler {
 
   Future<HandlerOutcome> _signOut(
       AppDatabase db, Profile row, Version newVersion) async {
-    // OQ-S7: sign-out clears the binding reference on the profile; data stays.
-    // (The cached session/token is cleared via AuthGateway.signOut outside the
-    // transaction — tokens live in secure storage, never the DB.)
+    // ADR-0024: sign-out KEEPS the binding (the profile still belongs to its
+    // account) and locks the profile until that account signs in again. Data
+    // stays (OQ-S7). The cached session/token is cleared via
+    // AuthGateway.signOut outside the transaction; tokens never touch the DB.
+    if (row.accountId == null) {
+      throw DomainRejection('this profile is not signed in');
+    }
+    if (row.signedOut) throw DomainRejection('this profile is already signed out');
     await (db.update(db.profiles)..where((p) => p.id.equals(row.id))).write(
       ProfilesCompanion(
-        accountId: const Value(null),
-        accountProvider: const Value(null),
+        signedOut: const Value(true),
         version: Value(newVersion.value),
       ),
     );
@@ -125,6 +132,29 @@ class ProfileCommandHandler implements CommandHandler {
       operationType: 'update',
       changeSet: {'id': row.id, 'signedOut': true},
       events: [DomainEvent('SignedOut', {'profileId': row.id})],
+    );
+  }
+
+  /// ADR-0024: the account that owns a signed-out profile signed in again.
+  Future<HandlerOutcome> _resume(AppDatabase db, Command cmd, Profile row,
+      Version newVersion) async {
+    final accountId = cmd.payload['accountId'] as String;
+    if (!_toDomain(row).canResumeWith(accountId)) {
+      throw DomainRejection(row.accountId == accountId
+          ? 'this profile is not signed out'
+          : 'this profile belongs to a different account');
+    }
+    await (db.update(db.profiles)..where((p) => p.id.equals(row.id))).write(
+      ProfilesCompanion(
+        signedOut: const Value(false),
+        version: Value(newVersion.value),
+      ),
+    );
+    return HandlerOutcome(
+      entityId: row.id,
+      operationType: 'update',
+      changeSet: {'id': row.id, 'signedOut': false},
+      events: [DomainEvent('SessionResumed', {'profileId': row.id})],
     );
   }
 
@@ -139,5 +169,6 @@ class ProfileCommandHandler implements CommandHandler {
                 boundAt: Instant(row.createdAt),
               )
             : null,
+        signedOut: row.signedOut,
       );
 }

@@ -148,6 +148,57 @@ void main() {
     });
   });
 
+  group('schema v1 -> v2 on existing files (ADR-0024)', () {
+    test('an existing v1 profile store and registry upgrade, data intact',
+        () async {
+      var dir = await openDirectory(base, keys);
+      final id = (await dir.active())!.id;
+      final host = TestHost(dir);
+      await host.openActive();
+      await Services(host, FakeAuthGateway()).tasks.create('Kept across upgrade');
+      // Turn both files back into what T6c-before-ADR-0024 builds wrote.
+      await host.db.customStatement('ALTER TABLE profiles DROP COLUMN signed_out');
+      await host.db.customStatement('PRAGMA user_version = 1');
+      await host.close();
+      await dir.close();
+      final reg = await openRegistryStore(
+          file: File('${base.path}${Platform.pathSeparator}${ProfileDirectory.registryFileName}'),
+          policy: AtRestPolicy.encrypt,
+          keys: keys(ProfileDirectory.registryKeyName),
+          background: false);
+      await reg.customStatement('ALTER TABLE registry_profiles DROP COLUMN signed_out');
+      await reg.customStatement('PRAGMA user_version = 1');
+      await reg.close();
+
+      dir = await openDirectory(base, keys);
+      addTearDown(dir.close);
+      final entry = (await dir.active())!;
+      expect(entry.id, id);
+      expect(entry.signedOut, isFalse);
+      final store = await dir.openProfile(id);
+      addTearDown(store.db.close);
+      expect((await store.db.select(store.db.tasks).get()).single.title,
+          'Kept across upgrade');
+      expect((await store.db.select(store.db.profiles).getSingle()).signedOut,
+          isFalse);
+      final v = await store.db.customSelect('PRAGMA user_version').getSingle();
+      expect(v.data.values.first, 2);
+    });
+
+    test('a locked profile can never become active', () async {
+      final dir = await openDirectory(base, keys);
+      addTearDown(dir.close);
+      final b = await dir.createProfile(displayName: 'B');
+      final store = await dir.openProfile(b.id);
+      await store.db.customStatement(
+          "UPDATE profiles SET account_id = 'acc', account_provider = 'github', signed_out = 1");
+      await dir.syncFromStore(b.id, store.db);
+      await store.db.close();
+      expect(() => dir.setActive(b.id), throwsStateError);
+      expect((await dir.active())!.id, isNot(b.id));
+    });
+  });
+
   group('cross-store ordering (ADR-0023)', () {
     test('an interrupted change (store committed, registry not) is reconciled',
         () async {

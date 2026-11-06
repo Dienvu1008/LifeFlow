@@ -54,7 +54,7 @@ GoRouter createRouter({String initialLocation = '/tasks'}) => GoRouter(
     );
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final router = createRouter();
+  final router = createRouter(initialLocation: ref.watch(initialRouteProvider));
   ref.onDispose(router.dispose);
   return router;
 });

@@ -71,6 +71,7 @@ class LocalProfile {
     required this.activeWorkspaceId,
     this.displayName = '',
     this.binding,
+    this.signedOut = false,
   });
 
   final EntityId profileId;
@@ -78,7 +79,19 @@ class LocalProfile {
   final String displayName;
   final AccountBinding? binding;
 
+  /// ADR-0024: the user signed out of this profile's account. The binding is
+  /// kept, so the profile still belongs to that account; it is locked until
+  /// the SAME account signs in again. Never set by offline or token expiry.
+  final bool signedOut;
+
   bool get isBound => binding != null;
+
+  /// Open only after its account signs in again.
+  bool get isLocked => isBound && signedOut;
+
+  /// Whether a sign-in by [accountId] may unlock this profile (ADR-0024).
+  bool canResumeWith(String accountId) =>
+      isLocked && binding!.accountId == accountId;
 
   /// Bind an account to THIS profile without re-keying anything
   /// (LF-INV-ID-001). Returns a copy with the binding set; ids are preserved.
@@ -95,11 +108,12 @@ class LocalProfile {
       other.profileId == profileId &&
       other.activeWorkspaceId == activeWorkspaceId &&
       other.displayName == displayName &&
-      other.binding == binding;
+      other.binding == binding &&
+      other.signedOut == signedOut;
 
   @override
   int get hashCode =>
-      Object.hash(profileId, activeWorkspaceId, displayName, binding);
+      Object.hash(profileId, activeWorkspaceId, displayName, binding, signedOut);
 }
 
 /// What to do when an account signs in from a given profile.

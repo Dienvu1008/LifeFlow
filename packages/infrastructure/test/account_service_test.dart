@@ -11,6 +11,7 @@
 import 'dart:io';
 
 import 'package:application/application.dart';
+import 'package:foundation/foundation.dart';
 import 'package:infrastructure/infrastructure.dart';
 import 'package:test/test.dart';
 
@@ -116,17 +117,123 @@ void main() {
     expect(await dir.list(), hasLength(1));
   });
 
-  test('sign-out keeps the profile and its data (OQ-S7)', () async {
-    final svc = s();
-    await svc.accounts.signIn(github);
-    await svc.tasks.create('Mine');
-    expect(await svc.accounts.signOut(), isA<CommandOk>());
-    expect(auth.calls.last, 'signOut');
-    expect((await dir.active())!.isBound, isFalse);
-    expect(await svc.titles(), ['Mine']);
-    expect(await dir.list(), hasLength(1));
-  });
+  group('sign-out locks the profile; signing in again returns to it (ADR-0024)',
+      () {
+    test('sign-out: data and account kept, profile locked, app on a guest',
+        () async {
+      final svc = s();
+      final bound = (await svc.accounts.signIn(github) as SignedIn).profile;
+      await svc.tasks.create('Mine');
 
+      expect(await svc.accounts.signOut(), isA<CommandOk>());
+      expect(auth.calls.last, 'signOut');
+      // The app moved to a NEW guest (the only profile was the account's) and
+      // opened the profile chooser.
+      expect(host.currentId, isNot(bound.id));
+      expect(host.lastShowProfiles, isTrue);
+      final all = await dir.list();
+      expect(all, hasLength(2));
+      final locked = all.firstWhere((e) => e.id == bound.id);
+      expect(locked.isLocked, isTrue);
+      expect(locked.accountId, 'acc-123'); // still the account's profile
+      expect(all.firstWhere((e) => e.id != bound.id).isBound, isFalse);
+      expect(await s().titles(), isEmpty); // the guest does not see the data
+    });
+
+    test('signing in again with the SAME account returns to its data',
+        () async {
+      var svc = s();
+      final bound = (await svc.accounts.signIn(github) as SignedIn).profile;
+      await svc.tasks.create('Mine');
+      await svc.accounts.signOut();
+
+      svc = s(); // now on the guest
+      final r = await svc.accounts.signIn(github);
+      expect(r, isA<SignedIn>(), reason: '$r');
+      expect((r as SignedIn).profile.id, bound.id);
+      expect(r.switchedProfile, isTrue);
+      expect(host.currentId, bound.id);
+      expect(await s().titles(), ['Mine']); // the owner's scenario
+      expect((await dir.active())!.isLocked, isFalse);
+      // No extra profile was created for the account.
+      expect((await dir.list()).where((e) => e.isBound), hasLength(1));
+    });
+
+    test('a locked profile cannot be opened with Switch', () async {
+      final svc = s();
+      final bound = (await svc.accounts.signIn(github) as SignedIn).profile;
+      await svc.accounts.signOut();
+      final r = await s().profiles.switchTo(bound.id);
+      expect((r as CommandFailure).kind, CommandFailureKind.policyDenied);
+      expect(host.currentId, isNot(bound.id));
+    });
+
+    test('a DIFFERENT account does not unlock it', () async {
+      final svc = s();
+      final bound = (await svc.accounts.signIn(github) as SignedIn).profile;
+      await svc.accounts.signOut();
+      auth.accountId = 'acc-other';
+      final r = await s().accounts.signIn(github);
+      expect(r, isA<SignedIn>());
+      expect((r as SignedIn).profile.id, isNot(bound.id));
+      expect((await dir.list()).firstWhere((e) => e.id == bound.id).isLocked,
+          isTrue);
+    });
+
+    test('an existing guest is reused after sign-out, none duplicated',
+        () async {
+      var svc = s();
+      final guest = host.currentId!;
+      await svc.tasks.create('Guest task');
+      await svc.accounts.signIn(github);
+      await svc.accounts.completeBind(moveData: false); // account in new space
+      svc = s();
+      await svc.accounts.signOut();
+      expect(host.currentId, guest);
+      expect(await s().titles(), ['Guest task']);
+      expect(await dir.list(), hasLength(2));
+    });
+
+    test('the provider revoking the session locks the profile too', () async {
+      final svc = s();
+      final bound = (await svc.accounts.signIn(github) as SignedIn).profile;
+      auth.revoke();
+      await svc.accounts.handleSessionRevoked();
+      expect(host.currentId, isNot(bound.id));
+      expect((await dir.list()).firstWhere((e) => e.id == bound.id).isLocked,
+          isTrue);
+    });
+
+    test('a restart right after sign-out never opens the locked profile',
+        () async {
+      final svc = s();
+      final bound = (await svc.accounts.signIn(github) as SignedIn).profile;
+      // Lock it in its store + registry, but crash before leaving it.
+      await dir.beginStoreChange(bound.id);
+      final row = await host.db.select(host.db.profiles).getSingle();
+      await DriftCommandGateway(host.db, WorkspaceOwnerAuthorization(host.db)).execute(
+        Command(
+          operationId: 'crash-signout',
+          actor: ActorRef(ActorKind.owner, bound.id),
+          workspaceId: row.activeWorkspaceId,
+          type: 'SignOut',
+          payload: {'op': 'signOut', 'id': bound.id},
+          expectedVersion: Version(row.version),
+          issuedAt: Instant.now(),
+        ),
+        const ProfileCommandHandler(),
+      );
+      await dir.syncFromStore(bound.id, host.db);
+      await host.close();
+      await dir.close();
+
+      dir = await openDirectory(base, keys);
+      host = TestHost(dir);
+      await host.openActive();
+      expect(host.currentId, isNot(bound.id));
+      expect((await dir.active())!.isBound, isFalse);
+    });
+  });
   test('signing out a guest profile is refused, nothing changes', () async {
     expect(await s().accounts.signOut(), isA<CommandFailure>());
     expect(auth.calls, isEmpty);
@@ -221,9 +328,13 @@ void main() {
 
   test('every account change is audited in that profile\'s store', () async {
     final svc = s();
-    await svc.accounts.signIn(github);
+    final bound = (await svc.accounts.signIn(github) as SignedIn).profile;
     await svc.accounts.signOut();
-    final actions = (await host.db.select(host.db.auditLog).get()).map((a) => a.action);
-    expect(actions, containsAll(['BindAccount', 'SignOut']));
+    await s().accounts.signIn(github); // resume
+    final opened = await dir.openProfile(bound.id);
+    final actions =
+        (await opened.db.select(opened.db.auditLog).get()).map((a) => a.action);
+    await opened.db.close();
+    expect(actions, containsAllInOrder(['BindAccount', 'SignOut', 'ResumeSession']));
   });
 }

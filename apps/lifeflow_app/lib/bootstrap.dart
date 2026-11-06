@@ -15,10 +15,15 @@ class AppWiring {
     required this.db,
     required this.notice,
     required this.overrides,
+    required this.onSessionRevoked,
   });
 
   final String profileId;
   final AppDatabase db;
+
+  /// ADR-0024: the provider ended the session while online; lock this
+  /// profile and move to a guest (no-op for a guest profile).
+  final Future<void> Function() onSessionRevoked;
 
   /// Result of the at-rest encryption self-check (ADR-0021/0022).
   final StorageNotice notice;
@@ -49,6 +54,7 @@ Future<AppWiring> openSession({
   required AuthGateway auth,
   required ProfileHost host,
   bool windowsPlainFallback = false,
+  String initialRoute = '/tasks',
   void Function(String message)? onWarning,
 }) async {
   final store = await directory.openProfile(profileId);
@@ -67,22 +73,21 @@ Future<AppWiring> openSession({
     await gateway.dispatchPendingEvents();
 
     final notice = storageNoticeFrom(status);
+    final accounts = DriftAccountService(
+        db: db, gateway: gateway, auth: auth, directory: directory, host: host);
     return AppWiring(
       profileId: profileId,
       db: db,
       notice: notice,
+      onSessionRevoked: accounts.handleSessionRevoked,
       overrides: [
         taskQueriesProvider.overrideWithValue(DriftTaskQueries(db)),
         taskServiceProvider.overrideWithValue(DriftTaskService(db, gateway)),
         profileServiceProvider
             .overrideWithValue(DirectoryProfileService(directory, host)),
-        accountServiceProvider.overrideWithValue(DriftAccountService(
-            db: db,
-            gateway: gateway,
-            auth: auth,
-            directory: directory,
-            host: host)),
+        accountServiceProvider.overrideWithValue(accounts),
         storageNoticeProvider.overrideWithValue(notice),
+        initialRouteProvider.overrideWithValue(initialRoute),
       ],
     );
   } catch (_) {

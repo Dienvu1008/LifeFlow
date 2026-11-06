@@ -12,6 +12,7 @@ import 'dart:io';
 import 'package:application/application.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:foundation/foundation.dart';
 import 'package:infrastructure/infrastructure.dart';
 import 'package:lifeflow_app/bootstrap.dart';
 import 'package:lifeflow_app/root.dart';
@@ -33,6 +34,8 @@ class RecordingAuth implements AuthGateway {
   @override
   bool get isConfigured => true;
   @override
+  Stream<void> get sessionRevoked => const Stream.empty();
+  @override
   Future<AuthSession> signIn(SignInRequest request) async {
     calls.add('signIn');
     throw const AuthFailure(AuthFailureKind.network, 'offline');
@@ -46,6 +49,21 @@ class RecordingAuth implements AuthGateway {
 
   @override
   Future<void> signOut() async => calls.add('signOut');
+}
+
+/// A provider that always signs the same GitHub account in.
+class OkAuth implements AuthGateway {
+  @override
+  bool get isConfigured => true;
+  @override
+  Stream<void> get sessionRevoked => const Stream.empty();
+  @override
+  Future<AuthSession> signIn(SignInRequest request) async => AuthSession(
+      accountId: 'acc-gh', provider: 'github', issuedAt: Instant.now());
+  @override
+  Future<AuthSession?> currentSession() async => null;
+  @override
+  Future<void> signOut() async {}
 }
 
 class MemoryKeys {
@@ -84,12 +102,13 @@ class World {
   Widget root(StoragePlatform platform, {bool fallback = false, String? initial}) =>
       LifeFlowRoot(
         initialProfileId: initial ?? 'unset',
-        openSession: (id, host) => openSession(
+        openSession: (id, host, route) => openSession(
           directory: directory,
           profileId: id,
           platform: platform,
           auth: auth,
           host: host,
+          initialRoute: route,
           windowsPlainFallback: fallback,
           onWarning: warnings.add,
         ),
@@ -233,6 +252,67 @@ void main() {
     expect(find.textContaining('missing'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
+    await tester.runAsync(w.dispose);
+  });
+
+  testWidgets('sign out locks; signing in again returns to the data (ADR-0024)',
+      (tester) async {
+    tester.view.physicalSize = const Size(1000, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final w = World();
+    final auth = OkAuth();
+    await tester.runAsync(() => w.open(StoragePlatform.android));
+    final first = (await tester.runAsync(() => w.directory.active()))!.id;
+    await tester.pumpWidget(LifeFlowRoot(
+      initialProfileId: first,
+      openSession: (id, host, route) => openSession(
+        directory: w.directory, profileId: id, platform: StoragePlatform.android,
+        auth: auth, host: host, initialRoute: route),
+    ));
+    await settle(tester);
+
+    Future<void> tapAndSettle(Finder f, [int rounds = 8]) async {
+      await tester.tap(f);
+      await settle(tester, rounds);
+    }
+
+    // Sign in on the empty guest (binds in place), then add a task.
+    await tapAndSettle(find.byIcon(Icons.people_outline));
+    await tapAndSettle(find.widgetWithText(FilledButton, 'Sign in'));
+    await tapAndSettle(find.text('Continue with GitHub'), 12);
+    expect(find.text('Signed in with GitHub.'), findsOneWidget);
+    // Let the "Signed in." snackbar expire; it sits over the add button.
+    await tester.pump(const Duration(seconds: 6));
+    await settle(tester, 2);
+    await tapAndSettle(find.byIcon(Icons.checklist_outlined));
+    await tapAndSettle(find.byTooltip('Add task'));
+    await tester.enterText(find.byType(TextField), 'My account task');
+    await tapAndSettle(find.widgetWithText(FilledButton, 'Add'));
+    expect(find.text('My account task'), findsOneWidget);
+
+    // Sign out: lands on Profiles of a guest; the account profile is locked.
+    await tapAndSettle(find.byIcon(Icons.people_outline));
+    await tapAndSettle(find.widgetWithText(OutlinedButton, 'Sign out'));
+    await tapAndSettle(find.widgetWithText(FilledButton, 'Sign out'), 14);
+    final root = tester.state<LifeFlowRootState>(find.byType(LifeFlowRoot));
+    expect(root.activeProfileId, isNot(first));
+    expect(find.byKey(const Key('account-card')), findsOneWidget); // on Profiles
+    expect(find.textContaining('Using LifeFlow as a guest'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Sign in to open'), findsOneWidget);
+    final locked = await tester.runAsync(() => w.directory.list());
+    expect(locked!.firstWhere((e) => e.id == first).isLocked, isTrue);
+
+    // Sign in again with the same account: back to the same profile + data.
+    await tapAndSettle(find.widgetWithText(FilledButton, 'Sign in to open'));
+    await tapAndSettle(find.text('Continue with GitHub'), 14);
+    expect(root.activeProfileId, first);
+    expect(find.text('Move your data to this account?'), findsNothing);
+    // The reopened session starts on Tasks: the account's data is back.
+    expect(find.text('My account task'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await settle(tester, 2);
     await tester.runAsync(w.dispose);
   });
 

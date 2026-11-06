@@ -8,6 +8,7 @@
 //   LF-INV-SEC-002 offline read path never calls AuthGateway (GS-22 airplane)
 //   OQ-S7          sign-out keeps all profiles + data on the device
 import 'package:application/application.dart';
+import 'package:domain/domain.dart' show LocalProfile;
 import 'package:drift/native.dart';
 import 'package:foundation/foundation.dart';
 import 'package:infrastructure/infrastructure.dart';
@@ -167,39 +168,66 @@ void main() {
     expect(still!.isBound, isFalse);
   });
 
-  test('sign-out clears the binding but keeps all profiles + data (OQ-S7)',
-      () async {
-    final guest = await store.ensureFirstProfile();
-    policy = OwnerPolicy(guest.profileId.value);
-    gw = DriftCommandGateway(db, policy);
-    final auth = FakeAuthGateway();
-    await auth.signIn(const OAuthSignIn('github'));
-    await gw.execute(
-      c(guest.profileId.value, 'bind',
-          {'accountId': 'acc-123', 'provider': 'github', 'hasData': false, 'moveData': false},
-          expected: Version.initial),
-      handler,
-    );
-    // Sign out: the token cache is cleared via AuthGateway; the profile stays.
-    await auth.signOut();
-    final boundVersion = (await (db.select(db.profiles)
-              ..where((p) => p.id.equals(guest.profileId.value)))
-            .getSingle())
-        .version;
-    final r = await gw.execute(
-      c(guest.profileId.value, 'signOut', const {},
-          expected: Version(boundVersion)),
-      handler,
-    );
-    expect(r, isA<CommandOk>(), reason: '$r');
-    // Profile still present (data stays); just no longer bound.
-    final after = await store.getActiveProfile();
-    expect(after, isNotNull);
-    expect(after!.isBound, isFalse);
-    expect(await auth.currentSession(), isNull);
-    expect(auth.calls.contains('signOut'), isTrue);
-  });
+  group('sign-out locks, keeps the binding (ADR-0024)', () {
+    late LocalProfile guest;
+    Future<CommandResult> run(String op, Map<String, Object?> p) async {
+      final v = (await (db.select(db.profiles)
+                ..where((r) => r.id.equals(guest.profileId.value)))
+              .getSingle())
+          .version;
+      return gw.execute(c(guest.profileId.value, op, p, expected: Version(v)), handler);
+    }
 
+    setUp(() async {
+      guest = await store.ensureFirstProfile();
+      gw = DriftCommandGateway(db, OwnerPolicy(guest.profileId.value));
+      expect(
+          await run('bind', {
+            'accountId': 'acc-123', 'provider': 'github',
+            'hasData': false, 'moveData': true,
+          }),
+          isA<CommandOk>());
+    });
+
+    test('sign-out keeps the account and data, and locks the profile',
+        () async {
+      expect(await run('signOut', const {}), isA<CommandOk>());
+      final p = (await store.getActiveProfile())!;
+      expect(p.binding!.accountId, 'acc-123'); // still this account's profile
+      expect(p.signedOut, isTrue);
+      expect(p.isLocked, isTrue);
+      expect(await db.select(db.profiles).get(), hasLength(1));
+    });
+
+    test('only the same account can resume it', () async {
+      await run('signOut', const {});
+      final wrong = await run('resume', {'accountId': 'someone-else'});
+      expect((wrong as CommandFailure).kind, CommandFailureKind.validationFailed);
+      expect((await store.getActiveProfile())!.isLocked, isTrue);
+
+      expect(await run('resume', {'accountId': 'acc-123'}), isA<CommandOk>());
+      final p = (await store.getActiveProfile())!;
+      expect(p.isLocked, isFalse);
+      expect(p.binding!.accountId, 'acc-123');
+    });
+
+    test('resume on a profile that is not signed out is refused', () async {
+      final r = await run('resume', {'accountId': 'acc-123'});
+      expect((r as CommandFailure).kind, CommandFailureKind.validationFailed);
+    });
+
+    test('signing out twice is refused; a guest cannot sign out', () async {
+      await run('signOut', const {});
+      expect(await run('signOut', const {}), isA<CommandFailure>());
+    });
+
+    test('sign-out and resume are audited', () async {
+      await run('signOut', const {});
+      await run('resume', {'accountId': 'acc-123'});
+      final actions = (await db.select(db.auditLog).get()).map((a) => a.action);
+      expect(actions, containsAllInOrder(['bind', 'signOut', 'resume']));
+    });
+  });
   test('read path works offline and never calls the AuthGateway (SEC-002)',
       () async {
     final auth = FakeAuthGateway();

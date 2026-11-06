@@ -1,5 +1,5 @@
-// P01 T6b/T6c: sign-in / bind / sign-out orchestration (ADR-0008, OQ-S7)
-// over per-profile stores (SR-03, ADR-0023).
+// P01 T6b/T6c: sign-in / bind / sign-out orchestration (ADR-0008, OQ-S7,
+// ADR-0024) over per-profile stores (SR-03, ADR-0023).
 //
 // The provider is reached only through AuthGateway; every change to profile
 // data goes through the command gateway of THAT profile's store (ADR-0011).
@@ -22,7 +22,9 @@ import 'profile_store.dart';
 /// opens the target's (the app shell implements this). After [activate]
 /// returns, services bound to the previous store must not be used again.
 abstract interface class ProfileHost {
-  Future<void> activate(String profileId);
+  /// [showProfiles] opens the profile chooser instead of the task list
+  /// (after a sign-out, OQ-S7).
+  Future<void> activate(String profileId, {bool showProfiles = false});
 }
 
 ProfileView profileViewOf(ProfileEntry e, {bool? active}) => ProfileView(
@@ -31,6 +33,7 @@ ProfileView profileViewOf(ProfileEntry e, {bool? active}) => ProfileView(
       isActive: active ?? e.isActive,
       isBound: e.isBound,
       provider: e.provider,
+      isSignedOut: e.signedOut,
     );
 
 /// Profile chooser over the device registry (OQ-S7).
@@ -56,6 +59,11 @@ class DirectoryProfileService implements ProfileService {
     if (target == null) {
       return const CommandFailure(CommandFailureKind.notFound,
           reason: 'profile not found');
+    }
+    if (target.isLocked) {
+      // ADR-0024: only its account signing in again may open it.
+      return const CommandFailure(CommandFailureKind.policyDenied,
+          reason: 'sign in with this account to open it');
     }
     if (!target.isActive) {
       await directory.setActive(profileId);
@@ -110,18 +118,26 @@ class DriftAccountService implements AccountService {
       return const SignInFailed('No local profile is open.');
     }
 
-    // One account maps to one profile on this device: if it already owns a
-    // profile, go there instead of binding it a second time.
+    // One account maps to one profile on this device. If it already owns a
+    // profile, go back to it (unlocking it if it was signed out, ADR-0024)
+    // instead of binding the account a second time.
     final owner = await directory.findByAccount(session.accountId);
     if (owner != null) {
       if (owner.id == active.profileId.value) {
         return SignedIn(profileViewOf(owner, active: true));
       }
+      if (owner.isLocked) {
+        final r = await _resume(owner.id, session.accountId);
+        if (r is CommandFailure) {
+          await auth.signOut();
+          return SignInFailed(_explain(r));
+        }
+      }
       return _activate(owner.id);
     }
 
-    // Bound to a different account: that account keeps its profile and this
-    // one signs in on a new profile (OQ-S7).
+    // Bound to a different (signed-in) account: that account keeps its
+    // profile and this one signs in on a new profile (OQ-S7).
     if (active.isBound) return _newSpace(active, session);
 
     // Guest: an empty profile binds without asking (ADR-0008).
@@ -157,21 +173,60 @@ class DriftAccountService implements AccountService {
   @override
   Future<CommandResult> signOut() async {
     final active = await _store.getActiveProfile();
-    if (active == null || !active.isBound) {
+    if (active == null || !active.isBound || active.isLocked) {
       return const CommandFailure(CommandFailureKind.validationFailed,
           reason: 'this profile is not signed in');
     }
     // Clear the provider session (tokens live only in secure storage), then
-    // record the sign-out in the profile's store. Data stays (OQ-S7).
+    // lock the profile in its own store, then leave it.
     await auth.signOut();
+    return _lockAndLeave(active);
+  }
+
+  /// The provider ended the session on its own while online (ADR-0024).
+  /// Locks the active profile like a sign-out. No-op for a guest.
+  Future<void> handleSessionRevoked() async {
+    final active = await _store.getActiveProfile();
+    if (active == null || !active.isBound || active.isLocked) return;
+    await _lockAndLeave(active);
+  }
+
+  // --- helpers --------------------------------------------------------------
+
+  /// ADR-0024: keep the binding, lock the profile, move to a guest profile and
+  /// the profile chooser. Data stays (OQ-S7).
+  Future<CommandResult> _lockAndLeave(LocalProfile active) async {
     final id = active.profileId.value;
     await directory.beginStoreChange(id);
     final r = await _run(db, gateway, active, 'SignOut', {'op': 'signOut', 'id': id});
     await directory.syncFromStore(id, db);
+    if (r is CommandFailure) return r;
+    final guest = await directory.activateGuest();
+    // This service's store is closed after this call.
+    await host.activate(guest.id, showProfiles: true);
     return r;
   }
 
-  // --- helpers --------------------------------------------------------------
+  /// Unlocks a signed-out profile in ITS store (not the active one).
+  Future<CommandResult> _resume(String profileId, String accountId) async {
+    final opened = await directory.openProfile(profileId);
+    final ownerDb = opened.db;
+    try {
+      final owner = (await ProfileStore(ownerDb).getActiveProfile())!;
+      await directory.beginStoreChange(profileId);
+      final r = await _run(
+        ownerDb,
+        DriftCommandGateway(ownerDb, WorkspaceOwnerAuthorization(ownerDb)),
+        owner,
+        'ResumeSession',
+        {'op': 'resume', 'id': profileId, 'accountId': accountId},
+      );
+      await directory.syncFromStore(profileId, ownerDb);
+      return r;
+    } finally {
+      await ownerDb.close();
+    }
+  }
 
   /// "Move my data" (or an empty guest): bind THIS profile, no id changes.
   Future<SignInOutcome> _bindHere(LocalProfile profile, AuthSession session,

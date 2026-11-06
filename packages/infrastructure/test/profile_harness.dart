@@ -34,6 +34,9 @@ class TestHost implements ProfileHost {
   String? currentId;
   final activations = <String>[];
 
+  /// Whether the last activation asked for the profile chooser.
+  bool lastShowProfiles = false;
+
   AppDatabase get db => _current!.db;
 
   Future<void> openActive() async {
@@ -43,8 +46,9 @@ class TestHost implements ProfileHost {
   }
 
   @override
-  Future<void> activate(String profileId) async {
+  Future<void> activate(String profileId, {bool showProfiles = false}) async {
     activations.add(profileId);
+    lastShowProfiles = showProfiles;
     await _current?.db.close();
     _current = await directory.openProfile(profileId);
     currentId = profileId;

@@ -177,6 +177,7 @@ Harvest note (Batch 4): 60 invariants were found across the docs and are all cat
 - Scope: platform adapters. Enforcement: keys/tokens in `flutter_secure_storage`; never in DB/logs/export/sync/AI context. Verification: security test + log scan. Severity: critical. Depends: —.
 ### LF-INV-SEC-002 — Offline never blocked by auth
 - Scope: Workspace and Access. Enforcement: AuthGateway only on sign-in/refresh, never the read path. Verification: integration (airplane-mode, GS-22). Severity: critical. Depends: —.
+- **ADR-0024 (2026-11-06):** a signed-in profile is never locked by being offline or by token expiry. Only an explicit sign-out, or the provider revoking the session while online, locks an account's profile until it signs in again. Guest profiles are never locked.
 ### LF-INV-SEC-010 — Export completeness
 - Scope: Data/export. Enforcement: export includes all user-owned entities + tombstones + audit. Verification: round-trip test (GS: export). Severity: high. Depends: —.
 ### LF-INV-SEC-011 — At-rest encryption (introduced in Batch 4)

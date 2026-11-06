@@ -114,6 +114,7 @@ Every non-trivial statement carries one of these labels.
 | [adr/0021-encryption-at-rest-platform-posture.md](adr/0021-encryption-at-rest-platform-posture.md) | P01/T5: encryption injectable — Android encrypted, Windows MVP plain + tracked exception (amended by 0022) |
 | [adr/0022-windows-encryption-at-rest.md](adr/0022-windows-encryption-at-rest.md) | P01/T5a: Windows encrypted too; plain Windows only as an explicit fallback build flag |
 | [adr/0023-per-profile-stores-and-registry.md](adr/0023-per-profile-stores-and-registry.md) | P01/T6c: one DB file + key per profile, encrypted registry, cross-store ordering |
+| [adr/0024-sign-out-locks-the-account-profile.md](adr/0024-sign-out-locks-the-account-profile.md) | P01/T6c: sign-out keeps the binding and locks the profile until the same account signs in |
 
 ## Batch 4 documents
 

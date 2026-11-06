@@ -51,15 +51,19 @@ Future<void> main() async {
   // runs fully as a guest. Initializing makes no network call.
   final auth = await SupabaseAuthGateway.initialize();
 
+  // Never a locked (signed-out) profile: ProfileDirectory.open falls back to
+  // a guest (ADR-0024).
   final active = (await directory.active())!;
   runApp(LifeFlowRoot(
     initialProfileId: active.id,
-    openSession: (profileId, host) => openSession(
+    sessionRevoked: auth.sessionRevoked,
+    openSession: (profileId, host, initialRoute) => openSession(
       directory: directory,
       profileId: profileId,
       platform: platform,
       auth: auth,
       host: host,
+      initialRoute: initialRoute,
       windowsPlainFallback: windowsPlainFallback,
       // Local log only; never uploaded (no telemetry, SR-15).
       onWarning: (m) => debugPrint('[storage] $m'),

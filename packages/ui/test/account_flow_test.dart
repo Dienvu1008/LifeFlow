@@ -1,4 +1,5 @@
 // Sign-in / bind / sign-out flows in the UI (ADR-0008, OQ-S7, GS-22).
+import 'package:application/application.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -143,8 +144,54 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Sign out'));
     await tester.pumpAndSettle();
     expect(w.calls.last, 'signOut');
-    expect(find.text('Signed out. Your data is still here.'), findsOneWidget);
+    // Now on a guest; the account's profile is listed as locked (ADR-0024).
     expect(find.textContaining('Using LifeFlow as a guest'), findsOneWidget);
+    expect(find.textContaining('signed out. Sign in to open it.'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Sign in to open'), findsOneWidget);
+  });
+
+  testWidgets('"Sign in to open" with the same account returns to its data',
+      (tester) async {
+    final w = world(withData: false);
+    await openProfiles(tester, w);
+    await chooseGitHub(tester); // empty guest A binds to GitHub
+    w.calls.clear();
+    // Give A some data, then sign out.
+    await w.create('Mine');
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Sign out'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Sign out'));
+    await tester.pumpAndSettle();
+    expect(w.activeId, isNot('A'));
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Sign in to open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continue with GitHub'));
+    await tester.pumpAndSettle();
+    expect(w.activeId, 'A');
+    expect(find.text('Move your data to this account?'), findsNothing);
+    expect(find.text('Signed in with GitHub.'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.checklist_outlined));
+    await tester.pumpAndSettle();
+    expect(find.text('Mine'), findsOneWidget);
+  });
+
+  testWidgets('a locked profile offers no Switch button', (tester) async {
+    final w = FakeWorld(
+      tasks: {'A': [], 'B': [task('b', 'B data')]},
+      profiles: [
+        profile('A', 'Guest'),
+        ProfileView(
+            id: 'B', displayName: 'Work', isActive: false, isBound: true,
+            provider: 'github', isSignedOut: true),
+      ],
+      activeId: 'A',
+    );
+    await openProfiles(tester, w);
+    expect(find.widgetWithText(FilledButton, 'Switch'), findsNothing);
+    expect(find.widgetWithText(FilledButton, 'Sign in to open'), findsOneWidget);
+    expect(find.byIcon(Icons.lock_outline), findsOneWidget);
   });
 
   testWidgets('a build without sign-in says so instead of hiding it',

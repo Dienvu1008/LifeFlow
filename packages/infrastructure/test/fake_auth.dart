@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:application/application.dart';
 import 'package:foundation/foundation.dart';
 
@@ -54,4 +56,16 @@ class FakeAuthGateway implements AuthGateway {
   }
 
   String? get secretToken => _secretToken;
+
+  final _revoked = StreamController<void>.broadcast();
+
+  @override
+  Stream<void> get sessionRevoked => _revoked.stream;
+
+  /// Simulates the provider ending the session while online (ADR-0024).
+  void revoke() {
+    _session = null;
+    _secretToken = null;
+    _revoked.add(null);
+  }
 }

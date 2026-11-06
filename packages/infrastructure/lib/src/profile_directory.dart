@@ -36,6 +36,7 @@ class ProfileEntry {
     required this.createdAt,
     this.accountId,
     this.provider,
+    this.signedOut = false,
   });
 
   final String id;
@@ -45,7 +46,12 @@ class ProfileEntry {
   final String? accountId;
   final String? provider;
 
+  /// ADR-0024: the account signed out; the profile opens again only after
+  /// that account signs in.
+  final bool signedOut;
+
   bool get isBound => accountId != null;
+  bool get isLocked => isBound && signedOut;
 }
 
 /// What the one-time migration of the pre-SR-03 shared database did.
@@ -106,11 +112,11 @@ class ProfileDirectory {
     try {
       await dir._migrateLegacyIfNeeded();
       await dir._recoverPending();
-      if ((await dir.list()).isEmpty) {
-        final guest = await dir.createProfile(displayName: guestDisplayName);
-        await dir.setActive(guest.id);
-      } else if (await dir.active() == null) {
-        await dir.setActive((await dir.list()).first.id);
+      final active = await dir.active();
+      if (active == null || active.isLocked) {
+        // First launch, or the app stopped right after a sign-out: never
+        // open a locked profile; fall back to a guest (ADR-0008, ADR-0024).
+        await dir.activateGuest(displayName: guestDisplayName);
       }
     } catch (_) {
       await registry.close();
@@ -150,13 +156,27 @@ class ProfileDirectory {
     return row == null ? null : _entry(row);
   }
 
+  /// Activates a guest (unbound) profile, creating one if the device has none
+  /// (ADR-0008: the app is always usable without an account). Returns it.
+  Future<ProfileEntry> activateGuest({String displayName = ''}) async {
+    final guest = (await list()).where((e) => !e.isBound).firstOrNull ??
+        await createProfile(displayName: displayName);
+    await setActive(guest.id);
+    return (await _get(guest.id))!;
+  }
+
   /// Makes [profileId] the active profile (device-level; not profile data).
+  /// A locked (signed-out) profile cannot become active (ADR-0024); its
+  /// account must sign in first.
   Future<void> setActive(String profileId) async {
     await _registry.transaction(() async {
       final exists = await (_registry.select(_registry.registryProfiles)
             ..where((p) => p.id.equals(profileId)))
           .getSingleOrNull();
       if (exists == null) throw StateError('unknown profile: $profileId');
+      if (exists.accountId != null && exists.signedOut) {
+        throw StateError('profile $profileId is signed out; sign in to open it');
+      }
       await _registry
           .update(_registry.registryProfiles)
           .write(const RegistryProfilesCompanion(isActive: Value(false)));
@@ -222,6 +242,7 @@ class ProfileDirectory {
         displayName: Value(row.displayName),
         accountId: Value(row.accountId),
         accountProvider: Value(row.accountProvider),
+        signedOut: Value(row.signedOut),
       ));
       if (await _getMeta(_metaPending) == profileId) {
         await (_registry.delete(_registry.registryMeta)
@@ -292,6 +313,7 @@ class ProfileDirectory {
           displayName: Value(p.displayName),
           accountId: Value(p.accountId),
           accountProvider: Value(p.accountProvider),
+          signedOut: Value(p.signedOut),
           isActive: Value(p.isActive && activeId == null),
           createdAt: p.createdAt,
         ));
@@ -422,6 +444,7 @@ class ProfileDirectory {
         createdAt: r.createdAt,
         accountId: r.accountId,
         provider: r.accountProvider,
+        signedOut: r.signedOut,
       );
 
   static String _join(String a, String b, [String? c]) {

@@ -14,6 +14,8 @@ class RegistryProfiles extends Table {
   TextColumn get accountId => text().nullable()(); // non-secret (OQ-WA-1)
   TextColumn get accountProvider => text().nullable()();
   BoolColumn get isActive => boolean().withDefault(const Constant(false))();
+  // Mirrors the profile store (ADR-0024): locked until its account signs in.
+  BoolColumn get signedOut => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt => dateTime()();
   @override
   Set<Column> get primaryKey => {id};
@@ -32,6 +34,17 @@ class RegistryMeta extends Table {
 class RegistryDatabase extends _$RegistryDatabase {
   RegistryDatabase(super.e);
 
+  /// v1 (T6c) initial; v2 (T6c, ADR-0024) registry_profiles.signed_out.
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) => m.createAll(),
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            await m.addColumn(registryProfiles, registryProfiles.signedOut);
+          }
+        },
+      );
 }

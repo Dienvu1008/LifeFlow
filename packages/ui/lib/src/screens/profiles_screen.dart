@@ -54,6 +54,8 @@ String _subtitle(ProfileView p) {
     final other? => other,
     null => 'an account',
   };
+  // ADR-0024: the account signed out; its data is kept but locked.
+  if (p.isLocked) return '$provider account · signed out. Sign in to open it.';
   return 'Signed in with $provider';
 }
 
@@ -67,16 +69,28 @@ class _ProfileTile extends ConsumerWidget {
     return ListTile(
       key: ValueKey('profile-${p.id}'),
       leading: CircleAvatar(
-        child: Icon(p.isBound ? Icons.account_circle : Icons.person_outline),
+        child: Icon(p.isLocked
+            ? Icons.lock_outline
+            : p.isBound
+                ? Icons.account_circle
+                : Icons.person_outline),
       ),
       title: Text(_title(p)),
       subtitle: Text(_subtitle(p)),
       trailing: p.isActive
           ? const Chip(label: Text('Active'))
-          : FilledButton.tonal(
-              onPressed: () => _switch(context, ref),
-              child: const Text('Switch'),
-            ),
+          : p.isLocked
+              ? FilledButton.tonalIcon(
+                  // Signing in with this profile's account unlocks and opens
+                  // it (ADR-0024); another account goes to its own profile.
+                  onPressed: () => startSignIn(context, ref),
+                  icon: const Icon(Icons.login),
+                  label: const Text('Sign in to open'),
+                )
+              : FilledButton.tonal(
+                  onPressed: () => _switch(context, ref),
+                  child: const Text('Switch'),
+                ),
     );
   }
 

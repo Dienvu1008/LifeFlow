@@ -137,6 +137,13 @@ class FakeWorld
       signInFailure = null;
       return SignInFailed(f);
     }
+    // ADR-0024: the account's own (locked) profile is unlocked and opened.
+    final owned = profiles.where((p) => p.isBound && p.provider == provider).firstOrNull;
+    if (owned != null) {
+      _setProfile(owned.id, bound: true, provider: provider, signedOut: false);
+      activeId = owned.id;
+      return SignedIn(owned.asActive(true), switchedProfile: true);
+    }
     if (_mine().isEmpty) return _bind(provider, move: true);
     _pendingProvider = provider;
     return NeedsBindChoice(provider: provider);
@@ -159,8 +166,20 @@ class FakeWorld
   @override
   Future<CommandResult> signOut() async {
     calls.add('signOut');
-    _setProfile(activeId, bound: false, provider: null);
-    return CommandOk(activeId, Version.initial, const []);
+    // ADR-0024: keep the binding, lock it, move to a guest (create if none).
+    final me = profiles.firstWhere((p) => p.id == activeId);
+    _setProfile(activeId, bound: true, provider: me.provider, signedOut: true);
+    final guest = profiles.where((p) => !p.isBound).firstOrNull;
+    if (guest == null) {
+      final id = 'guest${_n++}';
+      profiles.add(ProfileView(
+          id: id, displayName: '', isActive: false, isBound: false));
+      _tasks[id] = [];
+      activeId = id;
+    } else {
+      activeId = guest.id;
+    }
+    return CommandOk(me.id, Version.initial, const []);
   }
 
   SignInOutcome _bind(String provider, {required bool move}) {
@@ -176,7 +195,8 @@ class FakeWorld
     return SignedIn(profiles.last.asActive(true), switchedProfile: true);
   }
 
-  void _setProfile(String id, {required bool bound, String? provider}) {
+  void _setProfile(String id,
+      {required bool bound, String? provider, bool signedOut = false}) {
     final i = profiles.indexWhere((p) => p.id == id);
     final p = profiles[i];
     profiles[i] = ProfileView(
@@ -184,7 +204,8 @@ class FakeWorld
         displayName: p.displayName,
         isActive: p.isActive,
         isBound: bound,
-        provider: provider);
+        provider: provider,
+        isSignedOut: signedOut);
   }
 
   void _replace(String id, TaskView Function(TaskView) f) {
@@ -212,6 +233,7 @@ extension on ProfileView {
         isActive: active,
         isBound: isBound,
         provider: provider,
+        isSignedOut: isSignedOut,
       );
 }
 

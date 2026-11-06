@@ -145,5 +145,6 @@ class ProfileStore {
                 boundAt: Instant(row.createdAt), // bind time not separately stored in MVP
               )
             : null,
+        signedOut: row.signedOut,
       );
 }

@@ -34,8 +34,11 @@ Decide who owns and may touch data, and provide the guest-first profile and opti
 |---|---|---|---|---|---|---|---|
 | `CreateLocalProfile` | system (first launch) | displayName? | no active profile | profile + personal workspace | `ProfileCreated` | by `operationId`; re-run returns the existing first profile | n/a (new) |
 | `BindAccount` | local owner | accountId, provider, moveData: bool | signed-in via AuthGateway | binding or a new profile | `ProfileBoundToAccount` (+ `ProfileCreated` if moveData=false) | by `operationId` | `expectedVersion` on the profile |
-| `SignOut` | local owner | — | bound profile | session cleared | `SignedOut` | idempotent | — |
-| `SwitchProfile` | local owner | profileId | profile exists on device | active profile changed | — | idempotent | — |
+| `SignOut` | local owner | — | bound, signed-in profile | session cleared; **binding kept, profile locked** (ADR-0024); app moves to a guest + chooser | `SignedOut` | by `operationId` | `expectedVersion` on the profile |
+| `ResumeSession` | local owner | accountId | profile signed out, bound to the same account | profile unlocked and opened (ADR-0024) | `SessionResumed` | by `operationId` | `expectedVersion` on the profile |
+| `SwitchProfile` | local owner | profileId | profile exists on device and is **not locked** | active profile changed (device registry, ADR-0023) | — | idempotent | — |
+
+[Refined by owner 2026-11-06, ADR-0024] Sign-out **keeps** the account binding and **locks** the profile until the same account signs in again; offline or token expiry never locks it. The app moves to a guest profile and the chooser.
 
 [Decision, owner 2026-11-04] OQ-S7 resolved: on `SignOut`, the app returns to a **profile chooser**; all profiles and their data **stay on the device** (nothing is deleted); each profile is bound to **at most one account**; a different account may sign in on a new profile. This is a Decision for the MVP. The P04 refinements (what sign-out means once content is synced to a backend) remain a Proposal pending P04.
 
@@ -60,6 +63,7 @@ No method exposes another profile's workspace to a query that is not scoped by i
 ## 10. Open questions
 - OQ-S7: **resolved** (see the Decision above the commands table).
 - OQ-S8 (P04): binding to an account that already has cloud data.
+- OQ-S9 (new, from ADR-0024; not P01): move all or part of a guest profile's data into a signed-in account's profile. Needs selection, duplicate handling and an id-preservation rule. Today "Move my data" only binds the whole guest profile in place.
 - OQ-WA-1: is the auth provider's `accountId` stored in plain local storage or secure storage? Proposal: secure storage for tokens, plain storage for the non-secret `accountId`. Security batch confirms.
 
 ## 11. Implementation status (P01)
