@@ -111,6 +111,7 @@ Every non-trivial statement carries one of these labels.
 | [architecture/ui-ux-architecture.md](architecture/ui-ux-architecture.md) | Adaptive layout, navigation, cross-cutting interactions, state boundary |
 | [architecture/repository-structure.md](architecture/repository-structure.md) | Monorepo, package dependency table, fitness-function IDs FF-ARCH-01..08 |
 | ADRs 0018–0020 | License policy; Riverpod + go_router; editor decision/spike |
+| [adr/0021-encryption-at-rest-platform-posture.md](adr/0021-encryption-at-rest-platform-posture.md) | P01/T5: encryption injectable — Android encrypted, Windows MVP plain + tracked exception |
 
 ## Batch 4 documents
 

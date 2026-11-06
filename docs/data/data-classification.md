@@ -35,6 +35,11 @@ Notes:
 - Cloud AI with Confidential data requires both the feature toggle and a per-request consent; Restricted is never sent to cloud AI.
 - Auth tokens (Restricted) live only in secure storage and never appear in exports, logs, sync or AI context (LF-INV-SEC-001).
 
+### 2a. At-rest encryption posture per platform (ADR-0021, T5)
+The egress matrix above governs data **leaving** the device. At-rest protection on the device itself depends on the platform (ADR-0021):
+- **Android**: the local DB is encrypted at rest (SQLite3MultipleCiphers), so all classes including **Restricted** are encrypted at rest.
+- **Windows (MVP)**: the local DB runs **plain** as a tracked exception. Consequence: **Restricted data (health, etc.) is NOT encrypted at rest on Windows in the MVP.** This is explicit, not silent — the startup self-check warns and records it (SR-01a). Mitigations: OS full-disk encryption (BitLocker, SR-01b), a UI warning before storing Restricted data on Windows (SR-01c), and the local export as the controlled backup. Auth tokens and keys stay in secure storage regardless (SR-01d / LF-INV-SEC-001). Promote Windows to encrypted when a Windows-clean path ships.
+
 ## 3. Classification rules
 - [Decision] Default class for new user content is **Personal**.
 - [Decision] Health and activity data is **Restricted** regardless of source.
