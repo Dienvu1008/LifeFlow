@@ -6,3 +6,6 @@
 **/android/.gradle/
 **/windows/flutter/ephemeral/
 *.log
+
+# Local IDE settings (machine-specific, e.g. absolute CMake paths)
+.vscode/
