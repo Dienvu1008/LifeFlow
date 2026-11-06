@@ -12,3 +12,4 @@ export 'src/task_command_handler.dart';
 export 'src/profile_store.dart';
 export 'src/profile_command_handler.dart';
 export 'src/storage_security.dart';
+export 'src/app_service_impl.dart';

@@ -2,14 +2,12 @@ name: ui
 description: >-
   LifeFlow UI: widgets, view models (Riverpod), router (go_router), adaptive
   shells. Depends on application (via view models), never on infrastructure or
-  domain internals. Scaffold skeleton (P01). ADR-0019.
+  domain internals (FF-ARCH-04). ADR-0019.
 publish_to: "none"
 version: 0.0.1
-
 environment:
   sdk: ">=3.5.0 <4.0.0"
   flutter: ">=3.24.0"
-
 dependencies:
   flutter:
     sdk: flutter
@@ -17,7 +15,8 @@ dependencies:
   go_router: ^14.0.0
   foundation:
     path: ../foundation
-
+  application:
+    path: ../application
 dev_dependencies:
   flutter_test:
     sdk: flutter

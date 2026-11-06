@@ -50,11 +50,16 @@ flowchart LR
 - Cross-platform: layout, routing, view models, overlays, panels, most widgets.
 - Platform-specific: text-selection adapters per renderer (PDF/WebView/native), notifications/background behavior (technical-stack candidates + S-05), file dialogs, and any desktop-only window management.
 
-## 8. Open questions
-- OQ-UI-1: exact breakpoint widths (benchmark in P01).
+## 8. Implementation status (P01)
+- **T6a (2026-11-06):** `packages/ui` implements the adaptive shell (compact = `NavigationBar`, medium = labelled `NavigationRail`, expanded = extended rail) from one go_router `StatefulShellRoute`; Tasks and Profiles screens; the non-silent storage banner (ADR-0021, SR-01a) as a live region. `ui` sees only `application` ports and read models (`TaskQueries`, `TaskService`, `ProfileService`, `StorageNotice`), enforced by **FF-ARCH-04** in CI. `apps/lifeflow_app` is the composition root; the DB lives in the app-private support directory, not Documents.
+- Breakpoints adopted provisionally at **600 / 840 px** (Material 3 window size classes); OQ-UI-1 stays open for benchmarking.
+- Deferred to T6b: real sign-in (`SupabaseAuthGateway`) and the guest→bind UI; Android encrypted executor.
+
+## 9. Open questions
+- OQ-UI-1: exact breakpoint widths (benchmark in P01). Provisional 600/840 in use.
 - OQ-UI-2: desktop window state (multi-window?) — out of MVP unless needed.
 
-## 9. Self-check
+## 10. Self-check
 - [x] Adaptive by window size, not device type.
 - [x] Business logic out of widgets; UI not the domain source of truth (AP-12).
 - [x] Focus overlay persistence and selection adapter covered.

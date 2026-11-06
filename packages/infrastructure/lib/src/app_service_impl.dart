@@ -1,0 +1,222 @@
+// P01 T6a: infrastructure implementations of the ports the UI consumes
+// (application/app_services.dart) plus the production authorization policy.
+// Every write goes through the DriftCommandGateway (ADR-0011).
+import 'package:application/application.dart';
+import 'package:domain/domain.dart' show LocalProfile;
+import 'package:drift/drift.dart';
+import 'package:foundation/foundation.dart';
+import 'package:uuid/uuid.dart';
+
+import 'app_database.dart';
+import 'profile_command_handler.dart';
+import 'profile_store.dart';
+import 'storage_security.dart';
+import 'task_command_handler.dart';
+
+/// MVP authorization policy (authorization-model.md): the owner of a workspace
+/// may act on it; everyone else is denied (LF-INV-GOV-002, GS-11). Reads the
+/// workspace owner from the store so it cannot be spoofed by the caller.
+class WorkspaceOwnerAuthorization implements AuthorizationService {
+  WorkspaceOwnerAuthorization(this.db);
+  final AppDatabase db;
+
+  @override
+  Future<String?> denyReason(
+      ActorRef actor, String action, ResourceRef ref) async {
+    if (actor.kind != ActorKind.owner) {
+      return 'only the workspace owner may act in the MVP';
+    }
+    final ws = await (db.select(db.workspaces)
+          ..where((w) => w.id.equals(ref.workspaceId)))
+        .getSingleOrNull();
+    if (ws == null) return 'unknown workspace';
+    if (ws.ownerId != actor.id) return 'not the owner of this workspace';
+    return null;
+  }
+}
+
+/// Maps the startup self-check to the UI-facing notice (ADR-0021).
+StorageNotice storageNoticeFrom(AtRestStatus s) => StorageNotice(
+      atRestEncrypted: s.encrypted,
+      trackedException: s.isTrackedException,
+      message: s.warning,
+    );
+
+/// Read side: tasks of the ACTIVE profile's workspace, trash excluded.
+class DriftTaskQueries implements TaskQueries {
+  DriftTaskQueries(this.db) : _store = ProfileStore(db);
+  final AppDatabase db;
+  final ProfileStore _store;
+
+  @override
+  Stream<List<TaskView>> watchTasks() async* {
+    final profile = await _store.getActiveProfile();
+    if (profile == null) {
+      yield const [];
+      return;
+    }
+    final query = db.select(db.tasks)
+      ..where((t) =>
+          t.workspaceId.equals(profile.activeWorkspaceId.value) &
+          t.deletedAt.isNull())
+      // Insertion order: createdAt has second precision, rowid is exact.
+      ..orderBy([(t) => OrderingTerm(expression: const CustomExpression<int>('rowid'))]);
+    yield* query.watch().map((rows) => [
+          for (final r in rows)
+            TaskView(
+              id: r.id,
+              title: r.title,
+              status: r.status,
+              parentId: r.parentTaskId,
+              createdAt: r.createdAt,
+            ),
+        ]);
+  }
+}
+
+/// Write side for tasks via the gateway, acting as the active profile's owner.
+class DriftTaskService implements TaskService {
+  DriftTaskService(this.db, this.gateway) : _store = ProfileStore(db);
+  final AppDatabase db;
+  final CommandGateway gateway;
+  final ProfileStore _store;
+  final _handler = TaskCommandHandler();
+  final _uuid = const Uuid();
+
+  Future<CommandResult> _run(
+    String type,
+    Map<String, Object?> payload, {
+    Version? expected,
+  }) async {
+    final profile = await _store.getActiveProfile();
+    if (profile == null) {
+      return const CommandFailure(CommandFailureKind.notFound,
+          reason: 'no active profile');
+    }
+    return gateway.execute(
+      Command(
+        operationId: _uuid.v7(),
+        actor: ActorRef(ActorKind.owner, profile.profileId.value),
+        workspaceId: profile.activeWorkspaceId.value,
+        type: type,
+        payload: payload,
+        expectedVersion: expected,
+        issuedAt: Instant.now(),
+      ),
+      _handler,
+    );
+  }
+
+  Future<Version?> _versionOf(String id) async {
+    final row = await (db.select(db.tasks)..where((t) => t.id.equals(id)))
+        .getSingleOrNull();
+    return row == null ? null : Version(row.version);
+  }
+
+  Future<CommandResult> _update(
+      String type, String id, Map<String, Object?> extra) async {
+    final v = await _versionOf(id);
+    if (v == null) {
+      return const CommandFailure(CommandFailureKind.notFound,
+          reason: 'task not found');
+    }
+    return _run(type, {'id': id, ...extra}, expected: v);
+  }
+
+  @override
+  Future<CommandResult> create(String title, {String? parentId}) {
+    final t = title.trim();
+    if (t.isEmpty) {
+      return Future.value(const CommandFailure(
+          CommandFailureKind.validationFailed,
+          reason: 'title is empty'));
+    }
+    return _run('CreateTask', {
+      'op': 'create',
+      'id': EntityId.generate().value,
+      'title': t,
+      'parentId': parentId,
+    });
+  }
+
+  @override
+  Future<CommandResult> rename(String id, String title) {
+    final t = title.trim();
+    if (t.isEmpty) {
+      return Future.value(const CommandFailure(
+          CommandFailureKind.validationFailed,
+          reason: 'title is empty'));
+    }
+    return _update('RenameTask', id, {'op': 'rename', 'title': t});
+  }
+
+  @override
+  Future<CommandResult> complete(String id, {required bool withDescendants}) =>
+      _update(
+        withDescendants ? 'CompleteTaskWithDescendants' : 'CompleteTaskOnly',
+        id,
+        {'op': 'complete', 'cascade': withDescendants ? 'all' : 'parentOnly'},
+      );
+
+  @override
+  Future<CommandResult> trash(String id) =>
+      _update('TrashTask', id, {'op': 'trash'});
+}
+
+/// Profile chooser backed by the store + profile commands (OQ-S7).
+class DriftProfileService implements ProfileService {
+  DriftProfileService(this.db, this.gateway) : _store = ProfileStore(db);
+  final AppDatabase db;
+  final CommandGateway gateway;
+  final ProfileStore _store;
+  final _handler = const ProfileCommandHandler();
+  final _uuid = const Uuid();
+
+  ProfileView _view(LocalProfile p, String? activeId) => ProfileView(
+        id: p.profileId.value,
+        displayName: p.displayName,
+        isActive: p.profileId.value == activeId,
+        isBound: p.isBound,
+        provider: p.binding?.provider.name,
+      );
+
+  @override
+  Future<ProfileView?> active() async {
+    final p = await _store.getActiveProfile();
+    return p == null ? null : _view(p, p.profileId.value);
+  }
+
+  @override
+  Future<List<ProfileView>> list() async {
+    final activeId = (await _store.getActiveProfile())?.profileId.value;
+    final all = await _store.listProfiles();
+    return [for (final p in all) _view(p, activeId)];
+  }
+
+  @override
+  Future<CommandResult> switchTo(String profileId) async {
+    final target = (await _store.listProfiles())
+        .where((p) => p.profileId.value == profileId)
+        .firstOrNull;
+    if (target == null) {
+      return const CommandFailure(CommandFailureKind.notFound,
+          reason: 'profile not found');
+    }
+    final row = await (db.select(db.profiles)
+          ..where((p) => p.id.equals(profileId)))
+        .getSingle();
+    // The target profile owns its own workspace, so it is the owner actor.
+    return gateway.execute(
+      Command(
+        operationId: _uuid.v7(),
+        actor: ActorRef(ActorKind.owner, profileId),
+        workspaceId: target.activeWorkspaceId.value,
+        type: 'SwitchProfile',
+        payload: {'op': 'switch', 'id': profileId},
+        expectedVersion: Version(row.version),
+        issuedAt: Instant.now(),
+      ),
+      _handler,
+    );
+  }
+}
