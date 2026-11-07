@@ -123,3 +123,17 @@ class OpDedupe extends Table {
   @override
   Set<Column> get primaryKey => {operationId};
 }
+
+/// ADR-0025 (T7b): the state of the profile just before the last restore into
+/// it, so that restore can be undone. It is an export document kept INSIDE
+/// the profile's own encrypted store (never a plain file). At most one row;
+/// written in the same transaction as the restore. Not part of an export.
+/// Schema v3.
+class RestoreSnapshots extends Table {
+  TextColumn get id => text()();
+  TextColumn get operationId => text()(); // the restore it can undo
+  DateTimeColumn get createdAt => dateTime()();
+  TextColumn get exportText => text()();
+  @override
+  Set<Column> get primaryKey => {id};
+}

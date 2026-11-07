@@ -9,7 +9,8 @@ library;
 // HANDLER REGISTRY: tools/fitness/ff_arch_06_09.dart fails CI if a class
 // implementing CommandHandler under lib/ is missing from the list below, so a
 // new handler cannot skip this test.
-//   handlers covered: TaskCommandHandler, ProfileCommandHandler
+//   handlers covered: TaskCommandHandler, ProfileCommandHandler,
+//                     ProfileRestoreHandler
 import 'package:application/application.dart';
 import 'package:drift/native.dart';
 import 'package:foundation/foundation.dart';
@@ -38,6 +39,7 @@ void main() {
   late DriftCommandGateway gw;
   late String profileId;
   late String wsId;
+  late String emptyExport; // the profile before any task: restoring it trashes them
   var n = 0;
 
   setUp(() async {
@@ -46,6 +48,7 @@ void main() {
     final p = await ProfileStore(db).ensureFirstProfile();
     profileId = p.profileId.value;
     wsId = p.activeWorkspaceId.value;
+    emptyExport = await ProfileExport.build(db);
     n = 0;
   });
   tearDown(() => db.close());
@@ -79,6 +82,7 @@ void main() {
   Future<String> aggregates() async => [
         for (final r in await db.select(db.tasks).get()) r.toJson(),
         for (final r in await db.select(db.profiles).get()) r.toJson(),
+        for (final r in await db.select(db.restoreSnapshots).get()) r.toJson(),
       ].toString();
 
   Future<int> versionOf(String table, String id) async => table == 'task'
@@ -88,6 +92,7 @@ void main() {
   /// One handler operation: how to build its command.
   final taskHandler = TaskCommandHandler();
   const profileHandler = ProfileCommandHandler();
+  const restoreHandler = ProfileRestoreHandler();
 
   Command command(String type, Map<String, Object?> payload,
           {String? opId, Version? expected}) =>
@@ -120,6 +125,10 @@ void main() {
           (v, op) => command('CompleteTaskOnly', {'op': 'complete', 'id': 't1', 'cascade': 'parentOnly'}, opId: op, expected: v)),
       ('task.trash', taskHandler, 'task', 't2',
           (v, op) => command('TrashTask', {'op': 'trash', 'id': 't2'}, opId: op, expected: v)),
+      ('profile.restore', restoreHandler, 'profile', profileId,
+          (v, op) => command('RestoreProfile', {'op': 'restore', 'id': profileId, 'text': emptyExport, 'mode': 'overwrite'}, opId: op, expected: v)),
+      ('profile.undoRestore', restoreHandler, 'profile', profileId,
+          (v, op) => command('UndoRestoreProfile', {'op': 'undo', 'id': profileId}, opId: op, expected: v)),
       ('profile.bind', profileHandler, 'profile', profileId,
           (v, op) => command('BindAccount', {'op': 'bind', 'id': profileId, 'accountId': 'acc', 'provider': 'github', 'hasData': false, 'moveData': true}, opId: op, expected: v)),
       ('profile.signOut', profileHandler, 'profile', profileId,

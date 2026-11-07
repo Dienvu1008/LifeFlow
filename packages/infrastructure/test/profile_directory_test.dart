@@ -158,6 +158,7 @@ void main() {
       await Services(host, FakeAuthGateway()).tasks.create('Kept across upgrade');
       // Turn both files back into what T6c-before-ADR-0024 builds wrote.
       await host.db.customStatement('ALTER TABLE profiles DROP COLUMN signed_out');
+      await host.db.customStatement('DROP TABLE restore_snapshots');
       await host.db.customStatement('PRAGMA user_version = 1');
       await host.close();
       await dir.close();
@@ -182,7 +183,31 @@ void main() {
       expect((await store.db.select(store.db.profiles).getSingle()).signedOut,
           isFalse);
       final v = await store.db.customSelect('PRAGMA user_version').getSingle();
-      expect(v.data.values.first, 2);
+      expect(v.data.values.first, 3); // and on to v3 (restore_snapshots)
+      expect(await store.db.select(store.db.restoreSnapshots).get(), isEmpty);
+    });
+
+    test('an existing v2 profile store upgrades to v3 (undo of restore, ADR-0025)',
+        () async {
+      var dir = await openDirectory(base, keys);
+      final id = (await dir.active())!.id;
+      final host = TestHost(dir);
+      await host.openActive();
+      await Services(host, FakeAuthGateway()).tasks.create('Kept across upgrade');
+      await host.db.customStatement('DROP TABLE restore_snapshots');
+      await host.db.customStatement('PRAGMA user_version = 2');
+      await host.close();
+      await dir.close();
+
+      dir = await openDirectory(base, keys);
+      addTearDown(dir.close);
+      final store = await dir.openProfile(id);
+      addTearDown(store.db.close);
+      expect((await store.db.select(store.db.tasks).get()).single.title,
+          'Kept across upgrade');
+      expect(await store.db.select(store.db.restoreSnapshots).get(), isEmpty);
+      final v = await store.db.customSelect('PRAGMA user_version').getSingle();
+      expect(v.data.values.first, 3);
     });
 
     test('a locked profile can never become active', () async {

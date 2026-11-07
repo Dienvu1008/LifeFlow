@@ -376,30 +376,102 @@ void main() {
     expect(find.text('Exported 3 tasks.'), findsOneWidget);
     await tester.pump(const Duration(seconds: 6)); // let the snackbar go
 
-    // Restore the same file: the profile is already here, so it is a copy.
+    // Restore the same file into the same profile: nothing differs.
     await tapAndSettle(find.text('Restore from a file'));
-    expect(find.text('Restored'), findsOneWidget);
-    expect(find.textContaining('separate copy'), findsOneWidget);
+    expect(find.text('Nothing to restore'), findsOneWidget);
     await tapAndSettle(find.widgetWithText(FilledButton, 'OK'));
-    final profiles = (await tester.runAsync(() => w.directory.list()))!;
-    expect(profiles, hasLength(2));
-    final copyId = profiles.firstWhere((e) => e.id != original).id;
 
-    // Switch to the copy: the same three tasks, hierarchy included.
-    await tapAndSettle(find.widgetWithText(FilledButton, 'Switch'), 14);
-    final root = tester.state<LifeFlowRootState>(find.byType(LifeFlowRoot));
-    expect(root.activeProfileId, copyId);
-    // A switch opens the new profile on its task list.
+    // The device drifts: one more task. Restoring now shows the difference.
+    await tapAndSettle(find.byIcon(Icons.checklist_outlined));
+    await add('Device only');
+    expect(find.text('Device only'), findsOneWidget);
+    await tapAndSettle(find.byIcon(Icons.people_outline));
+    await tapAndSettle(find.text('Restore from a file'));
+    expect(find.byKey(const Key('restore-choice')), findsOneWidget);
+    expect(find.text('Only on this device: 1'), findsOneWidget);
+
+    // Overwrite: the profile becomes the file; the extra task goes to trash.
+    await tapAndSettle(find.byKey(const Key('mode-overwrite')));
+    await tapAndSettle(find.byKey(const Key('restore-go')), 12);
+    expect(find.textContaining('Moved 1 item to the trash.'), findsOneWidget);
+    await tapAndSettle(find.widgetWithText(FilledButton, 'OK'));
+    // Never a second profile for the same data (owner decision, ADR-0025).
+    final profiles = (await tester.runAsync(() => w.directory.list()))!;
+    expect(profiles.single.id, original);
+
+    await tapAndSettle(find.byIcon(Icons.checklist_outlined));
+    expect(find.text('Device only'), findsNothing);
     expect(find.text('Learn English'), findsOneWidget);
     expect(find.text('Chapter 1'), findsOneWidget);
     expect(find.text('Pay rent'), findsOneWidget);
     expect(tester.getTopLeft(find.text('Chapter 1')).dx,
         greaterThan(tester.getTopLeft(find.text('Learn English')).dx));
 
-    // The copy is its own encrypted file (SR-03, GS-19).
-    expect(isPlainSqliteFile(w.directory.profileFile(copyId)), isFalse);
-    expect(w.directory.profileFile(copyId).path,
-        isNot(w.directory.profileFile(original).path));
+    // Undo brings the extra task back.
+    await tapAndSettle(find.byIcon(Icons.people_outline));
+    await tapAndSettle(find.byKey(const Key('undo-restore')));
+    await tapAndSettle(find.widgetWithText(FilledButton, 'Undo restore'), 12);
+    await tester.pump(const Duration(seconds: 6));
+    await settle(tester, 2);
+    await tapAndSettle(find.byIcon(Icons.checklist_outlined));
+    expect(find.text('Device only'), findsOneWidget);
+
+    // Still one encrypted file for the profile (SR-03, GS-19).
+    expect(isPlainSqliteFile(w.directory.profileFile(original)), isFalse);
+    await finish(tester, w);
+  });
+
+  testWidgets('a backup of a profile that is not on the device is restored as '
+      'a new profile with its own ids (GS-20 clean install)', (tester) async {
+    tester.view.physicalSize = const Size(1000, 1100);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final w = await pumpApp(tester, StoragePlatform.android);
+    Future<void> tapAndSettle(Finder f, [int rounds = 8]) async {
+      await tester.tap(f);
+      await settle(tester, rounds);
+    }
+
+    // A file from ANOTHER install (its own folder and keys): a profile with
+    // one task, exported there.
+    final other = (await tester.runAsync(() async {
+      final oldBase = Directory.systemTemp.createTempSync('lifeflow_oldphone_');
+      final oldKeys = MemoryKeys();
+      final oldDir = await ProfileDirectory.open(
+          baseDir: oldBase,
+          policy: AtRestPolicy.encrypt,
+          keysFor: oldKeys.call,
+          background: false);
+      final p = (await oldDir.active())!;
+      final store = await oldDir.openProfile(p.id);
+      final db = store.db;
+      final ws = (await db.select(db.workspaces).getSingle()).id;
+      await DriftCommandGateway(db, WorkspaceOwnerAuthorization(db)).execute(
+          Command(
+            operationId: 'op-old-1',
+            actor: ActorRef(ActorKind.owner, p.id),
+            workspaceId: ws,
+            type: 'CreateTask',
+            payload: {'op': 'create', 'id': 'old-task-1', 'title': 'Old phone task'},
+            issuedAt: Instant.now(),
+          ),
+          TaskCommandHandler());
+      final text = await ProfileExport.build(db);
+      await db.close();
+      await oldDir.close();
+      oldBase.deleteSync(recursive: true);
+      return (id: p.id, text: text);
+    }))!;
+    w.files.pickOverride = other.text;
+
+    await tapAndSettle(find.byIcon(Icons.people_outline));
+    await tapAndSettle(find.text('Restore from a file'));
+    expect(find.text('Restore as a new profile?'), findsOneWidget);
+    await tapAndSettle(find.widgetWithText(FilledButton, 'Restore'), 12);
+    expect(find.textContaining('was restored with 1 task'), findsOneWidget);
+    final ids = (await tester.runAsync(() => w.directory.list()))!.map((e) => e.id);
+    expect(ids, contains(other.id)); // original id kept (LF-INV-ID-001)
+    await tapAndSettle(find.widgetWithText(FilledButton, 'OK'));
     await finish(tester, w);
   });
 

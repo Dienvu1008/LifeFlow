@@ -130,8 +130,13 @@ class FakeWorld
   bool pickTooLarge = false;
   bool pickThrows = false;
 
-  /// What the next restore returns; default restores a new profile.
-  RestoreOutcome? nextRestore;
+  /// What inspect returns; default: a profile not on this device.
+  RestorePreview? nextPreview;
+
+  /// What the next restores return, in order; when empty, a restore adds a
+  /// new profile.
+  final restoreResults = <RestoreOutcome>[];
+  bool canUndo = false;
 
   @override
   Future<ExportFile> exportActiveProfile() async {
@@ -143,24 +148,41 @@ class FakeWorld
   }
 
   @override
-  Future<RestoreOutcome> restore(String text) async {
-    calls.add('restore:$text');
-    final r = nextRestore;
-    if (r != null) {
-      nextRestore = null;
-      if (r is Restored) {
-        profiles.add(ProfileView(
-            id: r.profile.id, displayName: r.profile.displayName,
-            isActive: false, isBound: false));
-        _tasks[r.profile.id] = [];
-      }
+  Future<RestorePreview> inspect(String text) async {
+    calls.add('inspect:$text');
+    return nextPreview ??
+        const RestoreAsNewProfile(displayName: 'Backup of work', taskCount: 3);
+  }
+
+  @override
+  Future<RestoreOutcome> restore(String text, {RestoreChoice? choice}) async {
+    calls.add('restore:$text:${_choice(choice)}');
+    if (restoreResults.isNotEmpty) {
+      final r = restoreResults.removeAt(0);
+      if (r is RestoredInto && !r.changedNothing) canUndo = true;
       return r;
     }
     final id = 'restored${_n++}';
     profiles.add(ProfileView(
         id: id, displayName: 'Backup of work', isActive: false, isBound: false));
     _tasks[id] = [];
-    return Restored(profiles.last, asCopy: false, taskCount: 3);
+    return Restored(profiles.last, taskCount: 3);
+  }
+
+  static String _choice(RestoreChoice? c) => c == null
+      ? '-'
+      : c.mode == RestoreMode.overwrite
+          ? 'overwrite'
+          : 'merge(newer=${c.takeNewer},missing=${c.addMissing},keepParents=${c.keepDeviceParents})';
+
+  @override
+  Future<bool> canUndoRestore() async => canUndo;
+
+  @override
+  Future<RestoreOutcome> undoLastRestore() async {
+    calls.add('undo');
+    canUndo = false;
+    return const RestoredInto(added: 0, updated: 1, removed: 0, undoAvailable: false);
   }
 
   @override

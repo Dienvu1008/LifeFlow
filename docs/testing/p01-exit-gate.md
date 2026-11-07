@@ -14,7 +14,7 @@ How to reproduce: `dart test` in `packages/foundation|domain|application|infrast
 | GS-12 concurrent writers, one wins | `command_gateway_test.dart`, `task_commands_test.dart` (expectedVersion) |
 | GS-18 hierarchy acyclic and bounded | `domain/test/task_rules_test.dart`, `task_commands_test.dart`, export validation in `profile_export_test.dart` |
 | GS-19 encryption at rest | `local_store_test.dart` (encrypt policy, upgrade from plain), `storage_security_test.dart` (header detection); Android and Windows both encrypted by default (ADR-0021, ADR-0022); owner confirmed on device |
-| GS-20 export/restore round trip | `profile_export_test.dart` (round trip, copy on existing, tampered, newer rejected), `data_flow_test.dart`, `app_integration_test.dart`; owner device check pending |
+| GS-20 export/restore round trip | `profile_export_test.dart` (clean-install round trip with original ids, tampered, newer rejected), `profile_restore_test.dart` (restore into the same profile: identical, overwrite, merge, hierarchy, undo; T7b), `data_flow_test.dart`, `app_integration_test.dart`; owner device check of T7b pending |
 | GS-22 guest to account keeps ids, offline | `account_service_test.dart`, `profile_commands_test.dart`, `ui/test/account_flow_test.dart`; owner confirmed on device (sign in, offline, sign-out lock) |
 
 ## Invariants
@@ -25,13 +25,13 @@ How to reproduce: `dart test` in `packages/foundation|domain|application|infrast
 | LF-INV-WA-001 | `domain/test/workspace_rules_test.dart`, `app_services_test.dart` |
 | LF-INV-TASK-001/002/003/004/010/011 | `domain/test/task_rules_test.dart`, `task_commands_test.dart` |
 | LF-INV-GOV-001/002/003 | `application/test/command_test.dart`, `authorization_gate_test.dart` (FF-ARCH-09), `atomic_set_test.dart`; one controlled exception recorded in ADR-0023 (registry intent) |
-| LF-INV-OUTBOX-001/002 | `atomic_set_test.dart`, `command_gateway_test.dart` |
+| LF-INV-OUTBOX-001/002 | `atomic_set_test.dart`, `command_gateway_test.dart`; a restore writes one outbox row per changed record (`profile_restore_test.dart`) |
 | LF-INV-AUDIT-001 | `atomic_set_test.dart`; audit in every handler test |
-| LF-INV-VER-001 | `command_gateway_test.dart`, `task_commands_test.dart` |
+| LF-INV-VER-001 | `command_gateway_test.dart`, `task_commands_test.dart`; versions only increase on restore (`profile_restore_test.dart`) |
 | LF-INV-SEC-001/002 | `storage_security_test.dart`, key never in db; offline session does not lock (ADR-0024 tests) |
 | LF-INV-SEC-010 | `profile_export_test.dart` (decrypted, versioned, checksummed, includes tombstones and audit; guard that every table is exported) |
 | LF-INV-SEC-011 | `local_store_test.dart`, `storage_security_test.dart` |
-| LF-INV-SYNC-004 (tombstone write) | `task_commands_test.dart`; tombstones round-trip in export |
+| LF-INV-SYNC-004 (tombstone write) | `task_commands_test.dart`; tombstones round-trip in export; overwrite and undo tombstone instead of deleting (`profile_restore_test.dart`) |
 
 ## Fitness functions
 
@@ -57,10 +57,11 @@ ADR-0021 to ADR-0025: encryption posture, Windows encryption, per-profile stores
 - OQ-S8: binding a profile to an account that already has cloud data (P04).
 - Sign-in uses email and GitHub; other providers are not in P01.
 
-## Test counts at T7
-foundation 3, domain 17, application 3, infrastructure 125 (incl. 25 export, 2 atomic-set, 8 authorization), ui 61, app 10.
+## Test counts at T7b
+foundation 3, domain 17, application 3, infrastructure 146 (incl. export, 21 restore, 2 atomic-set, 8 authorization), ui 68, app 11.
 
 ## Owner sign-off
-- [ ] T7 device check (Windows and Android): export warns and saves; restore round trips; restore as copy; tampered or newer file rejected.
+- [x] T7 device check (Windows and Android): export warns and saves; tampered or newer file rejected (owner, 2026-11-07). Restore-as-copy was rejected by the owner and replaced by T7b.
+- [ ] T7b device check (Windows and Android): identical file says nothing to restore; overwrite and merge options; hierarchy question; undo last restore; a file of a profile not on the device becomes a new profile.
 - [ ] CI green on the T7 branch.
 - [ ] Owner approves P01 as done.

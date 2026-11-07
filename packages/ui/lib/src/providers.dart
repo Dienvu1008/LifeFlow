@@ -32,6 +32,12 @@ final activeProfileProvider = FutureProvider.autoDispose<ProfileView?>(
   (ref) => ref.watch(profileServiceProvider).active(),
 );
 
+/// Whether the active profile can go back to its state before the last
+/// restore (ADR-0025). Invalidate after a restore or an undo.
+final canUndoRestoreProvider = FutureProvider.autoDispose<bool>(
+  (ref) => ref.watch(dataTransferServiceProvider).canUndoRestore(),
+);
+
 /// Every profile on the device, for the chooser (OQ-S7).
 final profilesProvider = FutureProvider.autoDispose<List<ProfileView>>(
   (ref) => ref.watch(profileServiceProvider).list(),

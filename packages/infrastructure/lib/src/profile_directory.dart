@@ -225,28 +225,19 @@ class ProfileDirectory {
     return (await _get(id.value))!;
   }
 
-  /// Restores a validated export as a NEW profile with its own file and key
-  /// (ADR-0025). It never replaces anything:
-  ///  - profile not on this device -> restored with its ORIGINAL ids
-  ///    (clean-install round trip, GS-20, LF-INV-ID-001);
-  ///  - profile already on this device -> restored as a COPY under new profile
-  ///    and workspace ids, so the existing profile is untouched.
+  /// Restores a validated export of a profile that is NOT on this device as a
+  /// new profile with its ORIGINAL ids, its own file and key (ADR-0025;
+  /// clean-install round trip, GS-20, LF-INV-ID-001). A profile that is on
+  /// this device is restored INTO its own store instead (profile_restore.dart),
+  /// never as a second profile, so this refuses it.
   /// The restored profile is inactive and unbound. On any failure the partly
   /// written file is removed and the registry is unchanged.
-  Future<({ProfileEntry entry, bool asCopy})> restoreFromExport(
-      ParsedExport parsed) async {
-    var data = parsed;
-    var asCopy = false;
-    if (await _get(parsed.profileId) != null ||
-        profileFile(parsed.profileId).existsSync()) {
-      data = parsed.asCopy(
-        newProfileId: EntityId.generate().value,
-        newWorkspaceId: EntityId.generate().value,
-        copyLabel: '(restored)',
-      );
-      asCopy = true;
-    }
+  Future<ProfileEntry> restoreFromExport(ParsedExport parsed) async {
+    final data = parsed;
     final id = data.profileId;
+    if (await _get(id) != null || profileFile(id).existsSync()) {
+      throw StateError('profile $id is already on this device');
+    }
     final file = profileFile(id);
     try {
       final store = await _openStore(id);
@@ -267,7 +258,7 @@ class ProfileDirectory {
       }
       rethrow;
     }
-    return (entry: (await _get(id))!, asCopy: asCopy);
+    return (await _get(id))!;
   }
 
   /// Records the intent to change [profileId]'s store (ADR-0023). Call before

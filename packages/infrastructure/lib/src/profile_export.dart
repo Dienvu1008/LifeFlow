@@ -40,6 +40,11 @@ const exportedTables = [
   'opDedupe',
 ];
 
+/// Tables that are deliberately NOT exported. `restoreSnapshots` holds the
+/// undo copy of the last restore (an export itself); exporting it would nest
+/// old data in every file.
+const notExportedTables = ['restoreSnapshots'];
+
 /// A file that must not be restored. [message] is safe to show to the user and
 /// never echoes file contents.
 class ExportRejected implements Exception {
@@ -74,25 +79,8 @@ class ParsedExport {
   String get displayName => profile.displayName;
   int get taskCount => tasks.length;
 
-  /// The same data under NEW profile/workspace ids, for restoring onto a device
-  /// that already has this profile. Every reference is rewritten consistently;
-  /// the result is validated again.
-  ParsedExport asCopy({
-    required String newProfileId,
-    required String newWorkspaceId,
-    required String copyLabel,
-  }) {
-    var text = jsonEncode(_payload);
-    text = text
-        .replaceAll(profileId, newProfileId)
-        .replaceAll(workspaceId, newWorkspaceId);
-    final map = (jsonDecode(text) as Map).cast<String, Object?>();
-    final profiles = (map['profiles'] as List).cast<Map<String, Object?>>();
-    final name = (profiles.single['displayName'] as String?) ?? '';
-    profiles.single['displayName'] =
-        '${name.trim().isEmpty ? 'Guest' : name} $copyLabel';
-    return ProfileExport._decode(map, schemaVersion, exportedAt);
-  }
+  /// The validated payload (read-only use).
+  Map<String, Object?> get payload => _payload;
 }
 
 class ProfileExport {
@@ -103,19 +91,23 @@ class ProfileExport {
   /// Builds the export text for the single profile in [db]. Reads one
   /// consistent snapshot. [now] is injectable for tests.
   static Future<String> build(AppDatabase db, {DateTime? now}) async {
-    final payload = await db.transaction(() async => <String, Object?>{
-          'profiles': [for (final r in await db.select(db.profiles).get()) r.toJson()],
-          'workspaces': [for (final r in await db.select(db.workspaces).get()) r.toJson()],
-          'taskLists': [for (final r in await db.select(db.taskLists).get()) r.toJson()],
-          // Includes trashed tasks: tombstones are part of the data (SYNC-004).
-          'tasks': [for (final r in await db.select(db.tasks).get()) r.toJson()],
-          'auditLog': [for (final r in await db.select(db.auditLog).get()) r.toJson()],
-          'outbox': [for (final r in await db.select(db.outbox).get()) r.toJson()],
-          'eventLog': [for (final r in await db.select(db.eventLog).get()) r.toJson()],
-          'opDedupe': [for (final r in await db.select(db.opDedupe).get()) r.toJson()],
-        });
+    final payload = await db.transaction(() => payloadOf(db));
     return seal(payload, schemaVersion: db.schemaVersion, now: now);
   }
+
+  /// The export payload of [db], read in the CALLER's transaction (if any).
+  static Future<Map<String, Object?>> payloadOf(AppDatabase db) async =>
+      <String, Object?>{
+        'profiles': [for (final r in await db.select(db.profiles).get()) r.toJson()],
+        'workspaces': [for (final r in await db.select(db.workspaces).get()) r.toJson()],
+        'taskLists': [for (final r in await db.select(db.taskLists).get()) r.toJson()],
+        // Includes trashed tasks: tombstones are part of the data (SYNC-004).
+        'tasks': [for (final r in await db.select(db.tasks).get()) r.toJson()],
+        'auditLog': [for (final r in await db.select(db.auditLog).get()) r.toJson()],
+        'outbox': [for (final r in await db.select(db.outbox).get()) r.toJson()],
+        'eventLog': [for (final r in await db.select(db.eventLog).get()) r.toJson()],
+        'opDedupe': [for (final r in await db.select(db.opDedupe).get()) r.toJson()],
+      };
 
   /// Wraps [payload] in the envelope with counts and checksum. Public so tests
   /// can build files that are structurally wrong but correctly sealed.

@@ -112,7 +112,7 @@ void main() {
       (jsonDecode(text) as Map).cast<String, Object?>();
   Map<String, Object?> payloadOf(String text) =>
       (envelope(text)['payload'] as Map).cast<String, Object?>();
-  ParsedExport parse(String text) => ProfileExport.parse(text, currentSchemaVersion: 2);
+  ParsedExport parse(String text) => ProfileExport.parse(text, currentSchemaVersion: 3);
   void expectRejected(String text, RestoreRejection kind, {String? mentions}) {
     try {
       parse(text);
@@ -126,8 +126,15 @@ void main() {
   group('export content', () {
     test('covers every table of the schema (guard for LF-INV-SEC-010)',
         () async {
-      // A new table must be added to the export, or this test fails.
-      expect(host.db.allTables.length, exportedTables.length);
+      // A new table must be added to the export (or deliberately listed as
+      // not exported), or this test fails.
+      expect(host.db.allTables.map((t) => t.entityName).toSet(), {
+        ...['profiles', 'workspaces', 'task_lists', 'tasks', 'audit_log',
+            'outbox', 'event_log', 'op_dedupe'],
+        'restore_snapshots',
+      });
+      expect(host.db.allTables.length,
+          exportedTables.length + notExportedTables.length);
       final text = await ProfileExport.build(host.db);
       expect(payloadOf(text).keys, unorderedEquals(exportedTables));
     });
@@ -139,7 +146,7 @@ void main() {
       final env = envelope(f.contents);
       expect(env['format'], 'lifeflow-export');
       expect(env['formatVersion'], 1);
-      expect(env['schemaVersion'], 2);
+      expect(env['schemaVersion'], 3);
       expect(env['checksumSha256'], matches(RegExp(r'^[0-9a-f]{64}$')));
       expect(env['notice'], contains('unencrypted'));
       final tasks = (payloadOf(f.contents)['tasks'] as List).cast<Map>();
@@ -184,8 +191,7 @@ void main() {
       final r = await cleanTransfer.restore(file.contents);
       expect(r, isA<Restored>(), reason: '$r');
       final restored = r as Restored;
-      expect(restored.asCopy, isFalse); // clean install: original ids
-      expect(restored.profile.id, profileId);
+      expect(restored.profile.id, profileId); // clean install: original ids
       expect(restored.taskCount, 5);
 
       final store = await cleanDir.openProfile(profileId);
@@ -253,54 +259,22 @@ void main() {
     });
   });
 
-  group('restore onto a device that already has the profile', () {
-    test('becomes a COPY under new ids; the original is untouched', () async {
+  group('the same profile is never restored as a second profile', () {
+    test('without a choice nothing is written and no profile is added',
+        () async {
       await seed();
       final before = await snapshot(host.db);
       final file = await transfer.exportActiveProfile();
-
       final r = await transfer.restore(file.contents);
-      expect(r, isA<Restored>(), reason: '$r');
-      final restored = r as Restored;
-      expect(restored.asCopy, isTrue);
-      expect(restored.profile.id, isNot(profileId));
-      expect(restored.profile.displayName, contains('(restored)'));
-      expect(restored.profile.isActive, isFalse);
-
-      // The original profile and its store did not change.
+      expect(r, isA<RestoreRejected>());
+      expect((r as RestoreRejected).kind, RestoreRejection.notApplicable);
+      expect(await dir.list(), hasLength(1));
       expect(await snapshot(host.db), before);
-      expect((await dir.list()), hasLength(2));
-      expect((await dir.active())!.id, profileId);
-
-      // The copy has the same data under new ids, and no reference to the old.
-      final copy = await dir.openProfile(restored.profile.id);
-      addTearDown(copy.db.close);
-      final tasks = await copy.db.select(copy.db.tasks).get();
-      expect(tasks.map((t) => t.title), unorderedEquals(
-          ['Learn English', 'Chapter 1', 'Chapter 2', 'Old idea', 'Pay rent']));
-      final ws = (await copy.db.select(copy.db.workspaces).getSingle());
-      expect(ws.id, isNot(workspaceId));
-      expect(ws.ownerId, restored.profile.id);
-      expect(tasks.every((t) => t.workspaceId == ws.id), isTrue);
-      final dump = StringBuffer()
-        ..write(await copy.db.select(copy.db.profiles).get())
-        ..write(tasks)
-        ..write(await copy.db.select(copy.db.auditLog).get())
-        ..write(await copy.db.select(copy.db.outbox).get())
-        ..write(await copy.db.select(copy.db.opDedupe).get());
-      expect(dump.toString().contains(profileId), isFalse);
-      expect(dump.toString().contains(workspaceId), isFalse);
-      // The copy has its own file and key.
-      expect(keys.values.containsKey(ProfileDirectory.profileKeyName(restored.profile.id)), isTrue);
-    });
-
-    test('restoring twice makes two independent copies', () async {
-      await seed();
-      final file = await transfer.exportActiveProfile();
-      final a = await transfer.restore(file.contents) as Restored;
-      final b = await transfer.restore(file.contents) as Restored;
-      expect(a.profile.id, isNot(b.profile.id));
-      expect(await dir.list(), hasLength(3));
+      // The directory refuses it too (defence in depth).
+      await expectLater(
+          dir.restoreFromExport(parse(file.contents)), throwsStateError);
+      expect(await dir.list(), hasLength(1));
+      expect(dir.profileFile(profileId).existsSync(), isTrue);
     });
   });
 
@@ -318,7 +292,7 @@ void main() {
     });
 
     test('a file from a newer schema is rejected (AC-20a.2)', () {
-      final env = envelope(good)..['schemaVersion'] = 3;
+      final env = envelope(good)..['schemaVersion'] = 4;
       expectRejected(jsonEncode(env), RestoreRejection.newerVersion);
     });
 
@@ -343,7 +317,7 @@ void main() {
 
     test('an oversized file is refused before parsing', () {
       try {
-        ProfileExport.parse(good, currentSchemaVersion: 2, maxBytes: 100);
+        ProfileExport.parse(good, currentSchemaVersion: 3, maxBytes: 100);
         fail('expected rejection');
       } on ExportRejected catch (e) {
         expect(e.kind, RestoreRejection.tooLarge);
@@ -357,7 +331,7 @@ void main() {
     });
 
     Map<String, Object?> sealedPayload() => payloadOf(good);
-    String reseal(Map<String, Object?> p) => ProfileExport.seal(p, schemaVersion: 2);
+    String reseal(Map<String, Object?> p) => ProfileExport.seal(p, schemaVersion: 3);
 
     test('a correctly sealed file with a parent cycle is rejected', () {
       final p = sealedPayload();

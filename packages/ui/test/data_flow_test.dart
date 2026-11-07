@@ -73,40 +73,187 @@ void main() {
     });
   });
 
-  group('restore', () {
-    testWidgets('a valid file adds a separate profile and says how to open it',
+
+  group('restore: a profile not on this device', () {
+    testWidgets('asks first, then adds it as a separate profile',
         (tester) async {
       final w = world()..pickResult = '{"the":"file"}';
       await openProfiles(tester, w);
       await tester.tap(find.text('Restore from a file'));
       await tester.pumpAndSettle();
-      expect(w.calls, ['pick', 'restore:{"the":"file"}']);
-      expect(find.text('Restored'), findsOneWidget);
+      expect(find.text('Restore as a new profile?'), findsOneWidget);
+      expect(find.textContaining('"Backup of work" (3 tasks)'), findsOneWidget);
+      expect(w.calls, ['pick', 'inspect:{"the":"file"}']); // nothing written yet
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Restore'));
+      await tester.pumpAndSettle();
+      expect(w.calls.last, 'restore:{"the":"file"}:-');
       expect(find.textContaining('was restored with 3 tasks'), findsOneWidget);
-      expect(find.textContaining('Switch to it'), findsOneWidget);
       await tester.tap(find.widgetWithText(FilledButton, 'OK'));
       await tester.pumpAndSettle();
-      // The new profile is now listed with a Switch button; not activated.
       expect(find.text('Backup of work'), findsOneWidget);
       expect(find.widgetWithText(FilledButton, 'Switch'), findsOneWidget);
       expect(w.activeId, 'A');
     });
 
-    testWidgets('a profile already on the device is explained as a copy',
-        (tester) async {
-      final w = world()
-        ..pickResult = 'x'
-        ..nextRestore = Restored(
-            profile('A2', 'Guest (restored)'), asCopy: true, taskCount: 1);
+    testWidgets('Cancel adds nothing', (tester) async {
+      final w = world()..pickResult = 'x';
       await openProfiles(tester, w);
       await tester.tap(find.text('Restore from a file'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('already on this device'), findsOneWidget);
-      expect(find.textContaining('separate copy'), findsOneWidget);
-      expect(find.textContaining('was not changed'), findsOneWidget);
-      expect(find.textContaining('1 task.'), findsOneWidget); // singular
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.pumpAndSettle();
+      expect(w.calls, ['pick', 'inspect:x']);
+      expect(w.profiles, hasLength(1));
+    });
+  });
+
+  group('restore into this profile (no second profile)', () {
+    const diff = RestoreDiff(
+        onlyInFile: 2, onlyOnDevice: 1, differing: 3, newerInFile: 1);
+
+    testWidgets('an identical file says there is nothing to restore',
+        (tester) async {
+      final w = world()
+        ..pickResult = 'x'
+        ..nextPreview = const RestoreIdentical();
+      await openProfiles(tester, w);
+      await tester.tap(find.text('Restore from a file'));
+      await tester.pumpAndSettle();
+      expect(find.text('Nothing to restore'), findsOneWidget);
+      expect(find.textContaining('are the same'), findsOneWidget);
+      expect(w.calls, ['pick', 'inspect:x']);
+      expect(w.profiles, hasLength(1));
     });
 
+    testWidgets('a different file shows the differences and the choices',
+        (tester) async {
+      final w = world()
+        ..pickResult = 'x'
+        ..nextPreview = const RestoreDifferent(diff);
+      await openProfiles(tester, w);
+      await tester.tap(find.text('Restore from a file'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('restore-choice')), findsOneWidget);
+      expect(find.text('Only in the file: 2'), findsOneWidget);
+      expect(find.text('Only on this device: 1'), findsOneWidget);
+      expect(find.textContaining('different: 3 (newer in the file: 1)'), findsOneWidget);
+      expect(find.text('Overwrite everything'), findsOneWidget);
+      expect(find.text('Merge'), findsWidgets);
+      expect(find.text('Use the newer version'), findsOneWidget);
+      expect(find.text('Add what is only in the file'), findsOneWidget);
+    });
+
+    testWidgets('overwrite: applies, reports, and offers undo', (tester) async {
+      final w = world()
+        ..pickResult = 'x'
+        ..nextPreview = const RestoreDifferent(diff)
+        ..restoreResults.add(const RestoredInto(
+            added: 2, updated: 3, removed: 1, undoAvailable: true));
+      await openProfiles(tester, w);
+      expect(find.byKey(const Key('undo-restore')), findsNothing);
+      await tester.tap(find.text('Restore from a file'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('mode-overwrite')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('restore-go')));
+      await tester.pumpAndSettle();
+      expect(w.calls.last, 'restore:x:overwrite');
+      expect(find.textContaining('Added 2 items. Updated 3 items. Moved 1 item to the trash.'),
+          findsOneWidget);
+      expect(w.profiles, hasLength(1)); // never a second profile
+      await tester.tap(find.widgetWithText(FilledButton, 'OK'));
+      await tester.pumpAndSettle();
+
+      // Undo is offered and asks first.
+      await tester.tap(find.byKey(const Key('undo-restore')));
+      await tester.pumpAndSettle();
+      expect(find.text('Undo the last restore?'), findsOneWidget);
+      await tester.tap(find.widgetWithText(FilledButton, 'Undo restore'));
+      await tester.pumpAndSettle();
+      expect(w.calls.last, 'undo');
+      expect(find.text('The last restore was undone.'), findsOneWidget);
+      expect(find.byKey(const Key('undo-restore')), findsNothing);
+    });
+
+    testWidgets('merge: the two options are passed through; both off cannot start',
+        (tester) async {
+      final w = world()
+        ..pickResult = 'x'
+        ..nextPreview = const RestoreDifferent(diff)
+        ..restoreResults.add(const RestoredInto(
+            added: 0, updated: 1, removed: 0, undoAvailable: true));
+      await openProfiles(tester, w);
+      await tester.tap(find.text('Restore from a file'));
+      await tester.pumpAndSettle();
+      // Merge is the default with both options on; turn both off.
+      await tester.tap(find.byKey(const Key('opt-newer')));
+      await tester.tap(find.byKey(const Key('opt-missing')));
+      await tester.pumpAndSettle();
+      final go = tester.widget<FilledButton>(find.byKey(const Key('restore-go')));
+      expect(go.onPressed, isNull);
+      // (a) only.
+      await tester.tap(find.byKey(const Key('opt-newer')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('restore-go')));
+      await tester.pumpAndSettle();
+      expect(w.calls.last, 'restore:x:merge(newer=true,missing=false,keepParents=false)');
+      expect(find.textContaining('Updated 1 item.'), findsOneWidget);
+    });
+
+    testWidgets('a hierarchy conflict offers: keep device parents, or cancel',
+        (tester) async {
+      final w = world()
+        ..pickResult = 'x'
+        ..nextPreview = const RestoreDifferent(diff)
+        ..restoreResults.addAll(const [
+          RestoreHierarchyConflict(['Learn English']),
+          RestoredInto(added: 0, updated: 1, removed: 0, undoAvailable: true),
+        ]);
+      await openProfiles(tester, w);
+      await tester.tap(find.text('Restore from a file'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('restore-go')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('hierarchy-conflict')), findsOneWidget);
+      expect(find.textContaining('• Learn English'), findsOneWidget);
+      await tester.tap(find.widgetWithText(FilledButton, 'Keep this device\'s parents'));
+      await tester.pumpAndSettle();
+      expect(w.calls.last, 'restore:x:merge(newer=true,missing=true,keepParents=true)');
+      expect(find.text('Restored'), findsOneWidget);
+    });
+
+    testWidgets('cancelling the hierarchy question changes nothing',
+        (tester) async {
+      final w = world()
+        ..pickResult = 'x'
+        ..nextPreview = const RestoreDifferent(diff)
+        ..restoreResults.add(const RestoreHierarchyConflict(['A', 'B']));
+      await openProfiles(tester, w);
+      await tester.tap(find.text('Restore from a file'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('restore-go')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+      await tester.pumpAndSettle();
+      expect(w.calls.where((c) => c.startsWith('restore:')), hasLength(1));
+      expect(find.text('Restore cancelled. Nothing was changed.'), findsOneWidget);
+    });
+
+    testWidgets('a file of another profile says where to restore it',
+        (tester) async {
+      final w = world()
+        ..pickResult = 'x'
+        ..nextPreview = const RestoreOtherProfile(displayName: 'Work', locked: true);
+      await openProfiles(tester, w);
+      await tester.tap(find.text('Restore from a file'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('belongs to "Work", which is signed out'), findsOneWidget);
+      expect(w.calls, ['pick', 'inspect:x']);
+    });
+  });
+
+  group('restore: rejected files', () {
     for (final c in <(RestoreRejection, String)>[
       (RestoreRejection.newerVersion,
           'This export was made by a newer version of LifeFlow. Update the app, then try again.'),
@@ -118,13 +265,14 @@ void main() {
           (tester) async {
         final w = world()
           ..pickResult = 'x'
-          ..nextRestore = RestoreRejected(c.$1, c.$2);
+          ..nextPreview = RestoreRejected(c.$1, c.$2);
         await openProfiles(tester, w);
         await tester.tap(find.text('Restore from a file'));
         await tester.pumpAndSettle();
         expect(find.text('Cannot restore'), findsOneWidget);
         expect(find.textContaining(c.$2), findsOneWidget);
         expect(find.textContaining('Nothing was changed.'), findsOneWidget);
+        expect(w.calls, ['pick', 'inspect:x']);
         expect(w.profiles, hasLength(1));
       });
     }
