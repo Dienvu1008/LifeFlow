@@ -11,6 +11,12 @@ import 'auth/supabase_auth_gateway.dart';
 import 'bootstrap.dart';
 import 'secure_key_store.dart';
 
+/// ADR-0022 controlled fallback: build with
+/// `--dart-define=LIFEFLOW_WINDOWS_PLAIN_DB=true` to keep a plain database on
+/// Windows. Only for a fresh install: an already-encrypted database is never
+/// downgraded (the app reports it instead).
+const windowsPlainFallback = bool.fromEnvironment('LIFEFLOW_WINDOWS_PLAIN_DB');
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -21,12 +27,13 @@ Future<void> main() async {
 
   final OpenedStore store;
   try {
-    // ADR-0021: Android encrypted with a key from secure storage; Windows MVP
-    // plain (tracked exception). An existing plain DB from an earlier build is
-    // encrypted in place on Android.
+    // ADR-0022: encrypted on every platform with a key from secure storage.
+    // An existing plain DB from an earlier build is encrypted in place.
+    // The ADR-0021 plain Windows posture survives only as an explicit build
+    // flag (controlled fallback), and is then shown as a tracked exception.
     store = await openLocalStore(
       file: file,
-      policy: atRestPolicyFor(platform),
+      policy: atRestPolicyFor(platform, windowsPlainFallback: windowsPlainFallback),
       keys: const SecureDatabaseKeyStore(),
     );
   } on StoreUnavailable catch (e) {
@@ -48,6 +55,7 @@ Future<void> main() async {
     platform: platform,
     cipherProbe: fileCipherProbe(file),
     auth: auth,
+    windowsPlainFallback: windowsPlainFallback,
     // Local log only; never uploaded (no telemetry, SR-15).
     onWarning: (m) => debugPrint('[storage] $m'),
   );

@@ -1,10 +1,13 @@
-// P01 T6b: opening the local store with the at-rest posture of ADR-0021.
+// P01 T6b / T5a: opening the local store with the at-rest posture of
+// ADR-0021 as amended by ADR-0022.
 //
 // The app links SQLite3MultipleCiphers on every platform. Whether a database
 // is encrypted depends only on whether a key is applied, so one binary serves
 // both postures:
-//   - Android: encrypted (random 256-bit key from secure storage, OQ-DATA-1).
-//   - Windows MVP: plain, a tracked exception (ADR-0021).
+//   - Default (Android and Windows): encrypted, random 256-bit key from
+//     secure storage (OQ-DATA-1). An existing plain DB is encrypted in place.
+//   - Windows plain fallback (explicit build flag only): plain, a tracked
+//     exception (ADR-0021 option B kept as a controlled fallback).
 //
 // Encryption is detected from the FILE HEADER, never from `PRAGMA cipher`:
 // sqlite3mc reports its configured cipher even for an unkeyed (plain) file,
@@ -22,12 +25,14 @@ import 'storage_security.dart';
 /// What the store should do at rest on a platform (ADR-0021).
 enum AtRestPolicy { encrypt, plain }
 
-AtRestPolicy atRestPolicyFor(StoragePlatform platform) => switch (platform) {
-      StoragePlatform.android => AtRestPolicy.encrypt,
-      // Windows MVP tracked exception; revisit per ADR-0021 option A.
-      StoragePlatform.windows => AtRestPolicy.plain,
-      // Unknown targets get the safe default.
-      StoragePlatform.other => AtRestPolicy.encrypt,
+/// ADR-0022: every platform is encrypted. [windowsPlainFallback] restores the
+/// ADR-0021 plain Windows posture for a build that explicitly asks for it
+/// (controlled fallback; still a visible tracked exception).
+AtRestPolicy atRestPolicyFor(StoragePlatform platform,
+        {bool windowsPlainFallback = false}) =>
+    switch (platform) {
+      StoragePlatform.windows when windowsPlainFallback => AtRestPolicy.plain,
+      _ => AtRestPolicy.encrypt,
     };
 
 /// Where the database key lives. Backed by platform secure storage in the app

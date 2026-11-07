@@ -43,13 +43,17 @@ Future<AppWiring> bootstrap(
   required StoragePlatform platform,
   required CipherProbe cipherProbe,
   required AuthGateway auth,
+  bool windowsPlainFallback = false,
   void Function(String message)? onWarning,
 }) async {
   // Writes the first page, so the header check below sees the real file.
   await ProfileStore(db).ensureFirstProfile();
 
-  final status = await StorageSecurity(platform: platform, onWarning: onWarning)
-      .evaluate(cipherProbe);
+  final status = await StorageSecurity(
+    platform: platform,
+    windowsPlainFallback: windowsPlainFallback,
+    onWarning: onWarning,
+  ).evaluate(cipherProbe);
 
   final gateway = DriftCommandGateway(db, WorkspaceOwnerAuthorization(db));
   await gateway.dispatchPendingEvents();

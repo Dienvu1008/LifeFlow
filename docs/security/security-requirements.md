@@ -9,14 +9,14 @@ Each requirement is testable. Priority M = MVP.
 ## 1. Storage and keys
 | ID | Requirement | Pri | Label | Source |
 |---|---|---|---|---|
-| SR-01 | The local database is encrypted at rest with SQLite3MultipleCiphers (whole-file); the app asserts `PRAGMA cipher` at startup. **Platform posture (ADR-0021, T5):** enforced on **Android**. On **Windows MVP** the DB runs **plain** as an explicit tracked exception (S-02: no Windows-clean build) — the startup self-check emits a warning and records `atRestEncrypted=false` in diagnostics (non-silent). Promote Windows to encrypted when a Windows-clean path ships. | M | Decision | VS-21, data-architecture §4, ADR-0021 |
+| SR-01 | The local database is encrypted at rest with SQLite3MultipleCiphers (whole-file); the app asserts `PRAGMA cipher` at startup. **Platform posture (ADR-0022, T5a):** enforced on **Android and Windows**. An existing plain DB is encrypted in place. A plain Windows DB is accepted only in a build made with `LIFEFLOW_WINDOWS_PLAIN_DB=true` (ADR-0021 fallback), and is then shown as a tracked exception; otherwise it is a policy violation. | M | Decision | VS-21, data-architecture §4, ADR-0021, ADR-0022 |
 | SR-02 | The DB encryption key and auth tokens are stored only in platform secure storage (`flutter_secure_storage`); never in the DB, plain files, logs, exports, sync or AI context. | M | Decision | VS-24, LF-INV-SEC-001 |
 | SR-03 | Each LocalProfile has its own DB file and its own key. **Tracked gap (P01 T4–T6b):** profiles currently share one DB file and one key; isolation is enforced by `workspaceId` scoping on every query and the owner policy (GS-11 tested), not by file separation. Per-profile files remain the target; schedule before P01 exit or record an accepted deviation. | M | Decision | data-architecture §6 |
 | SR-04 | A random 256-bit key is generated on first launch per profile; no user passphrase in MVP (OQ-DATA-1 resolved). Losing the device without an export means the data is unrecoverable (see OQ-DATA-3). | M | Decision | data-architecture §4 |
 | SR-05 | Attachments stored outside the DB are protected consistently with the DB (approach per OQ-DATA-2). | M | Proposal | data-architecture §2 |
 
-### 1a. Windows MVP plain-DB mitigations (ADR-0021)
-While Windows runs on a plain DB (tracked exception, T5), these mitigations apply and are surfaced to the user rather than left implicit:
+### 1a. Windows plain-DB mitigations (ADR-0021; fallback builds only since ADR-0022)
+Since ADR-0022 Windows is encrypted by default. SR-01a still applies to every build (the self-check always runs). SR-01b and SR-01c apply only to a build made with the plain-database fallback flag. While a Windows DB is plain, these mitigations apply and are surfaced to the user rather than left implicit:
 | ID | Requirement | Pri | Label |
 |---|---|---|---|
 | SR-01a | The startup storage self-check (`StorageSecurity.evaluate`) runs on every launch; when at-rest encryption is off it emits a local warning and sets `atRestEncrypted=false` + `trackedException=true` in the diagnostic bundle. Never silent. | M | Decision (ADR-0021) |

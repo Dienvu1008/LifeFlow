@@ -209,9 +209,10 @@ void main() {
     });
   });
 
-  test('storageNoticeFrom maps the Windows tracked exception (ADR-0021)',
+  test('storageNoticeFrom maps the Windows fallback tracked exception',
       () async {
-    final status = await const StorageSecurity(platform: StoragePlatform.windows)
+    final status = await const StorageSecurity(
+            platform: StoragePlatform.windows, windowsPlainFallback: true)
         .evaluate(() async => null);
     final n = storageNoticeFrom(status);
     expect(n.atRestEncrypted, isFalse);

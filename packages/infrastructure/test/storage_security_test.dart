@@ -30,13 +30,14 @@ void main() {
       final warnings = <String>[];
       final sec = StorageSecurity(
         platform: StoragePlatform.windows,
+        windowsPlainFallback: true, // explicit fallback build (ADR-0022)
         onWarning: warnings.add,
       );
       final status = await sec.evaluate(() async => null); // plain DB
 
       expect(status.encrypted, isFalse);
       expect(status.cipher, isNull);
-      expect(status.isTrackedException, isTrue); // sanctioned, ADR-0021
+      expect(status.isTrackedException, isTrue); // sanctioned fallback
       expect(status.hasWarning, isTrue);
       // Non-silent: the warning was emitted to the sink exactly once.
       expect(warnings.length, 1);
@@ -47,6 +48,29 @@ void main() {
       expect(diag['atRestEncrypted'], isFalse);
       expect(diag['trackedException'], isTrue);
       expect(diag['warning'], isNotNull);
+    });
+
+    test('Windows plain WITHOUT the fallback flag is a violation (ADR-0022)',
+        () async {
+      final warnings = <String>[];
+      final status = await StorageSecurity(
+        platform: StoragePlatform.windows,
+        onWarning: warnings.add,
+      ).evaluate(() async => null);
+      expect(status.encrypted, isFalse);
+      expect(status.isTrackedException, isFalse);
+      expect(status.warning, contains('NOT an accepted'));
+      expect(warnings, hasLength(1));
+    });
+
+    test('Windows encrypted: no warning (ADR-0022)', () async {
+      final warnings = <String>[];
+      final status = await StorageSecurity(
+        platform: StoragePlatform.windows,
+        onWarning: warnings.add,
+      ).evaluate(() async => 'sqlite3mc');
+      expect(status.encrypted, isTrue);
+      expect(warnings, isEmpty);
     });
 
     test('non-Windows plain is a policy VIOLATION, not a tracked exception',
