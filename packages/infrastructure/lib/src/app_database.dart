@@ -6,7 +6,9 @@ part 'app_database.g.dart';
 
 /// The local Drift database (P01). Executor is injected so the same class runs
 /// native (plain or encrypted, T5), in-memory (tests), or web later.
-/// Schema version 1. Migrations are guided (VS-04); no destructive migrations.
+/// Migrations are guided (VS-04), additive only; no destructive migrations.
+///   v1 (P01 T1)  initial schema
+///   v2 (P01 T6c) profiles.signed_out — sign-out locks the profile, binding kept
 @DriftDatabase(
   tables: [Profiles, Workspaces, TaskLists, Tasks, AuditLog, Outbox, EventLog, OpDedupe],
 )
@@ -14,13 +16,16 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async {
           await m.createAll();
           await _createTaskTitleFts();
+        },
+        onUpgrade: (m, from, to) async {
+          if (from < 2) await m.addColumn(profiles, profiles.signedOut);
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');

@@ -36,6 +36,9 @@ Model (Proposal, to be detailed in the domain batch):
 - Con: the "no, create a new session" path can strand guest data if the user forgets it exists. The UI should make the other profile discoverable (OQ-S7).
 - The `AuthGateway` port is needed in the MVP, but only for sign-in, session and sign-out.
 
+## Update — sign-out (ADR-0024, 2026-11-06)
+Sign-out keeps the binding and locks the account's profile until the same account signs in again; the app moves to a guest profile. Signing in again returns to that profile and its data. Moving part of a guest's data into an account is a new open question (OQ-S9).
+
 ## Follow-ups
 - OQ-S7: what happens at sign-out (does the user return to the guest profile, is account data kept on device, can another account sign in on the same profile?).
 - OQ-S8 (P04): merge or conflict rules when a profile with local data is bound to an account that already has cloud data.

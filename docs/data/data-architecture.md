@@ -49,7 +49,7 @@ Local-first: the device holds a usable, authoritative copy of the active profile
 - Export includes audit and provenance (audit-and-provenance.md).
 
 ## 6. Profile isolation storage
-[Decision] Each `LocalProfile` (ADR-0008) uses a **separate database file** (and its own encryption key) rather than profile-scoped rows in one shared database. Reason: strong isolation (LF-INV-ID-002) with no risk of a query leaking across profiles, and per-profile export/delete is a file operation. Trade-off: switching profiles reopens a database; acceptable (profile switching is infrequent, AS-07). See local-storage.md section 4.
+[Decision, implemented P01 T6c — [ADR-0023](../adr/0023-per-profile-stores-and-registry.md)] Each `LocalProfile` (ADR-0008) uses a **separate database file** (and its own encryption key) rather than profile-scoped rows in one shared database. A small encrypted device registry lists the profiles and the active one. Reason: strong isolation (LF-INV-ID-002) with no risk of a query leaking across profiles, and per-profile export/delete is a file operation. Trade-off: switching profiles reopens a database; acceptable (profile switching is infrequent, AS-07). See local-storage.md section 4.
 
 ## 7. Open questions
 - OQ-DATA-1: **resolved** (section 4) — random 256-bit key in secure storage, no passphrase.

@@ -69,6 +69,12 @@ abstract interface class AuthGateway {
   /// Clear the cached session. Local profiles and their data are untouched
   /// (OQ-S7: sign-out returns to the profile chooser, nothing is deleted).
   Future<void> signOut();
+
+  /// Fires when the PROVIDER ended the session on its own while online (for
+  /// example the refresh token was revoked). It must NOT fire for being
+  /// offline or for an access token that merely expired (LF-INV-SEC-002), nor
+  /// for an app-initiated [signOut]. ADR-0024 then locks the profile.
+  Stream<void> get sessionRevoked;
 }
 
 /// Result of a sign-in as the UI needs it.
@@ -114,6 +120,8 @@ abstract interface class AccountService {
   /// is bound.
   Future<void> cancelPendingBind();
 
-  /// Sign out of the active profile. Its data stays (OQ-S7).
+  /// Sign out of the active profile (ADR-0024): the profile keeps its account
+  /// and its data, becomes locked until that account signs in again, and the
+  /// app moves to a guest profile and the profile chooser (OQ-S7).
   Future<CommandResult> signOut();
 }

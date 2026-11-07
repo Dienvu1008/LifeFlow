@@ -53,10 +53,28 @@ class SecurePkceStorage extends GotrueAsyncStorage {
 }
 
 class SupabaseAuthGateway implements AuthGateway {
-  SupabaseAuthGateway._(this.isConfigured);
+  SupabaseAuthGateway._(this.isConfigured) {
+    if (isConfigured) {
+      // gotrue emits signedOut when it gives up on the session itself (an
+      // invalid/revoked refresh token, seen only online). Network failures
+      // during refresh are retried and do NOT emit it, so being offline never
+      // locks a profile (LF-INV-SEC-002, ADR-0024).
+      _auth.onAuthStateChange.listen((s) {
+        if (s.event == AuthChangeEvent.signedOut && !_signingOut) {
+          _revoked.add(null);
+        }
+      }, onError: (Object _) {});
+    }
+  }
 
   @override
   final bool isConfigured;
+
+  final _revoked = StreamController<void>.broadcast();
+  bool _signingOut = false;
+
+  @override
+  Stream<void> get sessionRevoked => _revoked.stream;
 
   /// Initializes the SDK when the build has a Supabase URL + anon key
   /// (`--dart-define`). Without them sign-in is unavailable but the app works
@@ -154,12 +172,17 @@ class SupabaseAuthGateway implements AuthGateway {
   @override
   Future<void> signOut() async {
     if (!isConfigured) return;
+    _signingOut = true; // our own sign-out is not a revocation
     try {
       await _auth.signOut();
     } catch (_) {
       // Offline: the server could not be told, but the device must forget the
       // session anyway so a restart is signed out.
       await const SecureSessionStorage().removePersistedSession();
+    } finally {
+      // Let the signedOut event of this call pass before re-arming.
+      await Future<void>.delayed(Duration.zero);
+      _signingOut = false;
     }
   }
 

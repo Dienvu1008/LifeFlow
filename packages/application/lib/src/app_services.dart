@@ -54,12 +54,18 @@ class ProfileView {
     required this.isActive,
     required this.isBound,
     this.provider,
+    this.isSignedOut = false,
   });
 
   final String id;
   final String displayName;
   final bool isActive;
   final bool isBound;
+
+  /// ADR-0024: bound to an account that signed out; opens only after that
+  /// account signs in again.
+  final bool isSignedOut;
+  bool get isLocked => isBound && isSignedOut;
 
   /// Auth provider name when bound ('email' | 'github'); never a token.
   final String? provider;

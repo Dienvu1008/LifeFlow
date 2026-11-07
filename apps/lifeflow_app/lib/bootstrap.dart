@@ -6,13 +6,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:infrastructure/infrastructure.dart';
 import 'package:ui/ui.dart';
 
-/// Everything the UI needs, built once at startup.
+/// Everything the UI needs for ONE profile, built when that profile opens.
+/// Since SR-03 every profile has its own store, so switching profiles means
+/// a new [AppWiring] (and a new provider scope).
 class AppWiring {
-  const AppWiring({required this.db, required this.notice, required this.overrides});
+  const AppWiring({
+    required this.profileId,
+    required this.db,
+    required this.notice,
+    required this.overrides,
+    required this.onSessionRevoked,
+  });
 
+  final String profileId;
   final AppDatabase db;
 
-  /// Result of the at-rest encryption self-check (ADR-0021).
+  /// ADR-0024: the provider ended the session while online; lock this
+  /// profile and move to a guest (no-op for a guest profile).
+  final Future<void> Function() onSessionRevoked;
+
+  /// Result of the at-rest encryption self-check (ADR-0021/0022).
   final StorageNotice notice;
 
   /// ProviderScope overrides that inject the implementations into the UI ports.
@@ -26,49 +39,59 @@ StoragePlatform storagePlatformFor(TargetPlatform p) => switch (p) {
       _ => StoragePlatform.other,
     };
 
-/// Opens the app on [db]:
-///  1. first-launch bootstrap (a guest profile + its Personal Workspace;
-///     idempotent, ADR-0008),
-///  2. the startup at-rest encryption self-check; a warning is emitted through
-///     [onWarning] and surfaced in the UI, never silent (ADR-0021, SR-01a),
-///  3. drains events a crash left undispatched (transactional outbox, ADR-0014).
+/// Opens [profileId]'s own store and wires the UI ports to it:
+///  1. the startup at-rest encryption self-check on THIS profile's file;
+///     a warning is emitted through [onWarning] and surfaced in the UI, never
+///     silent (ADR-0021/0022, SR-01a),
+///  2. drains events a crash left undispatched (transactional outbox, ADR-0014).
 ///
-/// [cipherProbe] must reflect the real file on disk (use `fileCipherProbe`);
-/// `PRAGMA cipher` is not a valid signal with sqlite3mc (T6b finding).
-///
-/// [auth] is only used for interactive sign-in/out, never while starting up
-/// or reading data (LF-INV-SEC-002): this function makes no auth call.
-Future<AppWiring> bootstrap(
-  AppDatabase db, {
+/// [auth] is only used for interactive sign-in/out, never while opening or
+/// reading data (LF-INV-SEC-002): this function makes no auth call.
+Future<AppWiring> openSession({
+  required ProfileDirectory directory,
+  required String profileId,
   required StoragePlatform platform,
-  required CipherProbe cipherProbe,
   required AuthGateway auth,
+  required ProfileHost host,
   bool windowsPlainFallback = false,
+  String initialRoute = '/tasks',
   void Function(String message)? onWarning,
 }) async {
-  // Writes the first page, so the header check below sees the real file.
-  await ProfileStore(db).ensureFirstProfile();
+  final store = await directory.openProfile(profileId);
+  final db = store.db;
+  try {
+    // Reads the store, so the header check below sees the written file.
+    await ProfileStore(db).getActiveProfile();
 
-  final status = await StorageSecurity(
-    platform: platform,
-    windowsPlainFallback: windowsPlainFallback,
-    onWarning: onWarning,
-  ).evaluate(cipherProbe);
+    final status = await StorageSecurity(
+      platform: platform,
+      windowsPlainFallback: windowsPlainFallback,
+      onWarning: onWarning,
+    ).evaluate(fileCipherProbe(directory.profileFile(profileId)));
 
-  final gateway = DriftCommandGateway(db, WorkspaceOwnerAuthorization(db));
-  await gateway.dispatchPendingEvents();
+    final gateway = DriftCommandGateway(db, WorkspaceOwnerAuthorization(db));
+    await gateway.dispatchPendingEvents();
 
-  final notice = storageNoticeFrom(status);
-  return AppWiring(
-    db: db,
-    notice: notice,
-    overrides: [
-      taskQueriesProvider.overrideWithValue(DriftTaskQueries(db)),
-      taskServiceProvider.overrideWithValue(DriftTaskService(db, gateway)),
-      profileServiceProvider.overrideWithValue(DriftProfileService(db, gateway)),
-      accountServiceProvider
-          .overrideWithValue(DriftAccountService(db, gateway, auth)),
-      storageNoticeProvider.overrideWithValue(notice),
-    ],
-  );
+    final notice = storageNoticeFrom(status);
+    final accounts = DriftAccountService(
+        db: db, gateway: gateway, auth: auth, directory: directory, host: host);
+    return AppWiring(
+      profileId: profileId,
+      db: db,
+      notice: notice,
+      onSessionRevoked: accounts.handleSessionRevoked,
+      overrides: [
+        taskQueriesProvider.overrideWithValue(DriftTaskQueries(db)),
+        taskServiceProvider.overrideWithValue(DriftTaskService(db, gateway)),
+        profileServiceProvider
+            .overrideWithValue(DirectoryProfileService(directory, host)),
+        accountServiceProvider.overrideWithValue(accounts),
+        storageNoticeProvider.overrideWithValue(notice),
+        initialRouteProvider.overrideWithValue(initialRoute),
+      ],
+    );
+  } catch (_) {
+    await db.close();
+    rethrow;
+  }
 }

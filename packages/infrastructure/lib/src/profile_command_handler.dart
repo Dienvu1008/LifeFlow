@@ -6,18 +6,22 @@ import 'package:application/application.dart';
 import 'app_database.dart';
 import 'command_gateway.dart';
 
-/// Applies profile/account commands within the gateway transaction (T4).
-/// Enforces the guest-first bind-or-new rule (ADR-0008) via [ProfileBinder]
-/// so binding never re-keys an entity (LF-INV-ID-001) and a declined move
-/// yields an isolated new profile (LF-INV-ID-002).
+/// Applies profile/account commands within the gateway transaction of ONE
+/// profile store (T4, revised for SR-03 in T6c).
+///
+/// Since T6c each LocalProfile has its own database file (ADR-0023), so this
+/// handler can only bind the profile that owns this store. When the guest-
+/// first rule (ADR-0008) decides on a NEW profile ("new space"), the account
+/// layer creates a separate store for it; a request that would put a second
+/// profile into this store is rejected here, at the single mutation path.
 ///
 /// Supported ops (payload['op']):
 ///   bind     : id (profileId), accountId, provider, moveData(bool), hasData(bool)
-///   signOut  : id (profileId)
-///   switch   : id (profileId to activate)
+///   signOut  : id (profileId)            — keeps the binding, locks (ADR-0024)
+///   resume   : id (profileId), accountId — unlock; only the owning account
 ///
-/// CreateLocalProfile is a pre-account bootstrap handled by ProfileStore, not
-/// here (no actor/authorization exists at first launch).
+/// Switching profiles is a device-level registry change (ProfileDirectory),
+/// not a mutation of profile data.
 class ProfileCommandHandler implements CommandHandler {
   const ProfileCommandHandler({this.binder = const ProfileBinder()});
 
@@ -51,9 +55,9 @@ class ProfileCommandHandler implements CommandHandler {
       case 'bind':
         return _bind(db, cmd, row, newVersion, now);
       case 'signOut':
-        return _signOut(db, cmd, row, newVersion, now);
-      case 'switch':
-        return _switch(db, cmd, row, newVersion, now);
+        return _signOut(db, row, newVersion);
+      case 'resume':
+        return _resume(db, cmd, row, newVersion);
       default:
         throw DomainRejection('unknown op: $op');
     }
@@ -61,105 +65,65 @@ class ProfileCommandHandler implements CommandHandler {
 
   Future<HandlerOutcome> _bind(AppDatabase db, Command cmd, Profile row,
       Version newVersion, DateTime now) async {
-    final profile = _toDomain(row);
     final binding = AccountBinding(
       accountId: cmd.payload['accountId'] as String,
       provider: AccountProvider.fromName(cmd.payload['provider'] as String),
       boundAt: Instant(now),
     );
-    final hasData = cmd.payload['hasData'] as bool? ?? false;
-    final moveData = cmd.payload['moveData'] as bool? ?? false;
 
     final BindDecision decision;
     try {
       decision = binder.decide(
-        profile: profile,
-        hasData: hasData,
-        moveData: moveData,
+        profile: _toDomain(row),
+        hasData: cmd.payload['hasData'] as bool? ?? false,
+        moveData: cmd.payload['moveData'] as bool? ?? false,
         binding: binding,
       );
     } on ArgumentError catch (e) {
       throw DomainRejection(e.message as String);
     }
 
-    switch (decision) {
-      case BindInPlace(:final binding):
-        // Bind the current profile WITHOUT changing any id (LF-INV-ID-001).
-        await (db.update(db.profiles)..where((p) => p.id.equals(row.id))).write(
-          ProfilesCompanion(
-            accountId: Value(binding.accountId),
-            accountProvider: Value(binding.provider.name),
-            version: Value(newVersion.value),
-          ),
-        );
-        return HandlerOutcome(
-          entityId: row.id, // same id
-          operationType: 'update',
-          changeSet: {
-            'id': row.id,
-            'accountId': binding.accountId,
-            'provider': binding.provider.name,
-            'moveData': true,
-          },
-          events: [
-            DomainEvent('ProfileBoundToAccount',
-                {'profileId': row.id, 'provider': binding.provider.name})
-          ],
-        );
-
-      case CreateNewBoundProfile(
-          :final newProfileId,
-          :final newWorkspaceId,
-          :final binding
-        ):
-        // Declined move: a fresh, isolated profile+workspace is bound; the
-        // original profile and its data stay untouched (LF-INV-ID-002).
-        await db.into(db.workspaces).insert(WorkspacesCompanion.insert(
-              id: newWorkspaceId.value,
-              ownerId: newProfileId.value,
-              createdAt: now,
-            ));
-        // The new bound profile becomes active; the old one is deactivated.
-        await db.update(db.profiles).write(
-            const ProfilesCompanion(isActive: Value(false)));
-        await db.into(db.profiles).insert(ProfilesCompanion.insert(
-              id: newProfileId.value,
-              activeWorkspaceId: newWorkspaceId.value,
-              accountId: Value(binding.accountId),
-              accountProvider: Value(binding.provider.name),
-              isActive: const Value(true),
-              createdAt: now,
-            ));
-        return HandlerOutcome(
-          entityId: newProfileId.value, // a NEW id — original is untouched
-          operationType: 'create',
-          changeSet: {
-            'id': newProfileId.value,
-            'workspaceId': newWorkspaceId.value,
-            'accountId': binding.accountId,
-            'provider': binding.provider.name,
-            'moveData': false,
-          },
-          events: [
-            DomainEvent('ProfileCreated', {'profileId': newProfileId.value}),
-            DomainEvent('ProfileBoundToAccount', {
-              'profileId': newProfileId.value,
-              'provider': binding.provider.name
-            }),
-          ],
-        );
+    if (decision is! BindInPlace) {
+      // SR-03: one profile per store. A new space must be its own store.
+      throw DomainRejection('a new profile needs its own store (SR-03)');
     }
-  }
 
-  Future<HandlerOutcome> _signOut(AppDatabase db, Command cmd, Profile row,
-      Version newVersion, DateTime now) async {
-    // OQ-S7: sign-out clears the binding reference on the profile; data stays.
-    // (The cached session/token is cleared via AuthGateway.signOut outside the
-    // transaction — tokens live in secure storage, never the DB.)
+    // Bind the current profile WITHOUT changing any id (LF-INV-ID-001).
     await (db.update(db.profiles)..where((p) => p.id.equals(row.id))).write(
       ProfilesCompanion(
-        accountId: const Value(null),
-        accountProvider: const Value(null),
+        accountId: Value(binding.accountId),
+        accountProvider: Value(binding.provider.name),
+        version: Value(newVersion.value),
+      ),
+    );
+    return HandlerOutcome(
+      entityId: row.id, // same id
+      operationType: 'update',
+      changeSet: {
+        'id': row.id,
+        'accountId': binding.accountId,
+        'provider': binding.provider.name,
+      },
+      events: [
+        DomainEvent('ProfileBoundToAccount',
+            {'profileId': row.id, 'provider': binding.provider.name})
+      ],
+    );
+  }
+
+  Future<HandlerOutcome> _signOut(
+      AppDatabase db, Profile row, Version newVersion) async {
+    // ADR-0024: sign-out KEEPS the binding (the profile still belongs to its
+    // account) and locks the profile until that account signs in again. Data
+    // stays (OQ-S7). The cached session/token is cleared via
+    // AuthGateway.signOut outside the transaction; tokens never touch the DB.
+    if (row.accountId == null) {
+      throw DomainRejection('this profile is not signed in');
+    }
+    if (row.signedOut) throw DomainRejection('this profile is already signed out');
+    await (db.update(db.profiles)..where((p) => p.id.equals(row.id))).write(
+      ProfilesCompanion(
+        signedOut: const Value(true),
         version: Value(newVersion.value),
       ),
     );
@@ -171,21 +135,26 @@ class ProfileCommandHandler implements CommandHandler {
     );
   }
 
-  Future<HandlerOutcome> _switch(AppDatabase db, Command cmd, Profile row,
-      Version newVersion, DateTime now) async {
-    await db.update(db.profiles).write(
-        const ProfilesCompanion(isActive: Value(false)));
+  /// ADR-0024: the account that owns a signed-out profile signed in again.
+  Future<HandlerOutcome> _resume(AppDatabase db, Command cmd, Profile row,
+      Version newVersion) async {
+    final accountId = cmd.payload['accountId'] as String;
+    if (!_toDomain(row).canResumeWith(accountId)) {
+      throw DomainRejection(row.accountId == accountId
+          ? 'this profile is not signed out'
+          : 'this profile belongs to a different account');
+    }
     await (db.update(db.profiles)..where((p) => p.id.equals(row.id))).write(
       ProfilesCompanion(
-        isActive: const Value(true),
+        signedOut: const Value(false),
         version: Value(newVersion.value),
       ),
     );
     return HandlerOutcome(
       entityId: row.id,
       operationType: 'update',
-      changeSet: {'id': row.id, 'active': true},
-      events: const [],
+      changeSet: {'id': row.id, 'signedOut': false},
+      events: [DomainEvent('SessionResumed', {'profileId': row.id})],
     );
   }
 
@@ -200,5 +169,6 @@ class ProfileCommandHandler implements CommandHandler {
                 boundAt: Instant(row.createdAt),
               )
             : null,
+        signedOut: row.signedOut,
       );
 }

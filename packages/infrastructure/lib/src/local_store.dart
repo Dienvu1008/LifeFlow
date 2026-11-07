@@ -20,6 +20,7 @@ import 'package:drift/native.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 import 'app_database.dart';
+import 'registry_database.dart';
 import 'storage_security.dart';
 
 /// What the store should do at rest on a platform (ADR-0021).
@@ -116,6 +117,29 @@ Future<OpenedStore> openLocalStore({
   required DatabaseKeyStore keys,
   bool background = true,
 }) async {
+  final p = await _prepare(file, policy, keys);
+  return OpenedStore(
+      AppDatabase(_executor(file, p.pragma, background: background)),
+      migratedToEncrypted: p.migrated);
+}
+
+/// Opens the device profile registry (SR-03, ADR-0023) with the same rules
+/// as [openLocalStore] (own key, never downgraded, plain upgraded in place).
+Future<RegistryDatabase> openRegistryStore({
+  required File file,
+  required AtRestPolicy policy,
+  required DatabaseKeyStore keys,
+  bool background = true,
+}) async {
+  final p = await _prepare(file, policy, keys);
+  return RegistryDatabase(_executor(file, p.pragma, background: background));
+}
+
+/// Key handling shared by every store. Returns the PRAGMA to apply (null for
+/// plain) and whether an existing plain file was encrypted in place. The key
+/// itself never leaves this library.
+Future<({String? pragma, bool migrated})> _prepare(
+    File file, AtRestPolicy policy, DatabaseKeyStore keys) async {
   final plainOnDisk = isPlainSqliteFile(file);
   final hasData = file.existsSync() && file.lengthSync() > 0;
 
@@ -124,9 +148,7 @@ Future<OpenedStore> openLocalStore({
       throw const StoreUnavailable(
           'the database on disk is encrypted but this build opens it plain');
     }
-    return OpenedStore(
-        AppDatabase(_executor(file, null, background: background)),
-        migratedToEncrypted: false);
+    return (pragma: null, migrated: false);
   }
 
   var key = await keys.read();
@@ -155,9 +177,7 @@ Future<OpenedStore> openLocalStore({
     migrated = true;
   }
 
-  return OpenedStore(
-      AppDatabase(_executor(file, pragma, background: background)),
-      migratedToEncrypted: migrated);
+  return (pragma: pragma, migrated: migrated);
 }
 
 QueryExecutor _executor(File file, String? keyPragma,

@@ -16,6 +16,10 @@ final profileServiceProvider =
 final accountServiceProvider =
     Provider<AccountService>((ref) => _notWired('accountServiceProvider'));
 
+/// Where a freshly opened profile session starts. The app shell sets
+/// '/profiles' after a sign-out (OQ-S7: back to the profile chooser).
+final initialRouteProvider = Provider<String>((ref) => '/tasks');
+
 /// Startup at-rest encryption result (ADR-0021). Null = nothing to show.
 final storageNoticeProvider = Provider<StorageNotice?>((ref) => null);
 

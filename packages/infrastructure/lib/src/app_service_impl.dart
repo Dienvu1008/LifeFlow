@@ -2,13 +2,11 @@
 // (application/app_services.dart) plus the production authorization policy.
 // Every write goes through the DriftCommandGateway (ADR-0011).
 import 'package:application/application.dart';
-import 'package:domain/domain.dart' show LocalProfile;
 import 'package:drift/drift.dart';
 import 'package:foundation/foundation.dart';
 import 'package:uuid/uuid.dart';
 
 import 'app_database.dart';
-import 'profile_command_handler.dart';
 import 'profile_store.dart';
 import 'storage_security.dart';
 import 'task_command_handler.dart';
@@ -161,62 +159,4 @@ class DriftTaskService implements TaskService {
   @override
   Future<CommandResult> trash(String id) =>
       _update('TrashTask', id, {'op': 'trash'});
-}
-
-/// Profile chooser backed by the store + profile commands (OQ-S7).
-class DriftProfileService implements ProfileService {
-  DriftProfileService(this.db, this.gateway) : _store = ProfileStore(db);
-  final AppDatabase db;
-  final CommandGateway gateway;
-  final ProfileStore _store;
-  final _handler = const ProfileCommandHandler();
-  final _uuid = const Uuid();
-
-  ProfileView _view(LocalProfile p, String? activeId) => ProfileView(
-        id: p.profileId.value,
-        displayName: p.displayName,
-        isActive: p.profileId.value == activeId,
-        isBound: p.isBound,
-        provider: p.binding?.provider.name,
-      );
-
-  @override
-  Future<ProfileView?> active() async {
-    final p = await _store.getActiveProfile();
-    return p == null ? null : _view(p, p.profileId.value);
-  }
-
-  @override
-  Future<List<ProfileView>> list() async {
-    final activeId = (await _store.getActiveProfile())?.profileId.value;
-    final all = await _store.listProfiles();
-    return [for (final p in all) _view(p, activeId)];
-  }
-
-  @override
-  Future<CommandResult> switchTo(String profileId) async {
-    final target = (await _store.listProfiles())
-        .where((p) => p.profileId.value == profileId)
-        .firstOrNull;
-    if (target == null) {
-      return const CommandFailure(CommandFailureKind.notFound,
-          reason: 'profile not found');
-    }
-    final row = await (db.select(db.profiles)
-          ..where((p) => p.id.equals(profileId)))
-        .getSingle();
-    // The target profile owns its own workspace, so it is the owner actor.
-    return gateway.execute(
-      Command(
-        operationId: _uuid.v7(),
-        actor: ActorRef(ActorKind.owner, profileId),
-        workspaceId: target.activeWorkspaceId.value,
-        type: 'SwitchProfile',
-        payload: {'op': 'switch', 'id': profileId},
-        expectedVersion: Version(row.version),
-        issuedAt: Instant.now(),
-      ),
-      _handler,
-    );
-  }
 }

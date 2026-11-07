@@ -64,7 +64,8 @@ class AccountCard extends ConsumerWidget {
       builder: (ctx) => AlertDialog(
         title: const Text('Sign out?'),
         content: const Text(
-            'Your data stays on this device. You can sign in again later.'),
+            'Your data stays on this device, locked until you sign in again '
+            'with this account. LifeFlow switches to a guest profile.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -82,8 +83,10 @@ class AccountCard extends ConsumerWidget {
       _snack(context, describeFailure(r));
       return;
     }
+    // In the app the scope is replaced by the guest's (so this point is not
+    // reached); kept for hosts that update in place.
     _refresh(ref);
-    _snack(context, 'Signed out. Your data is still here.');
+    _snack(context, 'Signed out. Sign in again to open your data.');
   }
 }
 
