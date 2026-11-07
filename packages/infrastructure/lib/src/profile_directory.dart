@@ -21,6 +21,7 @@ import 'package:foundation/foundation.dart';
 
 import 'app_database.dart';
 import 'local_store.dart';
+import 'profile_export.dart';
 import 'profile_store.dart';
 import 'registry_database.dart';
 
@@ -222,6 +223,51 @@ class ProfileDirectory {
         RegistryProfilesCompanion.insert(
             id: id.value, displayName: Value(displayName), createdAt: createdAt));
     return (await _get(id.value))!;
+  }
+
+  /// Restores a validated export as a NEW profile with its own file and key
+  /// (ADR-0025). It never replaces anything:
+  ///  - profile not on this device -> restored with its ORIGINAL ids
+  ///    (clean-install round trip, GS-20, LF-INV-ID-001);
+  ///  - profile already on this device -> restored as a COPY under new profile
+  ///    and workspace ids, so the existing profile is untouched.
+  /// The restored profile is inactive and unbound. On any failure the partly
+  /// written file is removed and the registry is unchanged.
+  Future<({ProfileEntry entry, bool asCopy})> restoreFromExport(
+      ParsedExport parsed) async {
+    var data = parsed;
+    var asCopy = false;
+    if (await _get(parsed.profileId) != null ||
+        profileFile(parsed.profileId).existsSync()) {
+      data = parsed.asCopy(
+        newProfileId: EntityId.generate().value,
+        newWorkspaceId: EntityId.generate().value,
+        copyLabel: '(restored)',
+      );
+      asCopy = true;
+    }
+    final id = data.profileId;
+    final file = profileFile(id);
+    try {
+      final store = await _openStore(id);
+      try {
+        await ProfileExport.writeInto(store.db, data);
+      } finally {
+        await store.db.close();
+      }
+      await _registry.into(_registry.registryProfiles).insert(
+          RegistryProfilesCompanion.insert(
+              id: id,
+              displayName: Value(data.displayName),
+              createdAt: data.profile.createdAt));
+    } catch (_) {
+      for (final suffix in ['', '-wal', '-shm', '-journal']) {
+        final f = File('${file.path}$suffix');
+        if (f.existsSync()) f.deleteSync();
+      }
+      rethrow;
+    }
+    return (entry: (await _get(id))!, asCopy: asCopy);
   }
 
   /// Records the intent to change [profileId]'s store (ADR-0023). Call before

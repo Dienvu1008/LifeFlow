@@ -1,0 +1,174 @@
+@Tags(['ff-arch-06'])
+library;
+
+// FF-ARCH-06 (LF-INV-GOV-003, GS-06/07): EVERY mutation command handler writes
+// the atomic set (aggregate + audit + outbox + event log + dedupe) in ONE
+// transaction. Table-driven over every handler operation, with fault
+// injection after the handler ran: a failure must leave nothing behind.
+//
+// HANDLER REGISTRY: tools/fitness/ff_arch_06_09.dart fails CI if a class
+// implementing CommandHandler under lib/ is missing from the list below, so a
+// new handler cannot skip this test.
+//   handlers covered: TaskCommandHandler, ProfileCommandHandler
+import 'package:application/application.dart';
+import 'package:drift/native.dart';
+import 'package:foundation/foundation.dart';
+import 'package:infrastructure/infrastructure.dart';
+import 'package:test/test.dart';
+
+/// Runs the real handler, then fails: simulates a crash after the handler
+/// wrote the aggregate but before the transaction committed.
+class _FailAfterApply implements CommandHandler {
+  _FailAfterApply(this.inner);
+  final CommandHandler inner;
+  @override
+  String get entityType => inner.entityType;
+  @override
+  Future<Version?> currentVersion(TxContext tx, Command cmd) =>
+      inner.currentVersion(tx, cmd);
+  @override
+  Future<HandlerOutcome> apply(TxContext tx, Command cmd, Version v) async {
+    await inner.apply(tx, cmd, v);
+    throw StateError('injected failure after apply');
+  }
+}
+
+void main() {
+  late AppDatabase db;
+  late DriftCommandGateway gw;
+  late String profileId;
+  late String wsId;
+  var n = 0;
+
+  setUp(() async {
+    db = AppDatabase(NativeDatabase.memory());
+    gw = DriftCommandGateway(db, WorkspaceOwnerAuthorization(db));
+    final p = await ProfileStore(db).ensureFirstProfile();
+    profileId = p.profileId.value;
+    wsId = p.activeWorkspaceId.value;
+    n = 0;
+  });
+  tearDown(() => db.close());
+
+  Future<int> count(Iterable<Future<List<Object?>>> parts) async {
+    var total = 0;
+    for (final p in parts) {
+      total += (await p).length;
+    }
+    return total;
+  }
+
+  Future<List<int>> governance(String? opId) async {
+    Future<int> c(Future<List<Object?>> f) async => (await f).length;
+    return [
+      await c(opId == null
+          ? db.select(db.auditLog).get()
+          : (db.select(db.auditLog)..where((r) => r.operationId.equals(opId))).get()),
+      await c(opId == null
+          ? db.select(db.outbox).get()
+          : (db.select(db.outbox)..where((r) => r.operationId.equals(opId))).get()),
+      await c(opId == null
+          ? db.select(db.eventLog).get()
+          : (db.select(db.eventLog)..where((r) => r.operationId.equals(opId))).get()),
+      await c(opId == null
+          ? db.select(db.opDedupe).get()
+          : (db.select(db.opDedupe)..where((r) => r.operationId.equals(opId))).get()),
+    ];
+  }
+
+  Future<String> aggregates() async => [
+        for (final r in await db.select(db.tasks).get()) r.toJson(),
+        for (final r in await db.select(db.profiles).get()) r.toJson(),
+      ].toString();
+
+  Future<int> versionOf(String table, String id) async => table == 'task'
+      ? (await (db.select(db.tasks)..where((t) => t.id.equals(id))).getSingle()).version
+      : (await (db.select(db.profiles)..where((t) => t.id.equals(id))).getSingle()).version;
+
+  /// One handler operation: how to build its command.
+  final taskHandler = TaskCommandHandler();
+  const profileHandler = ProfileCommandHandler();
+
+  Command command(String type, Map<String, Object?> payload,
+          {String? opId, Version? expected}) =>
+      Command(
+        operationId: opId ?? 'op-${n++}',
+        actor: ActorRef(ActorKind.owner, profileId),
+        workspaceId: wsId,
+        type: type,
+        payload: payload,
+        expectedVersion: expected,
+        issuedAt: Instant.now(),
+      );
+
+  // Each step: [label, handler, entity table, entity id, builder(version)].
+  // Steps run in order against one database; every one is run twice: first
+  // with an injected failure (must leave nothing), then for real (must write
+  // the full set).
+  late List<(String, CommandHandler, String, String, Command Function(Version?, String))> steps;
+  setUp(() {
+    steps = [
+      ('task.create', taskHandler, 'task', 't1',
+          (v, op) => command('CreateTask', {'op': 'create', 'id': 't1', 'title': 'A'}, opId: op, expected: v)),
+      ('task.create(sub)', taskHandler, 'task', 't2',
+          (v, op) => command('CreateTask', {'op': 'create', 'id': 't2', 'title': 'B', 'parentId': 't1'}, opId: op, expected: v)),
+      ('task.rename', taskHandler, 'task', 't1',
+          (v, op) => command('RenameTask', {'op': 'rename', 'id': 't1', 'title': 'A2'}, opId: op, expected: v)),
+      ('task.reparent', taskHandler, 'task', 't2',
+          (v, op) => command('ReparentTask', {'op': 'reparent', 'id': 't2', 'newParentId': null}, opId: op, expected: v)),
+      ('task.complete', taskHandler, 'task', 't1',
+          (v, op) => command('CompleteTaskOnly', {'op': 'complete', 'id': 't1', 'cascade': 'parentOnly'}, opId: op, expected: v)),
+      ('task.trash', taskHandler, 'task', 't2',
+          (v, op) => command('TrashTask', {'op': 'trash', 'id': 't2'}, opId: op, expected: v)),
+      ('profile.bind', profileHandler, 'profile', profileId,
+          (v, op) => command('BindAccount', {'op': 'bind', 'id': profileId, 'accountId': 'acc', 'provider': 'github', 'hasData': false, 'moveData': true}, opId: op, expected: v)),
+      ('profile.signOut', profileHandler, 'profile', profileId,
+          (v, op) => command('SignOut', {'op': 'signOut', 'id': profileId}, opId: op, expected: v)),
+      ('profile.resume', profileHandler, 'profile', profileId,
+          (v, op) => command('ResumeSession', {'op': 'resume', 'id': profileId, 'accountId': 'acc'}, opId: op, expected: v)),
+    ];
+  });
+
+  test('every handler operation writes the whole atomic set, and a failure '
+      'after the handler leaves nothing (FF-ARCH-06, GS-06/07)', () async {
+    for (final (label, handler, table, id, build) in steps) {
+      final current = (table == 'task' && label.startsWith('task.create'))
+          ? null
+          : Version(await versionOf(table, id));
+
+      // 1) Failure injected after the handler ran -> total rollback.
+      final govBefore = await governance(null);
+      final aggBefore = await aggregates();
+      final failOp = 'fail-${n++}';
+      await expectLater(
+          gw.execute(build(current, failOp), _FailAfterApply(handler)),
+          throwsA(isA<StateError>()),
+          reason: '$label: the injected failure should surface');
+      expect(await governance(null), govBefore,
+          reason: '$label: a failed command left governance rows behind');
+      expect(await aggregates(), aggBefore,
+          reason: '$label: a failed command changed the aggregate');
+
+      // 2) The real run -> the FULL set, in the same commit.
+      final okOp = 'ok-${n++}';
+      final r = await gw.execute(build(current, okOp), handler);
+      expect(r, isA<CommandOk>(), reason: '$label: $r');
+      final set = await governance(okOp);
+      expect(set[0], 1, reason: '$label: audit row missing');
+      expect(set[1], greaterThanOrEqualTo(1), reason: '$label: outbox row missing');
+      expect(set[2], greaterThanOrEqualTo(1), reason: '$label: event-log row missing');
+      expect(set[3], 1, reason: '$label: dedupe row missing');
+    }
+  });
+
+  test('a duplicate operation changes nothing (idempotent atomic set)',
+      () async {
+    final a = command('CreateTask', {'op': 'create', 'id': 'd1', 'title': 'Once'}, opId: 'dup-1');
+    expect(await gw.execute(a, taskHandler), isA<CommandOk>());
+    final gov = await governance(null);
+    final dup = await gw.execute(a, taskHandler);
+    expect((dup as CommandFailure).kind, CommandFailureKind.duplicateOperation);
+    expect(await governance(null), gov);
+    expect(await count([db.select(db.tasks).get()]), 1);
+  });
+}

@@ -10,7 +10,13 @@ import 'package:ui/ui.dart';
 /// the task stream is bound to the profile that is active when it subscribes
 /// (LF-INV-ID-002), so a UI that forgets to re-subscribe after a switch fails.
 class FakeWorld
-    implements TaskQueries, TaskService, ProfileService, AccountService {
+    implements
+        TaskQueries,
+        TaskService,
+        ProfileService,
+        AccountService,
+        DataTransferService,
+        FileGateway {
   FakeWorld({
     required Map<String, List<TaskView>> tasks,
     required this.profiles,
@@ -112,6 +118,63 @@ class FakeWorld
     if (f != null) return f;
     activeId = profileId;
     return CommandOk(profileId, Version.initial, const []);
+  }
+
+  // --- DataTransferService + FileGateway --------------------------------------
+
+  /// What the save dialog answers (false = the user cancelled).
+  bool saveResult = true;
+
+  /// What the open dialog returns (null = cancelled).
+  String? pickResult;
+  bool pickTooLarge = false;
+  bool pickThrows = false;
+
+  /// What the next restore returns; default restores a new profile.
+  RestoreOutcome? nextRestore;
+
+  @override
+  Future<ExportFile> exportActiveProfile() async {
+    calls.add('export');
+    return ExportFile(
+        suggestedName: 'lifeflow-test-2026-11-07.lifeflow.json',
+        contents: '{"fake":"export"}',
+        taskCount: _mine().length);
+  }
+
+  @override
+  Future<RestoreOutcome> restore(String text) async {
+    calls.add('restore:$text');
+    final r = nextRestore;
+    if (r != null) {
+      nextRestore = null;
+      if (r is Restored) {
+        profiles.add(ProfileView(
+            id: r.profile.id, displayName: r.profile.displayName,
+            isActive: false, isBound: false));
+        _tasks[r.profile.id] = [];
+      }
+      return r;
+    }
+    final id = 'restored${_n++}';
+    profiles.add(ProfileView(
+        id: id, displayName: 'Backup of work', isActive: false, isBound: false));
+    _tasks[id] = [];
+    return Restored(profiles.last, asCopy: false, taskCount: 3);
+  }
+
+  @override
+  Future<bool> saveText(String suggestedName, String text) async {
+    calls.add('save:$suggestedName');
+    return saveResult;
+  }
+
+  @override
+  Future<String?> pickText() async {
+    calls.add('pick');
+    if (pickTooLarge) throw const FileTooLarge();
+    if (pickThrows) throw StateError('disk error');
+    return pickResult;
   }
 
   // --- AccountService (mirrors DriftAccountService's rules) -----------------
@@ -262,6 +325,8 @@ Widget appWith(FakeWorld world, {StorageNotice? notice}) => ProviderScope(
         taskServiceProvider.overrideWithValue(world),
         profileServiceProvider.overrideWithValue(world),
         accountServiceProvider.overrideWithValue(world),
+        dataTransferServiceProvider.overrideWithValue(world),
+        fileGatewayProvider.overrideWithValue(world),
         storageNoticeProvider.overrideWithValue(notice),
       ],
       child: const LifeFlowApp(),

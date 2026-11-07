@@ -1,0 +1,5 @@
+# Fitness-function test tags (docs/testing/architecture-fitness-functions.md).
+# tools/fitness/ff_arch_06_09.dart runs these by tag in CI.
+tags:
+  ff-arch-06: {}   # every mutation handler writes the atomic set in one transaction
+  ff-arch-09: {}   # every mutation is authorized before the domain method runs

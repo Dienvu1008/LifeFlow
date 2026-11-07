@@ -12,7 +12,7 @@ Each requirement is testable. Priority M = MVP.
 | SR-01 | The local database is encrypted at rest with SQLite3MultipleCiphers (whole-file); the app asserts `PRAGMA cipher` at startup. **Platform posture (ADR-0022, T5a):** enforced on **Android and Windows**. An existing plain DB is encrypted in place. A plain Windows DB is accepted only in a build made with `LIFEFLOW_WINDOWS_PLAIN_DB=true` (ADR-0021 fallback), and is then shown as a tracked exception; otherwise it is a policy violation. | M | Decision | VS-21, data-architecture §4, ADR-0021, ADR-0022 |
 | SR-02 | The DB encryption key and auth tokens are stored only in platform secure storage (`flutter_secure_storage`); never in the DB, plain files, logs, exports, sync or AI context. | M | Decision | VS-24, LF-INV-SEC-001 |
 | SR-03 | Each LocalProfile has its own DB file and its own key. **Implemented in P01 T6c (ADR-0023):** `profiles/<id>.sqlite` with key `lifeflow.db.key.<id>`, plus an encrypted device registry with its own key. The pre-SR-03 shared DB is split once and kept as an encrypted `.pre-sr03` backup. | M | Decision | data-architecture §6, ADR-0023 |
-| SR-04 | A random 256-bit key is generated on first launch per profile; no user passphrase in MVP (OQ-DATA-1 resolved). Losing the device without an export means the data is unrecoverable (see OQ-DATA-3). | M | Decision | data-architecture §4 |
+| SR-04 | A random 256-bit key is generated on first launch per profile; no user passphrase in MVP (OQ-DATA-1 resolved). Losing the device without an export means the data is unrecoverable; the user-initiated export is the MVP backup (OQ-DATA-3 (a), ADR-0025). | M | Decision | data-architecture §4 |
 | SR-05 | Attachments stored outside the DB are protected consistently with the DB (approach per OQ-DATA-2). | M | Proposal | data-architecture §2 |
 
 ### 1a. Windows plain-DB mitigations (ADR-0021; fallback builds only since ADR-0022)
@@ -44,7 +44,7 @@ Since ADR-0022 Windows is encrypted by default. SR-01a still applies to every bu
 | ID | Requirement | Pri | Label |
 |---|---|---|---|
 | SR-13 | A command's atomic set commits in one transaction; a failure leaves no partial state. | M | Decision (LF-INV-GOV-003) |
-| SR-14 | Import validates schema, version and checksum; untrusted until validated; failure is atomic. | M | Decision |
+| SR-14 | Import validates schema, version and checksum; untrusted until validated; failure is atomic. **Implemented in P01 T7 (ADR-0025).** | M | Decision |
 | SR-15 | No telemetry or user-data egress except the user's own auth (and P04 sync); debugging via local logs + audit + user-initiated export. | M | Decision (NFR-PRIV-01) |
 
 ## 5. Dependencies

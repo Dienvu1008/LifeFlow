@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 
 import 'auth/supabase_auth_gateway.dart';
 import 'bootstrap.dart';
+import 'file_picker_gateway.dart';
 import 'root.dart';
 import 'secure_key_store.dart';
 
@@ -64,6 +65,7 @@ Future<void> main() async {
       auth: auth,
       host: host,
       initialRoute: initialRoute,
+      files: const FilePickerGateway(),
       windowsPlainFallback: windowsPlainFallback,
       // Local log only; never uploaded (no telemetry, SR-15).
       onWarning: (m) => debugPrint('[storage] $m'),

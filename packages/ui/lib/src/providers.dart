@@ -15,6 +15,10 @@ final profileServiceProvider =
     Provider<ProfileService>((ref) => _notWired('profileServiceProvider'));
 final accountServiceProvider =
     Provider<AccountService>((ref) => _notWired('accountServiceProvider'));
+final dataTransferServiceProvider = Provider<DataTransferService>(
+    (ref) => _notWired('dataTransferServiceProvider'));
+final fileGatewayProvider =
+    Provider<FileGateway>((ref) => _notWired('fileGatewayProvider'));
 
 /// Where a freshly opened profile session starts. The app shell sets
 /// '/profiles' after a sign-out (OQ-S7: back to the profile chooser).
