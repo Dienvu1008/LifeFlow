@@ -113,6 +113,20 @@ void main() {
     expect(TimeZones.names(), contains('Asia/Ho_Chi_Minh'));
   });
 
+  test('legacy zone aliases reported by devices resolve like the canonical '
+      'zone (S-05: Windows reports Asia/Saigon, Android Asia/Ho_Chi_Minh)', () {
+    expect(TimeZones.isKnown('Asia/Saigon'), isTrue);
+    for (final (alias, canonical) in [
+      ('Asia/Saigon', 'Asia/Ho_Chi_Minh'),
+      ('US/Eastern', 'America/New_York'),
+    ]) {
+      expect(resolveWallClock(wc(alias, 2026, 3, 8, 2, 30)).utc,
+          resolveWallClock(wc(canonical, 2026, 3, 8, 2, 30)).utc, reason: alias);
+      expect(resolveWallClock(wc(alias, 2026, 7, 1, 9, 0)).utc,
+          resolveWallClock(wc(canonical, 2026, 7, 1, 9, 0)).utc, reason: alias);
+    }
+  });
+
   test('dateAt gives "today" in a zone', () {
     final at = Instant(utc(2026, 11, 7, 23, 30));
     expect(dateAt(at, 'UTC'), LocalDate(2026, 11, 7));

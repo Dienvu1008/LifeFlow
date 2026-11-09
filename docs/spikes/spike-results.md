@@ -1,6 +1,6 @@
 # Spike Results
 
-- Status: MVP-blocking spikes complete (S-03a PASS, S-01 PASS, S-02 plain PASS; encryption-at-rest resolved in P01 task T5 via ADR-0021 — Android encrypted, Windows MVP plain + tracked exception). This is the canonical results record on `main`; the throwaway POC code lives on the `spike/*` and `scaffold/p01-skeleton` branches (not merged to `main`).
+- Status: S-05 PASS on Windows and Android (2026-11-09, P02 T0). MVP-blocking spikes complete (S-03a PASS, S-01 PASS, S-02 plain PASS; encryption-at-rest resolved in P01 task T5 via ADR-0021 — Android encrypted, Windows MVP plain + tracked exception). This is the canonical results record on `main`; the throwaway POC code lives on the `spike/*` and `scaffold/p01-skeleton` branches (not merged to `main`).
 - Related: [spike-plan.md](spike-plan.md), [../FINAL-REPORT.md](../FINAL-REPORT.md) §19
 
 Fixed entry format: **Question / Hypothesis / What was done / Measured result / Success or Failure / Decision / ADR update or Open+escalation / Human gate date.**
@@ -44,3 +44,33 @@ T5 resolved the encryption-at-rest escalation with **ADR-0021** (owner decision)
 
 ### S-02 follow-up (P01 task T6b, 2026-11-06)
 With `sqlite3` 3.5.2 (resolved by the T6a app), the build hook's `source: sqlite3mc` **downloads prebuilt, hash-pinned SQLite3MultipleCiphers binaries** for Windows and Android instead of compiling, so the S-02 attempt-B failure (CMake `INSTALL`, `MSB3073`) no longer applies. Measured on Windows: `dart test` with the real `sqlite3mc` binary encrypts the file (no plain header, no plaintext), rejects a wrong key, and **FTS5 + MATCH work under encryption** (OQ-V10 resolved for the encrypted build); `flutter build windows --debug` with sqlite3mc + flutter_secure_storage + supabase_flutter succeeds and the app runs. **Finding:** `PRAGMA cipher` returns the configured cipher even without a key, so it cannot detect encryption; detection now reads the file header (ADR-0021 update, SR-01e). Android device verification of the encrypted build is part of the T6b gate. Windows remains plain per ADR-0021 until the owner decides on option A.
+
+---
+
+## S-05 — Local notifications on Windows and Android (P02 task T0)
+- Branch: `spike/s05-notifications` (throwaway probe app `spikes/s05_notifications`, not merged). Time-box 1–3 pd; used about 0.5 pd.
+- **Question:** Do scheduled local notifications fire on both platforms at the minute, with the app open, in the background and **closed**? Can a pending one be cancelled? Can many be pending? Does the device report an IANA zone the kernel knows? (Answers owner decision D8.)
+- **Hypothesis:** `flutter_local_notifications` schedules through the OS on both platforms (Android AlarmManager, Windows scheduled toasts), so notifications fire with the app closed.
+- **What was done (agent, on the owner's devices, 2026-11-09):** A probe app with `flutter_local_notifications` 22.3.3, `flutter_timezone` 5.1.1 and `timezone` 0.11.2: show now; schedule at +1 and +2 minutes; schedule then cancel at once; 60 pending then cancel all; zone check. Android (Samsung SM-N975F, Android 12) driven over `adb`, evidence from logcat and `dumpsys notification`. Windows 11 driven by a scripted run that exits by itself; evidence from the app log and screenshots of the toast corner (deleted afterwards).
+- **Measured result:**
+
+| Check | Android | Windows |
+|---|---|---|
+| Show now | PASS | PASS once the window has settled (8 s and 15 s after start); a `show` 2 s after start did not appear |
+| Scheduled, app open | PASS | PASS (+1 min) |
+| Scheduled, app in background | PASS: fired at 16:57:44.003 and 16:58:45.003, both to the second, while a phone call had the screen | — |
+| Scheduled, app **closed** | PASS: process killed (`am kill`, no pid); at 17:05:59.002 the system started the process and posted it | PASS: app exited at 17:10:22; the +3 min toast showed at 17:12:02 |
+| Cancel a pending one | PASS (never posted, pending 3 → 2) | PASS (never shown, pending 2 → 1) |
+| 60 pending, then cancel all | PASS (60 → 0) | PASS (61 → 0) |
+| Device zone | `Asia/Ho_Chi_Minh`, known | `Asia/Saigon` (legacy alias), known; resolves like `Asia/Ho_Chi_Minh` |
+| Permissions | notifications and exact alarms granted (Android 12) | none needed |
+
+- **Other findings:**
+  1. `flutter_local_notifications` **23.0.0** (2 days old) fails to build: it needs Android compileSdk 37, and the installed `android-37.0` platform is not found by the current Android Gradle Plugin. **22.3.3** builds and works. Revisit 23.x with a newer AGP.
+  2. Both 22.x and 23.x need **`timezone ^0.11.0`**, so `time_kernel` moves from 0.9.4 to **0.11.2** (done in T0: one API change, `offset` is now a `Duration`; all 72 kernel tests including the GS-04 DST table pass on the new data).
+  3. Windows reports **legacy zone aliases** (`Asia/Saigon`). The database resolves them identically; the UI should show a canonical name (T6).
+  4. Not measured: behaviour after a **reboot** (Android uses a boot receiver to re-schedule; the app also re-schedules on start, P02 plan §4), Android 14+ exact-alarm default (fallback to inexact is in the probe), and the user's "Force stop" on Android, which by design cancels an app's alarms until it is opened again.
+- **Success or Failure:** **PASS** on both platforms.
+- **Decision:** D8 resolved: **Windows reminders work with the app closed**, so no foreground-only fallback is needed. Adopt `flutter_local_notifications` **22.3.3** and `flutter_timezone` **5.1.1** (pinned) for T7, behind the `ReminderScheduler` port. Do not rely on an immediate `show` right after app start on Windows; reminders are scheduled ahead. The app re-schedules its rolling horizon on start, which also covers reboots and force-stops.
+- **ADR update:** ADR-0028 (timezone 0.11.2); verified-sources VS-32 to VS-34; P02 plan D8.
+- **Human gate date:** pending owner review (2026-11-09).

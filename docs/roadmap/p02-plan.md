@@ -31,7 +31,7 @@ Out of scope: AI scheduling (P06), external calendar sync, attendees and shared 
 | D5 | Ticking a recurring task (UC-06 step 4) | Ticking marks **that occurrence** done (an occurrence completion keyed by task and original date). The task itself stays open. |
 | D6 | OQ-CAL-1: scheduled tasks in the calendar | Shown in the calendar; tapping one opens the **task's** schedule editor. A task is **never turned into an event, nor an event into a task**. |
 | D7 | UC-08: conflicts | Conflicts are **only shown**; nothing is stored. All-day and date-only items are **never** in conflicts. |
-| D8 | Reminders on Windows | Decided by spike S-05. If Windows cannot fire scheduled notifications while the app is closed, Windows reminds **only while the app runs** (documented). |
+| D8 | Reminders on Windows | Decided by spike S-05. If Windows cannot fire scheduled notifications while the app is closed, Windows reminds **only while the app runs** (documented). **S-05 result (2026-11-09): Windows fires scheduled notifications with the app closed, so reminders work fully on both platforms.** |
 | D9 | Navigation | **Tasks, Calendar, Profiles, Settings**. Today and Upcoming are filters in Tasks; the **Calendar screen has buttons that open Tasks on Today and on Upcoming**. |
 | D10 | Time zone of a new timed item | The **device zone** at creation, shown and changeable in the editor. Date-only and all-day items have no zone. |
 

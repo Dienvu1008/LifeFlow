@@ -42,6 +42,9 @@ Label legend: **[Verified]** read in the cited source on the check date, **[Open
 | VS-29 | License: flutter_quill | MIT. | https://pub.dev/packages/flutter_quill/license | fetched 2026-11-04 | ADR-0020 (editor) |
 | VS-30 | License: super_editor | MIT. | https://pub.dev/packages/super_editor/license | fetched 2026-11-04 | ADR-0020 (editor) |
 | VS-31 | License: flutter_secure_storage | BSD-3-Clause. | https://pub.dev/packages/flutter_secure_storage (License section) | fetched 2026-11-04; confirm exact SPDX in T2 | technical-stack |
+| VS-32 | License: timezone | BSD-2-Clause (two conditions; LICENSE file read in the package). Same for 0.9.4 and 0.11.2. In 0.11 `TimeZone.offset` is a `Duration` (was milliseconds). | pub cache `timezone-0.11.2/LICENSE`; https://pub.dev/packages/timezone | 0.11.2, checked 2026-11-09 | ADR-0028, time_kernel |
+| VS-33 | flutter_local_notifications | BSD-3-Clause (pub.dev tags). Android, Windows (C++/WinRT toasts), others. Windows: no repeating notifications (`periodicallyShow` throws); without MSIX package identity, `cancel` of a **shown** notification does nothing. Android: some OEMs restrict background work; Samsung caps alarms at 500. 23.0.0 needs Android compileSdk 37; 22.3.3 needs Flutter >= 3.38.1. Both need `timezone ^0.11.0`. | https://pub.dev/packages/flutter_local_notifications ; README on GitHub (MaikuB/flutter_local_notifications) | 22.3.3 / 23.0.0, fetched 2026-11-09 | spike S-05, P02 T7 |
+| VS-34 | flutter_timezone | Apache-2.0 (pub.dev tags). `FlutterTimezone.getLocalTimezone()` returns a `TimezoneInfo` with the IANA `identifier`. | https://pub.dev/packages/flutter_timezone | 5.1.1, fetched 2026-11-09 | ADR-0010, spike S-05, P02 D10 |
 
 ## 2. Not verified (Open)
 

@@ -46,7 +46,7 @@ class TimeZones {
 
   /// UTC offset (milliseconds) of [zone] at [instant].
   static int offsetAt(String zone, Instant instant) =>
-      _location(zone).timeZone(instant.millis).offset;
+      _location(zone).timeZone(instant.millis).offset.inMilliseconds;
 }
 
 /// The zone name is not in the database.
@@ -83,7 +83,7 @@ int _localMillis(LocalDate d, TimeOfDayValue t) =>
 ResolvedWallClock resolveWallClockDetailed(ZonedWallClock w) {
   final loc = TimeZones._location(w.zone);
   final local = _localMillis(w.date, w.time);
-  int off(int utc) => loc.timeZone(utc).offset;
+  int off(int utc) => loc.timeZone(utc).offset.inMilliseconds;
 
   // Real zones never have two transitions within 36 hours, so the offsets
   // just before and just after cover every case.
