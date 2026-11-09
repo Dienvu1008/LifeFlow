@@ -118,7 +118,7 @@ Every non-trivial statement carries one of these labels.
 | [adr/0025-profile-export-and-restore.md](adr/0025-profile-export-and-restore.md) | P01/T7–T7c: decrypted, versioned, checksummed export; restore into the same profile, or the same account's profile on another device (overwrite or merge, undo), or as a new profile; closes OQ-DATA-3 (a) |
 | [adr/0026-reopen-and-trash-with-subtasks.md](adr/0026-reopen-and-trash-with-subtasks.md) | P01/T7c: reopen a done task; trash a parent with or without its subtasks (ask, or a device setting) |
 | [adr/0027-delete-a-profile-on-this-device.md](adr/0027-delete-a-profile-on-this-device.md) | P01/T7d: delete a profile that is not open (file, key, registry entry), finished on next open if interrupted |
-| [adr/0028-time-types-and-dst-resolution.md](adr/0028-time-types-and-dst-resolution.md) | P02/T1: time data in foundation, zone database and DST rule in time_kernel; ScheduleSpec |
+| [adr/0028-time-types-and-dst-resolution.md](adr/0028-time-types-and-dst-resolution.md) | P02/T1–T2: time data in foundation, zone database and DST rule in time_kernel; ScheduleSpec; recurrence engine, bounded window query, exceptions, conflicts |
 
 ## Batch 4 documents
 
@@ -179,7 +179,7 @@ Resolved in P01: OQ-R4 (encryption at rest on Android and Windows, ADR-0021/0022
 | OQ-S9 | Move all or part of a guest profile's data into an account profile (P04, owner 2026-11-07) | ADR-0024 |
 | ADR-0003 | Backend choice (auth before P01 exit via spike S-03a; data/sync P04) | adr |
 | OQ-GOV-2/3 | Dedupe/event-log retention; one table or two for outbox+event log | governance-kernel/data batch |
-| OQ-PLAN-1/2 | Max occurrences per window; series-split on rule edit (proposals D1/D4 in [roadmap/p02-plan.md](roadmap/p02-plan.md)) | planning-scheduling |
+| OQ-PLAN-2 (rest) | "This and following" series split (deferred to P03; OQ-PLAN-1 resolved by D1, ADR-0028) | planning-scheduling |
 | OQ-EXEC-1/2 | `no data` storage; health idempotency key | execution-measurement |
 | OQ-AUTHZ-1/2 | P04 roles; AI usage limits as policy | authorization-model |
 | OQ-AI-1/2 | Multi-command approval; offline cloud-only model | ai-action-governance |
