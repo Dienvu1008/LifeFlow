@@ -2,7 +2,7 @@ name: time_kernel
 description: >-
   Stateless time rules for LifeFlow: ScheduleSpec, RecurrenceRule,
   OccurrenceException, occurrence window query, DST resolution, overlap.
-  Pure Dart (ADR-0013). Depends only on foundation + timezone. Scaffold skeleton.
+  Pure Dart (ADR-0013). Depends only on foundation + timezone.
 publish_to: "none"
 version: 0.0.1
 
@@ -12,7 +12,10 @@ environment:
 dependencies:
   foundation:
     path: ../foundation
-  timezone: ^0.9.0
+  # BSD-2-Clause (LICENSE checked 2026-11-07, ADR-0018). Pinned: the zone
+  # database ships inside the package, so an upgrade changes DST data and is
+  # a deliberate change (R-DST).
+  timezone: 0.9.4
 
 dev_dependencies:
   test: ^1.25.0

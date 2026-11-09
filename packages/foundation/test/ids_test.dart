@@ -14,10 +14,10 @@ void main() {
   });
 
   test('LocalDate compares by value and formats ISO-like', () {
-    const d = LocalDate(2026, 3, 9);
-    expect(d, const LocalDate(2026, 3, 9));
+    final d = LocalDate(2026, 3, 9);
+    expect(d, LocalDate(2026, 3, 9));
     expect(d.toString(), '2026-03-09');
-    expect(d == const LocalDate(2026, 3, 10), isFalse);
+    expect(d == LocalDate(2026, 3, 10), isFalse);
   });
 
   test('Result is a sealed Ok/Err', () {

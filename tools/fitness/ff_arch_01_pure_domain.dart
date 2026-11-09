@@ -12,6 +12,12 @@ const _forbidden = [
 ];
 const _purePackages = ['foundation', 'time_kernel', 'domain'];
 
+/// Extra rules per package. ADR-0028: `foundation` holds plain time data
+/// only; the zone database (and the DST rule) is the Time Kernel's.
+const _forbiddenIn = {
+  'foundation': ["package:timezone/"],
+};
+
 void main() {
   final root = Directory('packages');
   final violations = <String>[];
@@ -23,7 +29,7 @@ void main() {
         .whereType<File>()
         .where((f) => f.path.endsWith('.dart') && !f.path.endsWith('.g.dart'))) {
       final text = f.readAsStringSync();
-      for (final bad in _forbidden) {
+      for (final bad in [..._forbidden, ...?_forbiddenIn[pkg]]) {
         if (text.contains("import '$bad") || text.contains('import "$bad')) {
           violations.add('${f.path}: forbidden import $bad');
         }

@@ -1,7 +1,7 @@
-/// Time Kernel (scaffold skeleton, P02). Stateless schedule/recurrence/DST
-/// rules per ADR-0007/0010/0013. Implementations land in P02.
+/// Time Kernel (ADR-0007, ADR-0010, ADR-0013, ADR-0028): stateless schedule,
+/// recurrence and DST rules. Pure Dart; depends only on `foundation` and the
+/// `timezone` database. Owns nothing persistent and emits no events.
 library time_kernel;
 
-// Intentionally empty for the skeleton; value objects and pure functions
-// (ScheduleSpec, RecurrenceRule, OccurrenceWindowQuery, resolveWallClock,
-// OverlapQuery) are added in P02.
+export 'src/schedule.dart';
+export 'src/zones.dart';

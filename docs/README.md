@@ -118,6 +118,7 @@ Every non-trivial statement carries one of these labels.
 | [adr/0025-profile-export-and-restore.md](adr/0025-profile-export-and-restore.md) | P01/T7–T7c: decrypted, versioned, checksummed export; restore into the same profile, or the same account's profile on another device (overwrite or merge, undo), or as a new profile; closes OQ-DATA-3 (a) |
 | [adr/0026-reopen-and-trash-with-subtasks.md](adr/0026-reopen-and-trash-with-subtasks.md) | P01/T7c: reopen a done task; trash a parent with or without its subtasks (ask, or a device setting) |
 | [adr/0027-delete-a-profile-on-this-device.md](adr/0027-delete-a-profile-on-this-device.md) | P01/T7d: delete a profile that is not open (file, key, registry entry), finished on next open if interrupted |
+| [adr/0028-time-types-and-dst-resolution.md](adr/0028-time-types-and-dst-resolution.md) | P02/T1: time data in foundation, zone database and DST rule in time_kernel; ScheduleSpec |
 
 ## Batch 4 documents
 

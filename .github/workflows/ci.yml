@@ -20,6 +20,12 @@ jobs:
           dart pub get
           dart analyze
           dart test
+      - name: Time Kernel analyze + test (DST, schedules; GS-04)
+        working-directory: packages/time_kernel
+        run: |
+          dart pub get
+          dart analyze
+          dart test
       - name: Domain analyze + test (Task rules, hierarchy, transitions)
         working-directory: packages/domain
         run: |
