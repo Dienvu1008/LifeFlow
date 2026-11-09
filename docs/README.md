@@ -167,17 +167,18 @@ Resolved in Batch 2: OQ-B1 (Time Kernel package, ADR-0013), OQ-R1 (subtask depth
 
 Resolved 2026-11-04 (pre-spike): OQ-S7 (sign-out → profile chooser, data stays on device), OQ-DATA-1 (random 256-bit key in secure storage, no passphrase). New non-blocking: OQ-DATA-3 (key/data backup).
 
+Resolved in P01: OQ-R4 (encryption at rest on Android and Windows, ADR-0021/0022), OQ-DATA-3 option (a) (user export as the backup, ADR-0025). **P01 done 2026-11-07** ([testing/p01-exit-gate.md](testing/p01-exit-gate.md)). P02 plan: [roadmap/p02-plan.md](roadmap/p02-plan.md).
+
 ## Unresolved decisions (summary)
 
 | ID | Question | Doc |
 |---|---|---|
 | OQ-DATA-3 (b)/(c) | Passphrase-wrapped key export or cloud escrow, and passphrase-encrypted export file (option (a), the plain export, is resolved by ADR-0025) | data-architecture |
 | OQ-S8 | Binding a profile to an account that already has cloud data (P04) | product-scope |
-| OQ-S9 | Move all or part of a guest profile's data into an account profile | ADR-0024 |
-| OQ-R4 | Encryption at rest | requirements (security/data batch) |
+| OQ-S9 | Move all or part of a guest profile's data into an account profile (P04, owner 2026-11-07) | ADR-0024 |
 | ADR-0003 | Backend choice (auth before P01 exit via spike S-03a; data/sync P04) | adr |
 | OQ-GOV-2/3 | Dedupe/event-log retention; one table or two for outbox+event log | governance-kernel/data batch |
-| OQ-PLAN-1/2 | Max occurrences per window; series-split on rule edit | planning-scheduling |
+| OQ-PLAN-1/2 | Max occurrences per window; series-split on rule edit (proposals D1/D4 in [roadmap/p02-plan.md](roadmap/p02-plan.md)) | planning-scheduling |
 | OQ-EXEC-1/2 | `no data` storage; health idempotency key | execution-measurement |
 | OQ-AUTHZ-1/2 | P04 roles; AI usage limits as policy | authorization-model |
 | OQ-AI-1/2 | Multi-command approval; offline cloud-only model | ai-action-governance |

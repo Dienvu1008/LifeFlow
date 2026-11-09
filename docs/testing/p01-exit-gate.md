@@ -1,6 +1,6 @@
 # P01 exit-gate evidence
 
-Maps each line of the P01 definition of done ([definition-of-done.md](definition-of-done.md)) to the tests and checks that prove it. Status: **ready for owner review**, pending the owner's device check of T7 and a green CI on the T7 branch.
+Maps each line of the P01 definition of done ([definition-of-done.md](definition-of-done.md)) to the tests and checks that prove it. Status: **signed off by the owner, 2026-11-07** (see the end of this document).
 
 How to reproduce: `dart test` in `packages/foundation|domain|application|infrastructure`, `flutter test` in `packages/ui` and `apps/lifeflow_app`, and `dart run tools/fitness/<script>.dart` for each fitness script. CI runs the same (`.github/workflows/ci.yml`).
 
@@ -53,8 +53,10 @@ ADR-0021 to ADR-0025: encryption posture, Windows encryption, per-profile stores
 ## Known limits carried out of P01
 - The sign-out lock is application-level, not cryptographic (ADR-0024). Crypto lock waits for OQ-DATA-3 (b) or (c) in P04.
 - Export is unencrypted by design in the MVP (ADR-0025); passphrase export is open.
-- OQ-S9: partial move of guest data into an account.
+- OQ-S9: partial move of guest data into an account (P04, owner decision 2026-11-07).
 - OQ-S8: binding a profile to an account that already has cloud data (P04).
+- Two devices of one account do not sync yet; the same thing created separately on both is two tasks until P04 (ADR-0025 T7c).
+- The subtask-trash setting is per device (ADR-0026).
 - Sign-in uses email and GitHub; other providers are not in P01.
 
 ## Test counts at T7d
@@ -62,8 +64,10 @@ foundation 3, domain 17, application 3, infrastructure 163 (incl. export, 24 res
 
 ## Owner sign-off
 - [x] T7 device check (Windows and Android): export warns and saves; tampered or newer file rejected (owner, 2026-11-07). Restore-as-copy was rejected by the owner and replaced by T7b.
-- [ ] T7b device check (Windows and Android): identical file says nothing to restore; overwrite and merge options; hierarchy question; undo last restore; a file of a profile not on the device becomes a new profile.
-- [ ] T7d device check: delete leftover profiles on Windows and Android; the open profile has no Delete button.
-- [ ] T7c device check (owner report 2026-11-07): a file from the same GitHub account on the other device goes into that account's profile; a new task is scrolled into view and not hidden by the + button; unchecking a done task reopens it; trashing a parent asks (or follows the setting in Settings).
-- [ ] CI green on the T7 branch.
-- [ ] Owner approves P01 as done.
+- [x] T7b device check (Windows and Android): identical file says nothing to restore; overwrite and merge options; hierarchy question; undo last restore; a file of a profile not on the device becomes a new profile (owner, 2026-11-07).
+- [x] T7d device check: delete leftover profiles on Windows and Android; the open profile has no Delete button (owner, 2026-11-07).
+- [x] T7c device check (owner report 2026-11-07): a file from the same GitHub account on the other device goes into that account's profile; a new task is scrolled into view and not hidden by the + button; unchecking a done task reopens it; trashing a parent asks (or follows the setting in Settings) (owner, 2026-11-07).
+- [x] CI green on the T7 branch (`0794ca2`) and on `main` after the merge (`10600ef`).
+- [x] Owner approves P01 as done (2026-11-07). OQ-S8 and OQ-S9 are carried to P04 by owner decision.
+
+**P01 status: Done (2026-11-07).**
