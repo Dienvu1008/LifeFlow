@@ -19,6 +19,8 @@ dependencies:
   domain:
     path: ../domain
   uuid: ^4.5.0
+  # SHA-256 for the export checksum (BSD-3, Dart team).
+  crypto: 3.0.8
 
 dev_dependencies:
   test: ^1.25.0

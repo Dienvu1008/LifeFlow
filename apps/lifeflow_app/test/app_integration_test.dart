@@ -66,6 +66,25 @@ class OkAuth implements AuthGateway {
   Future<void> signOut() async {}
 }
 
+/// File dialogs backed by memory: what the user "saves" can be "picked" again.
+class MemoryFiles implements FileGateway {
+  String? saved;
+  String? savedName;
+
+  /// What the next open dialog returns; defaults to the last saved file.
+  String? pickOverride;
+
+  @override
+  Future<bool> saveText(String suggestedName, String text) async {
+    savedName = suggestedName;
+    saved = text;
+    return true;
+  }
+
+  @override
+  Future<String?> pickText() async => pickOverride ?? saved;
+}
+
 class MemoryKeys {
   final values = <String, String>{};
   DatabaseKeyStore call(String name) => _Slot(this, name);
@@ -79,6 +98,8 @@ class _Slot implements DatabaseKeyStore {
   Future<String?> read() async => keys.values[name];
   @override
   Future<void> write(String key) async => keys.values[name] = key;
+  @override
+  Future<void> delete() async => keys.values.remove(name);
 }
 
 /// A temp app-support directory with a directory opened on it.
@@ -88,6 +109,7 @@ class World {
   final keys = MemoryKeys();
   final auth = RecordingAuth();
   final warnings = <String>[];
+  final files = MemoryFiles();
 
   Future<void> open(StoragePlatform platform, {bool fallback = false}) async {
     base = await Directory.systemTemp.createTemp('lifeflow_app_');
@@ -108,7 +130,7 @@ class World {
           platform: platform,
           auth: auth,
           host: host,
-          initialRoute: route,
+          initialRoute: route, files: files,
           windowsPlainFallback: fallback,
           onWarning: warnings.add,
         ),
@@ -268,7 +290,7 @@ void main() {
       initialProfileId: first,
       openSession: (id, host, route) => openSession(
         directory: w.directory, profileId: id, platform: StoragePlatform.android,
-        auth: auth, host: host, initialRoute: route),
+        auth: auth, host: host, initialRoute: route, files: w.files),
     ));
     await settle(tester);
 
@@ -314,6 +336,190 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await settle(tester, 2);
     await tester.runAsync(w.dispose);
+  });
+
+  testWidgets('export then restore through the UI gives the same data (GS-20)',
+      (tester) async {
+    tester.view.physicalSize = const Size(1000, 1100);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final w = await pumpApp(tester, StoragePlatform.android);
+
+    Future<void> tapAndSettle(Finder f, [int rounds = 8]) async {
+      await tester.tap(f);
+      await settle(tester, rounds);
+    }
+
+    // Two tasks and a subtask in the active profile.
+    Future<void> add(String title, {String? under}) async {
+      if (under == null) {
+        await tapAndSettle(find.byTooltip('Add task'));
+      } else {
+        await tapAndSettle(find.byTooltip('Actions for $under'));
+        await tapAndSettle(find.text('Add subtask'));
+      }
+      await tester.enterText(find.byType(TextField), title);
+      await tapAndSettle(find.widgetWithText(FilledButton, 'Add'));
+    }
+
+    await add('Learn English');
+    await add('Chapter 1', under: 'Learn English');
+    await add('Pay rent');
+    expect(find.text('Chapter 1'), findsOneWidget);
+    final original = (await tester.runAsync(() => w.directory.active()))!.id;
+
+    // Export from the Profiles screen.
+    await tapAndSettle(find.byIcon(Icons.people_outline));
+    await tapAndSettle(find.text('Export this profile'));
+    expect(find.textContaining('UNENCRYPTED'), findsOneWidget);
+    await tapAndSettle(find.widgetWithText(FilledButton, 'Export'));
+    expect(w.files.saved, isNotNull);
+    expect(w.files.savedName, endsWith('.lifeflow.json'));
+    expect(find.text('Exported 3 tasks.'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 6)); // let the snackbar go
+
+    // Restore the same file into the same profile: nothing differs.
+    await tapAndSettle(find.text('Restore from a file'));
+    expect(find.text('Nothing to restore'), findsOneWidget);
+    await tapAndSettle(find.widgetWithText(FilledButton, 'OK'));
+
+    // The device drifts: one more task. Restoring now shows the difference.
+    await tapAndSettle(find.byIcon(Icons.checklist_outlined));
+    await add('Device only');
+    expect(find.text('Device only'), findsOneWidget);
+    await tapAndSettle(find.byIcon(Icons.people_outline));
+    await tapAndSettle(find.text('Restore from a file'));
+    expect(find.byKey(const Key('restore-choice')), findsOneWidget);
+    expect(find.text('Only on this device: 1'), findsOneWidget);
+
+    // Overwrite: the profile becomes the file; the extra task goes to trash.
+    await tapAndSettle(find.byKey(const Key('mode-overwrite')));
+    await tapAndSettle(find.byKey(const Key('restore-go')), 12);
+    expect(find.textContaining('Moved 1 item to the trash.'), findsOneWidget);
+    await tapAndSettle(find.widgetWithText(FilledButton, 'OK'));
+    // Never a second profile for the same data (owner decision, ADR-0025).
+    final profiles = (await tester.runAsync(() => w.directory.list()))!;
+    expect(profiles.single.id, original);
+
+    await tapAndSettle(find.byIcon(Icons.checklist_outlined));
+    expect(find.text('Device only'), findsNothing);
+    expect(find.text('Learn English'), findsOneWidget);
+    expect(find.text('Chapter 1'), findsOneWidget);
+    expect(find.text('Pay rent'), findsOneWidget);
+    expect(tester.getTopLeft(find.text('Chapter 1')).dx,
+        greaterThan(tester.getTopLeft(find.text('Learn English')).dx));
+
+    // Undo brings the extra task back.
+    await tapAndSettle(find.byIcon(Icons.people_outline));
+    await tapAndSettle(find.byKey(const Key('undo-restore')));
+    await tapAndSettle(find.widgetWithText(FilledButton, 'Undo restore'), 12);
+    await tester.pump(const Duration(seconds: 6));
+    await settle(tester, 2);
+    await tapAndSettle(find.byIcon(Icons.checklist_outlined));
+    expect(find.text('Device only'), findsOneWidget);
+
+    // Still one encrypted file for the profile (SR-03, GS-19).
+    expect(isPlainSqliteFile(w.directory.profileFile(original)), isFalse);
+    await finish(tester, w);
+  });
+
+  testWidgets('a backup of a profile that is not on the device is restored as '
+      'a new profile with its own ids (GS-20 clean install)', (tester) async {
+    tester.view.physicalSize = const Size(1000, 1100);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final w = await pumpApp(tester, StoragePlatform.android);
+    Future<void> tapAndSettle(Finder f, [int rounds = 8]) async {
+      await tester.tap(f);
+      await settle(tester, rounds);
+    }
+
+    // A file from ANOTHER install (its own folder and keys): a profile with
+    // one task, exported there.
+    final other = (await tester.runAsync(() async {
+      final oldBase = Directory.systemTemp.createTempSync('lifeflow_oldphone_');
+      final oldKeys = MemoryKeys();
+      final oldDir = await ProfileDirectory.open(
+          baseDir: oldBase,
+          policy: AtRestPolicy.encrypt,
+          keysFor: oldKeys.call,
+          background: false);
+      final p = (await oldDir.active())!;
+      final store = await oldDir.openProfile(p.id);
+      final db = store.db;
+      final ws = (await db.select(db.workspaces).getSingle()).id;
+      await DriftCommandGateway(db, WorkspaceOwnerAuthorization(db)).execute(
+          Command(
+            operationId: 'op-old-1',
+            actor: ActorRef(ActorKind.owner, p.id),
+            workspaceId: ws,
+            type: 'CreateTask',
+            payload: {'op': 'create', 'id': 'old-task-1', 'title': 'Old phone task'},
+            issuedAt: Instant.now(),
+          ),
+          TaskCommandHandler());
+      final text = await ProfileExport.build(db);
+      await db.close();
+      await oldDir.close();
+      oldBase.deleteSync(recursive: true);
+      return (id: p.id, text: text);
+    }))!;
+    w.files.pickOverride = other.text;
+
+    await tapAndSettle(find.byIcon(Icons.people_outline));
+    await tapAndSettle(find.text('Restore from a file'));
+    expect(find.text('Restore as a new profile?'), findsOneWidget);
+    await tapAndSettle(find.widgetWithText(FilledButton, 'Restore'), 12);
+    expect(find.textContaining('was restored with 1 task'), findsOneWidget);
+    final ids = (await tester.runAsync(() => w.directory.list()))!.map((e) => e.id);
+    expect(ids, contains(other.id)); // original id kept (LF-INV-ID-001)
+    await tapAndSettle(find.widgetWithText(FilledButton, 'OK'));
+    await finish(tester, w);
+  });
+
+  testWidgets('deleting a profile through the UI removes its file and key '
+      '(ADR-0027)', (tester) async {
+    tester.view.physicalSize = const Size(1000, 1100);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final w = await pumpApp(tester, StoragePlatform.android);
+    final extra = (await tester.runAsync(
+        () => w.directory.createProfile(displayName: 'Old copy')))!;
+    expect(w.directory.profileFile(extra.id).existsSync(), isTrue);
+
+    await tester.tap(find.byIcon(Icons.people_outline));
+    await settle(tester);
+    await tester.tap(find.byTooltip('Delete Old copy'));
+    await settle(tester);
+    await tester.tap(find.widgetWithText(FilledButton, 'Delete profile'));
+    await settle(tester, 10);
+
+    expect(find.text('Old copy'), findsNothing);
+    final ids = (await tester.runAsync(() => w.directory.list()))!.map((e) => e.id);
+    expect(ids, isNot(contains(extra.id)));
+    expect(w.directory.profileFile(extra.id).existsSync(), isFalse);
+    expect(w.keys.values.containsKey(ProfileDirectory.profileKeyName(extra.id)),
+        isFalse);
+    await tester.pump(const Duration(seconds: 6));
+    await finish(tester, w);
+  });
+
+  testWidgets('a damaged export is rejected by the UI and changes nothing',
+      (tester) async {
+    tester.view.physicalSize = const Size(1000, 1100);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final w = await pumpApp(tester, StoragePlatform.android);
+    await tester.tap(find.byIcon(Icons.people_outline));
+    await settle(tester);
+    w.files.pickOverride = '{"format":"lifeflow-export","formatVersion":1,'
+        '"schemaVersion":2,"checksumSha256":"${'0' * 64}","counts":{},"payload":{}}';
+    await tester.tap(find.text('Restore from a file'));
+    await settle(tester);
+    expect(find.text('Cannot restore'), findsOneWidget);
+    expect(find.textContaining('Nothing was changed.'), findsOneWidget);
+    expect((await tester.runAsync(() => w.directory.list()))!, hasLength(1));
+    await finish(tester, w);
   });
 
   test('storagePlatformFor maps target platforms', () {

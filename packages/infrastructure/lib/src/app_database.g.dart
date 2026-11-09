@@ -3928,6 +3928,284 @@ class OpDedupeCompanion extends UpdateCompanion<OpDedupeData> {
   }
 }
 
+class $RestoreSnapshotsTable extends RestoreSnapshots
+    with TableInfo<$RestoreSnapshotsTable, RestoreSnapshot> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RestoreSnapshotsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _operationIdMeta =
+      const VerificationMeta('operationId');
+  @override
+  late final GeneratedColumn<String> operationId = GeneratedColumn<String>(
+      'operation_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _exportTextMeta =
+      const VerificationMeta('exportText');
+  @override
+  late final GeneratedColumn<String> exportText = GeneratedColumn<String>(
+      'export_text', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, operationId, createdAt, exportText];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'restore_snapshots';
+  @override
+  VerificationContext validateIntegrity(Insertable<RestoreSnapshot> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('operation_id')) {
+      context.handle(
+          _operationIdMeta,
+          operationId.isAcceptableOrUnknown(
+              data['operation_id']!, _operationIdMeta));
+    } else if (isInserting) {
+      context.missing(_operationIdMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('export_text')) {
+      context.handle(
+          _exportTextMeta,
+          exportText.isAcceptableOrUnknown(
+              data['export_text']!, _exportTextMeta));
+    } else if (isInserting) {
+      context.missing(_exportTextMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RestoreSnapshot map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RestoreSnapshot(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      operationId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}operation_id'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      exportText: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}export_text'])!,
+    );
+  }
+
+  @override
+  $RestoreSnapshotsTable createAlias(String alias) {
+    return $RestoreSnapshotsTable(attachedDatabase, alias);
+  }
+}
+
+class RestoreSnapshot extends DataClass implements Insertable<RestoreSnapshot> {
+  final String id;
+  final String operationId;
+  final DateTime createdAt;
+  final String exportText;
+  const RestoreSnapshot(
+      {required this.id,
+      required this.operationId,
+      required this.createdAt,
+      required this.exportText});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['operation_id'] = Variable<String>(operationId);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['export_text'] = Variable<String>(exportText);
+    return map;
+  }
+
+  RestoreSnapshotsCompanion toCompanion(bool nullToAbsent) {
+    return RestoreSnapshotsCompanion(
+      id: Value(id),
+      operationId: Value(operationId),
+      createdAt: Value(createdAt),
+      exportText: Value(exportText),
+    );
+  }
+
+  factory RestoreSnapshot.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RestoreSnapshot(
+      id: serializer.fromJson<String>(json['id']),
+      operationId: serializer.fromJson<String>(json['operationId']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      exportText: serializer.fromJson<String>(json['exportText']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'operationId': serializer.toJson<String>(operationId),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'exportText': serializer.toJson<String>(exportText),
+    };
+  }
+
+  RestoreSnapshot copyWith(
+          {String? id,
+          String? operationId,
+          DateTime? createdAt,
+          String? exportText}) =>
+      RestoreSnapshot(
+        id: id ?? this.id,
+        operationId: operationId ?? this.operationId,
+        createdAt: createdAt ?? this.createdAt,
+        exportText: exportText ?? this.exportText,
+      );
+  RestoreSnapshot copyWithCompanion(RestoreSnapshotsCompanion data) {
+    return RestoreSnapshot(
+      id: data.id.present ? data.id.value : this.id,
+      operationId:
+          data.operationId.present ? data.operationId.value : this.operationId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      exportText:
+          data.exportText.present ? data.exportText.value : this.exportText,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RestoreSnapshot(')
+          ..write('id: $id, ')
+          ..write('operationId: $operationId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('exportText: $exportText')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, operationId, createdAt, exportText);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RestoreSnapshot &&
+          other.id == this.id &&
+          other.operationId == this.operationId &&
+          other.createdAt == this.createdAt &&
+          other.exportText == this.exportText);
+}
+
+class RestoreSnapshotsCompanion extends UpdateCompanion<RestoreSnapshot> {
+  final Value<String> id;
+  final Value<String> operationId;
+  final Value<DateTime> createdAt;
+  final Value<String> exportText;
+  final Value<int> rowid;
+  const RestoreSnapshotsCompanion({
+    this.id = const Value.absent(),
+    this.operationId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.exportText = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RestoreSnapshotsCompanion.insert({
+    required String id,
+    required String operationId,
+    required DateTime createdAt,
+    required String exportText,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        operationId = Value(operationId),
+        createdAt = Value(createdAt),
+        exportText = Value(exportText);
+  static Insertable<RestoreSnapshot> custom({
+    Expression<String>? id,
+    Expression<String>? operationId,
+    Expression<DateTime>? createdAt,
+    Expression<String>? exportText,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (operationId != null) 'operation_id': operationId,
+      if (createdAt != null) 'created_at': createdAt,
+      if (exportText != null) 'export_text': exportText,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RestoreSnapshotsCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? operationId,
+      Value<DateTime>? createdAt,
+      Value<String>? exportText,
+      Value<int>? rowid}) {
+    return RestoreSnapshotsCompanion(
+      id: id ?? this.id,
+      operationId: operationId ?? this.operationId,
+      createdAt: createdAt ?? this.createdAt,
+      exportText: exportText ?? this.exportText,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (operationId.present) {
+      map['operation_id'] = Variable<String>(operationId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (exportText.present) {
+      map['export_text'] = Variable<String>(exportText.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RestoreSnapshotsCompanion(')
+          ..write('id: $id, ')
+          ..write('operationId: $operationId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('exportText: $exportText, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3939,6 +4217,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $OutboxTable outbox = $OutboxTable(this);
   late final $EventLogTable eventLog = $EventLogTable(this);
   late final $OpDedupeTable opDedupe = $OpDedupeTable(this);
+  late final $RestoreSnapshotsTable restoreSnapshots =
+      $RestoreSnapshotsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3951,7 +4231,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         auditLog,
         outbox,
         eventLog,
-        opDedupe
+        opDedupe,
+        restoreSnapshots
       ];
 }
 
@@ -5828,6 +6109,169 @@ typedef $$OpDedupeTableProcessedTableManager = ProcessedTableManager<
     (OpDedupeData, BaseReferences<_$AppDatabase, $OpDedupeTable, OpDedupeData>),
     OpDedupeData,
     PrefetchHooks Function()>;
+typedef $$RestoreSnapshotsTableCreateCompanionBuilder
+    = RestoreSnapshotsCompanion Function({
+  required String id,
+  required String operationId,
+  required DateTime createdAt,
+  required String exportText,
+  Value<int> rowid,
+});
+typedef $$RestoreSnapshotsTableUpdateCompanionBuilder
+    = RestoreSnapshotsCompanion Function({
+  Value<String> id,
+  Value<String> operationId,
+  Value<DateTime> createdAt,
+  Value<String> exportText,
+  Value<int> rowid,
+});
+
+class $$RestoreSnapshotsTableFilterComposer
+    extends Composer<_$AppDatabase, $RestoreSnapshotsTable> {
+  $$RestoreSnapshotsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get operationId => $composableBuilder(
+      column: $table.operationId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get exportText => $composableBuilder(
+      column: $table.exportText, builder: (column) => ColumnFilters(column));
+}
+
+class $$RestoreSnapshotsTableOrderingComposer
+    extends Composer<_$AppDatabase, $RestoreSnapshotsTable> {
+  $$RestoreSnapshotsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get operationId => $composableBuilder(
+      column: $table.operationId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get exportText => $composableBuilder(
+      column: $table.exportText, builder: (column) => ColumnOrderings(column));
+}
+
+class $$RestoreSnapshotsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RestoreSnapshotsTable> {
+  $$RestoreSnapshotsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get operationId => $composableBuilder(
+      column: $table.operationId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get exportText => $composableBuilder(
+      column: $table.exportText, builder: (column) => column);
+}
+
+class $$RestoreSnapshotsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $RestoreSnapshotsTable,
+    RestoreSnapshot,
+    $$RestoreSnapshotsTableFilterComposer,
+    $$RestoreSnapshotsTableOrderingComposer,
+    $$RestoreSnapshotsTableAnnotationComposer,
+    $$RestoreSnapshotsTableCreateCompanionBuilder,
+    $$RestoreSnapshotsTableUpdateCompanionBuilder,
+    (
+      RestoreSnapshot,
+      BaseReferences<_$AppDatabase, $RestoreSnapshotsTable, RestoreSnapshot>
+    ),
+    RestoreSnapshot,
+    PrefetchHooks Function()> {
+  $$RestoreSnapshotsTableTableManager(
+      _$AppDatabase db, $RestoreSnapshotsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RestoreSnapshotsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RestoreSnapshotsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RestoreSnapshotsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> operationId = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<String> exportText = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              RestoreSnapshotsCompanion(
+            id: id,
+            operationId: operationId,
+            createdAt: createdAt,
+            exportText: exportText,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String operationId,
+            required DateTime createdAt,
+            required String exportText,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              RestoreSnapshotsCompanion.insert(
+            id: id,
+            operationId: operationId,
+            createdAt: createdAt,
+            exportText: exportText,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable<$RestoreSnapshotsTable, RestoreSnapshot>(table),
+                    BaseReferences<_$AppDatabase, $RestoreSnapshotsTable,
+                        RestoreSnapshot>(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$RestoreSnapshotsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $RestoreSnapshotsTable,
+    RestoreSnapshot,
+    $$RestoreSnapshotsTableFilterComposer,
+    $$RestoreSnapshotsTableOrderingComposer,
+    $$RestoreSnapshotsTableAnnotationComposer,
+    $$RestoreSnapshotsTableCreateCompanionBuilder,
+    $$RestoreSnapshotsTableUpdateCompanionBuilder,
+    (
+      RestoreSnapshot,
+      BaseReferences<_$AppDatabase, $RestoreSnapshotsTable, RestoreSnapshot>
+    ),
+    RestoreSnapshot,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5848,4 +6292,6 @@ class $AppDatabaseManager {
       $$EventLogTableTableManager(_db, _db.eventLog);
   $$OpDedupeTableTableManager get opDedupe =>
       $$OpDedupeTableTableManager(_db, _db.opDedupe);
+  $$RestoreSnapshotsTableTableManager get restoreSnapshots =>
+      $$RestoreSnapshotsTableTableManager(_db, _db.restoreSnapshots);
 }

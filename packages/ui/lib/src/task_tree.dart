@@ -4,10 +4,15 @@ import 'package:application/application.dart';
 /// root) and whether any direct child is still open (drives the choice between
 /// "complete with subtasks" and "complete only this", OQ-R3).
 class TaskRow {
-  const TaskRow(this.task, this.depth, this.hasOpenChildren);
+  const TaskRow(this.task, this.depth, this.hasOpenChildren,
+      [this.subtaskCount = 0]);
   final TaskView task;
   final int depth;
   final bool hasOpenChildren;
+
+  /// All visible subtasks below this task, at any depth (asked about before
+  /// moving the task to the trash).
+  final int subtaskCount;
 }
 
 /// Orders a flat task list into depth-first tree order, keeping the incoming
@@ -32,10 +37,13 @@ List<TaskRow> orderTree(List<TaskView> tasks) {
   void visit(TaskView t, int depth) {
     if (!seen.add(t.id)) return;
     final kids = children[t.id] ?? const <TaskView>[];
+    final at = out.length;
     out.add(TaskRow(t, depth, kids.any((c) => !c.isDone)));
     for (final c in kids) {
       visit(c, depth + 1);
     }
+    // Everything emitted after this row, inside its visit, is its subtree.
+    out[at] = TaskRow(t, depth, out[at].hasOpenChildren, out.length - at - 1);
   }
 
   for (final r in roots) {

@@ -71,6 +71,26 @@ class DirectoryProfileService implements ProfileService {
     }
     return CommandOk(profileId, Version.initial, const []);
   }
+
+  @override
+  Future<CommandResult> delete(String profileId) async {
+    final target = (await directory.list()).where((e) => e.id == profileId).firstOrNull;
+    if (target == null) {
+      return const CommandFailure(CommandFailureKind.notFound,
+          reason: 'profile not found');
+    }
+    if (target.isActive) {
+      return const CommandFailure(CommandFailureKind.policyDenied,
+          reason: 'switch to another profile before deleting this one');
+    }
+    try {
+      await directory.deleteProfile(profileId);
+    } catch (_) {
+      return const CommandFailure(CommandFailureKind.validationFailed,
+          reason: 'the profile could not be deleted');
+    }
+    return CommandOk(profileId, Version.initial, const []);
+  }
 }
 
 class DriftAccountService implements AccountService {

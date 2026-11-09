@@ -40,11 +40,12 @@ Local-first: the device holds a usable, authoritative copy of the active profile
 
 - The encryption key lives in platform secure storage (`flutter_secure_storage`, VS-24), never in the database or plain files (LF-INV-SEC-001).
 - [Decision, owner 2026-11-04] OQ-DATA-1 resolved: a **random 256-bit key generated on first launch per profile, stored in platform secure storage; no user passphrase in the MVP**. Consequence (recorded): if the device is lost or secure storage is wiped and there is **no backup of the key or of a decrypted export**, the encrypted database is **unrecoverable** — the data is lost. This is acceptable for the MVP because the local export (UC-20a) is the user-controlled backup path. See the new OQ-DATA-3 on key backup.
-- [Open] OQ-DATA-3 (new, non-blocking for P01): should the MVP offer a key/data backup so a lost device does not mean lost data? Options: (a) rely only on the user-initiated decrypted export (UC-20a) as the backup — simplest, MVP default; (b) optional passphrase-wrapped key export; (c) cloud key escrow (needs backend, P04+). Proposal: ship (a) for the MVP and surface a clear warning that losing the device without an export loses the data; revisit (b)/(c) at P04. Decide before P01 UX is finalized.
+- [Decision, owner 2026-11-06, ADR-0025] OQ-DATA-3 option (a) is adopted: the user-initiated decrypted export is the MVP backup. Options (b) passphrase-wrapped key export and (c) cloud escrow stay open for P04. Original question: should the MVP offer a key/data backup so a lost device does not mean lost data? Options: (a) rely only on the user-initiated decrypted export (UC-20a) as the backup — simplest, MVP default; (b) optional passphrase-wrapped key export; (c) cloud key escrow (needs backend, P04+). Proposal: ship (a) for the MVP and surface a clear warning that losing the device without an export loses the data; revisit (b)/(c) at P04. Decide before P01 UX is finalized.
 - Caveat to verify: FTS5 availability under the encrypted build (OQ-V10, spike S-02).
 
 ## 5. Backup and restore
 - [Decision] Local export is a versioned, checksummed file of all user-owned entities including tombstones (UC-20a, LF-INV-SEC-010). Restore into a clean install reproduces the data (round-trip, AC-20a.1).
+- [Decision, implemented P01 T7/T7b — [ADR-0025](../adr/0025-profile-export-and-restore.md)] Export covers the active profile. Restore of a profile not on the device creates it with its original ids. Restore of the active profile compares by id and offers overwrite (device-only records become tombstones) or merge ((a) newer by updatedAt then version, (b) add file-only records), with an undo copy kept inside the encrypted store (schema v3). Never a second profile for the same data. The file is validated fully before anything is written (SR-14); newer format or schema versions are rejected (AC-20a.2). The passphrase-encrypted export mentioned below is deferred by the owner.
 - [Decision] The export file is **decrypted application data** (not the raw encrypted DB) in a documented schema, so it is portable across installs and the encryption key is not needed to read it. [Proposal] The export may itself be optionally encrypted with a user-provided passphrase; default is a plain (but local-only) file with a warning. Security batch decides the default.
 - Export includes audit and provenance (audit-and-provenance.md).
 
@@ -53,7 +54,7 @@ Local-first: the device holds a usable, authoritative copy of the active profile
 
 ## 7. Open questions
 - OQ-DATA-1: **resolved** (section 4) — random 256-bit key in secure storage, no passphrase.
-- OQ-DATA-3 (new, non-blocking): key/data backup so a lost device is not a total loss (section 4).
+- OQ-DATA-3: option (a) **resolved** (section 4, ADR-0025); (b) passphrase-wrapped key and (c) escrow remain open for P04.
 - OQ-V10: FTS5 under the encrypted build (verified-sources; spike S-02).
 - OQ-DATA-2: attachment encryption approach (section 2); security batch.
 

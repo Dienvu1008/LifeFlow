@@ -43,6 +43,8 @@ jobs:
         run: dart run tools/fitness/ff_arch_01_pure_domain.dart
       - name: FF-ARCH-04 (ui depends on application ports only)
         run: dart run tools/fitness/ff_arch_04_ui_isolation.dart
+      - name: FF-ARCH-06 + FF-ARCH-09 (atomic set per handler; authorize before domain)
+        run: dart run tools/fitness/ff_arch_06_09.dart
 
   flutter-ui-and-app:
     runs-on: ubuntu-latest

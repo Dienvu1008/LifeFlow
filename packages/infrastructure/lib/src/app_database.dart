@@ -9,14 +9,18 @@ part 'app_database.g.dart';
 /// Migrations are guided (VS-04), additive only; no destructive migrations.
 ///   v1 (P01 T1)  initial schema
 ///   v2 (P01 T6c) profiles.signed_out — sign-out locks the profile, binding kept
+///   v3 (P01 T7b) restore_snapshots — undo of the last restore (ADR-0025)
 @DriftDatabase(
-  tables: [Profiles, Workspaces, TaskLists, Tasks, AuditLog, Outbox, EventLog, OpDedupe],
+  tables: [
+    Profiles, Workspaces, TaskLists, Tasks, AuditLog, Outbox, EventLog,
+    OpDedupe, RestoreSnapshots,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -26,6 +30,7 @@ class AppDatabase extends _$AppDatabase {
         },
         onUpgrade: (m, from, to) async {
           if (from < 2) await m.addColumn(profiles, profiles.signedOut);
+          if (from < 3) await m.createTable(restoreSnapshots);
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');

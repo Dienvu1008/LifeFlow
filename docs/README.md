@@ -115,6 +115,9 @@ Every non-trivial statement carries one of these labels.
 | [adr/0022-windows-encryption-at-rest.md](adr/0022-windows-encryption-at-rest.md) | P01/T5a: Windows encrypted too; plain Windows only as an explicit fallback build flag |
 | [adr/0023-per-profile-stores-and-registry.md](adr/0023-per-profile-stores-and-registry.md) | P01/T6c: one DB file + key per profile, encrypted registry, cross-store ordering |
 | [adr/0024-sign-out-locks-the-account-profile.md](adr/0024-sign-out-locks-the-account-profile.md) | P01/T6c: sign-out keeps the binding and locks the profile until the same account signs in |
+| [adr/0025-profile-export-and-restore.md](adr/0025-profile-export-and-restore.md) | P01/T7–T7c: decrypted, versioned, checksummed export; restore into the same profile, or the same account's profile on another device (overwrite or merge, undo), or as a new profile; closes OQ-DATA-3 (a) |
+| [adr/0026-reopen-and-trash-with-subtasks.md](adr/0026-reopen-and-trash-with-subtasks.md) | P01/T7c: reopen a done task; trash a parent with or without its subtasks (ask, or a device setting) |
+| [adr/0027-delete-a-profile-on-this-device.md](adr/0027-delete-a-profile-on-this-device.md) | P01/T7d: delete a profile that is not open (file, key, registry entry), finished on next open if interrupted |
 
 ## Batch 4 documents
 
@@ -168,8 +171,9 @@ Resolved 2026-11-04 (pre-spike): OQ-S7 (sign-out → profile chooser, data stays
 
 | ID | Question | Doc |
 |---|---|---|
-| OQ-DATA-3 | Key/data backup so a lost device is not total loss (non-blocking) | data-architecture |
+| OQ-DATA-3 (b)/(c) | Passphrase-wrapped key export or cloud escrow, and passphrase-encrypted export file (option (a), the plain export, is resolved by ADR-0025) | data-architecture |
 | OQ-S8 | Binding a profile to an account that already has cloud data (P04) | product-scope |
+| OQ-S9 | Move all or part of a guest profile's data into an account profile | ADR-0024 |
 | OQ-R4 | Encryption at rest | requirements (security/data batch) |
 | ADR-0003 | Backend choice (auth before P01 exit via spike S-03a; data/sync P04) | adr |
 | OQ-GOV-2/3 | Dedupe/event-log retention; one table or two for outbox+event log | governance-kernel/data batch |

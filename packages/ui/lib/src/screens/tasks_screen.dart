@@ -10,19 +10,74 @@ enum _RowAction { rename, addSubtask, trash }
 
 enum _CompleteChoice { withSubtasks, onlyThis }
 
+/// Typical height of one row (one-line ListTile); only an estimate used to
+/// get close to a row that is not built yet.
+const _rowExtent = 56.0;
+
+/// Space kept free under the last row so the + button never covers it.
+const _fabClearance = 96.0;
+
 /// Task list for the active profile. All writes go through [TaskService]
 /// (the command gateway); this widget holds no domain state (AP-12).
-class TasksScreen extends ConsumerWidget {
+class TasksScreen extends ConsumerStatefulWidget {
   const TasksScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TasksScreen> createState() => _TasksScreenState();
+}
+
+class _TasksScreenState extends ConsumerState<TasksScreen> {
+  final _scroll = ScrollController();
+
+  /// A task just added here; scrolled into view once the list shows it.
+  String? _revealId;
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  Future<void> _addTask(String? parentId) async {
+    final id = await _add(context, ref, parentId);
+    if (id != null && mounted) setState(() => _revealId = id);
+  }
+
+  /// Attached to the row being revealed, so it can be scrolled into view
+  /// precisely once it is built.
+  final _revealKey = GlobalKey();
+  String? _revealing;
+
+  /// Scrolls so the row at [index] is visible (owner report: a new task was
+  /// added below the visible part of the list and looked lost). Rows have no
+  /// fixed height (large text), so: jump near it by estimate, then align on
+  /// the real row.
+  void _reveal(int index) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || !_scroll.hasClients) return;
+      if (_revealKey.currentContext == null) {
+        final pos = _scroll.position;
+        final estimate = index * _rowExtent - pos.viewportDimension / 2;
+        _scroll.jumpTo(estimate.clamp(0.0, pos.maxScrollExtent));
+        await WidgetsBinding.instance.endOfFrame;
+      }
+      final ctx = _revealKey.currentContext;
+      if (ctx != null && ctx.mounted) {
+        await Scrollable.ensureVisible(ctx,
+            alignment: 0.5, duration: const Duration(milliseconds: 250));
+      }
+      if (mounted) setState(() => _revealing = null);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final tasks = ref.watch(tasksProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Tasks')),
       floatingActionButton: FloatingActionButton(
         tooltip: 'Add task',
-        onPressed: () => _add(context, ref, null),
+        onPressed: () => _addTask(null),
         child: const Icon(Icons.add),
       ),
       body: tasks.when(
@@ -39,9 +94,26 @@ class TasksScreen extends ConsumerWidget {
         data: (list) {
           if (list.isEmpty) return const _EmptyState();
           final rows = orderTree(list);
+          final reveal = _revealId;
+          if (reveal != null) {
+            final i = rows.indexWhere((r) => r.task.id == reveal);
+            if (i >= 0) {
+              _revealId = null;
+              _revealing = reveal;
+              _reveal(i);
+            }
+          }
           return ListView.builder(
+            key: const Key('task-list'),
+            controller: _scroll,
+            padding: const EdgeInsets.only(bottom: _fabClearance),
             itemCount: rows.length,
-            itemBuilder: (context, i) => _TaskTile(row: rows[i]),
+            itemBuilder: (context, i) {
+              final tile = _TaskTile(row: rows[i], onAddSubtask: _addTask);
+              return rows[i].task.id == _revealing
+                  ? KeyedSubtree(key: _revealKey, child: tile)
+                  : tile;
+            },
           );
         },
       ),
@@ -66,8 +138,9 @@ class _EmptyState extends StatelessWidget {
 }
 
 class _TaskTile extends ConsumerWidget {
-  const _TaskTile({required this.row});
+  const _TaskTile({required this.row, required this.onAddSubtask});
   final TaskRow row;
+  final Future<void> Function(String parentId) onAddSubtask;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -78,8 +151,12 @@ class _TaskTile extends ConsumerWidget {
           EdgeInsetsDirectional.only(start: 16 + row.depth * 24.0, end: 8),
       leading: Checkbox(
         value: t.isDone,
-        semanticLabel: t.isDone ? 'Completed: ${t.title}' : 'Complete ${t.title}',
-        onChanged: t.isDone ? null : (_) => _complete(context, ref, row),
+        semanticLabel:
+            t.isDone ? 'Mark as not done: ${t.title}' : 'Complete ${t.title}',
+        // Unchecking a done task reopens it (a completion can be undone).
+        onChanged: (_) => t.isDone
+            ? _report(context, ref.read(taskServiceProvider).reopen(t.id))
+            : _complete(context, ref, row),
       ),
       title: Text(
         t.title,
@@ -109,20 +186,121 @@ class _TaskTile extends ConsumerWidget {
         if (title == null || !context.mounted) return;
         await _report(context, ref.read(taskServiceProvider).rename(t.id, title));
       case _RowAction.addSubtask:
-        await _add(context, ref, t.id);
+        await onAddSubtask(t.id);
       case _RowAction.trash:
-        await _report(context, ref.read(taskServiceProvider).trash(t.id));
+        await _trash(context, ref, row);
     }
   }
 }
 
-Future<void> _add(BuildContext context, WidgetRef ref, String? parentId) async {
+/// Returns the new task's id, or null when cancelled or refused.
+Future<String?> _add(BuildContext context, WidgetRef ref, String? parentId) async {
   final title = await showTextDialog(context,
       title: parentId == null ? 'New task' : 'New subtask',
       confirmLabel: 'Add');
-  if (title == null || !context.mounted) return;
-  await _report(
-      context, ref.read(taskServiceProvider).create(title, parentId: parentId));
+  if (title == null || !context.mounted) return null;
+  final result =
+      await ref.read(taskServiceProvider).create(title, parentId: parentId);
+  if (!context.mounted) return null;
+  if (result is CommandFailure) {
+    _show(context, describeFailure(result));
+    return null;
+  }
+  return (result as CommandOk).entityId;
+}
+
+/// Moving a task with subtasks to the trash follows the device setting
+/// (Settings): ask, always with subtasks, or keep them (they move up a level).
+Future<void> _trash(BuildContext context, WidgetRef ref, TaskRow row) async {
+  final service = ref.read(taskServiceProvider);
+  if (row.subtaskCount == 0) {
+    await _report(context, service.trash(row.task.id));
+    return;
+  }
+  var policy = SubtaskTrashPolicy.ask;
+  try {
+    policy = await ref.read(settingsServiceProvider).subtaskTrashPolicy();
+  } catch (_) {
+    // No setting available: ask.
+  }
+  if (!context.mounted) return;
+  final bool withSubtasks;
+  switch (policy) {
+    case SubtaskTrashPolicy.withSubtasks:
+      withSubtasks = true;
+    case SubtaskTrashPolicy.keepSubtasks:
+      withSubtasks = false;
+    case SubtaskTrashPolicy.ask:
+      final answer = await showDialog<(bool, bool)>(
+          context: context,
+          builder: (_) => _TrashDialog(
+              title: row.task.title, subtasks: row.subtaskCount));
+      if (answer == null || !context.mounted) return;
+      final (all, remember) = answer;
+      withSubtasks = all;
+      if (remember) {
+        await ref.read(settingsServiceProvider).setSubtaskTrashPolicy(all
+            ? SubtaskTrashPolicy.withSubtasks
+            : SubtaskTrashPolicy.keepSubtasks);
+        ref.invalidate(subtaskTrashPolicyProvider);
+        if (!context.mounted) return;
+      }
+  }
+  await _report(context, service.trash(row.task.id, withSubtasks: withSubtasks));
+}
+
+/// Asks what to do with the subtasks. Pops (withSubtasks, remember).
+class _TrashDialog extends StatefulWidget {
+  const _TrashDialog({required this.title, required this.subtasks});
+  final String title;
+  final int subtasks;
+  @override
+  State<_TrashDialog> createState() => _TrashDialogState();
+}
+
+class _TrashDialogState extends State<_TrashDialog> {
+  bool _remember = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final n = widget.subtasks;
+    final s = n == 1 ? 'subtask' : 'subtasks';
+    return AlertDialog(
+      key: const Key('trash-choice'),
+      title: Text('Move "${widget.title}" to the trash?'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(n == 1
+              ? 'It has 1 subtask. Move it to the trash too, or keep it? '
+                  'A kept subtask moves up one level.'
+              : 'It has $n subtasks. Move them to the trash too, or keep '
+                  'them? Kept subtasks move up one level.'),
+          const SizedBox(height: 8),
+          CheckboxListTile(
+            key: const Key('trash-remember'),
+            contentPadding: EdgeInsets.zero,
+            value: _remember,
+            onChanged: (v) => setState(() => _remember = v ?? false),
+            title: const Text('Remember my choice'),
+            subtitle: const Text('You can change this in Settings.'),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel')),
+        TextButton(
+            onPressed: () => Navigator.pop(context, (false, _remember)),
+            child: Text('Keep $s')),
+        FilledButton(
+            onPressed: () => Navigator.pop(context, (true, _remember)),
+            child: Text('Trash $s too')),
+      ],
+    );
+  }
 }
 
 /// OQ-R3: with open subtasks the user chooses between the two commands.
@@ -161,10 +339,14 @@ Future<void> _complete(BuildContext context, WidgetRef ref, TaskRow row) async {
 Future<void> _report(BuildContext context, Future<CommandResult> pending) async {
   final result = await pending;
   if (result is CommandFailure && context.mounted) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(describeFailure(result))));
+    _show(context, describeFailure(result));
   }
+}
+
+void _show(BuildContext context, String message) {
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text(message)));
 }
 
 /// Small single-field dialog. Returns the trimmed text, or null if cancelled

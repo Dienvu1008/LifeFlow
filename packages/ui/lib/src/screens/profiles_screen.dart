@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../messages.dart';
 import '../providers.dart';
 import 'account_card.dart';
+import 'data_card.dart';
 
 /// Profile chooser (OQ-S7): every profile on the device stays listed and its
 /// data stays on the device. Switching re-scopes the whole app to that
@@ -27,6 +28,7 @@ class ProfilesScreen extends ConsumerWidget {
           return ListView(
             children: [
               if (active != null) AccountCard(profile: active),
+              if (active != null) const DataCard(),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
                 child: Text('Profiles on this device',
@@ -66,6 +68,20 @@ class _ProfileTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final p = profile;
+    final Widget action = p.isActive
+        ? const Chip(label: Text('Active'))
+        : p.isLocked
+            ? FilledButton.tonalIcon(
+                // Signing in with this profile's account unlocks and opens
+                // it (ADR-0024); another account goes to its own profile.
+                onPressed: () => startSignIn(context, ref),
+                icon: const Icon(Icons.login),
+                label: const Text('Sign in to open'),
+              )
+            : FilledButton.tonal(
+                onPressed: () => _switch(context, ref),
+                child: const Text('Switch'),
+              );
     return ListTile(
       key: ValueKey('profile-${p.id}'),
       leading: CircleAvatar(
@@ -77,21 +93,61 @@ class _ProfileTile extends ConsumerWidget {
       ),
       title: Text(_title(p)),
       subtitle: Text(_subtitle(p)),
-      trailing: p.isActive
-          ? const Chip(label: Text('Active'))
-          : p.isLocked
-              ? FilledButton.tonalIcon(
-                  // Signing in with this profile's account unlocks and opens
-                  // it (ADR-0024); another account goes to its own profile.
-                  onPressed: () => startSignIn(context, ref),
-                  icon: const Icon(Icons.login),
-                  label: const Text('Sign in to open'),
-                )
-              : FilledButton.tonal(
-                  onPressed: () => _switch(context, ref),
-                  child: const Text('Switch'),
-                ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          action,
+          // The open profile cannot be deleted (switch first, ADR-0027).
+          if (!p.isActive)
+            IconButton(
+              tooltip: 'Delete ${_title(p)}',
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () => _delete(context, ref),
+            ),
+        ],
+      ),
     );
+  }
+
+  Future<void> _delete(BuildContext context, WidgetRef ref) async {
+    final p = profile;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        key: const Key('delete-profile'),
+        title: Text('Delete "${_title(p)}"?'),
+        content: Text(
+          'All tasks and history of this profile are deleted from this '
+          'device. This cannot be undone.'
+          '${p.isBound ? ' Nothing of it is stored online yet, so the '
+              'account cannot bring it back.' : ''}'
+          '\n\nTo keep a copy, switch to it and export it first.',
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+              foregroundColor: Theme.of(ctx).colorScheme.onError,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete profile'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    final result = await ref.read(profileServiceProvider).delete(p.id);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+          content: Text(result is CommandFailure
+              ? describeFailure(result)
+              : '"${_title(p)}" was deleted.')));
+    ref.invalidate(profilesProvider);
   }
 
   Future<void> _switch(BuildContext context, WidgetRef ref) async {

@@ -16,4 +16,7 @@ export 'src/local_store.dart';
 export 'src/account_service.dart';
 export 'src/registry_database.dart';
 export 'src/profile_directory.dart';
+export 'src/profile_export.dart';
+export 'src/profile_restore.dart';
+export 'src/data_transfer_service.dart';
 export 'src/app_service_impl.dart';

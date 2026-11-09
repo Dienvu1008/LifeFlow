@@ -10,7 +10,14 @@ import 'package:ui/ui.dart';
 /// the task stream is bound to the profile that is active when it subscribes
 /// (LF-INV-ID-002), so a UI that forgets to re-subscribe after a switch fails.
 class FakeWorld
-    implements TaskQueries, TaskService, ProfileService, AccountService {
+    implements
+        TaskQueries,
+        TaskService,
+        ProfileService,
+        AccountService,
+        DataTransferService,
+        FileGateway,
+        SettingsService {
   FakeWorld({
     required Map<String, List<TaskView>> tasks,
     required this.profiles,
@@ -31,6 +38,9 @@ class FakeWorld
   var _n = 0;
 
   List<TaskView> _mine() => _tasks[activeId]!;
+
+  /// The task list of profile [id] (test setup).
+  List<TaskView> tasks(String id) => _tasks[id]!;
 
   @override
   Stream<List<TaskView>> watchTasks() async* {
@@ -88,13 +98,56 @@ class FakeWorld
   }
 
   @override
-  Future<CommandResult> trash(String id) async {
-    calls.add('trash:$id');
+  Future<CommandResult> reopen(String id) async {
+    calls.add('reopen:$id');
     final f = _failure();
     if (f != null) return f;
-    _mine().removeWhere((t) => t.id == id);
+    _replace(id, (t) => _copy(t, status: 'todo'));
+    return CommandOk(id, Version.initial, const []);
+  }
+
+  @override
+  Future<CommandResult> trash(String id, {bool withSubtasks = false}) async {
+    calls.add(withSubtasks ? 'trash:$id:all' : 'trash:$id');
+    final f = _failure();
+    if (f != null) return f;
+    final list = _mine();
+    final gone = list.firstWhere((t) => t.id == id);
+    if (withSubtasks) {
+      final ids = {id};
+      var grew = true;
+      while (grew) {
+        grew = false;
+        for (final t in list) {
+          if (t.parentId != null && ids.contains(t.parentId) && ids.add(t.id)) grew = true;
+        }
+      }
+      list.removeWhere((t) => ids.contains(t.id));
+    } else {
+      list.removeWhere((t) => t.id == id);
+      for (var i = 0; i < list.length; i++) {
+        final t = list[i];
+        if (t.parentId == id) {
+          list[i] = TaskView(
+              id: t.id, title: t.title, status: t.status,
+              parentId: gone.parentId, createdAt: t.createdAt);
+        }
+      }
+    }
     _changes.add(null);
     return CommandOk(id, Version.initial, const []);
+  }
+
+  // --- SettingsService --------------------------------------------------------
+  SubtaskTrashPolicy trashPolicy = SubtaskTrashPolicy.ask;
+
+  @override
+  Future<SubtaskTrashPolicy> subtaskTrashPolicy() async => trashPolicy;
+
+  @override
+  Future<void> setSubtaskTrashPolicy(SubtaskTrashPolicy policy) async {
+    calls.add('setTrashPolicy:${policy.name}');
+    trashPolicy = policy;
   }
 
   @override
@@ -106,12 +159,101 @@ class FakeWorld
       [for (final p in profiles) p.asActive(p.id == activeId)];
 
   @override
+  Future<CommandResult> delete(String profileId) async {
+    calls.add('deleteProfile:$profileId');
+    final f = _failure();
+    if (f != null) return f;
+    profiles.removeWhere((p) => p.id == profileId);
+    _tasks.remove(profileId);
+    return CommandOk(profileId, Version.initial, const []);
+  }
+
+  @override
   Future<CommandResult> switchTo(String profileId) async {
     calls.add('switch:$profileId');
     final f = _failure();
     if (f != null) return f;
     activeId = profileId;
     return CommandOk(profileId, Version.initial, const []);
+  }
+
+  // --- DataTransferService + FileGateway --------------------------------------
+
+  /// What the save dialog answers (false = the user cancelled).
+  bool saveResult = true;
+
+  /// What the open dialog returns (null = cancelled).
+  String? pickResult;
+  bool pickTooLarge = false;
+  bool pickThrows = false;
+
+  /// What inspect returns; default: a profile not on this device.
+  RestorePreview? nextPreview;
+
+  /// What the next restores return, in order; when empty, a restore adds a
+  /// new profile.
+  final restoreResults = <RestoreOutcome>[];
+  bool canUndo = false;
+
+  @override
+  Future<ExportFile> exportActiveProfile() async {
+    calls.add('export');
+    return ExportFile(
+        suggestedName: 'lifeflow-test-2026-11-07.lifeflow.json',
+        contents: '{"fake":"export"}',
+        taskCount: _mine().length);
+  }
+
+  @override
+  Future<RestorePreview> inspect(String text) async {
+    calls.add('inspect:$text');
+    return nextPreview ??
+        const RestoreAsNewProfile(displayName: 'Backup of work', taskCount: 3);
+  }
+
+  @override
+  Future<RestoreOutcome> restore(String text, {RestoreChoice? choice}) async {
+    calls.add('restore:$text:${_choice(choice)}');
+    if (restoreResults.isNotEmpty) {
+      final r = restoreResults.removeAt(0);
+      if (r is RestoredInto && !r.changedNothing) canUndo = true;
+      return r;
+    }
+    final id = 'restored${_n++}';
+    profiles.add(ProfileView(
+        id: id, displayName: 'Backup of work', isActive: false, isBound: false));
+    _tasks[id] = [];
+    return Restored(profiles.last, taskCount: 3);
+  }
+
+  static String _choice(RestoreChoice? c) => c == null
+      ? '-'
+      : c.mode == RestoreMode.overwrite
+          ? 'overwrite'
+          : 'merge(newer=${c.takeNewer},missing=${c.addMissing},keepParents=${c.keepDeviceParents})';
+
+  @override
+  Future<bool> canUndoRestore() async => canUndo;
+
+  @override
+  Future<RestoreOutcome> undoLastRestore() async {
+    calls.add('undo');
+    canUndo = false;
+    return const RestoredInto(added: 0, updated: 1, removed: 0, undoAvailable: false);
+  }
+
+  @override
+  Future<bool> saveText(String suggestedName, String text) async {
+    calls.add('save:$suggestedName');
+    return saveResult;
+  }
+
+  @override
+  Future<String?> pickText() async {
+    calls.add('pick');
+    if (pickTooLarge) throw const FileTooLarge();
+    if (pickThrows) throw StateError('disk error');
+    return pickResult;
   }
 
   // --- AccountService (mirrors DriftAccountService's rules) -----------------
@@ -262,6 +404,9 @@ Widget appWith(FakeWorld world, {StorageNotice? notice}) => ProviderScope(
         taskServiceProvider.overrideWithValue(world),
         profileServiceProvider.overrideWithValue(world),
         accountServiceProvider.overrideWithValue(world),
+        dataTransferServiceProvider.overrideWithValue(world),
+        fileGatewayProvider.overrideWithValue(world),
+        settingsServiceProvider.overrideWithValue(world),
         storageNoticeProvider.overrideWithValue(notice),
       ],
       child: const LifeFlowApp(),

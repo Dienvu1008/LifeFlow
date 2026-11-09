@@ -15,6 +15,18 @@ final profileServiceProvider =
     Provider<ProfileService>((ref) => _notWired('profileServiceProvider'));
 final accountServiceProvider =
     Provider<AccountService>((ref) => _notWired('accountServiceProvider'));
+final dataTransferServiceProvider = Provider<DataTransferService>(
+    (ref) => _notWired('dataTransferServiceProvider'));
+final fileGatewayProvider =
+    Provider<FileGateway>((ref) => _notWired('fileGatewayProvider'));
+final settingsServiceProvider =
+    Provider<SettingsService>((ref) => _notWired('settingsServiceProvider'));
+
+/// What happens to subtasks when their parent goes to the trash (device
+/// setting). Invalidate after changing it.
+final subtaskTrashPolicyProvider = FutureProvider.autoDispose<SubtaskTrashPolicy>(
+  (ref) => ref.watch(settingsServiceProvider).subtaskTrashPolicy(),
+);
 
 /// Where a freshly opened profile session starts. The app shell sets
 /// '/profiles' after a sign-out (OQ-S7: back to the profile chooser).
@@ -26,6 +38,12 @@ final storageNoticeProvider = Provider<StorageNotice?>((ref) => null);
 /// The profile whose data the app is showing. Invalidate after a switch.
 final activeProfileProvider = FutureProvider.autoDispose<ProfileView?>(
   (ref) => ref.watch(profileServiceProvider).active(),
+);
+
+/// Whether the active profile can go back to its state before the last
+/// restore (ADR-0025). Invalidate after a restore or an undo.
+final canUndoRestoreProvider = FutureProvider.autoDispose<bool>(
+  (ref) => ref.watch(dataTransferServiceProvider).canUndoRestore(),
 );
 
 /// Every profile on the device, for the chooser (OQ-S7).

@@ -39,6 +39,18 @@ void main() {
       expect(closed.first.hasOpenChildren, isFalse);
     });
 
+    test('subtaskCount counts every level below a task', () {
+      final rows = orderTree([
+        task('p', 'P'),
+        task('c', 'C', parent: 'p'),
+        task('g', 'G', parent: 'c'),
+        task('s', 'S', parent: 'p'),
+        task('o', 'O'),
+      ]);
+      expect({for (final r in rows) r.task.id: r.subtaskCount},
+          {'p': 3, 'c': 1, 'g': 0, 's': 0, 'o': 0});
+    });
+
     test('a task whose parent is missing (trashed) is shown as a root', () {
       final rows = orderTree([task('c', 'C', parent: 'gone')]);
       expect(rows.single.depth, 0);

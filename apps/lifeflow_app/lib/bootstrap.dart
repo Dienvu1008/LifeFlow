@@ -53,6 +53,7 @@ Future<AppWiring> openSession({
   required StoragePlatform platform,
   required AuthGateway auth,
   required ProfileHost host,
+  required FileGateway files,
   bool windowsPlainFallback = false,
   String initialRoute = '/tasks',
   void Function(String message)? onWarning,
@@ -86,6 +87,11 @@ Future<AppWiring> openSession({
         profileServiceProvider
             .overrideWithValue(DirectoryProfileService(directory, host)),
         accountServiceProvider.overrideWithValue(accounts),
+        dataTransferServiceProvider
+            .overrideWithValue(DriftDataTransferService(db, directory, gateway: gateway)),
+        fileGatewayProvider.overrideWithValue(files),
+        settingsServiceProvider
+            .overrideWithValue(DirectorySettingsService(directory)),
         storageNoticeProvider.overrideWithValue(notice),
         initialRouteProvider.overrideWithValue(initialRoute),
       ],

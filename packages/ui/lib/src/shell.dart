@@ -13,6 +13,7 @@ class _Destination {
 const _destinations = [
   _Destination('Tasks', Icons.checklist_outlined, Icons.checklist),
   _Destination('Profiles', Icons.people_outline, Icons.people),
+  _Destination('Settings', Icons.settings_outlined, Icons.settings),
 ];
 
 /// Adaptive shell driven by window width (ui-ux-architecture.md §2):
