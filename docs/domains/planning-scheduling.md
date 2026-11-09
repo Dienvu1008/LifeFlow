@@ -52,8 +52,8 @@ None.
 [Decision] A `Reminder` is a capability of the **owning aggregate** (Task or Event), expressed as an offset-before or an absolute `Instant`, not a separate aggregate and not owned by the Time Kernel. The platform scheduling of a local notification is an infrastructure adapter behind a port (as in the legacy `ReminderScheduler`), invoked by the application layer after the owner's command succeeds. The Time Kernel only computes the trigger instant from the schedule and the reminder offset; it does not schedule anything.
 
 ## 11. Open questions
-- OQ-PLAN-1: exact max-occurrences-per-window value and window default. Technical batch.
-- OQ-PLAN-2: how a "move forward from here" rule edit splits a series (ADR-0007 A2). Proposal: end the old rule at the split date, start a new series; confirm in P02.
+- OQ-PLAN-1: **resolved** (owner D1, ADR-0028): default 1000 occurrences and 400 days per query, changeable in Settings within 100–5000 and 31–1100.
+- OQ-PLAN-2: **partly resolved** (owner D4): P02 edits "only this occurrence" (exception) or "all occurrences" (rule edit). "This and following" (series split) is deferred until P03 history rules exist.
 
 ## 12. Self-check
 - [x] Stateless: no aggregate, no repository, no events emitted here.

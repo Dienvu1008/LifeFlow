@@ -3,5 +3,7 @@
 /// `timezone` database. Owns nothing persistent and emits no events.
 library time_kernel;
 
+export 'src/overlap.dart';
+export 'src/recurrence.dart';
 export 'src/schedule.dart';
 export 'src/zones.dart';
