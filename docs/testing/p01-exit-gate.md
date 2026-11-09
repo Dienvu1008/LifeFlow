@@ -57,12 +57,13 @@ ADR-0021 to ADR-0025: encryption posture, Windows encryption, per-profile stores
 - OQ-S8: binding a profile to an account that already has cloud data (P04).
 - Sign-in uses email and GitHub; other providers are not in P01.
 
-## Test counts at T7c
-foundation 3, domain 17, application 3, infrastructure 158 (incl. export, 24 restore, 10 reopen/trash, 2 atomic-set, 8 authorization), ui 79, app 11.
+## Test counts at T7d
+foundation 3, domain 17, application 3, infrastructure 163 (incl. export, 24 restore, 10 reopen/trash, 5 profile delete, 2 atomic-set, 8 authorization), ui 84, app 12.
 
 ## Owner sign-off
 - [x] T7 device check (Windows and Android): export warns and saves; tampered or newer file rejected (owner, 2026-11-07). Restore-as-copy was rejected by the owner and replaced by T7b.
 - [ ] T7b device check (Windows and Android): identical file says nothing to restore; overwrite and merge options; hierarchy question; undo last restore; a file of a profile not on the device becomes a new profile.
+- [ ] T7d device check: delete leftover profiles on Windows and Android; the open profile has no Delete button.
 - [ ] T7c device check (owner report 2026-11-07): a file from the same GitHub account on the other device goes into that account's profile; a new task is scrolled into view and not hidden by the + button; unchecking a done task reopens it; trashing a parent asks (or follows the setting in Settings).
 - [ ] CI green on the T7 branch.
 - [ ] Owner approves P01 as done.

@@ -19,6 +19,9 @@ class SecureDatabaseKeyStore implements DatabaseKeyStore {
 
   @override
   Future<void> write(String key) => _storage.write(key: name, value: key);
+
+  @override
+  Future<void> delete() => _storage.delete(key: name);
 }
 
 /// Key slots for [ProfileDirectory.open].

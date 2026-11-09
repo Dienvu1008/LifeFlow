@@ -22,6 +22,9 @@ class MemoryKeyStore implements DatabaseKeyStore {
     writes++;
     value = key;
   }
+
+  @override
+  Future<void> delete() async => value = null;
 }
 
 void main() {

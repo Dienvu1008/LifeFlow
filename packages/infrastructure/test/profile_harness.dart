@@ -7,6 +7,9 @@ import 'package:infrastructure/infrastructure.dart';
 /// In-memory stand-in for platform secure storage, one slot per key name.
 class MemoryKeys {
   final values = <String, String>{};
+
+  /// The next delete throws (secure storage failure).
+  bool failNextDelete = false;
   DatabaseKeyStore call(String name) => _Slot(this, name);
 }
 
@@ -18,6 +21,14 @@ class _Slot implements DatabaseKeyStore {
   Future<String?> read() async => _keys.values[_name];
   @override
   Future<void> write(String key) async => _keys.values[_name] = key;
+  @override
+  Future<void> delete() async {
+    if (_keys.failNextDelete) {
+      _keys.failNextDelete = false;
+      throw StateError('secure storage failed');
+    }
+    _keys.values.remove(_name);
+  }
 }
 
 Future<ProfileDirectory> openDirectory(Directory base, MemoryKeys keys,

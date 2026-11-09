@@ -98,6 +98,8 @@ class _Slot implements DatabaseKeyStore {
   Future<String?> read() async => keys.values[name];
   @override
   Future<void> write(String key) async => keys.values[name] = key;
+  @override
+  Future<void> delete() async => keys.values.remove(name);
 }
 
 /// A temp app-support directory with a directory opened on it.
@@ -472,6 +474,33 @@ void main() {
     final ids = (await tester.runAsync(() => w.directory.list()))!.map((e) => e.id);
     expect(ids, contains(other.id)); // original id kept (LF-INV-ID-001)
     await tapAndSettle(find.widgetWithText(FilledButton, 'OK'));
+    await finish(tester, w);
+  });
+
+  testWidgets('deleting a profile through the UI removes its file and key '
+      '(ADR-0027)', (tester) async {
+    tester.view.physicalSize = const Size(1000, 1100);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final w = await pumpApp(tester, StoragePlatform.android);
+    final extra = (await tester.runAsync(
+        () => w.directory.createProfile(displayName: 'Old copy')))!;
+    expect(w.directory.profileFile(extra.id).existsSync(), isTrue);
+
+    await tester.tap(find.byIcon(Icons.people_outline));
+    await settle(tester);
+    await tester.tap(find.byTooltip('Delete Old copy'));
+    await settle(tester);
+    await tester.tap(find.widgetWithText(FilledButton, 'Delete profile'));
+    await settle(tester, 10);
+
+    expect(find.text('Old copy'), findsNothing);
+    final ids = (await tester.runAsync(() => w.directory.list()))!.map((e) => e.id);
+    expect(ids, isNot(contains(extra.id)));
+    expect(w.directory.profileFile(extra.id).existsSync(), isFalse);
+    expect(w.keys.values.containsKey(ProfileDirectory.profileKeyName(extra.id)),
+        isFalse);
+    await tester.pump(const Duration(seconds: 6));
     await finish(tester, w);
   });
 

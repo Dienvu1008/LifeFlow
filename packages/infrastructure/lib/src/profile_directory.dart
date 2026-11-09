@@ -78,6 +78,7 @@ class ProfileDirectory {
   static String profileKeyName(String profileId) => 'lifeflow.db.key.$profileId';
 
   static const _metaPending = 'pending_sync';
+  static const _metaPendingDelete = 'pending_delete';
   static const _metaLegacyMigrated = 'legacy_migrated';
   static const _metaLegacyUnmapped = 'legacy_unmapped_rows';
 
@@ -112,6 +113,7 @@ class ProfileDirectory {
     final dir = ProfileDirectory._(baseDir, policy, keysFor, registry, background);
     try {
       await dir._migrateLegacyIfNeeded();
+      await dir._finishPendingDelete();
       await dir._recoverPending();
       final active = await dir.active();
       if (active == null || active.isLocked) {
@@ -259,6 +261,47 @@ class ProfileDirectory {
       rethrow;
     }
     return (await _get(id))!;
+  }
+
+  /// Deletes a profile from this device for good (ADR-0027): its registry
+  /// entry, its database file and its key. The ACTIVE profile cannot be
+  /// deleted (its store is open; switch first), so one profile always
+  /// remains. Order: intent -> registry row -> files -> key -> clear intent.
+  /// An interrupted delete is finished on the next open. Once the registry
+  /// row is gone the profile is never listed or opened again.
+  Future<void> deleteProfile(String profileId) async {
+    final entry = await _get(profileId);
+    if (entry == null) throw StateError('unknown profile: $profileId');
+    if (entry.isActive) {
+      throw StateError('the open profile cannot be deleted; switch first');
+    }
+    await _registry.transaction(() async {
+      await _setMeta(_metaPendingDelete, profileId);
+      await (_registry.delete(_registry.registryProfiles)
+            ..where((p) => p.id.equals(profileId)))
+          .go();
+    });
+    await _wipe(profileId);
+  }
+
+  Future<void> _wipe(String profileId) async {
+    final file = profileFile(profileId);
+    for (final suffix in ['', '-wal', '-shm', '-journal']) {
+      final f = File('${file.path}$suffix');
+      if (f.existsSync()) f.deleteSync();
+    }
+    await _keysFor(profileKeyName(profileId)).delete();
+    if (await _getMeta(_metaPending) == profileId) await _clearMeta(_metaPending);
+    await _clearMeta(_metaPendingDelete);
+  }
+
+  Future<void> _finishPendingDelete() async {
+    final id = await _getMeta(_metaPendingDelete);
+    if (id == null) return;
+    await (_registry.delete(_registry.registryProfiles)
+          ..where((p) => p.id.equals(id)))
+        .go();
+    await _wipe(id);
   }
 
   /// Records the intent to change [profileId]'s store (ADR-0023). Call before

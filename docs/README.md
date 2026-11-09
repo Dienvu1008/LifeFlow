@@ -117,6 +117,7 @@ Every non-trivial statement carries one of these labels.
 | [adr/0024-sign-out-locks-the-account-profile.md](adr/0024-sign-out-locks-the-account-profile.md) | P01/T6c: sign-out keeps the binding and locks the profile until the same account signs in |
 | [adr/0025-profile-export-and-restore.md](adr/0025-profile-export-and-restore.md) | P01/T7–T7c: decrypted, versioned, checksummed export; restore into the same profile, or the same account's profile on another device (overwrite or merge, undo), or as a new profile; closes OQ-DATA-3 (a) |
 | [adr/0026-reopen-and-trash-with-subtasks.md](adr/0026-reopen-and-trash-with-subtasks.md) | P01/T7c: reopen a done task; trash a parent with or without its subtasks (ask, or a device setting) |
+| [adr/0027-delete-a-profile-on-this-device.md](adr/0027-delete-a-profile-on-this-device.md) | P01/T7d: delete a profile that is not open (file, key, registry entry), finished on next open if interrupted |
 
 ## Batch 4 documents
 

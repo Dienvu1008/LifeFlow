@@ -159,6 +159,16 @@ class FakeWorld
       [for (final p in profiles) p.asActive(p.id == activeId)];
 
   @override
+  Future<CommandResult> delete(String profileId) async {
+    calls.add('deleteProfile:$profileId');
+    final f = _failure();
+    if (f != null) return f;
+    profiles.removeWhere((p) => p.id == profileId);
+    _tasks.remove(profileId);
+    return CommandOk(profileId, Version.initial, const []);
+  }
+
+  @override
   Future<CommandResult> switchTo(String profileId) async {
     calls.add('switch:$profileId');
     final f = _failure();

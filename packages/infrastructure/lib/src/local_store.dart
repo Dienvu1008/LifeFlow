@@ -41,6 +41,9 @@ AtRestPolicy atRestPolicyFor(StoragePlatform platform,
 abstract interface class DatabaseKeyStore {
   Future<String?> read();
   Future<void> write(String key);
+
+  /// Removes the key (when its profile is deleted). No-op if absent.
+  Future<void> delete();
 }
 
 /// The store could not be opened safely. Nothing was deleted or rewritten.

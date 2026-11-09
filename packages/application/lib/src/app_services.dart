@@ -101,6 +101,10 @@ abstract interface class ProfileService {
   Future<ProfileView?> active();
   Future<List<ProfileView>> list();
   Future<CommandResult> switchTo(String profileId);
+
+  /// Deletes a profile that is NOT open, with all its data, from this device.
+  /// Cannot be undone. The open profile is refused (switch first).
+  Future<CommandResult> delete(String profileId);
 }
 
 /// A finished export, ready to be saved by the platform file dialog
