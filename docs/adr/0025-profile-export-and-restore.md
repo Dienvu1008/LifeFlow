@@ -25,6 +25,13 @@ A file is fully validated before anything is written: size cap (64 MB), format, 
 2. **The active profile**: compared, then restored **into it** (below). Never a second profile.
 3. **Another profile on this device**: refused with a message to open that profile (sign in first when it is locked) and restore there.
 
+### The same account on another device (T7c, owner report 2026-11-07)
+Until sync (P04), each device gives an account **its own profile and workspace ids**. A file exported on Windows from the GitHub account's profile therefore never had the id of that account's profile on Android, and was restored as a new profile. Fixed:
+- A file is **this profile's data** when it has the same profile id, **or** it was exported from a profile bound to the **same account** (same account id and provider).
+- Such a file is mapped onto this profile: its workspace id and owner id become this profile's. Record ids (tasks, lists) are kept, so the usual compare, overwrite, merge and undo apply. Tasks created on the other device are "only in the file" and merge (b) adds them.
+- If that account's profile is on this device but another profile is open, the file is refused with a pointer to that profile (sign in first when it is locked). Another account's file is never merged in.
+- Known limit until P04: the same task edited on both devices only matches if it was first created on one device and restored onto the other; otherwise the two are separate tasks.
+
 ### Restore into the active profile
 - **Compare** task lists and tasks by id. Content is compared without `version` and `updatedAt`. A record deleted on one side and absent on the other is not a difference. Identical: the app says there is nothing to restore and writes nothing.
 - **Overwrite everything**: the profile becomes the file. Records only on this device become **tombstones** (moved to trash), never hard-deleted, so a later sync deletes them instead of bringing them back.
@@ -63,4 +70,5 @@ A file is fully validated before anything is written: size cap (64 MB), format, 
 - `profile_directory_test.dart`: v1 → v3 and v2 → v3 upgrades with data intact.
 - `packages/ui/test/data_flow_test.dart`: every dialog (new profile, identical, choices, overwrite, merge options, hierarchy both ways, undo, other profile, rejected files).
 - `apps/lifeflow_app/test/app_integration_test.dart`: on real stores through the UI: export, identical, drift, overwrite, undo; and a file from another install restored as a new profile with its ids.
-- Mutations: disabling the hierarchy check fails 3 tests; `>=` instead of `>` on the version tie fails the tie test; writing rows with nulls treated as absent (deletedAt not cleared) fails 2 undo tests.
+- T7c: `profile_restore_test.dart` group "the same account on another device": two installs with their own folders and keys, same account; the file merges into the account's profile under its own workspace; a guest being open points to the account's profile; another account becomes a new profile.
+- Mutations: disabling the account match fails the cross-device test; disabling the hierarchy check fails 3 tests; `>=` instead of `>` on the version tie fails the tie test; writing rows with nulls treated as absent (deletedAt not cleared) fails 2 undo tests.

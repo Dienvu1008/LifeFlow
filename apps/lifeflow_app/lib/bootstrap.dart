@@ -90,6 +90,8 @@ Future<AppWiring> openSession({
         dataTransferServiceProvider
             .overrideWithValue(DriftDataTransferService(db, directory, gateway: gateway)),
         fileGatewayProvider.overrideWithValue(files),
+        settingsServiceProvider
+            .overrideWithValue(DirectorySettingsService(directory)),
         storageNoticeProvider.overrideWithValue(notice),
         initialRouteProvider.overrideWithValue(initialRoute),
       ],

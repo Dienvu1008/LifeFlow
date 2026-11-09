@@ -7,6 +7,7 @@ import 'package:foundation/foundation.dart';
 import 'package:uuid/uuid.dart';
 
 import 'app_database.dart';
+import 'profile_directory.dart';
 import 'profile_store.dart';
 import 'storage_security.dart';
 import 'task_command_handler.dart';
@@ -31,6 +32,26 @@ class WorkspaceOwnerAuthorization implements AuthorizationService {
     if (ws.ownerId != actor.id) return 'not the owner of this workspace';
     return null;
   }
+}
+
+/// Device settings in the encrypted registry (not profile data).
+class DirectorySettingsService implements SettingsService {
+  DirectorySettingsService(this.directory);
+  final ProfileDirectory directory;
+  static const _subtaskTrash = 'subtaskTrashPolicy';
+
+  @override
+  Future<SubtaskTrashPolicy> subtaskTrashPolicy() async {
+    final v = await directory.readSetting(_subtaskTrash);
+    return SubtaskTrashPolicy.values
+            .where((p) => p.name == v)
+            .firstOrNull ??
+        SubtaskTrashPolicy.ask;
+  }
+
+  @override
+  Future<void> setSubtaskTrashPolicy(SubtaskTrashPolicy policy) =>
+      directory.writeSetting(_subtaskTrash, policy.name);
 }
 
 /// Maps the startup self-check to the UI-facing notice (ADR-0021).
@@ -157,6 +178,13 @@ class DriftTaskService implements TaskService {
       );
 
   @override
-  Future<CommandResult> trash(String id) =>
-      _update('TrashTask', id, {'op': 'trash'});
+  Future<CommandResult> reopen(String id) =>
+      _update('ReopenTask', id, {'op': 'reopen'});
+
+  @override
+  Future<CommandResult> trash(String id, {bool withSubtasks = false}) => _update(
+        withSubtasks ? 'TrashTaskWithSubtasks' : 'TrashTask',
+        id,
+        {'op': 'trash', 'cascade': withSubtasks ? 'all' : 'parentOnly'},
+      );
 }

@@ -81,6 +81,46 @@ class ParsedExport {
 
   /// The validated payload (read-only use).
   Map<String, Object?> get payload => _payload;
+
+  /// The account the exported profile was bound to, if any.
+  String? get accountId => profile.accountId;
+  String? get accountProvider => profile.accountProvider;
+
+  /// The same records placed in ANOTHER profile and workspace: the profile of
+  /// the same account on another device (ADR-0025, T7c). Until sync (P04)
+  /// each device gives an account its own profile and workspace ids, so the
+  /// container ids are mapped; record ids (tasks, lists) are kept, which is
+  /// what lets two exports of the same device compare. Governance history is
+  /// kept as written (it records what happened where it happened).
+  ParsedExport rebasedOnto({required String profileId, required String workspaceId}) {
+    final fromWs = this.workspaceId;
+    final fromProfile = this.profileId;
+    String ws(String w) => w == fromWs ? workspaceId : w;
+    String owner(String o) => o == fromProfile ? profileId : o;
+    return ParsedExport._(
+      schemaVersion,
+      exportedAt,
+      _payload,
+      profile.copyWith(id: profileId, activeWorkspaceId: workspaceId),
+      // The target profile's own workspace already exists.
+      [
+        for (final w in workspaces)
+          if (w.id != fromWs) w.copyWith(ownerId: owner(w.ownerId))
+      ],
+      [
+        for (final l in taskLists)
+          l.copyWith(workspaceId: ws(l.workspaceId), ownerId: owner(l.ownerId))
+      ],
+      [
+        for (final t in tasks)
+          t.copyWith(workspaceId: ws(t.workspaceId), ownerId: owner(t.ownerId))
+      ],
+      auditLog,
+      [for (final o in outbox) o.copyWith(workspaceId: ws(o.workspaceId))],
+      eventLog,
+      [for (final d in opDedupe) d.copyWith(workspaceId: ws(d.workspaceId))],
+    );
+  }
 }
 
 class ProfileExport {

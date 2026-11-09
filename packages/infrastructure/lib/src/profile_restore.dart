@@ -275,6 +275,21 @@ class RestorePlanner {
   }
 }
 
+/// The file as data of [own] (a profile's own row), or null when the file
+/// belongs to someone else. A file is this profile's data when it was
+/// exported from this very profile (same id), or from the profile of the SAME
+/// account on another device (same account id and provider; ADR-0025 T7c).
+ParsedExport? alignToProfile(ParsedExport parsed, Profile own) {
+  if (parsed.profileId == own.id) return parsed;
+  final account = own.accountId;
+  if (account != null &&
+      parsed.accountId == account &&
+      parsed.accountProvider == own.accountProvider) {
+    return parsed.rebasedOnto(profileId: own.id, workspaceId: own.activeWorkspaceId);
+  }
+  return null;
+}
+
 /// Command types handled by [ProfileRestoreHandler].
 const restoreCommandType = 'RestoreProfile';
 const undoRestoreCommandType = 'UndoRestoreProfile';
@@ -319,15 +334,16 @@ class ProfileRestoreHandler implements CommandHandler {
     if (undo && snapshot == null) {
       throw DomainRejection('there is no restore to undo');
     }
-    final ParsedExport parsed;
+    final ParsedExport file;
     try {
-      parsed = ProfileExport.parse(
+      file = ProfileExport.parse(
           undo ? snapshot!.exportText : cmd.payload['text'] as String,
           currentSchemaVersion: db.schemaVersion);
     } on ExportRejected catch (e) {
       throw DomainRejection(e.message);
     }
-    if (parsed.profileId != profileId) {
+    final parsed = alignToProfile(file, profile);
+    if (parsed == null) {
       throw DomainRejection('the file belongs to another profile');
     }
 

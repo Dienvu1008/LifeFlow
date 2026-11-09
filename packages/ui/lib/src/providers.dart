@@ -19,6 +19,14 @@ final dataTransferServiceProvider = Provider<DataTransferService>(
     (ref) => _notWired('dataTransferServiceProvider'));
 final fileGatewayProvider =
     Provider<FileGateway>((ref) => _notWired('fileGatewayProvider'));
+final settingsServiceProvider =
+    Provider<SettingsService>((ref) => _notWired('settingsServiceProvider'));
+
+/// What happens to subtasks when their parent goes to the trash (device
+/// setting). Invalidate after changing it.
+final subtaskTrashPolicyProvider = FutureProvider.autoDispose<SubtaskTrashPolicy>(
+  (ref) => ref.watch(settingsServiceProvider).subtaskTrashPolicy(),
+);
 
 /// Where a freshly opened profile session starts. The app shell sets
 /// '/profiles' after a sign-out (OQ-S7: back to the profile chooser).

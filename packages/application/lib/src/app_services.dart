@@ -43,7 +43,32 @@ abstract interface class TaskService {
   /// [withDescendants] true = CompleteTaskWithDescendants, false =
   /// CompleteTaskOnly (open subtasks are recorded in the audit, OQ-R3).
   Future<CommandResult> complete(String id, {required bool withDescendants});
-  Future<CommandResult> trash(String id);
+
+  /// Undoes a completion: a done (or cancelled) task becomes open again
+  /// (`todo`). Its subtasks are not changed.
+  Future<CommandResult> reopen(String id);
+
+  /// [withSubtasks] true = the task and all its subtasks go to the trash;
+  /// false = only the task, and its direct subtasks move up one level.
+  Future<CommandResult> trash(String id, {bool withSubtasks = false});
+}
+
+/// What happens to subtasks when their parent is moved to the trash.
+enum SubtaskTrashPolicy {
+  /// Ask each time (default).
+  ask,
+
+  /// Trash the subtasks too.
+  withSubtasks,
+
+  /// Keep the subtasks; they move up one level.
+  keepSubtasks,
+}
+
+/// App settings of this device (not profile data, not synced, not exported).
+abstract interface class SettingsService {
+  Future<SubtaskTrashPolicy> subtaskTrashPolicy();
+  Future<void> setSubtaskTrashPolicy(SubtaskTrashPolicy policy);
 }
 
 /// Read model of a local profile for the profile chooser.

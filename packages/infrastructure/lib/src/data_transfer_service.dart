@@ -40,14 +40,25 @@ class DriftDataTransferService implements DataTransferService {
     );
   }
 
-  /// Where a validated file belongs.
-  Future<_Target> _target(ParsedExport parsed) async {
-    final active = await ProfileStore(db).getActiveProfile();
-    if (active != null && active.profileId.value == parsed.profileId) {
-      return _Target.active;
-    }
-    final onDevice = (await directory.list()).where((e) => e.id == parsed.profileId);
-    return onDevice.isEmpty ? _Target.newProfile : _Target.other;
+  /// Where a validated file belongs. The active profile when the file is its
+  /// data (same profile, or the same account exported on another device);
+  /// another profile on this device when that one matches; otherwise new.
+  Future<({_Target kind, ParsedExport data, ProfileEntry? other})> _target(
+      ParsedExport file) async {
+    final ownRow = await db.select(db.profiles).getSingleOrNull();
+    final aligned = ownRow == null ? null : alignToProfile(file, ownRow);
+    if (aligned != null) return (kind: _Target.active, data: aligned, other: null);
+    final all = await directory.list();
+    final sameId = all.where((e) => e.id == file.profileId).firstOrNull;
+    final account = file.accountId;
+    final sameAccount = account == null
+        ? null
+        : all
+            .where((e) => e.accountId == account && e.provider == file.accountProvider)
+            .firstOrNull;
+    final other = sameId ?? sameAccount;
+    if (other != null) return (kind: _Target.other, data: file, other: other);
+    return (kind: _Target.newProfile, data: file, other: null);
   }
 
   ParsedExport _parse(String text) =>
@@ -55,35 +66,41 @@ class DriftDataTransferService implements DataTransferService {
 
   @override
   Future<RestorePreview> inspect(String text) async {
-    final ParsedExport parsed;
+    final ParsedExport file;
     try {
-      parsed = _parse(text);
+      file = _parse(text);
     } on ExportRejected catch (e) {
       return RestoreRejected(e.kind, e.message);
     }
-    switch (await _target(parsed)) {
+    final t = await _target(file);
+    switch (t.kind) {
       case _Target.newProfile:
         return RestoreAsNewProfile(
-            displayName: parsed.displayName, taskCount: parsed.taskCount);
+            displayName: file.displayName, taskCount: file.taskCount);
       case _Target.other:
-        final e = (await directory.list()).firstWhere((e) => e.id == parsed.profileId);
-        return RestoreOtherProfile(displayName: e.displayName, locked: e.isLocked);
+        return RestoreOtherProfile(
+            displayName: t.other!.displayName.trim().isNotEmpty
+                ? t.other!.displayName
+                : (t.other!.isBound ? 'Account profile' : 'Guest'),
+            locked: t.other!.isLocked);
       case _Target.active:
         final diff = RestorePlanner.diff(
-            await RecordSet.ofDatabase(db), RecordSet.ofExport(parsed));
+            await RecordSet.ofDatabase(db), RecordSet.ofExport(t.data));
         return diff.isIdentical ? const RestoreIdentical() : RestoreDifferent(diff);
     }
   }
 
   @override
   Future<RestoreOutcome> restore(String text, {RestoreChoice? choice}) async {
-    final ParsedExport parsed;
+    final ParsedExport file;
     try {
-      parsed = _parse(text);
+      file = _parse(text);
     } on ExportRejected catch (e) {
       return RestoreRejected(e.kind, e.message);
     }
-    switch (await _target(parsed)) {
+    final t = await _target(file);
+    final parsed = t.data;
+    switch (t.kind) {
       case _Target.newProfile:
         return _restoreAsNew(parsed);
       case _Target.other:

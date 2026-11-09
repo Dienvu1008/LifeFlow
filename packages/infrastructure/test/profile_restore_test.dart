@@ -434,6 +434,101 @@ void main() {
     });
   });
 
+  group('the same account on another device (T7c, owner report)', () {
+    /// A second install (own folder, own keys) signed in with the SAME
+    /// account. Until sync, it has its own profile and workspace ids.
+    Future<({TestHost host, Services svc, DriftDataTransferService transfer})>
+        otherDevice() async {
+      final b = Directory.systemTemp.createTempSync('lifeflow_device2_');
+      final d = await openDirectory(b, MemoryKeys());
+      final h = TestHost(d);
+      await h.openActive();
+      addTearDown(() async {
+        await h.close();
+        await d.close();
+        if (b.existsSync()) b.deleteSync(recursive: true);
+      });
+      final s = Services(h, FakeAuthGateway());
+      final r = await s.accounts.signIn(const OAuthSignIn('github'));
+      if (r is NeedsBindChoice) await s.accounts.completeBind(moveData: true);
+      return (host: h, svc: s, transfer: DriftDataTransferService(h.db, d));
+    }
+
+    Future<void> signInHere() async {
+      final r = await svc.accounts.signIn(const OAuthSignIn('github'));
+      if (r is NeedsBindChoice) await svc.accounts.completeBind(moveData: true);
+    }
+
+    test('a file from the other device goes INTO this account\'s profile',
+        () async {
+      await signInHere();
+      await svc.tasks.create('Windows task');
+      final other = await otherDevice();
+      await other.svc.tasks.create('Android task');
+      final fileFromOther = (await other.transfer.exportActiveProfile()).contents;
+      expect(other.host.currentId, isNot(profileId)); // different ids per device
+
+      final p = await transfer.inspect(fileFromOther);
+      expect(p, isA<RestoreDifferent>(), reason: '$p');
+      final d = (p as RestoreDifferent).diff;
+      expect((d.onlyInFile, d.onlyOnDevice), (1, 1));
+
+      final r = await transfer.restore(fileFromOther,
+          choice: const RestoreChoice.merge(takeNewer: true, addMissing: true));
+      expect(r, isA<RestoredInto>(), reason: '$r');
+      // In THIS profile, under its own workspace; no new profile.
+      expect(await visible(), ['Android task', 'Windows task']);
+      expect(await dir.list(), hasLength(1));
+      final ws = (await host.db.select(host.db.workspaces).get());
+      expect(ws, hasLength(1));
+      final added = await row('Android task');
+      expect(added.workspaceId, ws.single.id);
+      expect(added.ownerId, profileId);
+      // Comparing the same file again: nothing in it is missing or different
+      // here any more; only this device's own task remains extra.
+      final again = (await transfer.inspect(fileFromOther) as RestoreDifferent).diff;
+      expect((again.onlyInFile, again.differing, again.onlyOnDevice), (0, 0, 1));
+    });
+
+    test('while a guest is open, it points to the account\'s profile', () async {
+      await signInHere();
+      final other = await otherDevice();
+      await other.svc.tasks.create('Android task');
+      final fileFromOther = (await other.transfer.exportActiveProfile()).contents;
+      final accountProfile = host.currentId!;
+      final guest = await dir.createProfile(displayName: 'Kid');
+      await dir.setActive(guest.id);
+      await host.activate(guest.id);
+      final guestTransfer = DriftDataTransferService(host.db, dir);
+
+      final p = await guestTransfer.inspect(fileFromOther);
+      expect(p, isA<RestoreOtherProfile>(), reason: '$p');
+      expect((await guestTransfer.restore(fileFromOther,
+              choice: const RestoreChoice.overwrite())) as RestoreRejected,
+          isA<RestoreRejected>());
+      expect(await host.db.select(host.db.tasks).get(), isEmpty);
+      expect(accountProfile, isNot(guest.id));
+    });
+
+    test('a different account is never merged in', () async {
+      await signInHere();
+      final b = Directory.systemTemp.createTempSync('lifeflow_device3_');
+      final d = await openDirectory(b, MemoryKeys());
+      final h = TestHost(d);
+      await h.openActive();
+      addTearDown(() async {
+        await h.close();
+        await d.close();
+        b.deleteSync(recursive: true);
+      });
+      final s = Services(h, FakeAuthGateway(accountId: 'acc-other'));
+      await s.accounts.signIn(const OAuthSignIn('github'));
+      await s.tasks.create('Someone else');
+      final file = (await DriftDataTransferService(h.db, d).exportActiveProfile()).contents;
+      expect(await transfer.inspect(file), isA<RestoreAsNewProfile>());
+    });
+  });
+
   group('a file of another profile on this device', () {
     test('says to open that profile, and changes nothing', () async {
       await seed();

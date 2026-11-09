@@ -16,7 +16,8 @@ class FakeWorld
         ProfileService,
         AccountService,
         DataTransferService,
-        FileGateway {
+        FileGateway,
+        SettingsService {
   FakeWorld({
     required Map<String, List<TaskView>> tasks,
     required this.profiles,
@@ -37,6 +38,9 @@ class FakeWorld
   var _n = 0;
 
   List<TaskView> _mine() => _tasks[activeId]!;
+
+  /// The task list of profile [id] (test setup).
+  List<TaskView> tasks(String id) => _tasks[id]!;
 
   @override
   Stream<List<TaskView>> watchTasks() async* {
@@ -94,13 +98,56 @@ class FakeWorld
   }
 
   @override
-  Future<CommandResult> trash(String id) async {
-    calls.add('trash:$id');
+  Future<CommandResult> reopen(String id) async {
+    calls.add('reopen:$id');
     final f = _failure();
     if (f != null) return f;
-    _mine().removeWhere((t) => t.id == id);
+    _replace(id, (t) => _copy(t, status: 'todo'));
+    return CommandOk(id, Version.initial, const []);
+  }
+
+  @override
+  Future<CommandResult> trash(String id, {bool withSubtasks = false}) async {
+    calls.add(withSubtasks ? 'trash:$id:all' : 'trash:$id');
+    final f = _failure();
+    if (f != null) return f;
+    final list = _mine();
+    final gone = list.firstWhere((t) => t.id == id);
+    if (withSubtasks) {
+      final ids = {id};
+      var grew = true;
+      while (grew) {
+        grew = false;
+        for (final t in list) {
+          if (t.parentId != null && ids.contains(t.parentId) && ids.add(t.id)) grew = true;
+        }
+      }
+      list.removeWhere((t) => ids.contains(t.id));
+    } else {
+      list.removeWhere((t) => t.id == id);
+      for (var i = 0; i < list.length; i++) {
+        final t = list[i];
+        if (t.parentId == id) {
+          list[i] = TaskView(
+              id: t.id, title: t.title, status: t.status,
+              parentId: gone.parentId, createdAt: t.createdAt);
+        }
+      }
+    }
     _changes.add(null);
     return CommandOk(id, Version.initial, const []);
+  }
+
+  // --- SettingsService --------------------------------------------------------
+  SubtaskTrashPolicy trashPolicy = SubtaskTrashPolicy.ask;
+
+  @override
+  Future<SubtaskTrashPolicy> subtaskTrashPolicy() async => trashPolicy;
+
+  @override
+  Future<void> setSubtaskTrashPolicy(SubtaskTrashPolicy policy) async {
+    calls.add('setTrashPolicy:${policy.name}');
+    trashPolicy = policy;
   }
 
   @override
@@ -349,6 +396,7 @@ Widget appWith(FakeWorld world, {StorageNotice? notice}) => ProviderScope(
         accountServiceProvider.overrideWithValue(world),
         dataTransferServiceProvider.overrideWithValue(world),
         fileGatewayProvider.overrideWithValue(world),
+        settingsServiceProvider.overrideWithValue(world),
         storageNoticeProvider.overrideWithValue(notice),
       ],
       child: const LifeFlowApp(),

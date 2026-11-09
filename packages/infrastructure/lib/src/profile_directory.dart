@@ -289,6 +289,12 @@ class ProfileDirectory {
     });
   }
 
+  /// Device-level app settings (not profile data): kept in the encrypted
+  /// registry, never exported or synced. Keys are prefixed `setting.`.
+  Future<String?> readSetting(String key) => _getMeta('setting.$key');
+  Future<void> writeSetting(String key, String value) =>
+      _setMeta('setting.$key', value);
+
   Future<void> close() => _registry.close();
 
   // --- internals ------------------------------------------------------------
