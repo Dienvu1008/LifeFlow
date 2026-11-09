@@ -272,8 +272,11 @@ class _TrashDialogState extends State<_TrashDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('It has $n $s. Move them to the trash too, or keep them? '
-              'Kept subtasks move up one level.'),
+          Text(n == 1
+              ? 'It has 1 subtask. Move it to the trash too, or keep it? '
+                  'A kept subtask moves up one level.'
+              : 'It has $n subtasks. Move them to the trash too, or keep '
+                  'them? Kept subtasks move up one level.'),
           const SizedBox(height: 8),
           CheckboxListTile(
             key: const Key('trash-remember'),
