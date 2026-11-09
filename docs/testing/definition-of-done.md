@@ -18,7 +18,7 @@ A phase is done only when all its DoD items hold. Phases beyond P03 use the temp
 - Status: this is the current design work (Batches 1–5). Exit gate: product scope, domain model, governance, invariants catalog, test strategy, fitness-function IDs, roadmap and spikes exist and are internally consistent; the owner has confirmed the MVP boundary and the key ADRs. (Done when Batch 5 completes.)
 
 ## P01 — Core Foundation & Personal Workspace
-- Evidence: see [p01-exit-gate.md](p01-exit-gate.md) (per-line proof; sign-off pending).
+- **Status: Done (owner sign-off 2026-11-07, `main` at `10600ef`).** Evidence: [p01-exit-gate.md](p01-exit-gate.md) (per-line proof and sign-off). Encryption exit-gate decision: Windows encrypted too (ADR-0022).
 - Scope: guest-first LocalProfile + Workspace, Task + hierarchy + lists, measurable target capability, local Drift store, outbox/event-log/audit/dedupe atomic set, command gateway, basic adaptive UI, optional sign-in (auth provider from spike S-03a).
 - **Encryption-at-rest (LF-INV-SEC-011) is an explicit P01 task, not assumed done** (spike S-02 found it does not build cleanly on Flutter Windows; risk R-ENCRYPTION-WINDOWS). P01 must either confirm a Windows-clean encryption path or ship Windows on a plain DB as a tracked exception with encryption on Android; the choice is a P01 exit-gate decision.
 - Invariants enforced-and-tested by exit: LF-INV-ID-001/002, WA-001, TASK-001/002/003/004/010/011, GOV-001/002/003, OUTBOX-001/002, AUDIT-001, VER-001, SEC-001/002/010/011, SYNC-004 (tombstone write).
@@ -27,6 +27,7 @@ A phase is done only when all its DoD items hold. Phases beyond P03 use the temp
 - Exit gate: the atomic-set crash/concurrency scenarios (GS-06/07/12) pass; encryption at rest verified (GS-19); export/restore round-trips (GS-20); guest→account binding keeps IDs and works offline (GS-22).
 
 ## P02 — Planning & Calendar
+- Status: in progress. Task plan and owner decisions: [../roadmap/p02-plan.md](../roadmap/p02-plan.md).
 - Scope: ScheduleSpec, RecurrenceRule, OccurrenceException, Time Kernel queries, Event/Calendar, conflict detection, reminders, DST.
 - Invariants: PLAN-004/010/011/012/013, CAL-001/002.
 - Golden scenarios: GS-03, GS-04.
