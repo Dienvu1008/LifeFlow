@@ -23,6 +23,17 @@ final fileGatewayProvider =
 final settingsServiceProvider =
     Provider<SettingsService>((ref) => _notWired('settingsServiceProvider'));
 
+final reminderServiceProvider = Provider<ReminderService>((ref) => _notWired('reminderServiceProvider'));
+
+/// The device's notifications (status and permission; scheduling is done by
+/// the app's reminder sync, never by the UI).
+final reminderSchedulerProvider = Provider<ReminderScheduler>((ref) => _notWired('reminderSchedulerProvider'));
+
+/// What the device allows for reminders. Invalidate after asking.
+final reminderStatusProvider = FutureProvider.autoDispose<ReminderStatus>(
+  (ref) => ref.watch(reminderSchedulerProvider).status(),
+);
+
 final taskSchedulingProvider =
     Provider<TaskScheduling>((ref) => _notWired('taskSchedulingProvider'));
 final agendaQueriesProvider =

@@ -9,12 +9,14 @@
 //                      moveDate?, moveTime?
 //   clearException     payload: id, originalDate
 //   setOccurrenceDone  payload: id, originalDate, done
+//   setReminders       payload: id, reminders (P02 T7, reminder_rows.dart)
 import 'package:application/application.dart';
 import 'package:drift/drift.dart';
 import 'package:foundation/foundation.dart';
 import 'package:time_kernel/time_kernel.dart' as tk;
 
 import 'app_database.dart';
+import 'reminder_rows.dart';
 import 'schedule_mapping.dart';
 import 'schedule_rows.dart';
 
@@ -24,6 +26,7 @@ const scheduleOps = {
   'setException',
   'clearException',
   'setOccurrenceDone',
+  'setReminders',
 };
 
 Future<HandlerOutcome> applyScheduleOp(
@@ -39,6 +42,16 @@ Future<HandlerOutcome> applyScheduleOp(
       .write(TasksCompanion(version: Value(newVersion.value), updatedAt: Value(now)));
 
   switch (op) {
+    case 'setReminders':
+      // P02 T7 (ADR-0034): the reminders are part of the task.
+      final n = await replaceReminders(rows, remindersOfPayload(cmd.payload['reminders']));
+      return HandlerOutcome(
+        entityId: taskId,
+        operationType: 'update',
+        changeSet: {'id': taskId, 'reminders': n},
+        events: [DomainEvent('TaskRemindersChanged', {'id': taskId})],
+      );
+
     case 'setSchedule':
       final (_, _, rule, previous) =
           await rows.write((cmd.payload['schedule'] as Map).cast<String, Object?>());

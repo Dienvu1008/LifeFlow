@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:foundation/foundation.dart';
 
 import '../providers.dart';
+import '../schedule_text.dart';
 
 /// App settings of this device.
 class SettingsScreen extends ConsumerWidget {
@@ -61,6 +62,8 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const Divider(height: 32),
           const _CalendarSettings(),
+          const Divider(height: 32),
+          const _ReminderSettings(),
         ],
       ),
     );
@@ -159,6 +162,83 @@ class _CalendarSettings extends ConsumerWidget {
                 },
               ),
             ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// P02 T7: what the device allows for reminders, and how to change it.
+class _ReminderSettings extends ConsumerWidget {
+  const _ReminderSettings();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final status = ref.watch(reminderStatusProvider);
+    return Column(
+      key: const Key('reminder-settings'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+          child: Text('Reminders', style: Theme.of(context).textTheme.titleSmall),
+        ),
+        status.when(
+          loading: () => const Padding(padding: EdgeInsets.all(16), child: LinearProgressIndicator()),
+          error: (_, __) => const ListTile(title: Text('The reminder status could not be read.')),
+          data: (s) => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (!s.supported)
+                const ListTile(
+                  leading: Icon(Icons.notifications_off_outlined),
+                  title: Text('This device does not show reminders.'),
+                )
+              else if (!s.allowed)
+                ListTile(
+                  leading: const Icon(Icons.notifications_off_outlined),
+                  title: const Text('Notifications are off for LifeFlow'),
+                  subtitle: const Text('Reminders will not show until you allow them.'),
+                  trailing: FilledButton(
+                    key: const Key('reminders-allow'),
+                    onPressed: () async {
+                      await ref.read(reminderSchedulerProvider).requestPermission();
+                      ref.invalidate(reminderStatusProvider);
+                    },
+                    child: const Text('Allow'),
+                  ),
+                )
+              else
+                const ListTile(
+                  leading: Icon(Icons.notifications_active_outlined),
+                  title: Text('Reminders are on'),
+                ),
+              if (s.supported && s.exactAllowed == false)
+                ListTile(
+                  leading: const Icon(Icons.timer_outlined),
+                  title: const Text('Reminders may arrive a few minutes late'),
+                  subtitle: const Text('Allow exact reminders to get them at the minute.'),
+                  trailing: OutlinedButton(
+                    key: const Key('reminders-exact'),
+                    onPressed: () async {
+                      await ref.read(reminderSchedulerProvider).requestExact();
+                      ref.invalidate(reminderStatusProvider);
+                    },
+                    child: const Text('Allow'),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+          child: Text(
+            'LifeFlow sets up the reminders of the next $reminderHorizonDays days each time it runs, '
+            'so open it at least once every $reminderHorizonDays days. '
+            'All-day items remind at $allDayReminderTimeText. '
+            'Only the open profile reminds.',
+            key: const Key('reminder-info'),
           ),
         ),
       ],

@@ -473,6 +473,9 @@ class FakeWorld
   /// Events, calendars and the calendar range (P02 T6b).
   late final FakeCalendar calendar = FakeCalendar(calls);
 
+  /// Reminders and the device's notifications (P02 T7).
+  late final FakeReminders reminders = FakeReminders(calls);
+
   void dispose() {
     _changes.close();
     calendar.dispose();
@@ -625,6 +628,64 @@ class _CalendarPort implements CalendarService {
   Stream<List<CalendarView>> watchCalendars() => f.watchCalendars();
 }
 
+/// In-memory reminders and device notifications. Writes are recorded in the
+/// shared calls list as `reminders:<task|event>:<id>:<list>` and
+/// `notify:<what>`.
+class FakeReminders implements ReminderService, ReminderScheduler {
+  FakeReminders(this.calls);
+  final List<String> calls;
+  final stored = <String, List<ReminderInput>>{};
+  CommandFailure? failNext;
+
+  ReminderStatus deviceStatus = const ReminderStatus(supported: true, allowed: true);
+
+  /// What the permission prompt answers.
+  bool grant = true;
+
+  @override
+  Future<CommandResult> setReminders(ReminderSubject subject, String id, List<ReminderInput> reminders) async {
+    calls.add('reminders:${subject.name}:$id:${describeReminders(reminders)}');
+    final f = failNext;
+    failNext = null;
+    if (f != null) return f;
+    stored['${subject.name}:$id'] = List.of(reminders);
+    return CommandOk(id, Version.initial, const []);
+  }
+
+  @override
+  Future<List<ReminderInput>> remindersOf(ReminderSubject subject, String id) async =>
+      List.of(stored['${subject.name}:$id'] ?? const []);
+
+  @override
+  Future<void> sync(List<PlannedReminder> planned) async => calls.add('notify:sync:${planned.length}');
+
+  @override
+  Future<ReminderStatus> status() async => deviceStatus;
+
+  @override
+  Future<bool> requestPermission() async {
+    calls.add('notify:ask');
+    if (grant) deviceStatus = ReminderStatus(supported: true, allowed: true, exactAllowed: deviceStatus.exactAllowed);
+    return grant;
+  }
+
+  @override
+  Future<void> requestExact() async {
+    calls.add('notify:exact');
+    deviceStatus = const ReminderStatus(supported: true, allowed: true, exactAllowed: true);
+  }
+}
+
+/// "10m,at:2026-11-10T02:00:00.000Z", or "none".
+String describeReminders(List<ReminderInput> list) => list.isEmpty
+    ? 'none'
+    : list
+        .map((r) => switch (r) {
+              RemindMinutesBefore(:final minutes) => '${minutes}m',
+              RemindAtInstant(:final at) => 'at:${at.utc.toIso8601String()}',
+            })
+        .join(',');
+
 /// A compact form of an event input for [FakeWorld.calls].
 String describeEvent(EventInput e) {
   final r = e.repeat;
@@ -699,6 +760,8 @@ Widget appWith(FakeWorld world, {StorageNotice? notice}) => ProviderScope(
         eventServiceProvider.overrideWithValue(world.calendar),
         calendarServiceProvider.overrideWithValue(world.calendar.calendarService),
         calendarQueriesProvider.overrideWithValue(world.calendar),
+        reminderServiceProvider.overrideWithValue(world.reminders),
+        reminderSchedulerProvider.overrideWithValue(world.reminders),
         storageNoticeProvider.overrideWithValue(notice),
       ],
       child: const LifeFlowApp(),

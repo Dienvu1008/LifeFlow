@@ -26,3 +26,5 @@ export 'src/calendar_service.dart';
 export 'src/event_command_handlers.dart';
 export 'src/data_transfer_service.dart';
 export 'src/app_service_impl.dart';
+export 'src/reminder_rows.dart';
+export 'src/reminder_service.dart';

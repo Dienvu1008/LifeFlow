@@ -124,6 +124,7 @@ Every non-trivial statement carries one of these labels.
 | [adr/0031-events-calendars-conflicts.md](adr/0031-events-calendars-conflicts.md) | P02/T5: event and calendar commands, the calendar range query, conflicts between events and tasks |
 | [adr/0032-task-schedule-ui-and-device-settings.md](adr/0032-task-schedule-ui-and-device-settings.md) | P02/T6a: task schedule editor, Tasks filters All/Today/Upcoming, Settings → Calendar, device zone wiring |
 | [adr/0033-calendar-tab-and-event-editor.md](adr/0033-calendar-tab-and-event-editor.md) | P02/T6b: Calendar tab (day, week, month), event editor, only-this-time actions, conflict badges, calendars |
+| [adr/0034-reminders.md](adr/0034-reminders.md) | P02/T7: reminders of tasks and events (kernel trigger times across DST, rolling 14-day horizon, device adapter, permissions) |
 
 ## Batch 4 documents
 

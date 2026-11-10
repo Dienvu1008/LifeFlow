@@ -9,3 +9,4 @@ export 'src/calendar.dart';
 export 'src/command.dart';
 export 'src/planning.dart';
 export 'src/ports.dart';
+export 'src/reminders.dart';

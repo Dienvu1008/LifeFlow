@@ -1,0 +1,73 @@
+# ADR-0034: Reminders of tasks and events
+
+- Status: Accepted (P02 task T7, 2026-11-10; within the owner-accepted P02 plan, decision D8 and §4 "Reminders")
+- Date: 2026-11-10
+- Deciders: Project owner (plan), implementation
+- Related: [planning-scheduling.md §10](../domains/planning-scheduling.md), [ADR-0028](0028-time-types-and-dst-resolution.md), [ADR-0029](0029-planning-storage-schema-v4.md), [ADR-0032](0032-task-schedule-ui-and-device-settings.md), [ADR-0033](0033-calendar-tab-and-event-editor.md), spike S-05 ([spike-results.md](../spikes/spike-results.md))
+
+## Decision
+- **Ownership (planning-scheduling.md §10):**
+  - A reminder is part of its task or event, not an aggregate of its own. `setReminders` is an op of `TaskCommandHandler` and `EventCommandHandler`, and the item's version moves with it.
+  - The `reminders` rows (schema v4) are written like schedule rows: the payload is checked again, every written row gets a version and an outbox row, a removed reminder becomes a tombstone, and an unchanged row is not rewritten.
+  - The rows are exported, validated and restored through the record registry (ADR-0029).
+- **Kinds:**
+  - **Minutes before** each occurrence, from 0 to 28 days. It counts from the start, else the deadline, else the end.
+  - **At a date and time**: once, at an instant. It needs no schedule.
+  - At most 5 per item, no duplicates.
+- **Trigger times (time_kernel `remindersInHorizon`):**
+  - A timed anchor is its own wall clock in its own zone, resolved with the ADR-0028 DST rule (gap → transition, overlap → earlier instant). Minutes are then subtracted from the instant.
+  - A date-only (all-day) anchor is that date at **09:00 in the device zone**. This is the one documented conversion of a date to an instant (LF-INV-PLAN-004).
+  - Cancelled occurrences never remind, nor do occurrences the caller excludes (done ones). A moved occurrence reminds at its new time and keeps its key `<item>#<n>@<original date>`.
+  - The kernel only computes; it schedules nothing.
+- **Planning (infrastructure `DriftReminderPlanner`):**
+  - Only the active profile's reminders are planned, inside a rolling horizon of 14 days, at most 50 (the earliest).
+  - Trashed, done or cancelled tasks, cancelled events and done occurrences are left out.
+  - Notification ids are a stable hash of the key; collisions are probed.
+  - The text is the item title plus "Starts / Due / Ends <date>, <time>" (with the zone when it is not the device's), or "Reminder" for a reminder at a fixed time.
+- **Sync (`ReminderSync`):**
+  - Hands the plan to the `ReminderScheduler` port on session start, after any change to tasks, events, schedules, exceptions, completions or reminders (debounced 400 ms), and every 6 hours while running.
+  - Stopping never cancels anything, because reminders must fire with the app closed (D8, S-05).
+  - A profile switch or sign-out lock first stops the old profile's sync. The next profile's plan then replaces the pending set, so a locked or inactive profile never reminds.
+- **Device adapter (app, `LocalNotificationScheduler`):**
+  - Built on `flutter_local_notifications` 22.3.3 and `timezone` 0.11.2 (pinned, licenses checked in T0).
+  - A sync only cancels and schedules what changed. A pending notification is kept when its id, payload (`lf1|<key>|<millis>`), title and body match the plan.
+  - Notifications are scheduled at the UTC instant and shown in local time.
+  - Android:
+    - `POST_NOTIFICATIONS`, `SCHEDULE_EXACT_ALARM` and `RECEIVE_BOOT_COMPLETED` permissions, plus the plugin's receivers and core-library desugaring.
+    - Exact alarms when allowed, otherwise inexact (possibly a few minutes late).
+    - Permission is asked when the first reminder of an item is added. If it is refused, the editor says reminders will not show.
+- **UI:**
+  - A "Reminders" section in the task schedule editor and the event editor: presets, a custom offset and a reminder at a date and time.
+  - All-day presets read "On the day, 09:00", "1 day before, 09:00" and so on.
+  - Removing a schedule also removes the reminders that count from it; a reminder at a date and time stays.
+  - Settings → Reminders shows whether notifications and exact timing are allowed, with buttons to allow them, and explains the 14-day horizon and the 09:00 all-day time.
+  - A device-zone change while the app runs applies at the next start (as in ADR-0032). Timed items keep their own zone, so only date-only reminders depend on the device zone.
+
+## Consequences
+- Pro: one engine computes when something reminds, for both item types. It is exact across DST, testable without a device, and the adapter stays thin.
+- Con: the horizon is rolling. If LifeFlow is not opened for more than 14 days, later reminders are not scheduled (Settings says so). A background refresh can come later.
+- Con: saving a schedule and its reminders are two commands. If the second fails, the editor shows the reason; for a new event the editor closes and says what was not saved, so it is never created twice.
+- Con: the all-day time (09:00) is fixed for now; it can become a setting.
+
+## Verification
+- `packages/time_kernel/test/reminders_test.dart` (15):
+  - Anchors: timed, date-only in the device zone, and the start / deadline / end order.
+  - DST: Berlin spring change, the gap and the overlap; "1 day before" over the New York change.
+  - Horizon: its bounds; a reminder a week before an occurrence beyond the horizon.
+  - Occurrences: cancelled, skipped and excluded ones; a moved one.
+  - Absolute reminders, stability, validation.
+- `packages/infrastructure/test/reminders_test.dart` (13):
+  - Commands: set, read and replace on tasks and events, version and outbox rows, tombstones, unchanged rows untouched, refusals with nothing written.
+  - Planner: text and stable id; all-day and foreign-zone items; done occurrences; the rolling horizon; at most N; done, trashed and cancelled items and their return; a cancelled event occurrence; reminders without a schedule; only the active profile.
+  - Sync: on start, after changes, not after stop, trash removes, a failing device is reported and retried.
+- `atomic_set_test.dart` (FF-ARCH-06): `task.setReminders` (set, then shrink) and `event.setReminders` with fault injection.
+- `packages/ui/test/reminder_flow_test.dart` (13):
+  - Presets, the permission prompt, a refused permission, stored reminders shown and removed, all-day labels, custom offset and its bounds.
+  - Without a date: only a reminder at a date and time, and no schedule written. Removing the schedule keeps absolute reminders only; at most five; a refused list.
+  - An event reminder saved as a second command; Settings statuses and buttons; texts.
+- `apps/lifeflow_app/test/notifications_test.dart` (3): the pending diff and the payload.
+- `apps/lifeflow_app/test/app_integration_test.dart`: on the real store, a reminder set in the UI reaches the device scheduler at 09:00 of its day. A profile switch replaces the pending set, and the old profile schedules nothing afterwards.
+- Device (Android, RF8M90JH9JA, 2026-11-10): a task reminder "At the start" for 12:16 was registered as an exact `RTC_WAKEUP` alarm (`exactAllowReason=permission`). With the app in the background, it was posted at 12:16:00.085 on the "reminders" channel with the text "Starts Tue 10 Nov, 12:16".
+- Mutations: 15 killed (all-day anchor zone, past reminders, window end, cancelled occurrences, duplicates, unchanged-row rewrite, tombstones, done/cancelled tasks, done occurrences, cancelled events, at most N, pending diff, remove-schedule rule, permission prompt). Two survivors, both explained:
+  - `stop()` without cancelling its subscription behaves the same, because the stopped flag blocks every sync and a restart cancels the old subscription.
+  - Removing the early `stopReminders()` in the root is not visible in fake-time tests, because `close()` stops the sync one frame later. It is kept as defense in depth against a debounced sync that is due during the store switch.

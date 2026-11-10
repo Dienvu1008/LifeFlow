@@ -156,6 +156,11 @@ void main() {
           (v, op) => command('ClearOccurrenceChange', {'op': 'clearException', 'id': 't1', 'originalDate': '2026-11-16'}, opId: op, expected: v)),
       ('task.setOccurrenceDone', taskHandler, 'task', 't1',
           (v, op) => command('CompleteOccurrence', {'op': 'setOccurrenceDone', 'id': 't1', 'originalDate': '2026-11-23', 'done': true}, opId: op, expected: v)),
+      // P02 T7: reminders (two, then one: writes and a tombstone).
+      ('task.setReminders', taskHandler, 'task', 't1',
+          (v, op) => command('SetTaskReminders', {'op': 'setReminders', 'id': 't1', 'reminders': [{'before': 10}, {'before': 60}]}, opId: op, expected: v)),
+      ('task.setReminders(shrink)', taskHandler, 'task', 't1',
+          (v, op) => command('SetTaskReminders', {'op': 'setReminders', 'id': 't1', 'reminders': [{'at': 1794000000000}]}, opId: op, expected: v)),
       ('task.clearSchedule', taskHandler, 'task', 't1',
           (v, op) => command('ClearTaskSchedule', {'op': 'clearSchedule', 'id': 't1'}, opId: op, expected: v)),
       // P02 T5: calendars and events.
@@ -171,6 +176,8 @@ void main() {
           (v, op) => command('CancelEventOccurrence', {'op': 'setException', 'id': 'e1', 'originalDate': '2026-11-16', 'kind': 'cancel'}, opId: op, expected: v)),
       ('event.clearException', eventHandler, 'event', 'e1',
           (v, op) => command('ClearEventOccurrenceChange', {'op': 'clearException', 'id': 'e1', 'originalDate': '2026-11-16'}, opId: op, expected: v)),
+      ('event.setReminders', eventHandler, 'event', 'e1',
+          (v, op) => command('SetEventReminders', {'op': 'setReminders', 'id': 'e1', 'reminders': [{'before': 15}]}, opId: op, expected: v)),
       ('event.setCancelled', eventHandler, 'event', 'e1',
           (v, op) => command('CancelEvent', {'op': 'setCancelled', 'id': 'e1', 'cancelled': true}, opId: op, expected: v)),
       ('event.trash', eventHandler, 'event', 'e1',

@@ -29,6 +29,11 @@ dependencies:
   file_picker: 13.3.2
   # Device IANA time zone (Apache-2.0, ADR-0018 OK; spike S-05). Pinned.
   flutter_timezone: 5.1.1
+  # Scheduled local notifications for reminders (BSD-3, ADR-0018 OK; spike
+  # S-05). 22.3.3, not 23.x: 23 needs compileSdk 37. Pinned.
+  flutter_local_notifications: 22.3.3
+  # The zone type the plugin schedules with; same pin as time_kernel.
+  timezone: 0.11.2
 
 dev_dependencies:
   flutter_test:

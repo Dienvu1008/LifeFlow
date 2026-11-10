@@ -86,3 +86,40 @@ String describeSchedule(TaskScheduleInput s, {required LocalDate today, required
   ];
   return parts.join(' · ');
 }
+
+// --- reminders (P02 T7) -------------------------------------------------------
+
+String _n(int n, String unit) => n == 1 ? '1 $unit' : '$n ${unit}s';
+
+/// "10 minutes", "1 hour 30 minutes", "1 day", "2 days 3 hours", "1 week".
+String describeOffset(int minutes) {
+  if (minutes > 0 && minutes % (7 * 1440) == 0) return _n(minutes ~/ (7 * 1440), 'week');
+  final d = minutes ~/ 1440, h = (minutes % 1440) ~/ 60, m = minutes % 60;
+  final parts = [if (d > 0) _n(d, 'day'), if (h > 0) _n(h, 'hour'), if (m > 0) _n(m, 'minute')];
+  return parts.isEmpty ? '0 minutes' : parts.join(' ');
+}
+
+/// The all-day reminder time, "09:00".
+String get allDayReminderTimeText {
+  const m = allDayReminderMinuteOfDay;
+  return '${(m ~/ 60).toString().padLeft(2, '0')}:${(m % 60).toString().padLeft(2, '0')}';
+}
+
+/// How a reminder reads in an editor. [anchor] names the point it counts
+/// from ('start', 'deadline' or 'end'); [allDay] when that point is a date.
+String describeReminder(ReminderInput r, {required String anchor, required bool allDay, required LocalDate today}) {
+  switch (r) {
+    case RemindMinutesBefore(:final minutes):
+      if (allDay) {
+        final t = allDayReminderTimeText;
+        if (minutes == 0) return 'On the day, $t';
+        return minutes % 1440 == 0 ? '${describeOffset(minutes)} before, $t' : '${describeOffset(minutes)} before $t';
+      }
+      if (minutes == 0) return 'At the $anchor';
+      return '${describeOffset(minutes)} before';
+    case RemindAtInstant(:final at):
+      final l = at.utc.toLocal();
+      final date = formatDate(LocalDate(l.year, l.month, l.day), today: today);
+      return '$date at ${TimeOfDayValue(l.hour, l.minute)}';
+  }
+}

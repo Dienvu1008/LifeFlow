@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:infrastructure/infrastructure.dart';
 import 'package:ui/ui.dart';
 
+import 'notifications.dart';
+
 /// Everything the UI needs for ONE profile, built when that profile opens.
 /// Since SR-03 every profile has its own store, so switching profiles means
 /// a new [AppWiring] (and a new provider scope).
@@ -16,10 +18,25 @@ class AppWiring {
     required this.notice,
     required this.overrides,
     required this.onSessionRevoked,
+    this.reminders,
   });
 
   final String profileId;
   final AppDatabase db;
+
+  /// Keeps the device's reminders equal to this profile's plan (ADR-0034).
+  final ReminderSync? reminders;
+
+  /// Stops watching for reminder changes. The pending reminders stay: they
+  /// must fire with the app closed. Call BEFORE the next profile opens, so
+  /// the old profile can never re-schedule its reminders after the switch.
+  Future<void> stopReminders() async => reminders?.stop();
+
+  /// Ends the session: reminder sync, then the store.
+  Future<void> close() async {
+    await stopReminders();
+    await db.close();
+  }
 
   /// ADR-0024: the provider ended the session while online; lock this
   /// profile and move to a guest (no-op for a guest profile).
@@ -57,6 +74,7 @@ Future<AppWiring> openSession({
   bool windowsPlainFallback = false,
   String initialRoute = '/tasks',
   String deviceZone = 'UTC',
+  ReminderScheduler reminders = const NoDeviceReminders(),
   void Function(String message)? onWarning,
 }) async {
   final store = await directory.openProfile(profileId);
@@ -84,14 +102,23 @@ Future<AppWiring> openSession({
     await settings.planningSettings();
     const zones = KernelZoneCatalog();
     final zone = zones.deviceZoneOr(deviceZone);
-    final agenda = DriftAgendaQueries(db, SystemDeviceTime(() => zone),
-        limits: () => settings.limitsCache.limits);
+    final deviceTime = SystemDeviceTime(() => zone);
+    final agenda = DriftAgendaQueries(db, deviceTime, limits: () => settings.limitsCache.limits);
+
+    // P02 T7: this profile's reminders replace whatever is pending on the
+    // device (another profile's after a switch or a sign-out lock).
+    final reminderSync = ReminderSync(db, DriftReminderPlanner(db, deviceTime), reminders,
+        onError: (e) => onWarning?.call('[reminders] $e'));
+    await reminderSync.start();
     return AppWiring(
       profileId: profileId,
       db: db,
       notice: notice,
       onSessionRevoked: accounts.handleSessionRevoked,
+      reminders: reminderSync,
       overrides: [
+        reminderServiceProvider.overrideWithValue(DriftReminderService(db, gateway)),
+        reminderSchedulerProvider.overrideWithValue(reminders),
         taskQueriesProvider.overrideWithValue(DriftTaskQueries(db)),
         taskServiceProvider.overrideWithValue(DriftTaskService(db, gateway)),
         profileServiceProvider

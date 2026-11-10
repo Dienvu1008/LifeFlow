@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'auth/supabase_auth_gateway.dart';
 import 'bootstrap.dart';
 import 'file_picker_gateway.dart';
+import 'notifications.dart';
 import 'root.dart';
 import 'secure_key_store.dart';
 
@@ -53,6 +54,9 @@ Future<void> main() async {
   // runs fully as a guest. Initializing makes no network call.
   final auth = await SupabaseAuthGateway.initialize();
 
+  // P02 T7: scheduled local notifications for reminders (never throws).
+  final reminders = await LocalNotificationScheduler.initialize(log: (m) => debugPrint('[reminders] $m'));
+
   // Owner decision D10: new timed items use the device zone. Unknown to this
   // build or unreadable -> UTC (openSession validates it).
   String? deviceZone;
@@ -76,6 +80,7 @@ Future<void> main() async {
       host: host,
       initialRoute: initialRoute,
       deviceZone: deviceZone ?? 'UTC',
+      reminders: reminders,
       files: const FilePickerGateway(),
       windowsPlainFallback: windowsPlainFallback,
       // Local log only; never uploaded (no telemetry, SR-15).

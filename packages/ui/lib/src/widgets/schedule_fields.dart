@@ -510,3 +510,190 @@ class _ZoneDialogState extends State<ZoneDialog> {
     );
   }
 }
+
+// --- reminders (P02 T7) -------------------------------------------------------
+
+const _timedPresets = [0, 5, 10, 15, 30, 60, 120, 1440];
+const _allDayPresets = [0, 1440, 2 * 1440, 7 * 1440];
+
+/// The reminders of an item, as chips, with "Add reminder". The list is
+/// edited in place; [onChanged] is called after every change. Without a
+/// schedule ([anchor] null) only a reminder at a date and time is offered.
+class ReminderFields extends StatelessWidget {
+  const ReminderFields({
+    super.key,
+    required this.reminders,
+    required this.anchor,
+    required this.allDay,
+    required this.today,
+    required this.onChanged,
+    this.note,
+  });
+
+  final List<ReminderInput> reminders;
+
+  /// 'start', 'deadline' or 'end'; null when the item has no date yet.
+  final String? anchor;
+  final bool allDay;
+  final LocalDate today;
+
+  /// Called after a change, with whether a reminder was added.
+  final void Function({required bool added}) onChanged;
+
+  /// Shown under the chips (for example: notifications are off).
+  final String? note;
+
+  @override
+  Widget build(BuildContext context) {
+    final a = anchor;
+    final presets = a == null ? const <int>[] : (allDay ? _allDayPresets : _timedPresets);
+    final has = reminders.whereType<RemindMinutesBefore>().map((r) => r.minutes).toSet();
+    final full = reminders.length >= 5;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              for (var i = 0; i < reminders.length; i++)
+                InputChip(
+                  key: Key('reminder-$i'),
+                  avatar: const Icon(Icons.notifications_outlined, size: 18),
+                  label: Text(describeReminder(reminders[i], anchor: a ?? 'start', allDay: allDay, today: today)),
+                  deleteButtonTooltipMessage: 'Remove this reminder',
+                  onDeleted: () {
+                    reminders.removeAt(i);
+                    onChanged(added: false);
+                  },
+                ),
+              if (!full)
+                PopupMenuButton<int>(
+                  key: const Key('reminder-add'),
+                  tooltip: 'Add reminder',
+                  onSelected: (v) async {
+                    final ReminderInput? r = switch (v) {
+                      -1 => await _custom(context),
+                      -2 => await _atTime(context),
+                      _ => RemindMinutesBefore(v),
+                    };
+                    if (r == null || reminders.contains(r)) return;
+                    reminders.add(r);
+                    onChanged(added: true);
+                  },
+                  itemBuilder: (_) => [
+                    for (final m in presets)
+                      if (!has.contains(m))
+                        PopupMenuItem(
+                          value: m,
+                          child: Text(describeReminder(RemindMinutesBefore(m),
+                              anchor: a!, allDay: allDay, today: today)),
+                        ),
+                    if (a != null) const PopupMenuItem(value: -1, child: Text('Custom…')),
+                    const PopupMenuItem(value: -2, child: Text('At a date and time…')),
+                  ],
+                  child: const Chip(
+                    avatar: Icon(Icons.add_alert_outlined, size: 18),
+                    label: Text('Add reminder'),
+                  ),
+                ),
+            ],
+          ),
+          if (a == null)
+            const Padding(
+              padding: EdgeInsets.only(top: 4),
+              child: Text('Set a date to be reminded before it.'),
+            ),
+          if (note != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Semantics(
+                liveRegion: true,
+                child: Text(note!,
+                    key: const Key('reminder-note'), style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<ReminderInput?> _custom(BuildContext context) async {
+    final m = await showDialog<int>(context: context, builder: (_) => const _OffsetDialog());
+    return m == null ? null : RemindMinutesBefore(m);
+  }
+
+  Future<ReminderInput?> _atTime(BuildContext context) async {
+    final d = await pickLocalDate(context, today: today, help: 'Remind on');
+    if (d == null || !context.mounted) return null;
+    final t = await showTimePicker(
+        context: context, helpText: 'Remind at', initialTime: const TimeOfDay(hour: 9, minute: 0));
+    if (t == null) return null;
+    // The device's local time is the device zone (D10).
+    return RemindAtInstant(Instant(DateTime(d.year, d.month, d.day, t.hour, t.minute).toUtc()));
+  }
+}
+
+/// "N minutes / hours / days / weeks before", at most 28 days.
+class _OffsetDialog extends StatefulWidget {
+  const _OffsetDialog();
+  @override
+  State<_OffsetDialog> createState() => _OffsetDialogState();
+}
+
+class _OffsetDialogState extends State<_OffsetDialog> {
+  final _c = TextEditingController(text: '1');
+  int _unit = 60;
+  String? _error;
+
+  static const _units = {1: 'minutes', 60: 'hours', 1440: 'days', 10080: 'weeks'};
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final n = int.tryParse(_c.text.trim());
+    final m = n == null ? null : n * _unit;
+    if (m == null || m < 1 || m > 28 * 1440) {
+      setState(() => _error = 'From 1 minute to 4 weeks.');
+      return;
+    }
+    Navigator.pop(context, m);
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+        title: const Text('Remind before'),
+        content: Row(
+          children: [
+            SizedBox(
+              width: 80,
+              child: TextField(
+                key: const Key('offset-number'),
+                controller: _c,
+                autofocus: true,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(errorText: _error, errorMaxLines: 2),
+                onSubmitted: (_) => _submit(),
+              ),
+            ),
+            const SizedBox(width: 12),
+            DropdownButton<int>(
+              key: const Key('offset-unit'),
+              value: _unit,
+              onChanged: (u) => setState(() => _unit = u ?? _unit),
+              items: [for (final e in _units.entries) DropdownMenuItem(value: e.key, child: Text(e.value))],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          FilledButton(onPressed: _submit, child: const Text('Add')),
+        ],
+      );
+}
