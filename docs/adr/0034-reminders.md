@@ -32,6 +32,10 @@
   - Built on `flutter_local_notifications` 22.3.3 and `timezone` 0.11.2 (pinned, licenses checked in T0).
   - A sync only cancels and schedules what changed. A pending notification is kept when its id, payload (`lf1|<key>|<millis>`), title and body match the plan.
   - Notifications are scheduled at the UTC instant and shown in local time.
+  - Windows (added in P02 T8 after the owner's device check):
+    - Windows drops scheduled toasts for an app id it has never shown a notification for. Its log says "Element not found", and it has no `Notifications\Settings\LifeFlow.App` entry. See spike-results, S-05 correction.
+    - The adapter therefore registers the app id by showing one "Reminders are on" notification, at the first sync that has reminders or when the user turns reminders on (the Windows counterpart of the Android permission prompt).
+    - Status: an entry = allowed; an entry with `Enabled` 0 = turned off by the user. Then the app does not ask; it says to turn LifeFlow on in the system settings (`ReminderStatus.canAsk` = false).
   - Android:
     - `POST_NOTIFICATIONS`, `SCHEDULE_EXACT_ALARM` and `RECEIVE_BOOT_COMPLETED` permissions, plus the plugin's receivers and core-library desugaring.
     - Exact alarms when allowed, otherwise inexact (possibly a few minutes late).
@@ -67,6 +71,11 @@
   - An event reminder saved as a second command; Settings statuses and buttons; texts.
 - `apps/lifeflow_app/test/notifications_test.dart` (3): the pending diff and the payload.
 - `apps/lifeflow_app/test/app_integration_test.dart`: on the real store, a reminder set in the UI reaches the device scheduler at 09:00 of its day. A profile switch replaces the pending set, and the old profile schedules nothing afterwards.
+- Device (Windows 11, 2026-11-10, P02 T8):
+  - The owner found that reminders did not fire with the app closed.
+  - Reproduced through the real commands: the toast was scheduled correctly (15:22:00) and survived a normal window close, but Windows failed it at delivery ("Element not found").
+  - After the fix, with Windows' LifeFlow entry removed first, one run of the real app registered it ("Reminders are on"). With the window closed, the reminder was delivered at 15:34:00 (log: source "Scheduled", "delivered to LifeFlow.App").
+  - `notifications_test.dart` covers how the registry entry is read; the registration itself depends on Windows and is device-verified only.
 - Device (Android, RF8M90JH9JA, 2026-11-10): a task reminder "At the start" for 12:16 was registered as an exact `RTC_WAKEUP` alarm (`exactAllowReason=permission`). With the app in the background, it was posted at 12:16:00.085 on the "reminders" channel with the text "Starts Tue 10 Nov, 12:16".
 - Mutations: 15 killed (all-day anchor zone, past reminders, window end, cancelled occurrences, duplicates, unchanged-row rewrite, tombstones, done/cancelled tasks, done occurrences, cancelled events, at most N, pending diff, remove-schedule rule, permission prompt). Two survivors, both explained:
   - `stop()` without cancelling its subscription behaves the same, because the stopped flag blocks every sync and a restart cancels the old subscription.

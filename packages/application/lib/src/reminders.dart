@@ -79,7 +79,7 @@ class PlannedReminder {
 
 /// What the device allows.
 class ReminderStatus {
-  const ReminderStatus({required this.supported, required this.allowed, this.exactAllowed});
+  const ReminderStatus({required this.supported, required this.allowed, this.exactAllowed, this.canAsk = true});
 
   /// This platform can show scheduled notifications at all.
   final bool supported;
@@ -90,6 +90,11 @@ class ReminderStatus {
   /// Android: reminders at the exact minute (null where it does not apply).
   /// Without it, Android may deliver a reminder some minutes late.
   final bool? exactAllowed;
+
+  /// The app can turn notifications on by asking ([ReminderScheduler.
+  /// requestPermission]). False when only the user can, in the system
+  /// settings (Windows: they turned LifeFlow off there).
+  final bool canAsk;
 }
 
 /// The device's scheduled notifications (adapter in the app).

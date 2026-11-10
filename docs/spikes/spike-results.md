@@ -74,3 +74,8 @@ With `sqlite3` 3.5.2 (resolved by the T6a app), the build hook's `source: sqlite
 - **Decision:** D8 resolved: **Windows reminders work with the app closed**, so no foreground-only fallback is needed. Adopt `flutter_local_notifications` **22.3.3** and `flutter_timezone` **5.1.1** (pinned) for T7, behind the `ReminderScheduler` port. Do not rely on an immediate `show` right after app start on Windows; reminders are scheduled ahead. The app re-schedules its rolling horizon on start, which also covers reboots and force-stops.
 - **ADR update:** ADR-0028 (timezone 0.11.2); verified-sources VS-32 to VS-34; P02 plan D8.
 - **Human gate date:** pending owner review (2026-11-09).
+- **Correction (2026-11-10, P02 T8, found by the owner on Windows):** the Windows "app closed" PASS held only because the probe had **shown** a toast before scheduling. In the real app no toast had ever been shown for its app id (`LifeFlow.App`):
+  - Windows accepted the scheduled toast, but at delivery its push-notification log said "A local notification failed to be submitted to threadpool: Element not found".
+  - Windows had no notification-settings entry for the app id (`HKCU\...\Notifications\Settings\LifeFlow.App`), where the probe's id had one.
+  - After one shown toast, the entry exists and a toast scheduled with no LifeFlow process running was delivered at the minute (log: source "Scheduled", "delivered").
+  - Fix (ADR-0034): the Windows adapter registers the app id by showing one "Reminders are on" notification when reminders are first turned on or first scheduled, and reports "turned off in Windows settings" when the user did that. Verified end to end: entry removed, real app run once, window closed, reminder delivered at 15:34:00.

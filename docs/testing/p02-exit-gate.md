@@ -49,7 +49,7 @@ All seven also appear in [invariant-test-matrix.md](../invariants/invariant-test
 |---|---|
 | Build passes on Windows and Android; analyze clean | Debug builds for Windows and Android at every task (T6a, T6b, T7), last on the T7 branch (`80336cb`); `dart analyze` / `flutter analyze` clean in every package. CI does not build for the devices (as in P01); the builds are local. |
 | Static fitness functions | FF-ARCH-01, 04 and **07 (license scan, added in T8, ADR-0035)** green in CI. FF-ARCH-02, 03 and 05 have no scripts yet, as at the P01 exit (P01 gate lists 01/04/06/09). |
-| All phase tests pass | foundation 13, time_kernel 87, domain 17, application 3, infrastructure 224, ui 146, app 19 (local and CI on the T8 branch), plus the FF-ARCH-07 self-test (11 cases). |
+| All phase tests pass | foundation 13, time_kernel 87, domain 17, application 3, infrastructure 224, ui 148, app 20 (local and CI on the T8 branch), plus the FF-ARCH-07 self-test (11 cases). |
 | Every P02 invariant has a passing verification row | see "Invariants" above and the matrix |
 | New dependencies have a verified license | `timezone` 0.11.2 BSD-2 (VS-32), `flutter_local_notifications` 22.3.3 BSD-3 (VS-33), `flutter_timezone` 5.1.1 Apache-2.0 (VS-34), `desugar_jdk_libs` 2.1.4 GPL-2.0 + Classpath Exception (VS-35, accepted by ADR-0035 with its notices shipped). All 125 shipped packages and libraries are in the FF-ARCH-07 inventory. |
 | ADRs for decisions with trade-offs | ADR-0028 (time types, DST), 0029 (schema v4), 0030 (task scheduling, agenda), 0031 (events, calendars, conflicts), 0032 (schedule UI, device settings), 0033 (Calendar tab, event editor), 0034 (reminders), 0035 (GPL-2.0 + Classpath Exception for Android desugaring, ADR-0018 rule 7); plan and owner decisions D1–D10 in p02-plan.md |
@@ -79,7 +79,12 @@ D1–D10 and the D2/D3 refinement (p02-plan.md §3), with the proofs listed in t
 - [x] T6a: schedule editor, Today and Upcoming, Settings → Calendar (owner approved the merge, 2026-11-10); the agent also ran it on Android: device zone `Asia/Ho_Chi_Minh` read, a daily schedule shown in Today, the filter bar fixed for a large font.
 - [x] T6b: Calendar tab, event editor, conflicts (owner approved the merge, 2026-11-10).
 - [x] T7 Android (agent, 2026-11-10): exact alarm registered, reminder posted at 12:16:00 with the app in the background, text "Starts Tue 10 Nov, 12:16".
-- [ ] T7 Windows: a reminder of the real app with the app closed. Owner, please confirm. The S-05 spike proved the mechanism on Windows, but I did not run the real app's reminder on Windows.
+- [x] T7 Windows, found and fixed (2026-11-10):
+  - The owner found that reminders did not fire with the app closed.
+  - Cause: Windows drops scheduled toasts for an app id it has never shown a notification for ("Element not found" in its push-notification log). The S-05 probe had passed only because it showed a toast first.
+  - Fix: the adapter registers the app id with one "Reminders are on" notification and reports "turned off in Windows settings" (ADR-0034, S-05 correction).
+  - Verified by the agent end to end: real app, window closed normally, reminder delivered at the minute.
+- [ ] T7 Windows, owner re-check after the fix: set a reminder a few minutes ahead, close LifeFlow, the notification appears.
 
 ## Known limits carried out of P02
 - "This and following" edits of a repeat (D4): deferred to after P03.
@@ -98,5 +103,5 @@ D1–D10 and the D2/D3 refinement (p02-plan.md §3), with the proofs listed in t
 
 ## Owner sign-off
 - [x] L-1 decided: (a), ADR-0035 (owner, 2026-11-10).
-- [ ] T7 Windows device check confirmed.
+- [ ] T7 Windows device check confirmed after the fix.
 - [ ] Owner approves P02 as done.

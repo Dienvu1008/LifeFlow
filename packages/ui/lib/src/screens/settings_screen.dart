@@ -208,6 +208,13 @@ class _ReminderSettings extends ConsumerWidget {
                   leading: Icon(Icons.notifications_off_outlined),
                   title: Text('This device does not show reminders.'),
                 )
+              else if (!s.allowed && !s.canAsk)
+                const ListTile(
+                  key: Key('reminders-off-in-system'),
+                  leading: Icon(Icons.notifications_off_outlined),
+                  title: Text('Notifications are off for LifeFlow'),
+                  subtitle: Text('Turn LifeFlow on in your system\'s notification settings to see reminders.'),
+                )
               else if (!s.allowed)
                 ListTile(
                   leading: const Icon(Icons.notifications_off_outlined),

@@ -62,6 +62,16 @@ void main() {
       ]);
     });
 
+    testWidgets('turned off in the system: the editor says so and does not ask', (tester) async {
+      final w = world([task('a', 'Call', schedule: timed())]);
+      w.reminders.deviceStatus = const ReminderStatus(supported: true, allowed: false, canAsk: false);
+      await pumpApp(tester, w);
+      await openEditor(tester, 'Call');
+      await addReminder(tester, 'At the start');
+      expect(w.calls.where((c) => c == 'notify:ask'), isEmpty);
+      expect(find.textContaining("system's notification settings"), findsOneWidget);
+    });
+
     testWidgets('permission refused: the editor says reminders will not show', (tester) async {
       final w = world([task('a', 'Call', schedule: timed())]);
       w.reminders
@@ -221,6 +231,15 @@ void main() {
       await tester.pumpAndSettle();
       await tapKey(tester, 'open-source-licenses');
       expect(find.byType(LicensePage), findsOneWidget);
+    });
+
+    testWidgets('turned off in the system settings: no Allow button, says where to turn it on', (tester) async {
+      final w = world([]);
+      w.reminders.deviceStatus = const ReminderStatus(supported: true, allowed: false, canAsk: false);
+      await pumpApp(tester, w);
+      await openSettings(tester);
+      expect(find.byKey(const Key('reminders-off-in-system')), findsOneWidget);
+      expect(find.byKey(const Key('reminders-allow')), findsNothing);
     });
 
     testWidgets('a device without notifications says so', (tester) async {

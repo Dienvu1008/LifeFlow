@@ -35,6 +35,20 @@ void main() {
     expect(d.schedule, [a, b]);
   });
 
+  test('Windows: no entry = never shown (scheduled ones would be dropped); Enabled 0 = turned off', () {
+    expect(windowsNotificationStateOf(1, ''), WindowsNotificationState.unregistered);
+    const shown = r'''
+HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings\LifeFlow.App
+    LastNotificationAddedTime    REG_QWORD    0x1dd70ecfb29ce70
+    PeriodicNotificationCount    REG_DWORD    0x2
+''';
+    expect(windowsNotificationStateOf(0, shown), WindowsNotificationState.enabled);
+    const off = '$shown    Enabled    REG_DWORD    0x0\n';
+    expect(windowsNotificationStateOf(0, off), WindowsNotificationState.disabled);
+    const on = '$shown    Enabled    REG_DWORD    0x1\n';
+    expect(windowsNotificationStateOf(0, on), WindowsNotificationState.enabled);
+  });
+
   test('the payload carries the key and the instant', () {
     expect(payloadOf(r(1, 'task:a#0@2026-11-10', 1)), 'lf1|task:a#0@2026-11-10|${DateTime.utc(2026, 11, 10, 1).millisecondsSinceEpoch}');
   });
