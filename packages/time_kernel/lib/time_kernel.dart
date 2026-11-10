@@ -5,5 +5,6 @@ library time_kernel;
 
 export 'src/overlap.dart';
 export 'src/recurrence.dart';
+export 'src/reminders.dart';
 export 'src/schedule.dart';
 export 'src/zones.dart';

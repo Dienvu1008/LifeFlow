@@ -56,7 +56,7 @@ class LifeFlowRootState extends State<LifeFlowRoot> {
     try {
       final s = await widget.openSession(profileId, _host, '/tasks');
       if (!mounted) {
-        await s.db.close();
+        await s.close();
         return;
       }
       setState(() => _session = s);
@@ -68,23 +68,32 @@ class LifeFlowRootState extends State<LifeFlowRoot> {
   Future<void> _switchTo(String profileId, {required bool showProfiles}) async {
     if (_session?.profileId == profileId) return;
     final previous = _session;
-    final next = await widget.openSession(
-        profileId, _host, showProfiles ? '/profiles' : '/tasks');
+    // P02 T7: the old profile must not re-schedule its reminders once the
+    // next profile has replaced them (ADR-0034).
+    await previous?.stopReminders();
+    final AppWiring next;
+    try {
+      next = await widget.openSession(
+          profileId, _host, showProfiles ? '/profiles' : '/tasks');
+    } catch (_) {
+      await previous?.reminders?.start(); // still on the old profile
+      rethrow;
+    }
     if (!mounted) {
-      await next.db.close();
+      await next.close();
       return;
     }
     setState(() => _session = next);
     // Close the old store once the old scope has been torn down.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      previous?.db.close();
+      previous?.close();
     });
   }
 
   @override
   void dispose() {
     _revokedSub?.cancel();
-    _session?.db.close();
+    _session?.close();
     super.dispose();
   }
 

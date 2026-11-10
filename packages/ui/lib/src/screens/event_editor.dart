@@ -24,10 +24,12 @@ Future<void> openEventEditor(BuildContext context, WidgetRef ref, {String? event
       return;
     }
   }
+  final reminders = eventId == null ? const <ReminderInput>[] : await readReminders(ref, ReminderSubject.event, eventId);
   if (!context.mounted) return;
   await Navigator.of(context, rootNavigator: true).push(MaterialPageRoute<void>(
     fullscreenDialog: true,
-    builder: (_) => EventEditorPage(existing: existing, date: date, defaults: defaults),
+    builder: (_) =>
+        EventEditorPage(existing: existing, date: date, defaults: defaults, initialReminders: reminders),
   ));
 }
 
@@ -36,8 +38,10 @@ void _snack(BuildContext context, String m) => ScaffoldMessenger.of(context)
   ..showSnackBar(SnackBar(content: Text(m)));
 
 class EventEditorPage extends ConsumerStatefulWidget {
-  const EventEditorPage({super.key, this.existing, this.date, required this.defaults});
+  const EventEditorPage(
+      {super.key, this.existing, this.date, required this.defaults, this.initialReminders = const []});
   final EventDetails? existing;
+  final List<ReminderInput> initialReminders;
 
   /// The day a new event goes on (default: today).
   final LocalDate? date;
@@ -58,6 +62,8 @@ class _EventEditorPageState extends ConsumerState<EventEditorPage> {
   late final _repeat =
       RepeatDraft(monthEnd: widget.defaults.defaultMonthEnd, weekStart: widget.defaults.firstDayOfWeek)
         ..load(_in?.repeat);
+  late final _reminders = List<ReminderInput>.of(widget.initialReminders);
+  String? _reminderNote;
   String? _error;
   bool _busy = false;
 
@@ -106,7 +112,20 @@ class _EventEditorPageState extends ConsumerState<EventEditorPage> {
     );
     final events = ref.read(eventServiceProvider);
     final existing = widget.existing;
-    await _run(existing == null ? events.create(input) : events.update(existing.id, input));
+    final messenger = ScaffoldMessenger.of(context);
+    await _run(() async {
+      final saved = existing == null ? await events.create(input) : await events.update(existing.id, input);
+      if (saved is! CommandOk || sameReminders(_reminders, widget.initialReminders)) return saved;
+      // The reminders are a second command on the (now existing) event.
+      final r = await ref.read(reminderServiceProvider).setReminders(ReminderSubject.event, saved.entityId, _reminders);
+      if (r is CommandFailure && existing == null) {
+        // The event exists now: close (saving again would make a second one)
+        // and say what was not saved.
+        messenger.showSnackBar(SnackBar(content: Text('Event saved; its reminders were not: ${describeFailure(r)}')));
+        return saved;
+      }
+      return r;
+    }());
   }
 
   Future<void> _trash() async {
@@ -235,6 +254,21 @@ class _EventEditorPageState extends ConsumerState<EventEditorPage> {
           const EditorSection('Repeat'),
           RepeatFields(
               draft: _repeat, firstDayOfWeek: widget.defaults.firstDayOfWeek, today: today, anchor: _start.date),
+          const EditorSection('Reminders'),
+          ReminderFields(
+            reminders: _reminders,
+            anchor: _start.date == null ? null : 'start',
+            allDay: !_start.hasTime,
+            today: today,
+            note: _reminderNote,
+            onChanged: ({required bool added}) async {
+              setState(() {});
+              if (added && _reminders.length == 1) {
+                final note = await ensureReminderPermission(ref);
+                if (mounted) setState(() => _reminderNote = note);
+              }
+            },
+          ),
           if (editing) ...[
             const Divider(height: 32),
             Padding(

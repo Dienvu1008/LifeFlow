@@ -10,6 +10,7 @@
 //   setException  id, originalDate, kind (skip|cancel|move|edit),
 //                 moveDate?, moveTime?, title?, location?
 //   clearException id, originalDate
+//   setReminders  id, reminders (P02 T7, reminder_rows.dart)
 // CalendarCommandHandler, payload['op']:
 //   create  id, name, color      update  id, name?, color?
 //   trash   id (its events stay, without a calendar)
@@ -20,6 +21,7 @@ import 'package:time_kernel/time_kernel.dart' as tk;
 
 import 'app_database.dart';
 import 'command_gateway.dart';
+import 'reminder_rows.dart';
 import 'schedule_rows.dart';
 
 String _title(Command cmd) {
@@ -136,6 +138,15 @@ class EventCommandHandler implements CommandHandler {
             version: Value(newVersion.value),
             updatedAt: Value(now)));
         return outcome(trash ? 'delete' : 'update', 'EventUpdated', {'tombstone': trash});
+
+      case 'setReminders':
+        // P02 T7 (ADR-0034): the reminders are part of the event.
+        if (existing == null || existing.deletedAt != null) throw DomainRejection('event not found');
+        final n = await replaceReminders(
+            ScheduleRows(db, cmd, 'event', id, existing.ownerId, now), remindersOfPayload(cmd.payload['reminders']));
+        await (db.update(db.events)..where((e) => e.id.equals(id)))
+            .write(EventsCompanion(version: Value(newVersion.value), updatedAt: Value(now)));
+        return outcome('update', 'EventRemindersChanged', {'reminders': n});
 
       case 'setException':
       case 'clearException':

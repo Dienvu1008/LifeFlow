@@ -102,6 +102,20 @@ class _Slot implements DatabaseKeyStore {
   Future<void> delete() async => keys.values.remove(name);
 }
 
+/// The device's notifications, recorded: every plan the app hands over.
+class RecordingReminders implements ReminderScheduler {
+  final plans = <List<PlannedReminder>>[];
+  List<PlannedReminder> get pending => plans.isEmpty ? const [] : plans.last;
+  @override
+  Future<void> sync(List<PlannedReminder> planned) async => plans.add(planned);
+  @override
+  Future<ReminderStatus> status() async => const ReminderStatus(supported: true, allowed: true);
+  @override
+  Future<bool> requestPermission() async => true;
+  @override
+  Future<void> requestExact() async {}
+}
+
 /// A temp app-support directory with a directory opened on it.
 class World {
   late Directory base;
@@ -110,6 +124,7 @@ class World {
   final auth = RecordingAuth();
   final warnings = <String>[];
   final files = MemoryFiles();
+  final device = RecordingReminders();
 
   Future<void> open(StoragePlatform platform, {bool fallback = false}) async {
     base = await Directory.systemTemp.createTemp('lifeflow_app_');
@@ -132,6 +147,7 @@ class World {
           host: host,
           initialRoute: route, files: files,
           windowsPlainFallback: fallback,
+          reminders: device,
           onWarning: warnings.add,
         ),
       );
@@ -356,6 +372,66 @@ void main() {
     expect(rows.schedules.map((s) => s.subjectType).toSet(), {'event', 'task'});
     // D6: the event is not a task, and has its own id.
     expect(rows.tasks.map((t) => t.id), isNot(contains(rows.events.single.id)));
+    await finish(tester, w);
+  });
+
+  testWidgets('P02 T7: a reminder set in the UI reaches the device; a profile switch replaces it',
+      (tester) async {
+    final w = await pumpApp(tester, StoragePlatform.android);
+    expect(w.device.plans, isNotEmpty); // synced on open
+    expect(w.device.pending, isEmpty);
+
+    await tester.tap(find.byTooltip('Add task'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Pay the bill');
+    await tester.tap(find.widgetWithText(FilledButton, 'Add'));
+    await tester.pump();
+    await settle(tester);
+
+    // Tomorrow, all day, reminded on the day at 09:00 (device zone: UTC here).
+    await tester.tap(find.byTooltip('Actions for Pay the bill'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Schedule…'));
+    await settle(tester);
+    await tester.pumpAndSettle();
+    final tomorrow = DateTime.now().toUtc().add(const Duration(days: 1));
+    await tester.tap(find.byKey(const Key('due-date')));
+    await tester.pumpAndSettle();
+    // Pick tomorrow in the open month (or the next one at a month end).
+    if (tomorrow.day == 1) {
+      await tester.tap(find.byTooltip('Next month'));
+      await tester.pumpAndSettle();
+    }
+    await tester.tap(find.text('${tomorrow.day}').last);
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('reminder-add')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('reminder-add')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('On the day, 09:00').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('schedule-save')));
+    await tester.pump();
+    await settle(tester, 14); // debounce of the sync
+    await tester.pumpAndSettle();
+
+    final p = w.device.pending.single;
+    expect(p.title, 'Pay the bill');
+    expect(p.at.utc, DateTime.utc(tomorrow.year, tomorrow.month, tomorrow.day, 9));
+    expect(p.body, startsWith('Due '));
+
+    // Switch to another (empty) profile: its plan replaces the pending set.
+    await tester.runAsync(() => w.directory.createProfile(displayName: 'Work'));
+    await tester.tap(find.byIcon(Icons.people_outline));
+    await settle(tester);
+    await tester.tap(find.widgetWithText(FilledButton, 'Switch'));
+    await settle(tester, 10);
+    expect(w.device.pending, isEmpty);
+    final n = w.device.plans.length;
+    await settle(tester, 14); // the old profile never schedules again
+    expect(w.device.plans, hasLength(n));
+    expect(w.device.pending, isEmpty);
     await finish(tester, w);
   });
 

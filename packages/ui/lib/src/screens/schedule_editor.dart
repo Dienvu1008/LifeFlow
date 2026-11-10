@@ -28,11 +28,56 @@ Future<void> openScheduleEditor(
   TaskScheduleInput? initial,
 }) async {
   final defaults = await readPlanningDefaults(ref);
+  final reminders = await readReminders(ref, ReminderSubject.task, taskId);
   if (!context.mounted) return;
   await Navigator.of(context, rootNavigator: true).push(MaterialPageRoute<void>(
     fullscreenDialog: true,
-    builder: (_) => ScheduleEditorPage(taskId: taskId, taskTitle: title, initial: initial, defaults: defaults),
+    builder: (_) => ScheduleEditorPage(
+        taskId: taskId, taskTitle: title, initial: initial, defaults: defaults, initialReminders: reminders),
   ));
+}
+
+/// The stored reminders of an item, or none when they cannot be read.
+Future<List<ReminderInput>> readReminders(WidgetRef ref, ReminderSubject subject, String id) async {
+  try {
+    return await ref.read(reminderServiceProvider).remindersOf(subject, id);
+  } catch (_) {
+    return const [];
+  }
+}
+
+/// After the first reminder is added: asks the device for permission once.
+/// Returns a note to show when reminders will not appear, else null.
+Future<String?> ensureReminderPermission(WidgetRef ref) async {
+  try {
+    final scheduler = ref.read(reminderSchedulerProvider);
+    final status = await scheduler.status();
+    if (!status.supported) return 'This device does not show reminders.';
+    if (status.allowed) return null;
+    final ok = await scheduler.requestPermission();
+    ref.invalidate(reminderStatusProvider);
+    return ok ? null : 'Notifications are off for LifeFlow, so reminders will not show. '
+        'You can allow them in Settings → Reminders.';
+  } catch (_) {
+    return null;
+  }
+}
+
+/// The point reminders count from in an editor: ('start'|'deadline'|'end',
+/// all day?), or null without a date.
+(String, bool)? reminderAnchorOf(PointDraft start, PointDraft due, PointDraft end) {
+  for (final (name, p) in [('start', start), ('deadline', due), ('end', end)]) {
+    if (p.date != null) return (name, p.time == null);
+  }
+  return null;
+}
+
+bool sameReminders(List<ReminderInput> a, List<ReminderInput> b) {
+  if (a.length != b.length) return false;
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) return false;
+  }
+  return true;
 }
 
 class ScheduleEditorPage extends ConsumerStatefulWidget {
@@ -42,12 +87,14 @@ class ScheduleEditorPage extends ConsumerStatefulWidget {
     required this.taskTitle,
     required this.defaults,
     this.initial,
+    this.initialReminders = const [],
   });
 
   final String taskId;
   final String taskTitle;
   final TaskScheduleInput? initial;
   final PlanningSettings defaults;
+  final List<ReminderInput> initialReminders;
 
   @override
   ConsumerState<ScheduleEditorPage> createState() => _ScheduleEditorPageState();
@@ -61,6 +108,9 @@ class _ScheduleEditorPageState extends ConsumerState<ScheduleEditorPage> {
   late final _repeat = RepeatDraft(
       monthEnd: widget.defaults.defaultMonthEnd, weekStart: widget.defaults.firstDayOfWeek)
     ..load(widget.initial?.repeat);
+
+  late final _reminders = List<ReminderInput>.of(widget.initialReminders);
+  String? _reminderNote;
 
   String? _error;
   bool _busy = false;
@@ -87,17 +137,42 @@ class _ScheduleEditorPageState extends ConsumerState<ScheduleEditorPage> {
     }
     final input = TaskScheduleInput(
         start: _start.input(_zone), end: _end.input(_zone), deadline: _due.input(_zone), repeat: r.value);
-    await _run(ref.read(taskSchedulingProvider).setSchedule(widget.taskId, input));
+    // No date and no repeat: no schedule (a reminder at a date and time
+    // needs none); an existing schedule is cleared.
+    final empty = input.start == null && input.end == null && input.deadline == null && input.repeat == null;
+    await _run(() async {
+      final scheduling = ref.read(taskSchedulingProvider);
+      if (!empty || widget.initial != null) {
+        final saved = await scheduling.setSchedule(widget.taskId, empty ? null : input);
+        if (saved is CommandFailure) return saved;
+      }
+      // Reminders counting from a date need one.
+      return _saveReminders(empty ? [for (final r in _reminders) if (r is RemindAtInstant) r] : _reminders);
+    });
   }
 
-  Future<void> _remove() => _run(ref.read(taskSchedulingProvider).setSchedule(widget.taskId, null));
+  /// Removing the schedule also removes the reminders that count from it;
+  /// a reminder at a date and time stays.
+  Future<void> _remove() => _run(() async {
+        final cleared = await ref.read(taskSchedulingProvider).setSchedule(widget.taskId, null);
+        if (cleared is CommandFailure) return cleared;
+        return _saveReminders([for (final r in _reminders) if (r is RemindAtInstant) r]);
+      });
 
-  Future<void> _run(Future<CommandResult> pending) async {
+  Future<CommandResult?> _saveReminders(List<ReminderInput> list) async {
+    if (sameReminders(list, widget.initialReminders)) return null;
+    final r = await ref.read(reminderServiceProvider).setReminders(ReminderSubject.task, widget.taskId, list);
+    return r is CommandFailure ? r : null;
+  }
+
+  /// Runs the save; a failure (of the schedule or of the reminders) stays
+  /// in the editor with its reason.
+  Future<void> _run(Future<CommandResult?> Function() save) async {
     setState(() {
       _busy = true;
       _error = null;
     });
-    final result = await pending;
+    final result = await save();
     if (!mounted) return;
     if (result is CommandFailure) {
       setState(() {
@@ -155,6 +230,21 @@ class _ScheduleEditorPageState extends ConsumerState<ScheduleEditorPage> {
           const EditorSection('Repeat'),
           RepeatFields(
               draft: _repeat, firstDayOfWeek: widget.defaults.firstDayOfWeek, today: today, anchor: _start.date),
+          const EditorSection('Reminders'),
+          ReminderFields(
+            reminders: _reminders,
+            anchor: reminderAnchorOf(_start, _due, _end)?.$1,
+            allDay: reminderAnchorOf(_start, _due, _end)?.$2 ?? false,
+            today: today,
+            note: _reminderNote,
+            onChanged: ({required bool added}) async {
+              setState(() {});
+              if (added && _reminders.length == 1) {
+                final note = await ensureReminderPermission(ref);
+                if (mounted) setState(() => _reminderNote = note);
+              }
+            },
+          ),
           if (widget.initial != null) ...[
             const Divider(height: 32),
             Padding(
