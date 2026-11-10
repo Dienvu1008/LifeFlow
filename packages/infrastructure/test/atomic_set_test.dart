@@ -10,7 +10,8 @@ library;
 // implementing CommandHandler under lib/ is missing from the list below, so a
 // new handler cannot skip this test.
 //   handlers covered: TaskCommandHandler, ProfileCommandHandler,
-//                     ProfileRestoreHandler
+//                     ProfileRestoreHandler, EventCommandHandler,
+//                     CalendarCommandHandler
 import 'package:application/application.dart';
 import 'package:drift/native.dart';
 import 'package:foundation/foundation.dart';
@@ -87,18 +88,29 @@ void main() {
         for (final k in recordKinds) ...await k.readAll(db),
       ].toString();
 
+  final eventSchedule = scheduleFieldsJson('event', 'e1',
+      tk.ScheduleSpec(
+          start: tk.TimedPoint(ZonedWallClock(LocalDate(2026, 11, 9), TimeOfDayValue(9, 0), 'UTC')),
+          end: tk.TimedPoint(ZonedWallClock(LocalDate(2026, 11, 9), TimeOfDayValue(10, 0), 'UTC'))),
+      const tk.RecurrenceRule(frequency: tk.Frequency.weekly));
+
   final weeklySchedule = scheduleFieldsJson('task', 't1',
       tk.ScheduleSpec(start: tk.DatePoint(LocalDate(2026, 11, 9))),
       const tk.RecurrenceRule(frequency: tk.Frequency.weekly));
 
-  Future<int> versionOf(String table, String id) async => table == 'task'
-      ? (await (db.select(db.tasks)..where((t) => t.id.equals(id))).getSingle()).version
-      : (await (db.select(db.profiles)..where((t) => t.id.equals(id))).getSingle()).version;
+  Future<int> versionOf(String table, String id) async => switch (table) {
+        'task' => (await (db.select(db.tasks)..where((t) => t.id.equals(id))).getSingle()).version,
+        'event' => (await (db.select(db.events)..where((t) => t.id.equals(id))).getSingle()).version,
+        'calendar' => (await (db.select(db.calendars)..where((t) => t.id.equals(id))).getSingle()).version,
+        _ => (await (db.select(db.profiles)..where((t) => t.id.equals(id))).getSingle()).version,
+      };
 
   /// One handler operation: how to build its command.
   final taskHandler = TaskCommandHandler();
   const profileHandler = ProfileCommandHandler();
   const restoreHandler = ProfileRestoreHandler();
+  const eventHandler = EventCommandHandler();
+  const calendarHandler = CalendarCommandHandler();
 
   Command command(String type, Map<String, Object?> payload,
           {String? opId, Version? expected}) =>
@@ -146,6 +158,27 @@ void main() {
           (v, op) => command('CompleteOccurrence', {'op': 'setOccurrenceDone', 'id': 't1', 'originalDate': '2026-11-23', 'done': true}, opId: op, expected: v)),
       ('task.clearSchedule', taskHandler, 'task', 't1',
           (v, op) => command('ClearTaskSchedule', {'op': 'clearSchedule', 'id': 't1'}, opId: op, expected: v)),
+      // P02 T5: calendars and events.
+      ('calendar.create', calendarHandler, 'calendar', 'c1',
+          (v, op) => command('CreateCalendar', {'op': 'create', 'id': 'c1', 'name': 'Work'}, opId: op, expected: v)),
+      ('calendar.update', calendarHandler, 'calendar', 'c1',
+          (v, op) => command('UpdateCalendar', {'op': 'update', 'id': 'c1', 'name': 'Office'}, opId: op, expected: v)),
+      ('event.create', eventHandler, 'event', 'e1',
+          (v, op) => command('CreateEvent', {'op': 'create', 'id': 'e1', 'title': 'Meet', 'calendarId': 'c1', 'schedule': eventSchedule}, opId: op, expected: v)),
+      ('event.update', eventHandler, 'event', 'e1',
+          (v, op) => command('UpdateEvent', {'op': 'update', 'id': 'e1', 'title': 'Meet 2', 'calendarId': 'c1', 'schedule': eventSchedule}, opId: op, expected: v)),
+      ('event.setException', eventHandler, 'event', 'e1',
+          (v, op) => command('CancelEventOccurrence', {'op': 'setException', 'id': 'e1', 'originalDate': '2026-11-16', 'kind': 'cancel'}, opId: op, expected: v)),
+      ('event.clearException', eventHandler, 'event', 'e1',
+          (v, op) => command('ClearEventOccurrenceChange', {'op': 'clearException', 'id': 'e1', 'originalDate': '2026-11-16'}, opId: op, expected: v)),
+      ('event.setCancelled', eventHandler, 'event', 'e1',
+          (v, op) => command('CancelEvent', {'op': 'setCancelled', 'id': 'e1', 'cancelled': true}, opId: op, expected: v)),
+      ('event.trash', eventHandler, 'event', 'e1',
+          (v, op) => command('TrashEvent', {'op': 'trash', 'id': 'e1'}, opId: op, expected: v)),
+      ('event.restore', eventHandler, 'event', 'e1',
+          (v, op) => command('RestoreEvent', {'op': 'restore', 'id': 'e1'}, opId: op, expected: v)),
+      ('calendar.trash', calendarHandler, 'calendar', 'c1',
+          (v, op) => command('TrashCalendar', {'op': 'trash', 'id': 'c1'}, opId: op, expected: v)),
       ('task.trash', taskHandler, 'task', 't2',
           (v, op) => command('TrashTask', {'op': 'trash', 'id': 't2'}, opId: op, expected: v)),
       ('task.trash(all)', taskHandler, 'task', 't1',
@@ -166,7 +199,7 @@ void main() {
   test('every handler operation writes the whole atomic set, and a failure '
       'after the handler leaves nothing (FF-ARCH-06, GS-06/07)', () async {
     for (final (label, handler, table, id, build) in steps) {
-      final current = (table == 'task' && label.startsWith('task.create'))
+      final current = label.endsWith('.create') || label.startsWith('task.create')
           ? null
           : Version(await versionOf(table, id));
 
