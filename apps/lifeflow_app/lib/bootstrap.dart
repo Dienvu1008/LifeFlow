@@ -106,6 +106,10 @@ Future<AppWiring> openSession({
         zoneCatalogProvider.overrideWithValue(zones),
         deviceZoneProvider.overrideWithValue(zone),
         todayProvider.overrideWithValue(agenda.today),
+        eventServiceProvider.overrideWithValue(DriftEventService(db, gateway)),
+        calendarServiceProvider.overrideWithValue(DriftCalendarService(db, gateway)),
+        calendarQueriesProvider.overrideWithValue(
+            DriftCalendarQueries(db, agenda, limits: () => settings.limitsCache.limits)),
         storageNoticeProvider.overrideWithValue(notice),
         initialRouteProvider.overrideWithValue(initialRoute),
       ],

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'providers.dart';
+import 'screens/calendar_screen.dart';
 import 'screens/profiles_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/tasks_screen.dart';
@@ -13,7 +14,7 @@ import 'shell.dart';
 /// Top-level destinations. Anything else (for example "/" or an OS-delivered
 /// link such as an OAuth callback) is redirected to the task list, so the app
 /// never replaces itself with a "Page Not Found" screen.
-const _knownRoots = ['/tasks', '/profiles', '/settings'];
+const _knownRoots = ['/tasks', '/calendar', '/profiles', '/settings'];
 
 String? _redirectUnknown(GoRouterState state) {
   final path = state.uri.path;
@@ -41,6 +42,12 @@ GoRouter createRouter({String initialLocation = '/tasks'}) => GoRouter(
               GoRoute(
                 path: '/tasks',
                 builder: (context, state) => const TasksScreen(),
+              ),
+            ]),
+            StatefulShellBranch(routes: [
+              GoRoute(
+                path: '/calendar',
+                builder: (context, state) => const CalendarScreen(),
               ),
             ]),
             StatefulShellBranch(routes: [

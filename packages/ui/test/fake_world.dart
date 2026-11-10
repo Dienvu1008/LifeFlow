@@ -470,7 +470,166 @@ class FakeWorld
         schedule: setSchedule ? schedule : t.schedule,
       );
 
+  /// Events, calendars and the calendar range (P02 T6b).
+  late final FakeCalendar calendar = FakeCalendar(calls);
+
+  void dispose() {
+    _changes.close();
+    calendar.dispose();
+  }
+}
+
+/// In-memory events, calendars and calendar range. Writes are recorded in
+/// the shared [calls] list; the range shown is whatever [range] is set to.
+class FakeCalendar implements EventService, CalendarQueries {
+  FakeCalendar(this.calls);
+  final List<String> calls;
+
+  CalendarRange range = const CalendarRange(events: [], tasks: [], conflicts: []);
+  final calendars = <CalendarView>[];
+  final events = <String, EventDetails>{};
+  CommandFailure? failNext;
+
+  /// Every range a view asked for, as `from..to`.
+  final ranges = <String>[];
+
+  final _changes = StreamController<void>.broadcast();
+  var _n = 0;
+
+  /// Re-emits the range and the calendars (after a test changed them).
+  void changed() => _changes.add(null);
+
+  CommandResult _ok(String id) {
+    _changes.add(null);
+    return CommandOk(id, Version.initial, const []);
+  }
+
+  CommandFailure? _failure() {
+    final f = failNext;
+    failNext = null;
+    return f;
+  }
+
+  @override
+  Stream<CalendarRange> watchRange(LocalDate from, LocalDate to) async* {
+    ranges.add('$from..$to');
+    yield range;
+    await for (final _ in _changes.stream) {
+      yield range;
+    }
+  }
+
+  // --- EventService -----------------------------------------------------------
+  @override
+  Future<CommandResult> create(EventInput input) async {
+    calls.add('event.create:${describeEvent(input)}');
+    final f = _failure();
+    if (f != null) return f;
+    final id = 'ev${_n++}';
+    events[id] = EventDetails(id: id, input: input, isCancelled: false);
+    return _ok(id);
+  }
+
+  @override
+  Future<CommandResult> update(String eventId, EventInput input) async {
+    calls.add('event.update:$eventId:${describeEvent(input)}');
+    final f = _failure();
+    if (f != null) return f;
+    events[eventId] = EventDetails(id: eventId, input: input, isCancelled: events[eventId]?.isCancelled ?? false);
+    return _ok(eventId);
+  }
+
+  @override
+  Future<CommandResult> setCancelled(String eventId, {required bool cancelled}) async {
+    calls.add('event.cancelled:$eventId:$cancelled');
+    return _failure() ?? _ok(eventId);
+  }
+
+  @override
+  Future<CommandResult> trash(String id) async {
+    calls.add(id.startsWith('cal') ? 'calendar.trash:$id' : 'event.trash:$id');
+    final f = _failure();
+    if (f != null) return f;
+    calendars.removeWhere((c) => c.id == id);
+    return _ok(id);
+  }
+
+  @override
+  Future<CommandResult> restore(String eventId) async {
+    calls.add('event.restore:$eventId');
+    return _failure() ?? _ok(eventId);
+  }
+
+  @override
+  Future<CommandResult> changeOccurrence(String eventId, LocalDate originalDate, EventOccurrenceChange? change) async {
+    final what = switch (change) {
+      null => 'undo',
+      SkipEventOccurrence() => 'skip',
+      CancelEventOccurrence() => 'cancel',
+      MoveEventOccurrence(:final toDate) => 'move>$toDate',
+      EditEventOccurrence(:final title) => 'edit>$title',
+    };
+    calls.add('event.change:$eventId@$originalDate:$what');
+    return _failure() ?? _ok(eventId);
+  }
+
+  @override
+  Future<EventDetails?> details(String eventId) async => events[eventId];
+
+  // --- Calendars --------------------------------------------------------------
+  // CalendarService's create/update clash with EventService's, so the port is
+  // the adapter [calendarService] over the methods below.
+  late final CalendarService calendarService = _CalendarPort(this);
+
+  Stream<List<CalendarView>> watchCalendars() async* {
+    yield List.of(calendars);
+    await for (final _ in _changes.stream) {
+      yield List.of(calendars);
+    }
+  }
+
+  Future<CommandResult> createCalendar(String name, int color) async {
+    calls.add('calendar.create:$name:${color.toRadixString(16)}');
+    final f = _failure();
+    if (f != null) return f;
+    final id = 'cal${_n++}';
+    calendars.add(CalendarView(id: id, name: name, color: color));
+    return _ok(id);
+  }
+
+  Future<CommandResult> updateCalendar(String id, String? name, int? color) async {
+    calls.add('calendar.update:$id:$name:${color?.toRadixString(16)}');
+    final f = _failure();
+    if (f != null) return f;
+    final i = calendars.indexWhere((c) => c.id == id);
+    final c = calendars[i];
+    calendars[i] = CalendarView(id: id, name: name ?? c.name, color: color ?? c.color);
+    return _ok(id);
+  }
+
   void dispose() => _changes.close();
+}
+
+/// [CalendarService] over [FakeCalendar] (its own create/update signatures).
+class _CalendarPort implements CalendarService {
+  _CalendarPort(this.f);
+  final FakeCalendar f;
+  @override
+  Future<CommandResult> create(String name, {int color = 0xFF00897B}) => f.createCalendar(name, color);
+  @override
+  Future<CommandResult> update(String calendarId, {String? name, int? color}) =>
+      f.updateCalendar(calendarId, name, color);
+  @override
+  Future<CommandResult> trash(String calendarId) => f.trash(calendarId);
+  @override
+  Stream<List<CalendarView>> watchCalendars() => f.watchCalendars();
+}
+
+/// A compact form of an event input for [FakeWorld.calls].
+String describeEvent(EventInput e) {
+  final r = e.repeat;
+  return '${e.title}|${e.start}|${e.end ?? '-'}|${e.location ?? '-'}|${e.calendarId ?? '-'}|'
+      '${r == null ? '-' : '${r.frequency.name}/${r.interval}'}';
 }
 
 extension on ProfileView {
@@ -537,6 +696,9 @@ Widget appWith(FakeWorld world, {StorageNotice? notice}) => ProviderScope(
         zoneCatalogProvider.overrideWithValue(world),
         deviceZoneProvider.overrideWithValue(testZone),
         todayProvider.overrideWithValue(() => testToday),
+        eventServiceProvider.overrideWithValue(world.calendar),
+        calendarServiceProvider.overrideWithValue(world.calendar.calendarService),
+        calendarQueriesProvider.overrideWithValue(world.calendar),
         storageNoticeProvider.overrideWithValue(notice),
       ],
       child: const LifeFlowApp(),

@@ -69,9 +69,12 @@ void main() {
     testWidgets('selecting a destination reports its index', (tester) async {
       int? picked;
       await pumpShell(tester, width: 400, onSelected: (i) => picked = i);
-      await tester.tap(find.byIcon(Icons.people_outline));
+      await tester.tap(find.byIcon(Icons.calendar_month_outlined));
       await tester.pump();
       expect(picked, 1);
+      await tester.tap(find.byIcon(Icons.people_outline));
+      await tester.pump();
+      expect(picked, 2);
     });
   });
 
