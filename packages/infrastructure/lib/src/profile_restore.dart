@@ -31,10 +31,10 @@ import 'package:uuid/uuid.dart';
 import 'app_database.dart';
 import 'command_gateway.dart';
 import 'profile_export.dart';
+import 'record_kinds.dart';
 
-typedef Row = Map<String, dynamic>;
-
-const _kinds = ['taskList', 'task'];
+/// Every record kind, in write order (P02 T3: planning and calendar too).
+List<String> get _kinds => [for (final k in recordKinds) k.name];
 
 ValueSerializer get _ser => driftRuntimeOptions.defaultSerializer;
 
@@ -79,15 +79,13 @@ class RecordSet {
   final Map<String, Map<String, Row>> byKind;
 
   static Future<RecordSet> ofDatabase(AppDatabase db) async => RecordSet({
-        'taskList': {
-          for (final r in await db.select(db.taskLists).get()) r.id: r.toJson()
-        },
-        'task': {for (final r in await db.select(db.tasks).get()) r.id: r.toJson()},
+        for (final k in recordKinds)
+          k.name: {for (final r in await k.readAll(db)) r['id'] as String: r},
       });
 
   static RecordSet ofExport(ParsedExport p) => RecordSet({
-        'taskList': {for (final r in p.taskLists) r.id: r.toJson()},
-        'task': {for (final r in p.tasks) r.id: r.toJson()},
+        for (final k in recordKinds)
+          k.name: {for (final r in p.records[k.name]!) r['id'] as String: Row.of(r)},
       });
 }
 
@@ -198,6 +196,7 @@ class RestorePlanner {
       for (final id in offenders) '${changes.firstWhere((c) => c.kind == 'task' && c.id == id).after['title']}'
     ];
     if (offenders.isEmpty || !choice.keepDeviceParents) {
+      _dropOrphans(device, changes);
       return RestorePlan(changes, titles);
     }
 
@@ -223,7 +222,30 @@ class RestorePlanner {
     // A record that became equal to the device again needs no write.
     changes.removeWhere((c) =>
         c.before != null && _content(c.before!) == _content(c.after));
+    _dropOrphans(device, changes);
     return RestorePlan(changes, const []);
+  }
+
+  /// P02 T3: a dependent row from the file (schedule, exception, completion,
+  /// reminder) is not written when the task or event it belongs to will not
+  /// exist after the restore (for example merge (a) without (b)). An event
+  /// whose calendar will not exist keeps no calendar. Device rows are never
+  /// dropped here.
+  static void _dropOrphans(RecordSet device, List<RowChange> changes) {
+    final finalIds = {
+      for (final kind in ['task', 'event', 'calendar']) kind: _finalIds(device, changes, kind),
+    };
+    changes.removeWhere((c) {
+      if (!c.fromFile) return false;
+      final s = subjectOf(c.kind, c.after);
+      return s != null && !(finalIds[s.$1]?.contains(s.$2) ?? false);
+    });
+    for (final c in changes) {
+      if (c.kind == 'event' && c.fromFile) {
+        final cal = c.after['calendarId'];
+        if (cal != null && !finalIds['calendar']!.contains(cal)) c.after['calendarId'] = null;
+      }
+    }
   }
 
   static Set<String> _finalIds(
@@ -379,20 +401,17 @@ class ProfileRestoreHandler implements CommandHandler {
     await db.batch((b) {
       // Containers the file needs (never removed).
       b.insertAll(db.workspaces, parsed.workspaces, mode: InsertMode.insertOrIgnore);
-      // Lists before tasks (a task may point to a new list).
+      // In write order (lists before tasks, items before their schedules).
       // Upsert, NOT "insert or replace": REPLACE deletes without firing the
       // delete trigger and would leave the FTS index stale. ON CONFLICT DO
       // UPDATE fires the update trigger, so the title index stays in step.
       // toCompanion(false): a null (e.g. deletedAt or parentTaskId cleared)
       // must be WRITTEN, not skipped as "absent".
-      b.insertAllOnConflictUpdate(db.taskLists, [
-        for (final c in plan.changes.where((c) => c.kind == 'taskList'))
-          TaskList.fromJson(c.after).toCompanion(false)
-      ]);
-      b.insertAllOnConflictUpdate(db.tasks, [
-        for (final c in plan.changes.where((c) => c.kind == 'task'))
-          Task.fromJson(c.after).toCompanion(false)
-      ]);
+      for (final k in recordKinds) {
+        k.upsert(b, db, [
+          for (final c in plan.changes.where((c) => c.kind == k.name)) c.after
+        ]);
+      }
       // Governance history is append-only: union by id, nothing rewritten.
       if (!undo) {
         b.insertAll(db.auditLog, parsed.auditLog, mode: InsertMode.insertOrIgnore);

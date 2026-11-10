@@ -119,6 +119,7 @@ Every non-trivial statement carries one of these labels.
 | [adr/0026-reopen-and-trash-with-subtasks.md](adr/0026-reopen-and-trash-with-subtasks.md) | P01/T7c: reopen a done task; trash a parent with or without its subtasks (ask, or a device setting) |
 | [adr/0027-delete-a-profile-on-this-device.md](adr/0027-delete-a-profile-on-this-device.md) | P01/T7d: delete a profile that is not open (file, key, registry entry), finished on next open if interrupted |
 | [adr/0028-time-types-and-dst-resolution.md](adr/0028-time-types-and-dst-resolution.md) | P02/T1–T2: time data in foundation, zone database and DST rule in time_kernel; ScheduleSpec; recurrence engine, bounded window query, exceptions, conflicts |
+| [adr/0029-planning-storage-schema-v4.md](adr/0029-planning-storage-schema-v4.md) | P02/T3: schema v4 for schedules, exceptions, completions, events, calendars, reminders; one registry of record tables for export and restore |
 
 ## Batch 4 documents
 

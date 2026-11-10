@@ -575,7 +575,7 @@ packages:
     source: hosted
     version: "0.6.21"
   time_kernel:
-    dependency: transitive
+    dependency: "direct main"
     description:
       path: "../time_kernel"
       relative: true

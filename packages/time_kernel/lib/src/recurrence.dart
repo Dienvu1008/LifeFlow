@@ -351,6 +351,27 @@ Iterable<LocalDate> _ruleDates(RecurrenceRule r, LocalDate anchor, LocalDate fro
   }
 }
 
+/// The last original date of a series, or null when it never ends. Used to
+/// store a date range for pre-filtering window queries (ADR-0029).
+LocalDate? lastRuleDate(ScheduleSpec spec, RecurrenceRule rule) {
+  final anchor = _anchor(spec);
+  final LocalDate bound;
+  switch (rule.end) {
+    case EndsNever():
+      return null;
+    case EndsOnDate(:final date):
+      bound = date;
+    case EndsAfterCount():
+      // The count stops the walk; the bound only has to be far enough.
+      bound = LocalDate.fromEpochDay(anchor.epochDay + 3660000);
+  }
+  LocalDate? last;
+  for (final d in _ruleDates(rule, anchor, anchor, bound)) {
+    last = d;
+  }
+  return last ?? anchor;
+}
+
 /// Whether [date] is one of the rule's dates.
 bool isRuleDate(RecurrenceRule rule, ScheduleSpec spec, LocalDate date) =>
     _ruleDates(rule, _anchor(spec), date, date).isNotEmpty;

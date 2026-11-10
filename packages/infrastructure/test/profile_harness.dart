@@ -93,3 +93,17 @@ class Services {
   Future<List<String>> titles() async =>
       (await queries.watchTasks().first).map((t) => t.title).toList();
 }
+
+/// Turns a current profile store back into what a build with schema [version]
+/// wrote (for migration tests). Data in the tables that remain is kept.
+Future<void> rewindProfileStore(AppDatabase db, int version) async {
+  if (version < 4) {
+    for (final t in ['calendars', 'events', 'schedules', 'occurrence_exceptions',
+        'occurrence_completions', 'reminders']) {
+      await db.customStatement('DROP TABLE $t'); // drops its indexes too
+    }
+  }
+  if (version < 3) await db.customStatement('DROP TABLE restore_snapshots');
+  if (version < 2) await db.customStatement('ALTER TABLE profiles DROP COLUMN signed_out');
+  await db.customStatement('PRAGMA user_version = $version');
+}

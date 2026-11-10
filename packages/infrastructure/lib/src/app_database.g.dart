@@ -4206,6 +4206,4278 @@ class RestoreSnapshotsCompanion extends UpdateCompanion<RestoreSnapshot> {
   }
 }
 
+class $CalendarsTable extends Calendars
+    with TableInfo<$CalendarsTable, Calendar> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CalendarsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _workspaceIdMeta =
+      const VerificationMeta('workspaceId');
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+      'workspace_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _ownerIdMeta =
+      const VerificationMeta('ownerId');
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+      'owner_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _versionMeta =
+      const VerificationMeta('version');
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+      'version', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _deletedByMeta =
+      const VerificationMeta('deletedBy');
+  @override
+  late final GeneratedColumn<String> deletedBy = GeneratedColumn<String>(
+      'deleted_by', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _colorMeta = const VerificationMeta('color');
+  @override
+  late final GeneratedColumn<int> color = GeneratedColumn<int>(
+      'color', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0xFF009688));
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        workspaceId,
+        ownerId,
+        version,
+        createdAt,
+        updatedAt,
+        deletedAt,
+        deletedBy,
+        name,
+        color
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'calendars';
+  @override
+  VerificationContext validateIntegrity(Insertable<Calendar> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+          _workspaceIdMeta,
+          workspaceId.isAcceptableOrUnknown(
+              data['workspace_id']!, _workspaceIdMeta));
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(_ownerIdMeta,
+          ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta));
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('version')) {
+      context.handle(_versionMeta,
+          version.isAcceptableOrUnknown(data['version']!, _versionMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
+    if (data.containsKey('deleted_by')) {
+      context.handle(_deletedByMeta,
+          deletedBy.isAcceptableOrUnknown(data['deleted_by']!, _deletedByMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('color')) {
+      context.handle(
+          _colorMeta, color.isAcceptableOrUnknown(data['color']!, _colorMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Calendar map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Calendar(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      workspaceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}workspace_id'])!,
+      ownerId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}owner_id'])!,
+      version: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}version'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
+      deletedBy: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}deleted_by']),
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      color: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}color'])!,
+    );
+  }
+
+  @override
+  $CalendarsTable createAlias(String alias) {
+    return $CalendarsTable(attachedDatabase, alias);
+  }
+}
+
+class Calendar extends DataClass implements Insertable<Calendar> {
+  final String id;
+  final String workspaceId;
+  final String ownerId;
+  final int version;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final String? deletedBy;
+  final String name;
+  final int color;
+  const Calendar(
+      {required this.id,
+      required this.workspaceId,
+      required this.ownerId,
+      required this.version,
+      required this.createdAt,
+      required this.updatedAt,
+      this.deletedAt,
+      this.deletedBy,
+      required this.name,
+      required this.color});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['version'] = Variable<int>(version);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || deletedBy != null) {
+      map['deleted_by'] = Variable<String>(deletedBy);
+    }
+    map['name'] = Variable<String>(name);
+    map['color'] = Variable<int>(color);
+    return map;
+  }
+
+  CalendarsCompanion toCompanion(bool nullToAbsent) {
+    return CalendarsCompanion(
+      id: Value(id),
+      workspaceId: Value(workspaceId),
+      ownerId: Value(ownerId),
+      version: Value(version),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      deletedBy: deletedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedBy),
+      name: Value(name),
+      color: Value(color),
+    );
+  }
+
+  factory Calendar.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Calendar(
+      id: serializer.fromJson<String>(json['id']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      version: serializer.fromJson<int>(json['version']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      deletedBy: serializer.fromJson<String?>(json['deletedBy']),
+      name: serializer.fromJson<String>(json['name']),
+      color: serializer.fromJson<int>(json['color']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'version': serializer.toJson<int>(version),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'deletedBy': serializer.toJson<String?>(deletedBy),
+      'name': serializer.toJson<String>(name),
+      'color': serializer.toJson<int>(color),
+    };
+  }
+
+  Calendar copyWith(
+          {String? id,
+          String? workspaceId,
+          String? ownerId,
+          int? version,
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          Value<DateTime?> deletedAt = const Value.absent(),
+          Value<String?> deletedBy = const Value.absent(),
+          String? name,
+          int? color}) =>
+      Calendar(
+        id: id ?? this.id,
+        workspaceId: workspaceId ?? this.workspaceId,
+        ownerId: ownerId ?? this.ownerId,
+        version: version ?? this.version,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+        deletedBy: deletedBy.present ? deletedBy.value : this.deletedBy,
+        name: name ?? this.name,
+        color: color ?? this.color,
+      );
+  Calendar copyWithCompanion(CalendarsCompanion data) {
+    return Calendar(
+      id: data.id.present ? data.id.value : this.id,
+      workspaceId:
+          data.workspaceId.present ? data.workspaceId.value : this.workspaceId,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      version: data.version.present ? data.version.value : this.version,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      deletedBy: data.deletedBy.present ? data.deletedBy.value : this.deletedBy,
+      name: data.name.present ? data.name.value : this.name,
+      color: data.color.present ? data.color.value : this.color,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Calendar(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('version: $version, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedBy: $deletedBy, ')
+          ..write('name: $name, ')
+          ..write('color: $color')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, workspaceId, ownerId, version, createdAt,
+      updatedAt, deletedAt, deletedBy, name, color);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Calendar &&
+          other.id == this.id &&
+          other.workspaceId == this.workspaceId &&
+          other.ownerId == this.ownerId &&
+          other.version == this.version &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.deletedBy == this.deletedBy &&
+          other.name == this.name &&
+          other.color == this.color);
+}
+
+class CalendarsCompanion extends UpdateCompanion<Calendar> {
+  final Value<String> id;
+  final Value<String> workspaceId;
+  final Value<String> ownerId;
+  final Value<int> version;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> deletedBy;
+  final Value<String> name;
+  final Value<int> color;
+  final Value<int> rowid;
+  const CalendarsCompanion({
+    this.id = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.version = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.deletedBy = const Value.absent(),
+    this.name = const Value.absent(),
+    this.color = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CalendarsCompanion.insert({
+    required String id,
+    required String workspaceId,
+    required String ownerId,
+    this.version = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.deletedBy = const Value.absent(),
+    required String name,
+    this.color = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        workspaceId = Value(workspaceId),
+        ownerId = Value(ownerId),
+        createdAt = Value(createdAt),
+        updatedAt = Value(updatedAt),
+        name = Value(name);
+  static Insertable<Calendar> custom({
+    Expression<String>? id,
+    Expression<String>? workspaceId,
+    Expression<String>? ownerId,
+    Expression<int>? version,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? deletedBy,
+    Expression<String>? name,
+    Expression<int>? color,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (version != null) 'version': version,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (deletedBy != null) 'deleted_by': deletedBy,
+      if (name != null) 'name': name,
+      if (color != null) 'color': color,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CalendarsCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? workspaceId,
+      Value<String>? ownerId,
+      Value<int>? version,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<DateTime?>? deletedAt,
+      Value<String?>? deletedBy,
+      Value<String>? name,
+      Value<int>? color,
+      Value<int>? rowid}) {
+    return CalendarsCompanion(
+      id: id ?? this.id,
+      workspaceId: workspaceId ?? this.workspaceId,
+      ownerId: ownerId ?? this.ownerId,
+      version: version ?? this.version,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      deletedBy: deletedBy ?? this.deletedBy,
+      name: name ?? this.name,
+      color: color ?? this.color,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (deletedBy.present) {
+      map['deleted_by'] = Variable<String>(deletedBy.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (color.present) {
+      map['color'] = Variable<int>(color.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CalendarsCompanion(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('version: $version, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedBy: $deletedBy, ')
+          ..write('name: $name, ')
+          ..write('color: $color, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $EventsTable extends Events with TableInfo<$EventsTable, Event> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $EventsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _workspaceIdMeta =
+      const VerificationMeta('workspaceId');
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+      'workspace_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _ownerIdMeta =
+      const VerificationMeta('ownerId');
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+      'owner_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _versionMeta =
+      const VerificationMeta('version');
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+      'version', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _deletedByMeta =
+      const VerificationMeta('deletedBy');
+  @override
+  late final GeneratedColumn<String> deletedBy = GeneratedColumn<String>(
+      'deleted_by', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+      'title', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _locationMeta =
+      const VerificationMeta('location');
+  @override
+  late final GeneratedColumn<String> location = GeneratedColumn<String>(
+      'location', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _calendarIdMeta =
+      const VerificationMeta('calendarId');
+  @override
+  late final GeneratedColumn<String> calendarId = GeneratedColumn<String>(
+      'calendar_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+      'status', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('confirmed'));
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        workspaceId,
+        ownerId,
+        version,
+        createdAt,
+        updatedAt,
+        deletedAt,
+        deletedBy,
+        title,
+        location,
+        calendarId,
+        status
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'events';
+  @override
+  VerificationContext validateIntegrity(Insertable<Event> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+          _workspaceIdMeta,
+          workspaceId.isAcceptableOrUnknown(
+              data['workspace_id']!, _workspaceIdMeta));
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(_ownerIdMeta,
+          ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta));
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('version')) {
+      context.handle(_versionMeta,
+          version.isAcceptableOrUnknown(data['version']!, _versionMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
+    if (data.containsKey('deleted_by')) {
+      context.handle(_deletedByMeta,
+          deletedBy.isAcceptableOrUnknown(data['deleted_by']!, _deletedByMeta));
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+          _titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('location')) {
+      context.handle(_locationMeta,
+          location.isAcceptableOrUnknown(data['location']!, _locationMeta));
+    }
+    if (data.containsKey('calendar_id')) {
+      context.handle(
+          _calendarIdMeta,
+          calendarId.isAcceptableOrUnknown(
+              data['calendar_id']!, _calendarIdMeta));
+    }
+    if (data.containsKey('status')) {
+      context.handle(_statusMeta,
+          status.isAcceptableOrUnknown(data['status']!, _statusMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Event map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Event(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      workspaceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}workspace_id'])!,
+      ownerId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}owner_id'])!,
+      version: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}version'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
+      deletedBy: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}deleted_by']),
+      title: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
+      location: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}location']),
+      calendarId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}calendar_id']),
+      status: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
+    );
+  }
+
+  @override
+  $EventsTable createAlias(String alias) {
+    return $EventsTable(attachedDatabase, alias);
+  }
+}
+
+class Event extends DataClass implements Insertable<Event> {
+  final String id;
+  final String workspaceId;
+  final String ownerId;
+  final int version;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final String? deletedBy;
+  final String title;
+  final String? location;
+  final String? calendarId;
+  final String status;
+  const Event(
+      {required this.id,
+      required this.workspaceId,
+      required this.ownerId,
+      required this.version,
+      required this.createdAt,
+      required this.updatedAt,
+      this.deletedAt,
+      this.deletedBy,
+      required this.title,
+      this.location,
+      this.calendarId,
+      required this.status});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['version'] = Variable<int>(version);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || deletedBy != null) {
+      map['deleted_by'] = Variable<String>(deletedBy);
+    }
+    map['title'] = Variable<String>(title);
+    if (!nullToAbsent || location != null) {
+      map['location'] = Variable<String>(location);
+    }
+    if (!nullToAbsent || calendarId != null) {
+      map['calendar_id'] = Variable<String>(calendarId);
+    }
+    map['status'] = Variable<String>(status);
+    return map;
+  }
+
+  EventsCompanion toCompanion(bool nullToAbsent) {
+    return EventsCompanion(
+      id: Value(id),
+      workspaceId: Value(workspaceId),
+      ownerId: Value(ownerId),
+      version: Value(version),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      deletedBy: deletedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedBy),
+      title: Value(title),
+      location: location == null && nullToAbsent
+          ? const Value.absent()
+          : Value(location),
+      calendarId: calendarId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(calendarId),
+      status: Value(status),
+    );
+  }
+
+  factory Event.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Event(
+      id: serializer.fromJson<String>(json['id']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      version: serializer.fromJson<int>(json['version']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      deletedBy: serializer.fromJson<String?>(json['deletedBy']),
+      title: serializer.fromJson<String>(json['title']),
+      location: serializer.fromJson<String?>(json['location']),
+      calendarId: serializer.fromJson<String?>(json['calendarId']),
+      status: serializer.fromJson<String>(json['status']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'version': serializer.toJson<int>(version),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'deletedBy': serializer.toJson<String?>(deletedBy),
+      'title': serializer.toJson<String>(title),
+      'location': serializer.toJson<String?>(location),
+      'calendarId': serializer.toJson<String?>(calendarId),
+      'status': serializer.toJson<String>(status),
+    };
+  }
+
+  Event copyWith(
+          {String? id,
+          String? workspaceId,
+          String? ownerId,
+          int? version,
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          Value<DateTime?> deletedAt = const Value.absent(),
+          Value<String?> deletedBy = const Value.absent(),
+          String? title,
+          Value<String?> location = const Value.absent(),
+          Value<String?> calendarId = const Value.absent(),
+          String? status}) =>
+      Event(
+        id: id ?? this.id,
+        workspaceId: workspaceId ?? this.workspaceId,
+        ownerId: ownerId ?? this.ownerId,
+        version: version ?? this.version,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+        deletedBy: deletedBy.present ? deletedBy.value : this.deletedBy,
+        title: title ?? this.title,
+        location: location.present ? location.value : this.location,
+        calendarId: calendarId.present ? calendarId.value : this.calendarId,
+        status: status ?? this.status,
+      );
+  Event copyWithCompanion(EventsCompanion data) {
+    return Event(
+      id: data.id.present ? data.id.value : this.id,
+      workspaceId:
+          data.workspaceId.present ? data.workspaceId.value : this.workspaceId,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      version: data.version.present ? data.version.value : this.version,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      deletedBy: data.deletedBy.present ? data.deletedBy.value : this.deletedBy,
+      title: data.title.present ? data.title.value : this.title,
+      location: data.location.present ? data.location.value : this.location,
+      calendarId:
+          data.calendarId.present ? data.calendarId.value : this.calendarId,
+      status: data.status.present ? data.status.value : this.status,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Event(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('version: $version, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedBy: $deletedBy, ')
+          ..write('title: $title, ')
+          ..write('location: $location, ')
+          ..write('calendarId: $calendarId, ')
+          ..write('status: $status')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, workspaceId, ownerId, version, createdAt,
+      updatedAt, deletedAt, deletedBy, title, location, calendarId, status);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Event &&
+          other.id == this.id &&
+          other.workspaceId == this.workspaceId &&
+          other.ownerId == this.ownerId &&
+          other.version == this.version &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.deletedBy == this.deletedBy &&
+          other.title == this.title &&
+          other.location == this.location &&
+          other.calendarId == this.calendarId &&
+          other.status == this.status);
+}
+
+class EventsCompanion extends UpdateCompanion<Event> {
+  final Value<String> id;
+  final Value<String> workspaceId;
+  final Value<String> ownerId;
+  final Value<int> version;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> deletedBy;
+  final Value<String> title;
+  final Value<String?> location;
+  final Value<String?> calendarId;
+  final Value<String> status;
+  final Value<int> rowid;
+  const EventsCompanion({
+    this.id = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.version = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.deletedBy = const Value.absent(),
+    this.title = const Value.absent(),
+    this.location = const Value.absent(),
+    this.calendarId = const Value.absent(),
+    this.status = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  EventsCompanion.insert({
+    required String id,
+    required String workspaceId,
+    required String ownerId,
+    this.version = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.deletedBy = const Value.absent(),
+    required String title,
+    this.location = const Value.absent(),
+    this.calendarId = const Value.absent(),
+    this.status = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        workspaceId = Value(workspaceId),
+        ownerId = Value(ownerId),
+        createdAt = Value(createdAt),
+        updatedAt = Value(updatedAt),
+        title = Value(title);
+  static Insertable<Event> custom({
+    Expression<String>? id,
+    Expression<String>? workspaceId,
+    Expression<String>? ownerId,
+    Expression<int>? version,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? deletedBy,
+    Expression<String>? title,
+    Expression<String>? location,
+    Expression<String>? calendarId,
+    Expression<String>? status,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (version != null) 'version': version,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (deletedBy != null) 'deleted_by': deletedBy,
+      if (title != null) 'title': title,
+      if (location != null) 'location': location,
+      if (calendarId != null) 'calendar_id': calendarId,
+      if (status != null) 'status': status,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  EventsCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? workspaceId,
+      Value<String>? ownerId,
+      Value<int>? version,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<DateTime?>? deletedAt,
+      Value<String?>? deletedBy,
+      Value<String>? title,
+      Value<String?>? location,
+      Value<String?>? calendarId,
+      Value<String>? status,
+      Value<int>? rowid}) {
+    return EventsCompanion(
+      id: id ?? this.id,
+      workspaceId: workspaceId ?? this.workspaceId,
+      ownerId: ownerId ?? this.ownerId,
+      version: version ?? this.version,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      deletedBy: deletedBy ?? this.deletedBy,
+      title: title ?? this.title,
+      location: location ?? this.location,
+      calendarId: calendarId ?? this.calendarId,
+      status: status ?? this.status,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (deletedBy.present) {
+      map['deleted_by'] = Variable<String>(deletedBy.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (location.present) {
+      map['location'] = Variable<String>(location.value);
+    }
+    if (calendarId.present) {
+      map['calendar_id'] = Variable<String>(calendarId.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EventsCompanion(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('version: $version, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedBy: $deletedBy, ')
+          ..write('title: $title, ')
+          ..write('location: $location, ')
+          ..write('calendarId: $calendarId, ')
+          ..write('status: $status, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SchedulesTable extends Schedules
+    with TableInfo<$SchedulesTable, Schedule> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SchedulesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _workspaceIdMeta =
+      const VerificationMeta('workspaceId');
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+      'workspace_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _ownerIdMeta =
+      const VerificationMeta('ownerId');
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+      'owner_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _versionMeta =
+      const VerificationMeta('version');
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+      'version', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _deletedByMeta =
+      const VerificationMeta('deletedBy');
+  @override
+  late final GeneratedColumn<String> deletedBy = GeneratedColumn<String>(
+      'deleted_by', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _subjectTypeMeta =
+      const VerificationMeta('subjectType');
+  @override
+  late final GeneratedColumn<String> subjectType = GeneratedColumn<String>(
+      'subject_type', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _subjectIdMeta =
+      const VerificationMeta('subjectId');
+  @override
+  late final GeneratedColumn<String> subjectId = GeneratedColumn<String>(
+      'subject_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _startDateMeta =
+      const VerificationMeta('startDate');
+  @override
+  late final GeneratedColumn<String> startDate = GeneratedColumn<String>(
+      'start_date', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _startTimeMeta =
+      const VerificationMeta('startTime');
+  @override
+  late final GeneratedColumn<String> startTime = GeneratedColumn<String>(
+      'start_time', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _startZoneMeta =
+      const VerificationMeta('startZone');
+  @override
+  late final GeneratedColumn<String> startZone = GeneratedColumn<String>(
+      'start_zone', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _endDateMeta =
+      const VerificationMeta('endDate');
+  @override
+  late final GeneratedColumn<String> endDate = GeneratedColumn<String>(
+      'end_date', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _endTimeMeta =
+      const VerificationMeta('endTime');
+  @override
+  late final GeneratedColumn<String> endTime = GeneratedColumn<String>(
+      'end_time', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _endZoneMeta =
+      const VerificationMeta('endZone');
+  @override
+  late final GeneratedColumn<String> endZone = GeneratedColumn<String>(
+      'end_zone', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _deadlineDateMeta =
+      const VerificationMeta('deadlineDate');
+  @override
+  late final GeneratedColumn<String> deadlineDate = GeneratedColumn<String>(
+      'deadline_date', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _deadlineTimeMeta =
+      const VerificationMeta('deadlineTime');
+  @override
+  late final GeneratedColumn<String> deadlineTime = GeneratedColumn<String>(
+      'deadline_time', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _deadlineZoneMeta =
+      const VerificationMeta('deadlineZone');
+  @override
+  late final GeneratedColumn<String> deadlineZone = GeneratedColumn<String>(
+      'deadline_zone', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _firstDateMeta =
+      const VerificationMeta('firstDate');
+  @override
+  late final GeneratedColumn<String> firstDate = GeneratedColumn<String>(
+      'first_date', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _lastDateMeta =
+      const VerificationMeta('lastDate');
+  @override
+  late final GeneratedColumn<String> lastDate = GeneratedColumn<String>(
+      'last_date', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _frequencyMeta =
+      const VerificationMeta('frequency');
+  @override
+  late final GeneratedColumn<String> frequency = GeneratedColumn<String>(
+      'frequency', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _intervalMeta =
+      const VerificationMeta('interval');
+  @override
+  late final GeneratedColumn<int> interval = GeneratedColumn<int>(
+      'interval', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
+  static const VerificationMeta _weekdaysMeta =
+      const VerificationMeta('weekdays');
+  @override
+  late final GeneratedColumn<String> weekdays = GeneratedColumn<String>(
+      'weekdays', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _endKindMeta =
+      const VerificationMeta('endKind');
+  @override
+  late final GeneratedColumn<String> endKind = GeneratedColumn<String>(
+      'end_kind', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _endDateRuleMeta =
+      const VerificationMeta('endDateRule');
+  @override
+  late final GeneratedColumn<String> endDateRule = GeneratedColumn<String>(
+      'end_date_rule', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _endCountMeta =
+      const VerificationMeta('endCount');
+  @override
+  late final GeneratedColumn<int> endCount = GeneratedColumn<int>(
+      'end_count', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _monthEndRuleMeta =
+      const VerificationMeta('monthEndRule');
+  @override
+  late final GeneratedColumn<String> monthEndRule = GeneratedColumn<String>(
+      'month_end_rule', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('skip'));
+  static const VerificationMeta _weekStartMeta =
+      const VerificationMeta('weekStart');
+  @override
+  late final GeneratedColumn<int> weekStart = GeneratedColumn<int>(
+      'week_start', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        workspaceId,
+        ownerId,
+        version,
+        createdAt,
+        updatedAt,
+        deletedAt,
+        deletedBy,
+        subjectType,
+        subjectId,
+        startDate,
+        startTime,
+        startZone,
+        endDate,
+        endTime,
+        endZone,
+        deadlineDate,
+        deadlineTime,
+        deadlineZone,
+        firstDate,
+        lastDate,
+        frequency,
+        interval,
+        weekdays,
+        endKind,
+        endDateRule,
+        endCount,
+        monthEndRule,
+        weekStart
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'schedules';
+  @override
+  VerificationContext validateIntegrity(Insertable<Schedule> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+          _workspaceIdMeta,
+          workspaceId.isAcceptableOrUnknown(
+              data['workspace_id']!, _workspaceIdMeta));
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(_ownerIdMeta,
+          ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta));
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('version')) {
+      context.handle(_versionMeta,
+          version.isAcceptableOrUnknown(data['version']!, _versionMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
+    if (data.containsKey('deleted_by')) {
+      context.handle(_deletedByMeta,
+          deletedBy.isAcceptableOrUnknown(data['deleted_by']!, _deletedByMeta));
+    }
+    if (data.containsKey('subject_type')) {
+      context.handle(
+          _subjectTypeMeta,
+          subjectType.isAcceptableOrUnknown(
+              data['subject_type']!, _subjectTypeMeta));
+    } else if (isInserting) {
+      context.missing(_subjectTypeMeta);
+    }
+    if (data.containsKey('subject_id')) {
+      context.handle(_subjectIdMeta,
+          subjectId.isAcceptableOrUnknown(data['subject_id']!, _subjectIdMeta));
+    } else if (isInserting) {
+      context.missing(_subjectIdMeta);
+    }
+    if (data.containsKey('start_date')) {
+      context.handle(_startDateMeta,
+          startDate.isAcceptableOrUnknown(data['start_date']!, _startDateMeta));
+    }
+    if (data.containsKey('start_time')) {
+      context.handle(_startTimeMeta,
+          startTime.isAcceptableOrUnknown(data['start_time']!, _startTimeMeta));
+    }
+    if (data.containsKey('start_zone')) {
+      context.handle(_startZoneMeta,
+          startZone.isAcceptableOrUnknown(data['start_zone']!, _startZoneMeta));
+    }
+    if (data.containsKey('end_date')) {
+      context.handle(_endDateMeta,
+          endDate.isAcceptableOrUnknown(data['end_date']!, _endDateMeta));
+    }
+    if (data.containsKey('end_time')) {
+      context.handle(_endTimeMeta,
+          endTime.isAcceptableOrUnknown(data['end_time']!, _endTimeMeta));
+    }
+    if (data.containsKey('end_zone')) {
+      context.handle(_endZoneMeta,
+          endZone.isAcceptableOrUnknown(data['end_zone']!, _endZoneMeta));
+    }
+    if (data.containsKey('deadline_date')) {
+      context.handle(
+          _deadlineDateMeta,
+          deadlineDate.isAcceptableOrUnknown(
+              data['deadline_date']!, _deadlineDateMeta));
+    }
+    if (data.containsKey('deadline_time')) {
+      context.handle(
+          _deadlineTimeMeta,
+          deadlineTime.isAcceptableOrUnknown(
+              data['deadline_time']!, _deadlineTimeMeta));
+    }
+    if (data.containsKey('deadline_zone')) {
+      context.handle(
+          _deadlineZoneMeta,
+          deadlineZone.isAcceptableOrUnknown(
+              data['deadline_zone']!, _deadlineZoneMeta));
+    }
+    if (data.containsKey('first_date')) {
+      context.handle(_firstDateMeta,
+          firstDate.isAcceptableOrUnknown(data['first_date']!, _firstDateMeta));
+    } else if (isInserting) {
+      context.missing(_firstDateMeta);
+    }
+    if (data.containsKey('last_date')) {
+      context.handle(_lastDateMeta,
+          lastDate.isAcceptableOrUnknown(data['last_date']!, _lastDateMeta));
+    }
+    if (data.containsKey('frequency')) {
+      context.handle(_frequencyMeta,
+          frequency.isAcceptableOrUnknown(data['frequency']!, _frequencyMeta));
+    }
+    if (data.containsKey('interval')) {
+      context.handle(_intervalMeta,
+          interval.isAcceptableOrUnknown(data['interval']!, _intervalMeta));
+    }
+    if (data.containsKey('weekdays')) {
+      context.handle(_weekdaysMeta,
+          weekdays.isAcceptableOrUnknown(data['weekdays']!, _weekdaysMeta));
+    }
+    if (data.containsKey('end_kind')) {
+      context.handle(_endKindMeta,
+          endKind.isAcceptableOrUnknown(data['end_kind']!, _endKindMeta));
+    }
+    if (data.containsKey('end_date_rule')) {
+      context.handle(
+          _endDateRuleMeta,
+          endDateRule.isAcceptableOrUnknown(
+              data['end_date_rule']!, _endDateRuleMeta));
+    }
+    if (data.containsKey('end_count')) {
+      context.handle(_endCountMeta,
+          endCount.isAcceptableOrUnknown(data['end_count']!, _endCountMeta));
+    }
+    if (data.containsKey('month_end_rule')) {
+      context.handle(
+          _monthEndRuleMeta,
+          monthEndRule.isAcceptableOrUnknown(
+              data['month_end_rule']!, _monthEndRuleMeta));
+    }
+    if (data.containsKey('week_start')) {
+      context.handle(_weekStartMeta,
+          weekStart.isAcceptableOrUnknown(data['week_start']!, _weekStartMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Schedule map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Schedule(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      workspaceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}workspace_id'])!,
+      ownerId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}owner_id'])!,
+      version: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}version'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
+      deletedBy: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}deleted_by']),
+      subjectType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}subject_type'])!,
+      subjectId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}subject_id'])!,
+      startDate: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}start_date']),
+      startTime: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}start_time']),
+      startZone: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}start_zone']),
+      endDate: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}end_date']),
+      endTime: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}end_time']),
+      endZone: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}end_zone']),
+      deadlineDate: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}deadline_date']),
+      deadlineTime: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}deadline_time']),
+      deadlineZone: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}deadline_zone']),
+      firstDate: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}first_date'])!,
+      lastDate: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}last_date']),
+      frequency: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}frequency']),
+      interval: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}interval'])!,
+      weekdays: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}weekdays']),
+      endKind: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}end_kind']),
+      endDateRule: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}end_date_rule']),
+      endCount: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}end_count']),
+      monthEndRule: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}month_end_rule'])!,
+      weekStart: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}week_start'])!,
+    );
+  }
+
+  @override
+  $SchedulesTable createAlias(String alias) {
+    return $SchedulesTable(attachedDatabase, alias);
+  }
+}
+
+class Schedule extends DataClass implements Insertable<Schedule> {
+  final String id;
+  final String workspaceId;
+  final String ownerId;
+  final int version;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final String? deletedBy;
+  final String subjectType;
+  final String subjectId;
+  final String? startDate;
+  final String? startTime;
+  final String? startZone;
+  final String? endDate;
+  final String? endTime;
+  final String? endZone;
+  final String? deadlineDate;
+  final String? deadlineTime;
+  final String? deadlineZone;
+  final String firstDate;
+  final String? lastDate;
+  final String? frequency;
+  final int interval;
+  final String? weekdays;
+  final String? endKind;
+  final String? endDateRule;
+  final int? endCount;
+  final String monthEndRule;
+  final int weekStart;
+  const Schedule(
+      {required this.id,
+      required this.workspaceId,
+      required this.ownerId,
+      required this.version,
+      required this.createdAt,
+      required this.updatedAt,
+      this.deletedAt,
+      this.deletedBy,
+      required this.subjectType,
+      required this.subjectId,
+      this.startDate,
+      this.startTime,
+      this.startZone,
+      this.endDate,
+      this.endTime,
+      this.endZone,
+      this.deadlineDate,
+      this.deadlineTime,
+      this.deadlineZone,
+      required this.firstDate,
+      this.lastDate,
+      this.frequency,
+      required this.interval,
+      this.weekdays,
+      this.endKind,
+      this.endDateRule,
+      this.endCount,
+      required this.monthEndRule,
+      required this.weekStart});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['version'] = Variable<int>(version);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || deletedBy != null) {
+      map['deleted_by'] = Variable<String>(deletedBy);
+    }
+    map['subject_type'] = Variable<String>(subjectType);
+    map['subject_id'] = Variable<String>(subjectId);
+    if (!nullToAbsent || startDate != null) {
+      map['start_date'] = Variable<String>(startDate);
+    }
+    if (!nullToAbsent || startTime != null) {
+      map['start_time'] = Variable<String>(startTime);
+    }
+    if (!nullToAbsent || startZone != null) {
+      map['start_zone'] = Variable<String>(startZone);
+    }
+    if (!nullToAbsent || endDate != null) {
+      map['end_date'] = Variable<String>(endDate);
+    }
+    if (!nullToAbsent || endTime != null) {
+      map['end_time'] = Variable<String>(endTime);
+    }
+    if (!nullToAbsent || endZone != null) {
+      map['end_zone'] = Variable<String>(endZone);
+    }
+    if (!nullToAbsent || deadlineDate != null) {
+      map['deadline_date'] = Variable<String>(deadlineDate);
+    }
+    if (!nullToAbsent || deadlineTime != null) {
+      map['deadline_time'] = Variable<String>(deadlineTime);
+    }
+    if (!nullToAbsent || deadlineZone != null) {
+      map['deadline_zone'] = Variable<String>(deadlineZone);
+    }
+    map['first_date'] = Variable<String>(firstDate);
+    if (!nullToAbsent || lastDate != null) {
+      map['last_date'] = Variable<String>(lastDate);
+    }
+    if (!nullToAbsent || frequency != null) {
+      map['frequency'] = Variable<String>(frequency);
+    }
+    map['interval'] = Variable<int>(interval);
+    if (!nullToAbsent || weekdays != null) {
+      map['weekdays'] = Variable<String>(weekdays);
+    }
+    if (!nullToAbsent || endKind != null) {
+      map['end_kind'] = Variable<String>(endKind);
+    }
+    if (!nullToAbsent || endDateRule != null) {
+      map['end_date_rule'] = Variable<String>(endDateRule);
+    }
+    if (!nullToAbsent || endCount != null) {
+      map['end_count'] = Variable<int>(endCount);
+    }
+    map['month_end_rule'] = Variable<String>(monthEndRule);
+    map['week_start'] = Variable<int>(weekStart);
+    return map;
+  }
+
+  SchedulesCompanion toCompanion(bool nullToAbsent) {
+    return SchedulesCompanion(
+      id: Value(id),
+      workspaceId: Value(workspaceId),
+      ownerId: Value(ownerId),
+      version: Value(version),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      deletedBy: deletedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedBy),
+      subjectType: Value(subjectType),
+      subjectId: Value(subjectId),
+      startDate: startDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(startDate),
+      startTime: startTime == null && nullToAbsent
+          ? const Value.absent()
+          : Value(startTime),
+      startZone: startZone == null && nullToAbsent
+          ? const Value.absent()
+          : Value(startZone),
+      endDate: endDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endDate),
+      endTime: endTime == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endTime),
+      endZone: endZone == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endZone),
+      deadlineDate: deadlineDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deadlineDate),
+      deadlineTime: deadlineTime == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deadlineTime),
+      deadlineZone: deadlineZone == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deadlineZone),
+      firstDate: Value(firstDate),
+      lastDate: lastDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastDate),
+      frequency: frequency == null && nullToAbsent
+          ? const Value.absent()
+          : Value(frequency),
+      interval: Value(interval),
+      weekdays: weekdays == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weekdays),
+      endKind: endKind == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endKind),
+      endDateRule: endDateRule == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endDateRule),
+      endCount: endCount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endCount),
+      monthEndRule: Value(monthEndRule),
+      weekStart: Value(weekStart),
+    );
+  }
+
+  factory Schedule.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Schedule(
+      id: serializer.fromJson<String>(json['id']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      version: serializer.fromJson<int>(json['version']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      deletedBy: serializer.fromJson<String?>(json['deletedBy']),
+      subjectType: serializer.fromJson<String>(json['subjectType']),
+      subjectId: serializer.fromJson<String>(json['subjectId']),
+      startDate: serializer.fromJson<String?>(json['startDate']),
+      startTime: serializer.fromJson<String?>(json['startTime']),
+      startZone: serializer.fromJson<String?>(json['startZone']),
+      endDate: serializer.fromJson<String?>(json['endDate']),
+      endTime: serializer.fromJson<String?>(json['endTime']),
+      endZone: serializer.fromJson<String?>(json['endZone']),
+      deadlineDate: serializer.fromJson<String?>(json['deadlineDate']),
+      deadlineTime: serializer.fromJson<String?>(json['deadlineTime']),
+      deadlineZone: serializer.fromJson<String?>(json['deadlineZone']),
+      firstDate: serializer.fromJson<String>(json['firstDate']),
+      lastDate: serializer.fromJson<String?>(json['lastDate']),
+      frequency: serializer.fromJson<String?>(json['frequency']),
+      interval: serializer.fromJson<int>(json['interval']),
+      weekdays: serializer.fromJson<String?>(json['weekdays']),
+      endKind: serializer.fromJson<String?>(json['endKind']),
+      endDateRule: serializer.fromJson<String?>(json['endDateRule']),
+      endCount: serializer.fromJson<int?>(json['endCount']),
+      monthEndRule: serializer.fromJson<String>(json['monthEndRule']),
+      weekStart: serializer.fromJson<int>(json['weekStart']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'version': serializer.toJson<int>(version),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'deletedBy': serializer.toJson<String?>(deletedBy),
+      'subjectType': serializer.toJson<String>(subjectType),
+      'subjectId': serializer.toJson<String>(subjectId),
+      'startDate': serializer.toJson<String?>(startDate),
+      'startTime': serializer.toJson<String?>(startTime),
+      'startZone': serializer.toJson<String?>(startZone),
+      'endDate': serializer.toJson<String?>(endDate),
+      'endTime': serializer.toJson<String?>(endTime),
+      'endZone': serializer.toJson<String?>(endZone),
+      'deadlineDate': serializer.toJson<String?>(deadlineDate),
+      'deadlineTime': serializer.toJson<String?>(deadlineTime),
+      'deadlineZone': serializer.toJson<String?>(deadlineZone),
+      'firstDate': serializer.toJson<String>(firstDate),
+      'lastDate': serializer.toJson<String?>(lastDate),
+      'frequency': serializer.toJson<String?>(frequency),
+      'interval': serializer.toJson<int>(interval),
+      'weekdays': serializer.toJson<String?>(weekdays),
+      'endKind': serializer.toJson<String?>(endKind),
+      'endDateRule': serializer.toJson<String?>(endDateRule),
+      'endCount': serializer.toJson<int?>(endCount),
+      'monthEndRule': serializer.toJson<String>(monthEndRule),
+      'weekStart': serializer.toJson<int>(weekStart),
+    };
+  }
+
+  Schedule copyWith(
+          {String? id,
+          String? workspaceId,
+          String? ownerId,
+          int? version,
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          Value<DateTime?> deletedAt = const Value.absent(),
+          Value<String?> deletedBy = const Value.absent(),
+          String? subjectType,
+          String? subjectId,
+          Value<String?> startDate = const Value.absent(),
+          Value<String?> startTime = const Value.absent(),
+          Value<String?> startZone = const Value.absent(),
+          Value<String?> endDate = const Value.absent(),
+          Value<String?> endTime = const Value.absent(),
+          Value<String?> endZone = const Value.absent(),
+          Value<String?> deadlineDate = const Value.absent(),
+          Value<String?> deadlineTime = const Value.absent(),
+          Value<String?> deadlineZone = const Value.absent(),
+          String? firstDate,
+          Value<String?> lastDate = const Value.absent(),
+          Value<String?> frequency = const Value.absent(),
+          int? interval,
+          Value<String?> weekdays = const Value.absent(),
+          Value<String?> endKind = const Value.absent(),
+          Value<String?> endDateRule = const Value.absent(),
+          Value<int?> endCount = const Value.absent(),
+          String? monthEndRule,
+          int? weekStart}) =>
+      Schedule(
+        id: id ?? this.id,
+        workspaceId: workspaceId ?? this.workspaceId,
+        ownerId: ownerId ?? this.ownerId,
+        version: version ?? this.version,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+        deletedBy: deletedBy.present ? deletedBy.value : this.deletedBy,
+        subjectType: subjectType ?? this.subjectType,
+        subjectId: subjectId ?? this.subjectId,
+        startDate: startDate.present ? startDate.value : this.startDate,
+        startTime: startTime.present ? startTime.value : this.startTime,
+        startZone: startZone.present ? startZone.value : this.startZone,
+        endDate: endDate.present ? endDate.value : this.endDate,
+        endTime: endTime.present ? endTime.value : this.endTime,
+        endZone: endZone.present ? endZone.value : this.endZone,
+        deadlineDate:
+            deadlineDate.present ? deadlineDate.value : this.deadlineDate,
+        deadlineTime:
+            deadlineTime.present ? deadlineTime.value : this.deadlineTime,
+        deadlineZone:
+            deadlineZone.present ? deadlineZone.value : this.deadlineZone,
+        firstDate: firstDate ?? this.firstDate,
+        lastDate: lastDate.present ? lastDate.value : this.lastDate,
+        frequency: frequency.present ? frequency.value : this.frequency,
+        interval: interval ?? this.interval,
+        weekdays: weekdays.present ? weekdays.value : this.weekdays,
+        endKind: endKind.present ? endKind.value : this.endKind,
+        endDateRule: endDateRule.present ? endDateRule.value : this.endDateRule,
+        endCount: endCount.present ? endCount.value : this.endCount,
+        monthEndRule: monthEndRule ?? this.monthEndRule,
+        weekStart: weekStart ?? this.weekStart,
+      );
+  Schedule copyWithCompanion(SchedulesCompanion data) {
+    return Schedule(
+      id: data.id.present ? data.id.value : this.id,
+      workspaceId:
+          data.workspaceId.present ? data.workspaceId.value : this.workspaceId,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      version: data.version.present ? data.version.value : this.version,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      deletedBy: data.deletedBy.present ? data.deletedBy.value : this.deletedBy,
+      subjectType:
+          data.subjectType.present ? data.subjectType.value : this.subjectType,
+      subjectId: data.subjectId.present ? data.subjectId.value : this.subjectId,
+      startDate: data.startDate.present ? data.startDate.value : this.startDate,
+      startTime: data.startTime.present ? data.startTime.value : this.startTime,
+      startZone: data.startZone.present ? data.startZone.value : this.startZone,
+      endDate: data.endDate.present ? data.endDate.value : this.endDate,
+      endTime: data.endTime.present ? data.endTime.value : this.endTime,
+      endZone: data.endZone.present ? data.endZone.value : this.endZone,
+      deadlineDate: data.deadlineDate.present
+          ? data.deadlineDate.value
+          : this.deadlineDate,
+      deadlineTime: data.deadlineTime.present
+          ? data.deadlineTime.value
+          : this.deadlineTime,
+      deadlineZone: data.deadlineZone.present
+          ? data.deadlineZone.value
+          : this.deadlineZone,
+      firstDate: data.firstDate.present ? data.firstDate.value : this.firstDate,
+      lastDate: data.lastDate.present ? data.lastDate.value : this.lastDate,
+      frequency: data.frequency.present ? data.frequency.value : this.frequency,
+      interval: data.interval.present ? data.interval.value : this.interval,
+      weekdays: data.weekdays.present ? data.weekdays.value : this.weekdays,
+      endKind: data.endKind.present ? data.endKind.value : this.endKind,
+      endDateRule:
+          data.endDateRule.present ? data.endDateRule.value : this.endDateRule,
+      endCount: data.endCount.present ? data.endCount.value : this.endCount,
+      monthEndRule: data.monthEndRule.present
+          ? data.monthEndRule.value
+          : this.monthEndRule,
+      weekStart: data.weekStart.present ? data.weekStart.value : this.weekStart,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Schedule(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('version: $version, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedBy: $deletedBy, ')
+          ..write('subjectType: $subjectType, ')
+          ..write('subjectId: $subjectId, ')
+          ..write('startDate: $startDate, ')
+          ..write('startTime: $startTime, ')
+          ..write('startZone: $startZone, ')
+          ..write('endDate: $endDate, ')
+          ..write('endTime: $endTime, ')
+          ..write('endZone: $endZone, ')
+          ..write('deadlineDate: $deadlineDate, ')
+          ..write('deadlineTime: $deadlineTime, ')
+          ..write('deadlineZone: $deadlineZone, ')
+          ..write('firstDate: $firstDate, ')
+          ..write('lastDate: $lastDate, ')
+          ..write('frequency: $frequency, ')
+          ..write('interval: $interval, ')
+          ..write('weekdays: $weekdays, ')
+          ..write('endKind: $endKind, ')
+          ..write('endDateRule: $endDateRule, ')
+          ..write('endCount: $endCount, ')
+          ..write('monthEndRule: $monthEndRule, ')
+          ..write('weekStart: $weekStart')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+        id,
+        workspaceId,
+        ownerId,
+        version,
+        createdAt,
+        updatedAt,
+        deletedAt,
+        deletedBy,
+        subjectType,
+        subjectId,
+        startDate,
+        startTime,
+        startZone,
+        endDate,
+        endTime,
+        endZone,
+        deadlineDate,
+        deadlineTime,
+        deadlineZone,
+        firstDate,
+        lastDate,
+        frequency,
+        interval,
+        weekdays,
+        endKind,
+        endDateRule,
+        endCount,
+        monthEndRule,
+        weekStart
+      ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Schedule &&
+          other.id == this.id &&
+          other.workspaceId == this.workspaceId &&
+          other.ownerId == this.ownerId &&
+          other.version == this.version &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.deletedBy == this.deletedBy &&
+          other.subjectType == this.subjectType &&
+          other.subjectId == this.subjectId &&
+          other.startDate == this.startDate &&
+          other.startTime == this.startTime &&
+          other.startZone == this.startZone &&
+          other.endDate == this.endDate &&
+          other.endTime == this.endTime &&
+          other.endZone == this.endZone &&
+          other.deadlineDate == this.deadlineDate &&
+          other.deadlineTime == this.deadlineTime &&
+          other.deadlineZone == this.deadlineZone &&
+          other.firstDate == this.firstDate &&
+          other.lastDate == this.lastDate &&
+          other.frequency == this.frequency &&
+          other.interval == this.interval &&
+          other.weekdays == this.weekdays &&
+          other.endKind == this.endKind &&
+          other.endDateRule == this.endDateRule &&
+          other.endCount == this.endCount &&
+          other.monthEndRule == this.monthEndRule &&
+          other.weekStart == this.weekStart);
+}
+
+class SchedulesCompanion extends UpdateCompanion<Schedule> {
+  final Value<String> id;
+  final Value<String> workspaceId;
+  final Value<String> ownerId;
+  final Value<int> version;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> deletedBy;
+  final Value<String> subjectType;
+  final Value<String> subjectId;
+  final Value<String?> startDate;
+  final Value<String?> startTime;
+  final Value<String?> startZone;
+  final Value<String?> endDate;
+  final Value<String?> endTime;
+  final Value<String?> endZone;
+  final Value<String?> deadlineDate;
+  final Value<String?> deadlineTime;
+  final Value<String?> deadlineZone;
+  final Value<String> firstDate;
+  final Value<String?> lastDate;
+  final Value<String?> frequency;
+  final Value<int> interval;
+  final Value<String?> weekdays;
+  final Value<String?> endKind;
+  final Value<String?> endDateRule;
+  final Value<int?> endCount;
+  final Value<String> monthEndRule;
+  final Value<int> weekStart;
+  final Value<int> rowid;
+  const SchedulesCompanion({
+    this.id = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.version = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.deletedBy = const Value.absent(),
+    this.subjectType = const Value.absent(),
+    this.subjectId = const Value.absent(),
+    this.startDate = const Value.absent(),
+    this.startTime = const Value.absent(),
+    this.startZone = const Value.absent(),
+    this.endDate = const Value.absent(),
+    this.endTime = const Value.absent(),
+    this.endZone = const Value.absent(),
+    this.deadlineDate = const Value.absent(),
+    this.deadlineTime = const Value.absent(),
+    this.deadlineZone = const Value.absent(),
+    this.firstDate = const Value.absent(),
+    this.lastDate = const Value.absent(),
+    this.frequency = const Value.absent(),
+    this.interval = const Value.absent(),
+    this.weekdays = const Value.absent(),
+    this.endKind = const Value.absent(),
+    this.endDateRule = const Value.absent(),
+    this.endCount = const Value.absent(),
+    this.monthEndRule = const Value.absent(),
+    this.weekStart = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SchedulesCompanion.insert({
+    required String id,
+    required String workspaceId,
+    required String ownerId,
+    this.version = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.deletedBy = const Value.absent(),
+    required String subjectType,
+    required String subjectId,
+    this.startDate = const Value.absent(),
+    this.startTime = const Value.absent(),
+    this.startZone = const Value.absent(),
+    this.endDate = const Value.absent(),
+    this.endTime = const Value.absent(),
+    this.endZone = const Value.absent(),
+    this.deadlineDate = const Value.absent(),
+    this.deadlineTime = const Value.absent(),
+    this.deadlineZone = const Value.absent(),
+    required String firstDate,
+    this.lastDate = const Value.absent(),
+    this.frequency = const Value.absent(),
+    this.interval = const Value.absent(),
+    this.weekdays = const Value.absent(),
+    this.endKind = const Value.absent(),
+    this.endDateRule = const Value.absent(),
+    this.endCount = const Value.absent(),
+    this.monthEndRule = const Value.absent(),
+    this.weekStart = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        workspaceId = Value(workspaceId),
+        ownerId = Value(ownerId),
+        createdAt = Value(createdAt),
+        updatedAt = Value(updatedAt),
+        subjectType = Value(subjectType),
+        subjectId = Value(subjectId),
+        firstDate = Value(firstDate);
+  static Insertable<Schedule> custom({
+    Expression<String>? id,
+    Expression<String>? workspaceId,
+    Expression<String>? ownerId,
+    Expression<int>? version,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? deletedBy,
+    Expression<String>? subjectType,
+    Expression<String>? subjectId,
+    Expression<String>? startDate,
+    Expression<String>? startTime,
+    Expression<String>? startZone,
+    Expression<String>? endDate,
+    Expression<String>? endTime,
+    Expression<String>? endZone,
+    Expression<String>? deadlineDate,
+    Expression<String>? deadlineTime,
+    Expression<String>? deadlineZone,
+    Expression<String>? firstDate,
+    Expression<String>? lastDate,
+    Expression<String>? frequency,
+    Expression<int>? interval,
+    Expression<String>? weekdays,
+    Expression<String>? endKind,
+    Expression<String>? endDateRule,
+    Expression<int>? endCount,
+    Expression<String>? monthEndRule,
+    Expression<int>? weekStart,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (version != null) 'version': version,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (deletedBy != null) 'deleted_by': deletedBy,
+      if (subjectType != null) 'subject_type': subjectType,
+      if (subjectId != null) 'subject_id': subjectId,
+      if (startDate != null) 'start_date': startDate,
+      if (startTime != null) 'start_time': startTime,
+      if (startZone != null) 'start_zone': startZone,
+      if (endDate != null) 'end_date': endDate,
+      if (endTime != null) 'end_time': endTime,
+      if (endZone != null) 'end_zone': endZone,
+      if (deadlineDate != null) 'deadline_date': deadlineDate,
+      if (deadlineTime != null) 'deadline_time': deadlineTime,
+      if (deadlineZone != null) 'deadline_zone': deadlineZone,
+      if (firstDate != null) 'first_date': firstDate,
+      if (lastDate != null) 'last_date': lastDate,
+      if (frequency != null) 'frequency': frequency,
+      if (interval != null) 'interval': interval,
+      if (weekdays != null) 'weekdays': weekdays,
+      if (endKind != null) 'end_kind': endKind,
+      if (endDateRule != null) 'end_date_rule': endDateRule,
+      if (endCount != null) 'end_count': endCount,
+      if (monthEndRule != null) 'month_end_rule': monthEndRule,
+      if (weekStart != null) 'week_start': weekStart,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SchedulesCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? workspaceId,
+      Value<String>? ownerId,
+      Value<int>? version,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<DateTime?>? deletedAt,
+      Value<String?>? deletedBy,
+      Value<String>? subjectType,
+      Value<String>? subjectId,
+      Value<String?>? startDate,
+      Value<String?>? startTime,
+      Value<String?>? startZone,
+      Value<String?>? endDate,
+      Value<String?>? endTime,
+      Value<String?>? endZone,
+      Value<String?>? deadlineDate,
+      Value<String?>? deadlineTime,
+      Value<String?>? deadlineZone,
+      Value<String>? firstDate,
+      Value<String?>? lastDate,
+      Value<String?>? frequency,
+      Value<int>? interval,
+      Value<String?>? weekdays,
+      Value<String?>? endKind,
+      Value<String?>? endDateRule,
+      Value<int?>? endCount,
+      Value<String>? monthEndRule,
+      Value<int>? weekStart,
+      Value<int>? rowid}) {
+    return SchedulesCompanion(
+      id: id ?? this.id,
+      workspaceId: workspaceId ?? this.workspaceId,
+      ownerId: ownerId ?? this.ownerId,
+      version: version ?? this.version,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      deletedBy: deletedBy ?? this.deletedBy,
+      subjectType: subjectType ?? this.subjectType,
+      subjectId: subjectId ?? this.subjectId,
+      startDate: startDate ?? this.startDate,
+      startTime: startTime ?? this.startTime,
+      startZone: startZone ?? this.startZone,
+      endDate: endDate ?? this.endDate,
+      endTime: endTime ?? this.endTime,
+      endZone: endZone ?? this.endZone,
+      deadlineDate: deadlineDate ?? this.deadlineDate,
+      deadlineTime: deadlineTime ?? this.deadlineTime,
+      deadlineZone: deadlineZone ?? this.deadlineZone,
+      firstDate: firstDate ?? this.firstDate,
+      lastDate: lastDate ?? this.lastDate,
+      frequency: frequency ?? this.frequency,
+      interval: interval ?? this.interval,
+      weekdays: weekdays ?? this.weekdays,
+      endKind: endKind ?? this.endKind,
+      endDateRule: endDateRule ?? this.endDateRule,
+      endCount: endCount ?? this.endCount,
+      monthEndRule: monthEndRule ?? this.monthEndRule,
+      weekStart: weekStart ?? this.weekStart,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (deletedBy.present) {
+      map['deleted_by'] = Variable<String>(deletedBy.value);
+    }
+    if (subjectType.present) {
+      map['subject_type'] = Variable<String>(subjectType.value);
+    }
+    if (subjectId.present) {
+      map['subject_id'] = Variable<String>(subjectId.value);
+    }
+    if (startDate.present) {
+      map['start_date'] = Variable<String>(startDate.value);
+    }
+    if (startTime.present) {
+      map['start_time'] = Variable<String>(startTime.value);
+    }
+    if (startZone.present) {
+      map['start_zone'] = Variable<String>(startZone.value);
+    }
+    if (endDate.present) {
+      map['end_date'] = Variable<String>(endDate.value);
+    }
+    if (endTime.present) {
+      map['end_time'] = Variable<String>(endTime.value);
+    }
+    if (endZone.present) {
+      map['end_zone'] = Variable<String>(endZone.value);
+    }
+    if (deadlineDate.present) {
+      map['deadline_date'] = Variable<String>(deadlineDate.value);
+    }
+    if (deadlineTime.present) {
+      map['deadline_time'] = Variable<String>(deadlineTime.value);
+    }
+    if (deadlineZone.present) {
+      map['deadline_zone'] = Variable<String>(deadlineZone.value);
+    }
+    if (firstDate.present) {
+      map['first_date'] = Variable<String>(firstDate.value);
+    }
+    if (lastDate.present) {
+      map['last_date'] = Variable<String>(lastDate.value);
+    }
+    if (frequency.present) {
+      map['frequency'] = Variable<String>(frequency.value);
+    }
+    if (interval.present) {
+      map['interval'] = Variable<int>(interval.value);
+    }
+    if (weekdays.present) {
+      map['weekdays'] = Variable<String>(weekdays.value);
+    }
+    if (endKind.present) {
+      map['end_kind'] = Variable<String>(endKind.value);
+    }
+    if (endDateRule.present) {
+      map['end_date_rule'] = Variable<String>(endDateRule.value);
+    }
+    if (endCount.present) {
+      map['end_count'] = Variable<int>(endCount.value);
+    }
+    if (monthEndRule.present) {
+      map['month_end_rule'] = Variable<String>(monthEndRule.value);
+    }
+    if (weekStart.present) {
+      map['week_start'] = Variable<int>(weekStart.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SchedulesCompanion(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('version: $version, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedBy: $deletedBy, ')
+          ..write('subjectType: $subjectType, ')
+          ..write('subjectId: $subjectId, ')
+          ..write('startDate: $startDate, ')
+          ..write('startTime: $startTime, ')
+          ..write('startZone: $startZone, ')
+          ..write('endDate: $endDate, ')
+          ..write('endTime: $endTime, ')
+          ..write('endZone: $endZone, ')
+          ..write('deadlineDate: $deadlineDate, ')
+          ..write('deadlineTime: $deadlineTime, ')
+          ..write('deadlineZone: $deadlineZone, ')
+          ..write('firstDate: $firstDate, ')
+          ..write('lastDate: $lastDate, ')
+          ..write('frequency: $frequency, ')
+          ..write('interval: $interval, ')
+          ..write('weekdays: $weekdays, ')
+          ..write('endKind: $endKind, ')
+          ..write('endDateRule: $endDateRule, ')
+          ..write('endCount: $endCount, ')
+          ..write('monthEndRule: $monthEndRule, ')
+          ..write('weekStart: $weekStart, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $OccurrenceExceptionsTable extends OccurrenceExceptions
+    with TableInfo<$OccurrenceExceptionsTable, OccurrenceException> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $OccurrenceExceptionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _workspaceIdMeta =
+      const VerificationMeta('workspaceId');
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+      'workspace_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _ownerIdMeta =
+      const VerificationMeta('ownerId');
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+      'owner_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _versionMeta =
+      const VerificationMeta('version');
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+      'version', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _deletedByMeta =
+      const VerificationMeta('deletedBy');
+  @override
+  late final GeneratedColumn<String> deletedBy = GeneratedColumn<String>(
+      'deleted_by', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _subjectTypeMeta =
+      const VerificationMeta('subjectType');
+  @override
+  late final GeneratedColumn<String> subjectType = GeneratedColumn<String>(
+      'subject_type', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _subjectIdMeta =
+      const VerificationMeta('subjectId');
+  @override
+  late final GeneratedColumn<String> subjectId = GeneratedColumn<String>(
+      'subject_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _originalDateMeta =
+      const VerificationMeta('originalDate');
+  @override
+  late final GeneratedColumn<String> originalDate = GeneratedColumn<String>(
+      'original_date', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+      'kind', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _moveDateMeta =
+      const VerificationMeta('moveDate');
+  @override
+  late final GeneratedColumn<String> moveDate = GeneratedColumn<String>(
+      'move_date', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _moveTimeMeta =
+      const VerificationMeta('moveTime');
+  @override
+  late final GeneratedColumn<String> moveTime = GeneratedColumn<String>(
+      'move_time', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _patchMeta = const VerificationMeta('patch');
+  @override
+  late final GeneratedColumn<String> patch = GeneratedColumn<String>(
+      'patch', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        workspaceId,
+        ownerId,
+        version,
+        createdAt,
+        updatedAt,
+        deletedAt,
+        deletedBy,
+        subjectType,
+        subjectId,
+        originalDate,
+        kind,
+        moveDate,
+        moveTime,
+        patch
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'occurrence_exceptions';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<OccurrenceException> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+          _workspaceIdMeta,
+          workspaceId.isAcceptableOrUnknown(
+              data['workspace_id']!, _workspaceIdMeta));
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(_ownerIdMeta,
+          ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta));
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('version')) {
+      context.handle(_versionMeta,
+          version.isAcceptableOrUnknown(data['version']!, _versionMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
+    if (data.containsKey('deleted_by')) {
+      context.handle(_deletedByMeta,
+          deletedBy.isAcceptableOrUnknown(data['deleted_by']!, _deletedByMeta));
+    }
+    if (data.containsKey('subject_type')) {
+      context.handle(
+          _subjectTypeMeta,
+          subjectType.isAcceptableOrUnknown(
+              data['subject_type']!, _subjectTypeMeta));
+    } else if (isInserting) {
+      context.missing(_subjectTypeMeta);
+    }
+    if (data.containsKey('subject_id')) {
+      context.handle(_subjectIdMeta,
+          subjectId.isAcceptableOrUnknown(data['subject_id']!, _subjectIdMeta));
+    } else if (isInserting) {
+      context.missing(_subjectIdMeta);
+    }
+    if (data.containsKey('original_date')) {
+      context.handle(
+          _originalDateMeta,
+          originalDate.isAcceptableOrUnknown(
+              data['original_date']!, _originalDateMeta));
+    } else if (isInserting) {
+      context.missing(_originalDateMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+          _kindMeta, kind.isAcceptableOrUnknown(data['kind']!, _kindMeta));
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('move_date')) {
+      context.handle(_moveDateMeta,
+          moveDate.isAcceptableOrUnknown(data['move_date']!, _moveDateMeta));
+    }
+    if (data.containsKey('move_time')) {
+      context.handle(_moveTimeMeta,
+          moveTime.isAcceptableOrUnknown(data['move_time']!, _moveTimeMeta));
+    }
+    if (data.containsKey('patch')) {
+      context.handle(
+          _patchMeta, patch.isAcceptableOrUnknown(data['patch']!, _patchMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  OccurrenceException map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return OccurrenceException(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      workspaceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}workspace_id'])!,
+      ownerId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}owner_id'])!,
+      version: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}version'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
+      deletedBy: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}deleted_by']),
+      subjectType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}subject_type'])!,
+      subjectId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}subject_id'])!,
+      originalDate: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}original_date'])!,
+      kind: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}kind'])!,
+      moveDate: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}move_date']),
+      moveTime: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}move_time']),
+      patch: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}patch']),
+    );
+  }
+
+  @override
+  $OccurrenceExceptionsTable createAlias(String alias) {
+    return $OccurrenceExceptionsTable(attachedDatabase, alias);
+  }
+}
+
+class OccurrenceException extends DataClass
+    implements Insertable<OccurrenceException> {
+  final String id;
+  final String workspaceId;
+  final String ownerId;
+  final int version;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final String? deletedBy;
+  final String subjectType;
+  final String subjectId;
+  final String originalDate;
+  final String kind;
+  final String? moveDate;
+  final String? moveTime;
+  final String? patch;
+  const OccurrenceException(
+      {required this.id,
+      required this.workspaceId,
+      required this.ownerId,
+      required this.version,
+      required this.createdAt,
+      required this.updatedAt,
+      this.deletedAt,
+      this.deletedBy,
+      required this.subjectType,
+      required this.subjectId,
+      required this.originalDate,
+      required this.kind,
+      this.moveDate,
+      this.moveTime,
+      this.patch});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['version'] = Variable<int>(version);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || deletedBy != null) {
+      map['deleted_by'] = Variable<String>(deletedBy);
+    }
+    map['subject_type'] = Variable<String>(subjectType);
+    map['subject_id'] = Variable<String>(subjectId);
+    map['original_date'] = Variable<String>(originalDate);
+    map['kind'] = Variable<String>(kind);
+    if (!nullToAbsent || moveDate != null) {
+      map['move_date'] = Variable<String>(moveDate);
+    }
+    if (!nullToAbsent || moveTime != null) {
+      map['move_time'] = Variable<String>(moveTime);
+    }
+    if (!nullToAbsent || patch != null) {
+      map['patch'] = Variable<String>(patch);
+    }
+    return map;
+  }
+
+  OccurrenceExceptionsCompanion toCompanion(bool nullToAbsent) {
+    return OccurrenceExceptionsCompanion(
+      id: Value(id),
+      workspaceId: Value(workspaceId),
+      ownerId: Value(ownerId),
+      version: Value(version),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      deletedBy: deletedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedBy),
+      subjectType: Value(subjectType),
+      subjectId: Value(subjectId),
+      originalDate: Value(originalDate),
+      kind: Value(kind),
+      moveDate: moveDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(moveDate),
+      moveTime: moveTime == null && nullToAbsent
+          ? const Value.absent()
+          : Value(moveTime),
+      patch:
+          patch == null && nullToAbsent ? const Value.absent() : Value(patch),
+    );
+  }
+
+  factory OccurrenceException.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return OccurrenceException(
+      id: serializer.fromJson<String>(json['id']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      version: serializer.fromJson<int>(json['version']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      deletedBy: serializer.fromJson<String?>(json['deletedBy']),
+      subjectType: serializer.fromJson<String>(json['subjectType']),
+      subjectId: serializer.fromJson<String>(json['subjectId']),
+      originalDate: serializer.fromJson<String>(json['originalDate']),
+      kind: serializer.fromJson<String>(json['kind']),
+      moveDate: serializer.fromJson<String?>(json['moveDate']),
+      moveTime: serializer.fromJson<String?>(json['moveTime']),
+      patch: serializer.fromJson<String?>(json['patch']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'version': serializer.toJson<int>(version),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'deletedBy': serializer.toJson<String?>(deletedBy),
+      'subjectType': serializer.toJson<String>(subjectType),
+      'subjectId': serializer.toJson<String>(subjectId),
+      'originalDate': serializer.toJson<String>(originalDate),
+      'kind': serializer.toJson<String>(kind),
+      'moveDate': serializer.toJson<String?>(moveDate),
+      'moveTime': serializer.toJson<String?>(moveTime),
+      'patch': serializer.toJson<String?>(patch),
+    };
+  }
+
+  OccurrenceException copyWith(
+          {String? id,
+          String? workspaceId,
+          String? ownerId,
+          int? version,
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          Value<DateTime?> deletedAt = const Value.absent(),
+          Value<String?> deletedBy = const Value.absent(),
+          String? subjectType,
+          String? subjectId,
+          String? originalDate,
+          String? kind,
+          Value<String?> moveDate = const Value.absent(),
+          Value<String?> moveTime = const Value.absent(),
+          Value<String?> patch = const Value.absent()}) =>
+      OccurrenceException(
+        id: id ?? this.id,
+        workspaceId: workspaceId ?? this.workspaceId,
+        ownerId: ownerId ?? this.ownerId,
+        version: version ?? this.version,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+        deletedBy: deletedBy.present ? deletedBy.value : this.deletedBy,
+        subjectType: subjectType ?? this.subjectType,
+        subjectId: subjectId ?? this.subjectId,
+        originalDate: originalDate ?? this.originalDate,
+        kind: kind ?? this.kind,
+        moveDate: moveDate.present ? moveDate.value : this.moveDate,
+        moveTime: moveTime.present ? moveTime.value : this.moveTime,
+        patch: patch.present ? patch.value : this.patch,
+      );
+  OccurrenceException copyWithCompanion(OccurrenceExceptionsCompanion data) {
+    return OccurrenceException(
+      id: data.id.present ? data.id.value : this.id,
+      workspaceId:
+          data.workspaceId.present ? data.workspaceId.value : this.workspaceId,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      version: data.version.present ? data.version.value : this.version,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      deletedBy: data.deletedBy.present ? data.deletedBy.value : this.deletedBy,
+      subjectType:
+          data.subjectType.present ? data.subjectType.value : this.subjectType,
+      subjectId: data.subjectId.present ? data.subjectId.value : this.subjectId,
+      originalDate: data.originalDate.present
+          ? data.originalDate.value
+          : this.originalDate,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      moveDate: data.moveDate.present ? data.moveDate.value : this.moveDate,
+      moveTime: data.moveTime.present ? data.moveTime.value : this.moveTime,
+      patch: data.patch.present ? data.patch.value : this.patch,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OccurrenceException(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('version: $version, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedBy: $deletedBy, ')
+          ..write('subjectType: $subjectType, ')
+          ..write('subjectId: $subjectId, ')
+          ..write('originalDate: $originalDate, ')
+          ..write('kind: $kind, ')
+          ..write('moveDate: $moveDate, ')
+          ..write('moveTime: $moveTime, ')
+          ..write('patch: $patch')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id,
+      workspaceId,
+      ownerId,
+      version,
+      createdAt,
+      updatedAt,
+      deletedAt,
+      deletedBy,
+      subjectType,
+      subjectId,
+      originalDate,
+      kind,
+      moveDate,
+      moveTime,
+      patch);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is OccurrenceException &&
+          other.id == this.id &&
+          other.workspaceId == this.workspaceId &&
+          other.ownerId == this.ownerId &&
+          other.version == this.version &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.deletedBy == this.deletedBy &&
+          other.subjectType == this.subjectType &&
+          other.subjectId == this.subjectId &&
+          other.originalDate == this.originalDate &&
+          other.kind == this.kind &&
+          other.moveDate == this.moveDate &&
+          other.moveTime == this.moveTime &&
+          other.patch == this.patch);
+}
+
+class OccurrenceExceptionsCompanion
+    extends UpdateCompanion<OccurrenceException> {
+  final Value<String> id;
+  final Value<String> workspaceId;
+  final Value<String> ownerId;
+  final Value<int> version;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> deletedBy;
+  final Value<String> subjectType;
+  final Value<String> subjectId;
+  final Value<String> originalDate;
+  final Value<String> kind;
+  final Value<String?> moveDate;
+  final Value<String?> moveTime;
+  final Value<String?> patch;
+  final Value<int> rowid;
+  const OccurrenceExceptionsCompanion({
+    this.id = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.version = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.deletedBy = const Value.absent(),
+    this.subjectType = const Value.absent(),
+    this.subjectId = const Value.absent(),
+    this.originalDate = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.moveDate = const Value.absent(),
+    this.moveTime = const Value.absent(),
+    this.patch = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  OccurrenceExceptionsCompanion.insert({
+    required String id,
+    required String workspaceId,
+    required String ownerId,
+    this.version = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.deletedBy = const Value.absent(),
+    required String subjectType,
+    required String subjectId,
+    required String originalDate,
+    required String kind,
+    this.moveDate = const Value.absent(),
+    this.moveTime = const Value.absent(),
+    this.patch = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        workspaceId = Value(workspaceId),
+        ownerId = Value(ownerId),
+        createdAt = Value(createdAt),
+        updatedAt = Value(updatedAt),
+        subjectType = Value(subjectType),
+        subjectId = Value(subjectId),
+        originalDate = Value(originalDate),
+        kind = Value(kind);
+  static Insertable<OccurrenceException> custom({
+    Expression<String>? id,
+    Expression<String>? workspaceId,
+    Expression<String>? ownerId,
+    Expression<int>? version,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? deletedBy,
+    Expression<String>? subjectType,
+    Expression<String>? subjectId,
+    Expression<String>? originalDate,
+    Expression<String>? kind,
+    Expression<String>? moveDate,
+    Expression<String>? moveTime,
+    Expression<String>? patch,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (version != null) 'version': version,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (deletedBy != null) 'deleted_by': deletedBy,
+      if (subjectType != null) 'subject_type': subjectType,
+      if (subjectId != null) 'subject_id': subjectId,
+      if (originalDate != null) 'original_date': originalDate,
+      if (kind != null) 'kind': kind,
+      if (moveDate != null) 'move_date': moveDate,
+      if (moveTime != null) 'move_time': moveTime,
+      if (patch != null) 'patch': patch,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  OccurrenceExceptionsCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? workspaceId,
+      Value<String>? ownerId,
+      Value<int>? version,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<DateTime?>? deletedAt,
+      Value<String?>? deletedBy,
+      Value<String>? subjectType,
+      Value<String>? subjectId,
+      Value<String>? originalDate,
+      Value<String>? kind,
+      Value<String?>? moveDate,
+      Value<String?>? moveTime,
+      Value<String?>? patch,
+      Value<int>? rowid}) {
+    return OccurrenceExceptionsCompanion(
+      id: id ?? this.id,
+      workspaceId: workspaceId ?? this.workspaceId,
+      ownerId: ownerId ?? this.ownerId,
+      version: version ?? this.version,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      deletedBy: deletedBy ?? this.deletedBy,
+      subjectType: subjectType ?? this.subjectType,
+      subjectId: subjectId ?? this.subjectId,
+      originalDate: originalDate ?? this.originalDate,
+      kind: kind ?? this.kind,
+      moveDate: moveDate ?? this.moveDate,
+      moveTime: moveTime ?? this.moveTime,
+      patch: patch ?? this.patch,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (deletedBy.present) {
+      map['deleted_by'] = Variable<String>(deletedBy.value);
+    }
+    if (subjectType.present) {
+      map['subject_type'] = Variable<String>(subjectType.value);
+    }
+    if (subjectId.present) {
+      map['subject_id'] = Variable<String>(subjectId.value);
+    }
+    if (originalDate.present) {
+      map['original_date'] = Variable<String>(originalDate.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (moveDate.present) {
+      map['move_date'] = Variable<String>(moveDate.value);
+    }
+    if (moveTime.present) {
+      map['move_time'] = Variable<String>(moveTime.value);
+    }
+    if (patch.present) {
+      map['patch'] = Variable<String>(patch.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OccurrenceExceptionsCompanion(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('version: $version, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedBy: $deletedBy, ')
+          ..write('subjectType: $subjectType, ')
+          ..write('subjectId: $subjectId, ')
+          ..write('originalDate: $originalDate, ')
+          ..write('kind: $kind, ')
+          ..write('moveDate: $moveDate, ')
+          ..write('moveTime: $moveTime, ')
+          ..write('patch: $patch, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $OccurrenceCompletionsTable extends OccurrenceCompletions
+    with TableInfo<$OccurrenceCompletionsTable, OccurrenceCompletion> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $OccurrenceCompletionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _workspaceIdMeta =
+      const VerificationMeta('workspaceId');
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+      'workspace_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _ownerIdMeta =
+      const VerificationMeta('ownerId');
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+      'owner_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _versionMeta =
+      const VerificationMeta('version');
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+      'version', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _deletedByMeta =
+      const VerificationMeta('deletedBy');
+  @override
+  late final GeneratedColumn<String> deletedBy = GeneratedColumn<String>(
+      'deleted_by', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _taskIdMeta = const VerificationMeta('taskId');
+  @override
+  late final GeneratedColumn<String> taskId = GeneratedColumn<String>(
+      'task_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _originalDateMeta =
+      const VerificationMeta('originalDate');
+  @override
+  late final GeneratedColumn<String> originalDate = GeneratedColumn<String>(
+      'original_date', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _completedAtMeta =
+      const VerificationMeta('completedAt');
+  @override
+  late final GeneratedColumn<DateTime> completedAt = GeneratedColumn<DateTime>(
+      'completed_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        workspaceId,
+        ownerId,
+        version,
+        createdAt,
+        updatedAt,
+        deletedAt,
+        deletedBy,
+        taskId,
+        originalDate,
+        completedAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'occurrence_completions';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<OccurrenceCompletion> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+          _workspaceIdMeta,
+          workspaceId.isAcceptableOrUnknown(
+              data['workspace_id']!, _workspaceIdMeta));
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(_ownerIdMeta,
+          ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta));
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('version')) {
+      context.handle(_versionMeta,
+          version.isAcceptableOrUnknown(data['version']!, _versionMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
+    if (data.containsKey('deleted_by')) {
+      context.handle(_deletedByMeta,
+          deletedBy.isAcceptableOrUnknown(data['deleted_by']!, _deletedByMeta));
+    }
+    if (data.containsKey('task_id')) {
+      context.handle(_taskIdMeta,
+          taskId.isAcceptableOrUnknown(data['task_id']!, _taskIdMeta));
+    } else if (isInserting) {
+      context.missing(_taskIdMeta);
+    }
+    if (data.containsKey('original_date')) {
+      context.handle(
+          _originalDateMeta,
+          originalDate.isAcceptableOrUnknown(
+              data['original_date']!, _originalDateMeta));
+    } else if (isInserting) {
+      context.missing(_originalDateMeta);
+    }
+    if (data.containsKey('completed_at')) {
+      context.handle(
+          _completedAtMeta,
+          completedAt.isAcceptableOrUnknown(
+              data['completed_at']!, _completedAtMeta));
+    } else if (isInserting) {
+      context.missing(_completedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  OccurrenceCompletion map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return OccurrenceCompletion(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      workspaceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}workspace_id'])!,
+      ownerId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}owner_id'])!,
+      version: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}version'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
+      deletedBy: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}deleted_by']),
+      taskId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}task_id'])!,
+      originalDate: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}original_date'])!,
+      completedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}completed_at'])!,
+    );
+  }
+
+  @override
+  $OccurrenceCompletionsTable createAlias(String alias) {
+    return $OccurrenceCompletionsTable(attachedDatabase, alias);
+  }
+}
+
+class OccurrenceCompletion extends DataClass
+    implements Insertable<OccurrenceCompletion> {
+  final String id;
+  final String workspaceId;
+  final String ownerId;
+  final int version;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final String? deletedBy;
+  final String taskId;
+  final String originalDate;
+  final DateTime completedAt;
+  const OccurrenceCompletion(
+      {required this.id,
+      required this.workspaceId,
+      required this.ownerId,
+      required this.version,
+      required this.createdAt,
+      required this.updatedAt,
+      this.deletedAt,
+      this.deletedBy,
+      required this.taskId,
+      required this.originalDate,
+      required this.completedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['version'] = Variable<int>(version);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || deletedBy != null) {
+      map['deleted_by'] = Variable<String>(deletedBy);
+    }
+    map['task_id'] = Variable<String>(taskId);
+    map['original_date'] = Variable<String>(originalDate);
+    map['completed_at'] = Variable<DateTime>(completedAt);
+    return map;
+  }
+
+  OccurrenceCompletionsCompanion toCompanion(bool nullToAbsent) {
+    return OccurrenceCompletionsCompanion(
+      id: Value(id),
+      workspaceId: Value(workspaceId),
+      ownerId: Value(ownerId),
+      version: Value(version),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      deletedBy: deletedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedBy),
+      taskId: Value(taskId),
+      originalDate: Value(originalDate),
+      completedAt: Value(completedAt),
+    );
+  }
+
+  factory OccurrenceCompletion.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return OccurrenceCompletion(
+      id: serializer.fromJson<String>(json['id']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      version: serializer.fromJson<int>(json['version']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      deletedBy: serializer.fromJson<String?>(json['deletedBy']),
+      taskId: serializer.fromJson<String>(json['taskId']),
+      originalDate: serializer.fromJson<String>(json['originalDate']),
+      completedAt: serializer.fromJson<DateTime>(json['completedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'version': serializer.toJson<int>(version),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'deletedBy': serializer.toJson<String?>(deletedBy),
+      'taskId': serializer.toJson<String>(taskId),
+      'originalDate': serializer.toJson<String>(originalDate),
+      'completedAt': serializer.toJson<DateTime>(completedAt),
+    };
+  }
+
+  OccurrenceCompletion copyWith(
+          {String? id,
+          String? workspaceId,
+          String? ownerId,
+          int? version,
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          Value<DateTime?> deletedAt = const Value.absent(),
+          Value<String?> deletedBy = const Value.absent(),
+          String? taskId,
+          String? originalDate,
+          DateTime? completedAt}) =>
+      OccurrenceCompletion(
+        id: id ?? this.id,
+        workspaceId: workspaceId ?? this.workspaceId,
+        ownerId: ownerId ?? this.ownerId,
+        version: version ?? this.version,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+        deletedBy: deletedBy.present ? deletedBy.value : this.deletedBy,
+        taskId: taskId ?? this.taskId,
+        originalDate: originalDate ?? this.originalDate,
+        completedAt: completedAt ?? this.completedAt,
+      );
+  OccurrenceCompletion copyWithCompanion(OccurrenceCompletionsCompanion data) {
+    return OccurrenceCompletion(
+      id: data.id.present ? data.id.value : this.id,
+      workspaceId:
+          data.workspaceId.present ? data.workspaceId.value : this.workspaceId,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      version: data.version.present ? data.version.value : this.version,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      deletedBy: data.deletedBy.present ? data.deletedBy.value : this.deletedBy,
+      taskId: data.taskId.present ? data.taskId.value : this.taskId,
+      originalDate: data.originalDate.present
+          ? data.originalDate.value
+          : this.originalDate,
+      completedAt:
+          data.completedAt.present ? data.completedAt.value : this.completedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OccurrenceCompletion(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('version: $version, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedBy: $deletedBy, ')
+          ..write('taskId: $taskId, ')
+          ..write('originalDate: $originalDate, ')
+          ..write('completedAt: $completedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, workspaceId, ownerId, version, createdAt,
+      updatedAt, deletedAt, deletedBy, taskId, originalDate, completedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is OccurrenceCompletion &&
+          other.id == this.id &&
+          other.workspaceId == this.workspaceId &&
+          other.ownerId == this.ownerId &&
+          other.version == this.version &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.deletedBy == this.deletedBy &&
+          other.taskId == this.taskId &&
+          other.originalDate == this.originalDate &&
+          other.completedAt == this.completedAt);
+}
+
+class OccurrenceCompletionsCompanion
+    extends UpdateCompanion<OccurrenceCompletion> {
+  final Value<String> id;
+  final Value<String> workspaceId;
+  final Value<String> ownerId;
+  final Value<int> version;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> deletedBy;
+  final Value<String> taskId;
+  final Value<String> originalDate;
+  final Value<DateTime> completedAt;
+  final Value<int> rowid;
+  const OccurrenceCompletionsCompanion({
+    this.id = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.version = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.deletedBy = const Value.absent(),
+    this.taskId = const Value.absent(),
+    this.originalDate = const Value.absent(),
+    this.completedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  OccurrenceCompletionsCompanion.insert({
+    required String id,
+    required String workspaceId,
+    required String ownerId,
+    this.version = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.deletedBy = const Value.absent(),
+    required String taskId,
+    required String originalDate,
+    required DateTime completedAt,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        workspaceId = Value(workspaceId),
+        ownerId = Value(ownerId),
+        createdAt = Value(createdAt),
+        updatedAt = Value(updatedAt),
+        taskId = Value(taskId),
+        originalDate = Value(originalDate),
+        completedAt = Value(completedAt);
+  static Insertable<OccurrenceCompletion> custom({
+    Expression<String>? id,
+    Expression<String>? workspaceId,
+    Expression<String>? ownerId,
+    Expression<int>? version,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? deletedBy,
+    Expression<String>? taskId,
+    Expression<String>? originalDate,
+    Expression<DateTime>? completedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (version != null) 'version': version,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (deletedBy != null) 'deleted_by': deletedBy,
+      if (taskId != null) 'task_id': taskId,
+      if (originalDate != null) 'original_date': originalDate,
+      if (completedAt != null) 'completed_at': completedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  OccurrenceCompletionsCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? workspaceId,
+      Value<String>? ownerId,
+      Value<int>? version,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<DateTime?>? deletedAt,
+      Value<String?>? deletedBy,
+      Value<String>? taskId,
+      Value<String>? originalDate,
+      Value<DateTime>? completedAt,
+      Value<int>? rowid}) {
+    return OccurrenceCompletionsCompanion(
+      id: id ?? this.id,
+      workspaceId: workspaceId ?? this.workspaceId,
+      ownerId: ownerId ?? this.ownerId,
+      version: version ?? this.version,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      deletedBy: deletedBy ?? this.deletedBy,
+      taskId: taskId ?? this.taskId,
+      originalDate: originalDate ?? this.originalDate,
+      completedAt: completedAt ?? this.completedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (deletedBy.present) {
+      map['deleted_by'] = Variable<String>(deletedBy.value);
+    }
+    if (taskId.present) {
+      map['task_id'] = Variable<String>(taskId.value);
+    }
+    if (originalDate.present) {
+      map['original_date'] = Variable<String>(originalDate.value);
+    }
+    if (completedAt.present) {
+      map['completed_at'] = Variable<DateTime>(completedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OccurrenceCompletionsCompanion(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('version: $version, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedBy: $deletedBy, ')
+          ..write('taskId: $taskId, ')
+          ..write('originalDate: $originalDate, ')
+          ..write('completedAt: $completedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $RemindersTable extends Reminders
+    with TableInfo<$RemindersTable, Reminder> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RemindersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _workspaceIdMeta =
+      const VerificationMeta('workspaceId');
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+      'workspace_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _ownerIdMeta =
+      const VerificationMeta('ownerId');
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+      'owner_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _versionMeta =
+      const VerificationMeta('version');
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+      'version', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _deletedByMeta =
+      const VerificationMeta('deletedBy');
+  @override
+  late final GeneratedColumn<String> deletedBy = GeneratedColumn<String>(
+      'deleted_by', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _subjectTypeMeta =
+      const VerificationMeta('subjectType');
+  @override
+  late final GeneratedColumn<String> subjectType = GeneratedColumn<String>(
+      'subject_type', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _subjectIdMeta =
+      const VerificationMeta('subjectId');
+  @override
+  late final GeneratedColumn<String> subjectId = GeneratedColumn<String>(
+      'subject_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _offsetMinutesMeta =
+      const VerificationMeta('offsetMinutes');
+  @override
+  late final GeneratedColumn<int> offsetMinutes = GeneratedColumn<int>(
+      'offset_minutes', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _atUtcMeta = const VerificationMeta('atUtc');
+  @override
+  late final GeneratedColumn<DateTime> atUtc = GeneratedColumn<DateTime>(
+      'at_utc', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        workspaceId,
+        ownerId,
+        version,
+        createdAt,
+        updatedAt,
+        deletedAt,
+        deletedBy,
+        subjectType,
+        subjectId,
+        offsetMinutes,
+        atUtc
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'reminders';
+  @override
+  VerificationContext validateIntegrity(Insertable<Reminder> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+          _workspaceIdMeta,
+          workspaceId.isAcceptableOrUnknown(
+              data['workspace_id']!, _workspaceIdMeta));
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(_ownerIdMeta,
+          ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta));
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('version')) {
+      context.handle(_versionMeta,
+          version.isAcceptableOrUnknown(data['version']!, _versionMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
+    if (data.containsKey('deleted_by')) {
+      context.handle(_deletedByMeta,
+          deletedBy.isAcceptableOrUnknown(data['deleted_by']!, _deletedByMeta));
+    }
+    if (data.containsKey('subject_type')) {
+      context.handle(
+          _subjectTypeMeta,
+          subjectType.isAcceptableOrUnknown(
+              data['subject_type']!, _subjectTypeMeta));
+    } else if (isInserting) {
+      context.missing(_subjectTypeMeta);
+    }
+    if (data.containsKey('subject_id')) {
+      context.handle(_subjectIdMeta,
+          subjectId.isAcceptableOrUnknown(data['subject_id']!, _subjectIdMeta));
+    } else if (isInserting) {
+      context.missing(_subjectIdMeta);
+    }
+    if (data.containsKey('offset_minutes')) {
+      context.handle(
+          _offsetMinutesMeta,
+          offsetMinutes.isAcceptableOrUnknown(
+              data['offset_minutes']!, _offsetMinutesMeta));
+    }
+    if (data.containsKey('at_utc')) {
+      context.handle(
+          _atUtcMeta, atUtc.isAcceptableOrUnknown(data['at_utc']!, _atUtcMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Reminder map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Reminder(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      workspaceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}workspace_id'])!,
+      ownerId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}owner_id'])!,
+      version: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}version'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
+      deletedBy: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}deleted_by']),
+      subjectType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}subject_type'])!,
+      subjectId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}subject_id'])!,
+      offsetMinutes: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}offset_minutes']),
+      atUtc: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}at_utc']),
+    );
+  }
+
+  @override
+  $RemindersTable createAlias(String alias) {
+    return $RemindersTable(attachedDatabase, alias);
+  }
+}
+
+class Reminder extends DataClass implements Insertable<Reminder> {
+  final String id;
+  final String workspaceId;
+  final String ownerId;
+  final int version;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final String? deletedBy;
+  final String subjectType;
+  final String subjectId;
+  final int? offsetMinutes;
+  final DateTime? atUtc;
+  const Reminder(
+      {required this.id,
+      required this.workspaceId,
+      required this.ownerId,
+      required this.version,
+      required this.createdAt,
+      required this.updatedAt,
+      this.deletedAt,
+      this.deletedBy,
+      required this.subjectType,
+      required this.subjectId,
+      this.offsetMinutes,
+      this.atUtc});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['version'] = Variable<int>(version);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || deletedBy != null) {
+      map['deleted_by'] = Variable<String>(deletedBy);
+    }
+    map['subject_type'] = Variable<String>(subjectType);
+    map['subject_id'] = Variable<String>(subjectId);
+    if (!nullToAbsent || offsetMinutes != null) {
+      map['offset_minutes'] = Variable<int>(offsetMinutes);
+    }
+    if (!nullToAbsent || atUtc != null) {
+      map['at_utc'] = Variable<DateTime>(atUtc);
+    }
+    return map;
+  }
+
+  RemindersCompanion toCompanion(bool nullToAbsent) {
+    return RemindersCompanion(
+      id: Value(id),
+      workspaceId: Value(workspaceId),
+      ownerId: Value(ownerId),
+      version: Value(version),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      deletedBy: deletedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedBy),
+      subjectType: Value(subjectType),
+      subjectId: Value(subjectId),
+      offsetMinutes: offsetMinutes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(offsetMinutes),
+      atUtc:
+          atUtc == null && nullToAbsent ? const Value.absent() : Value(atUtc),
+    );
+  }
+
+  factory Reminder.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Reminder(
+      id: serializer.fromJson<String>(json['id']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      version: serializer.fromJson<int>(json['version']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      deletedBy: serializer.fromJson<String?>(json['deletedBy']),
+      subjectType: serializer.fromJson<String>(json['subjectType']),
+      subjectId: serializer.fromJson<String>(json['subjectId']),
+      offsetMinutes: serializer.fromJson<int?>(json['offsetMinutes']),
+      atUtc: serializer.fromJson<DateTime?>(json['atUtc']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'version': serializer.toJson<int>(version),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'deletedBy': serializer.toJson<String?>(deletedBy),
+      'subjectType': serializer.toJson<String>(subjectType),
+      'subjectId': serializer.toJson<String>(subjectId),
+      'offsetMinutes': serializer.toJson<int?>(offsetMinutes),
+      'atUtc': serializer.toJson<DateTime?>(atUtc),
+    };
+  }
+
+  Reminder copyWith(
+          {String? id,
+          String? workspaceId,
+          String? ownerId,
+          int? version,
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          Value<DateTime?> deletedAt = const Value.absent(),
+          Value<String?> deletedBy = const Value.absent(),
+          String? subjectType,
+          String? subjectId,
+          Value<int?> offsetMinutes = const Value.absent(),
+          Value<DateTime?> atUtc = const Value.absent()}) =>
+      Reminder(
+        id: id ?? this.id,
+        workspaceId: workspaceId ?? this.workspaceId,
+        ownerId: ownerId ?? this.ownerId,
+        version: version ?? this.version,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+        deletedBy: deletedBy.present ? deletedBy.value : this.deletedBy,
+        subjectType: subjectType ?? this.subjectType,
+        subjectId: subjectId ?? this.subjectId,
+        offsetMinutes:
+            offsetMinutes.present ? offsetMinutes.value : this.offsetMinutes,
+        atUtc: atUtc.present ? atUtc.value : this.atUtc,
+      );
+  Reminder copyWithCompanion(RemindersCompanion data) {
+    return Reminder(
+      id: data.id.present ? data.id.value : this.id,
+      workspaceId:
+          data.workspaceId.present ? data.workspaceId.value : this.workspaceId,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      version: data.version.present ? data.version.value : this.version,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      deletedBy: data.deletedBy.present ? data.deletedBy.value : this.deletedBy,
+      subjectType:
+          data.subjectType.present ? data.subjectType.value : this.subjectType,
+      subjectId: data.subjectId.present ? data.subjectId.value : this.subjectId,
+      offsetMinutes: data.offsetMinutes.present
+          ? data.offsetMinutes.value
+          : this.offsetMinutes,
+      atUtc: data.atUtc.present ? data.atUtc.value : this.atUtc,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Reminder(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('version: $version, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedBy: $deletedBy, ')
+          ..write('subjectType: $subjectType, ')
+          ..write('subjectId: $subjectId, ')
+          ..write('offsetMinutes: $offsetMinutes, ')
+          ..write('atUtc: $atUtc')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id,
+      workspaceId,
+      ownerId,
+      version,
+      createdAt,
+      updatedAt,
+      deletedAt,
+      deletedBy,
+      subjectType,
+      subjectId,
+      offsetMinutes,
+      atUtc);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Reminder &&
+          other.id == this.id &&
+          other.workspaceId == this.workspaceId &&
+          other.ownerId == this.ownerId &&
+          other.version == this.version &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.deletedBy == this.deletedBy &&
+          other.subjectType == this.subjectType &&
+          other.subjectId == this.subjectId &&
+          other.offsetMinutes == this.offsetMinutes &&
+          other.atUtc == this.atUtc);
+}
+
+class RemindersCompanion extends UpdateCompanion<Reminder> {
+  final Value<String> id;
+  final Value<String> workspaceId;
+  final Value<String> ownerId;
+  final Value<int> version;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> deletedBy;
+  final Value<String> subjectType;
+  final Value<String> subjectId;
+  final Value<int?> offsetMinutes;
+  final Value<DateTime?> atUtc;
+  final Value<int> rowid;
+  const RemindersCompanion({
+    this.id = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.version = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.deletedBy = const Value.absent(),
+    this.subjectType = const Value.absent(),
+    this.subjectId = const Value.absent(),
+    this.offsetMinutes = const Value.absent(),
+    this.atUtc = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RemindersCompanion.insert({
+    required String id,
+    required String workspaceId,
+    required String ownerId,
+    this.version = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.deletedBy = const Value.absent(),
+    required String subjectType,
+    required String subjectId,
+    this.offsetMinutes = const Value.absent(),
+    this.atUtc = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        workspaceId = Value(workspaceId),
+        ownerId = Value(ownerId),
+        createdAt = Value(createdAt),
+        updatedAt = Value(updatedAt),
+        subjectType = Value(subjectType),
+        subjectId = Value(subjectId);
+  static Insertable<Reminder> custom({
+    Expression<String>? id,
+    Expression<String>? workspaceId,
+    Expression<String>? ownerId,
+    Expression<int>? version,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? deletedBy,
+    Expression<String>? subjectType,
+    Expression<String>? subjectId,
+    Expression<int>? offsetMinutes,
+    Expression<DateTime>? atUtc,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (version != null) 'version': version,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (deletedBy != null) 'deleted_by': deletedBy,
+      if (subjectType != null) 'subject_type': subjectType,
+      if (subjectId != null) 'subject_id': subjectId,
+      if (offsetMinutes != null) 'offset_minutes': offsetMinutes,
+      if (atUtc != null) 'at_utc': atUtc,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RemindersCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? workspaceId,
+      Value<String>? ownerId,
+      Value<int>? version,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<DateTime?>? deletedAt,
+      Value<String?>? deletedBy,
+      Value<String>? subjectType,
+      Value<String>? subjectId,
+      Value<int?>? offsetMinutes,
+      Value<DateTime?>? atUtc,
+      Value<int>? rowid}) {
+    return RemindersCompanion(
+      id: id ?? this.id,
+      workspaceId: workspaceId ?? this.workspaceId,
+      ownerId: ownerId ?? this.ownerId,
+      version: version ?? this.version,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      deletedBy: deletedBy ?? this.deletedBy,
+      subjectType: subjectType ?? this.subjectType,
+      subjectId: subjectId ?? this.subjectId,
+      offsetMinutes: offsetMinutes ?? this.offsetMinutes,
+      atUtc: atUtc ?? this.atUtc,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (deletedBy.present) {
+      map['deleted_by'] = Variable<String>(deletedBy.value);
+    }
+    if (subjectType.present) {
+      map['subject_type'] = Variable<String>(subjectType.value);
+    }
+    if (subjectId.present) {
+      map['subject_id'] = Variable<String>(subjectId.value);
+    }
+    if (offsetMinutes.present) {
+      map['offset_minutes'] = Variable<int>(offsetMinutes.value);
+    }
+    if (atUtc.present) {
+      map['at_utc'] = Variable<DateTime>(atUtc.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RemindersCompanion(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('version: $version, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedBy: $deletedBy, ')
+          ..write('subjectType: $subjectType, ')
+          ..write('subjectId: $subjectId, ')
+          ..write('offsetMinutes: $offsetMinutes, ')
+          ..write('atUtc: $atUtc, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4219,6 +8491,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $OpDedupeTable opDedupe = $OpDedupeTable(this);
   late final $RestoreSnapshotsTable restoreSnapshots =
       $RestoreSnapshotsTable(this);
+  late final $CalendarsTable calendars = $CalendarsTable(this);
+  late final $EventsTable events = $EventsTable(this);
+  late final $SchedulesTable schedules = $SchedulesTable(this);
+  late final $OccurrenceExceptionsTable occurrenceExceptions =
+      $OccurrenceExceptionsTable(this);
+  late final $OccurrenceCompletionsTable occurrenceCompletions =
+      $OccurrenceCompletionsTable(this);
+  late final $RemindersTable reminders = $RemindersTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4232,7 +8512,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         outbox,
         eventLog,
         opDedupe,
-        restoreSnapshots
+        restoreSnapshots,
+        calendars,
+        events,
+        schedules,
+        occurrenceExceptions,
+        occurrenceCompletions,
+        reminders
       ];
 }
 
@@ -6272,6 +10558,1943 @@ typedef $$RestoreSnapshotsTableProcessedTableManager = ProcessedTableManager<
     ),
     RestoreSnapshot,
     PrefetchHooks Function()>;
+typedef $$CalendarsTableCreateCompanionBuilder = CalendarsCompanion Function({
+  required String id,
+  required String workspaceId,
+  required String ownerId,
+  Value<int> version,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String?> deletedBy,
+  required String name,
+  Value<int> color,
+  Value<int> rowid,
+});
+typedef $$CalendarsTableUpdateCompanionBuilder = CalendarsCompanion Function({
+  Value<String> id,
+  Value<String> workspaceId,
+  Value<String> ownerId,
+  Value<int> version,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String?> deletedBy,
+  Value<String> name,
+  Value<int> color,
+  Value<int> rowid,
+});
+
+class $$CalendarsTableFilterComposer
+    extends Composer<_$AppDatabase, $CalendarsTable> {
+  $$CalendarsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerId => $composableBuilder(
+      column: $table.ownerId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deletedBy => $composableBuilder(
+      column: $table.deletedBy, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get color => $composableBuilder(
+      column: $table.color, builder: (column) => ColumnFilters(column));
+}
+
+class $$CalendarsTableOrderingComposer
+    extends Composer<_$AppDatabase, $CalendarsTable> {
+  $$CalendarsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get ownerId => $composableBuilder(
+      column: $table.ownerId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deletedBy => $composableBuilder(
+      column: $table.deletedBy, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get color => $composableBuilder(
+      column: $table.color, builder: (column) => ColumnOrderings(column));
+}
+
+class $$CalendarsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CalendarsTable> {
+  $$CalendarsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerId =>
+      $composableBuilder(column: $table.ownerId, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get deletedBy =>
+      $composableBuilder(column: $table.deletedBy, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<int> get color =>
+      $composableBuilder(column: $table.color, builder: (column) => column);
+}
+
+class $$CalendarsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $CalendarsTable,
+    Calendar,
+    $$CalendarsTableFilterComposer,
+    $$CalendarsTableOrderingComposer,
+    $$CalendarsTableAnnotationComposer,
+    $$CalendarsTableCreateCompanionBuilder,
+    $$CalendarsTableUpdateCompanionBuilder,
+    (Calendar, BaseReferences<_$AppDatabase, $CalendarsTable, Calendar>),
+    Calendar,
+    PrefetchHooks Function()> {
+  $$CalendarsTableTableManager(_$AppDatabase db, $CalendarsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CalendarsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CalendarsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CalendarsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> workspaceId = const Value.absent(),
+            Value<String> ownerId = const Value.absent(),
+            Value<int> version = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String?> deletedBy = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<int> color = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              CalendarsCompanion(
+            id: id,
+            workspaceId: workspaceId,
+            ownerId: ownerId,
+            version: version,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            deletedBy: deletedBy,
+            name: name,
+            color: color,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String workspaceId,
+            required String ownerId,
+            Value<int> version = const Value.absent(),
+            required DateTime createdAt,
+            required DateTime updatedAt,
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String?> deletedBy = const Value.absent(),
+            required String name,
+            Value<int> color = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              CalendarsCompanion.insert(
+            id: id,
+            workspaceId: workspaceId,
+            ownerId: ownerId,
+            version: version,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            deletedBy: deletedBy,
+            name: name,
+            color: color,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable<$CalendarsTable, Calendar>(table),
+                    BaseReferences<_$AppDatabase, $CalendarsTable, Calendar>(
+                        db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$CalendarsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $CalendarsTable,
+    Calendar,
+    $$CalendarsTableFilterComposer,
+    $$CalendarsTableOrderingComposer,
+    $$CalendarsTableAnnotationComposer,
+    $$CalendarsTableCreateCompanionBuilder,
+    $$CalendarsTableUpdateCompanionBuilder,
+    (Calendar, BaseReferences<_$AppDatabase, $CalendarsTable, Calendar>),
+    Calendar,
+    PrefetchHooks Function()>;
+typedef $$EventsTableCreateCompanionBuilder = EventsCompanion Function({
+  required String id,
+  required String workspaceId,
+  required String ownerId,
+  Value<int> version,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String?> deletedBy,
+  required String title,
+  Value<String?> location,
+  Value<String?> calendarId,
+  Value<String> status,
+  Value<int> rowid,
+});
+typedef $$EventsTableUpdateCompanionBuilder = EventsCompanion Function({
+  Value<String> id,
+  Value<String> workspaceId,
+  Value<String> ownerId,
+  Value<int> version,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String?> deletedBy,
+  Value<String> title,
+  Value<String?> location,
+  Value<String?> calendarId,
+  Value<String> status,
+  Value<int> rowid,
+});
+
+class $$EventsTableFilterComposer
+    extends Composer<_$AppDatabase, $EventsTable> {
+  $$EventsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerId => $composableBuilder(
+      column: $table.ownerId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deletedBy => $composableBuilder(
+      column: $table.deletedBy, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get location => $composableBuilder(
+      column: $table.location, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get calendarId => $composableBuilder(
+      column: $table.calendarId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnFilters(column));
+}
+
+class $$EventsTableOrderingComposer
+    extends Composer<_$AppDatabase, $EventsTable> {
+  $$EventsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get ownerId => $composableBuilder(
+      column: $table.ownerId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deletedBy => $composableBuilder(
+      column: $table.deletedBy, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get location => $composableBuilder(
+      column: $table.location, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get calendarId => $composableBuilder(
+      column: $table.calendarId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnOrderings(column));
+}
+
+class $$EventsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $EventsTable> {
+  $$EventsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerId =>
+      $composableBuilder(column: $table.ownerId, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get deletedBy =>
+      $composableBuilder(column: $table.deletedBy, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get location =>
+      $composableBuilder(column: $table.location, builder: (column) => column);
+
+  GeneratedColumn<String> get calendarId => $composableBuilder(
+      column: $table.calendarId, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+}
+
+class $$EventsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $EventsTable,
+    Event,
+    $$EventsTableFilterComposer,
+    $$EventsTableOrderingComposer,
+    $$EventsTableAnnotationComposer,
+    $$EventsTableCreateCompanionBuilder,
+    $$EventsTableUpdateCompanionBuilder,
+    (Event, BaseReferences<_$AppDatabase, $EventsTable, Event>),
+    Event,
+    PrefetchHooks Function()> {
+  $$EventsTableTableManager(_$AppDatabase db, $EventsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$EventsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$EventsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$EventsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> workspaceId = const Value.absent(),
+            Value<String> ownerId = const Value.absent(),
+            Value<int> version = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String?> deletedBy = const Value.absent(),
+            Value<String> title = const Value.absent(),
+            Value<String?> location = const Value.absent(),
+            Value<String?> calendarId = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              EventsCompanion(
+            id: id,
+            workspaceId: workspaceId,
+            ownerId: ownerId,
+            version: version,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            deletedBy: deletedBy,
+            title: title,
+            location: location,
+            calendarId: calendarId,
+            status: status,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String workspaceId,
+            required String ownerId,
+            Value<int> version = const Value.absent(),
+            required DateTime createdAt,
+            required DateTime updatedAt,
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String?> deletedBy = const Value.absent(),
+            required String title,
+            Value<String?> location = const Value.absent(),
+            Value<String?> calendarId = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              EventsCompanion.insert(
+            id: id,
+            workspaceId: workspaceId,
+            ownerId: ownerId,
+            version: version,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            deletedBy: deletedBy,
+            title: title,
+            location: location,
+            calendarId: calendarId,
+            status: status,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable<$EventsTable, Event>(table),
+                    BaseReferences<_$AppDatabase, $EventsTable, Event>(
+                        db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$EventsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $EventsTable,
+    Event,
+    $$EventsTableFilterComposer,
+    $$EventsTableOrderingComposer,
+    $$EventsTableAnnotationComposer,
+    $$EventsTableCreateCompanionBuilder,
+    $$EventsTableUpdateCompanionBuilder,
+    (Event, BaseReferences<_$AppDatabase, $EventsTable, Event>),
+    Event,
+    PrefetchHooks Function()>;
+typedef $$SchedulesTableCreateCompanionBuilder = SchedulesCompanion Function({
+  required String id,
+  required String workspaceId,
+  required String ownerId,
+  Value<int> version,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String?> deletedBy,
+  required String subjectType,
+  required String subjectId,
+  Value<String?> startDate,
+  Value<String?> startTime,
+  Value<String?> startZone,
+  Value<String?> endDate,
+  Value<String?> endTime,
+  Value<String?> endZone,
+  Value<String?> deadlineDate,
+  Value<String?> deadlineTime,
+  Value<String?> deadlineZone,
+  required String firstDate,
+  Value<String?> lastDate,
+  Value<String?> frequency,
+  Value<int> interval,
+  Value<String?> weekdays,
+  Value<String?> endKind,
+  Value<String?> endDateRule,
+  Value<int?> endCount,
+  Value<String> monthEndRule,
+  Value<int> weekStart,
+  Value<int> rowid,
+});
+typedef $$SchedulesTableUpdateCompanionBuilder = SchedulesCompanion Function({
+  Value<String> id,
+  Value<String> workspaceId,
+  Value<String> ownerId,
+  Value<int> version,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String?> deletedBy,
+  Value<String> subjectType,
+  Value<String> subjectId,
+  Value<String?> startDate,
+  Value<String?> startTime,
+  Value<String?> startZone,
+  Value<String?> endDate,
+  Value<String?> endTime,
+  Value<String?> endZone,
+  Value<String?> deadlineDate,
+  Value<String?> deadlineTime,
+  Value<String?> deadlineZone,
+  Value<String> firstDate,
+  Value<String?> lastDate,
+  Value<String?> frequency,
+  Value<int> interval,
+  Value<String?> weekdays,
+  Value<String?> endKind,
+  Value<String?> endDateRule,
+  Value<int?> endCount,
+  Value<String> monthEndRule,
+  Value<int> weekStart,
+  Value<int> rowid,
+});
+
+class $$SchedulesTableFilterComposer
+    extends Composer<_$AppDatabase, $SchedulesTable> {
+  $$SchedulesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerId => $composableBuilder(
+      column: $table.ownerId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deletedBy => $composableBuilder(
+      column: $table.deletedBy, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get subjectType => $composableBuilder(
+      column: $table.subjectType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get subjectId => $composableBuilder(
+      column: $table.subjectId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get startDate => $composableBuilder(
+      column: $table.startDate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get startTime => $composableBuilder(
+      column: $table.startTime, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get startZone => $composableBuilder(
+      column: $table.startZone, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get endDate => $composableBuilder(
+      column: $table.endDate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get endTime => $composableBuilder(
+      column: $table.endTime, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get endZone => $composableBuilder(
+      column: $table.endZone, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deadlineDate => $composableBuilder(
+      column: $table.deadlineDate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deadlineTime => $composableBuilder(
+      column: $table.deadlineTime, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deadlineZone => $composableBuilder(
+      column: $table.deadlineZone, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get firstDate => $composableBuilder(
+      column: $table.firstDate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get lastDate => $composableBuilder(
+      column: $table.lastDate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get frequency => $composableBuilder(
+      column: $table.frequency, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get interval => $composableBuilder(
+      column: $table.interval, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get weekdays => $composableBuilder(
+      column: $table.weekdays, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get endKind => $composableBuilder(
+      column: $table.endKind, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get endDateRule => $composableBuilder(
+      column: $table.endDateRule, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get endCount => $composableBuilder(
+      column: $table.endCount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get monthEndRule => $composableBuilder(
+      column: $table.monthEndRule, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get weekStart => $composableBuilder(
+      column: $table.weekStart, builder: (column) => ColumnFilters(column));
+}
+
+class $$SchedulesTableOrderingComposer
+    extends Composer<_$AppDatabase, $SchedulesTable> {
+  $$SchedulesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get ownerId => $composableBuilder(
+      column: $table.ownerId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deletedBy => $composableBuilder(
+      column: $table.deletedBy, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get subjectType => $composableBuilder(
+      column: $table.subjectType, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get subjectId => $composableBuilder(
+      column: $table.subjectId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get startDate => $composableBuilder(
+      column: $table.startDate, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get startTime => $composableBuilder(
+      column: $table.startTime, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get startZone => $composableBuilder(
+      column: $table.startZone, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get endDate => $composableBuilder(
+      column: $table.endDate, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get endTime => $composableBuilder(
+      column: $table.endTime, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get endZone => $composableBuilder(
+      column: $table.endZone, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deadlineDate => $composableBuilder(
+      column: $table.deadlineDate,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deadlineTime => $composableBuilder(
+      column: $table.deadlineTime,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deadlineZone => $composableBuilder(
+      column: $table.deadlineZone,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get firstDate => $composableBuilder(
+      column: $table.firstDate, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get lastDate => $composableBuilder(
+      column: $table.lastDate, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get frequency => $composableBuilder(
+      column: $table.frequency, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get interval => $composableBuilder(
+      column: $table.interval, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get weekdays => $composableBuilder(
+      column: $table.weekdays, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get endKind => $composableBuilder(
+      column: $table.endKind, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get endDateRule => $composableBuilder(
+      column: $table.endDateRule, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get endCount => $composableBuilder(
+      column: $table.endCount, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get monthEndRule => $composableBuilder(
+      column: $table.monthEndRule,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get weekStart => $composableBuilder(
+      column: $table.weekStart, builder: (column) => ColumnOrderings(column));
+}
+
+class $$SchedulesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SchedulesTable> {
+  $$SchedulesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerId =>
+      $composableBuilder(column: $table.ownerId, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get deletedBy =>
+      $composableBuilder(column: $table.deletedBy, builder: (column) => column);
+
+  GeneratedColumn<String> get subjectType => $composableBuilder(
+      column: $table.subjectType, builder: (column) => column);
+
+  GeneratedColumn<String> get subjectId =>
+      $composableBuilder(column: $table.subjectId, builder: (column) => column);
+
+  GeneratedColumn<String> get startDate =>
+      $composableBuilder(column: $table.startDate, builder: (column) => column);
+
+  GeneratedColumn<String> get startTime =>
+      $composableBuilder(column: $table.startTime, builder: (column) => column);
+
+  GeneratedColumn<String> get startZone =>
+      $composableBuilder(column: $table.startZone, builder: (column) => column);
+
+  GeneratedColumn<String> get endDate =>
+      $composableBuilder(column: $table.endDate, builder: (column) => column);
+
+  GeneratedColumn<String> get endTime =>
+      $composableBuilder(column: $table.endTime, builder: (column) => column);
+
+  GeneratedColumn<String> get endZone =>
+      $composableBuilder(column: $table.endZone, builder: (column) => column);
+
+  GeneratedColumn<String> get deadlineDate => $composableBuilder(
+      column: $table.deadlineDate, builder: (column) => column);
+
+  GeneratedColumn<String> get deadlineTime => $composableBuilder(
+      column: $table.deadlineTime, builder: (column) => column);
+
+  GeneratedColumn<String> get deadlineZone => $composableBuilder(
+      column: $table.deadlineZone, builder: (column) => column);
+
+  GeneratedColumn<String> get firstDate =>
+      $composableBuilder(column: $table.firstDate, builder: (column) => column);
+
+  GeneratedColumn<String> get lastDate =>
+      $composableBuilder(column: $table.lastDate, builder: (column) => column);
+
+  GeneratedColumn<String> get frequency =>
+      $composableBuilder(column: $table.frequency, builder: (column) => column);
+
+  GeneratedColumn<int> get interval =>
+      $composableBuilder(column: $table.interval, builder: (column) => column);
+
+  GeneratedColumn<String> get weekdays =>
+      $composableBuilder(column: $table.weekdays, builder: (column) => column);
+
+  GeneratedColumn<String> get endKind =>
+      $composableBuilder(column: $table.endKind, builder: (column) => column);
+
+  GeneratedColumn<String> get endDateRule => $composableBuilder(
+      column: $table.endDateRule, builder: (column) => column);
+
+  GeneratedColumn<int> get endCount =>
+      $composableBuilder(column: $table.endCount, builder: (column) => column);
+
+  GeneratedColumn<String> get monthEndRule => $composableBuilder(
+      column: $table.monthEndRule, builder: (column) => column);
+
+  GeneratedColumn<int> get weekStart =>
+      $composableBuilder(column: $table.weekStart, builder: (column) => column);
+}
+
+class $$SchedulesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $SchedulesTable,
+    Schedule,
+    $$SchedulesTableFilterComposer,
+    $$SchedulesTableOrderingComposer,
+    $$SchedulesTableAnnotationComposer,
+    $$SchedulesTableCreateCompanionBuilder,
+    $$SchedulesTableUpdateCompanionBuilder,
+    (Schedule, BaseReferences<_$AppDatabase, $SchedulesTable, Schedule>),
+    Schedule,
+    PrefetchHooks Function()> {
+  $$SchedulesTableTableManager(_$AppDatabase db, $SchedulesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SchedulesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SchedulesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SchedulesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> workspaceId = const Value.absent(),
+            Value<String> ownerId = const Value.absent(),
+            Value<int> version = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String?> deletedBy = const Value.absent(),
+            Value<String> subjectType = const Value.absent(),
+            Value<String> subjectId = const Value.absent(),
+            Value<String?> startDate = const Value.absent(),
+            Value<String?> startTime = const Value.absent(),
+            Value<String?> startZone = const Value.absent(),
+            Value<String?> endDate = const Value.absent(),
+            Value<String?> endTime = const Value.absent(),
+            Value<String?> endZone = const Value.absent(),
+            Value<String?> deadlineDate = const Value.absent(),
+            Value<String?> deadlineTime = const Value.absent(),
+            Value<String?> deadlineZone = const Value.absent(),
+            Value<String> firstDate = const Value.absent(),
+            Value<String?> lastDate = const Value.absent(),
+            Value<String?> frequency = const Value.absent(),
+            Value<int> interval = const Value.absent(),
+            Value<String?> weekdays = const Value.absent(),
+            Value<String?> endKind = const Value.absent(),
+            Value<String?> endDateRule = const Value.absent(),
+            Value<int?> endCount = const Value.absent(),
+            Value<String> monthEndRule = const Value.absent(),
+            Value<int> weekStart = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SchedulesCompanion(
+            id: id,
+            workspaceId: workspaceId,
+            ownerId: ownerId,
+            version: version,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            deletedBy: deletedBy,
+            subjectType: subjectType,
+            subjectId: subjectId,
+            startDate: startDate,
+            startTime: startTime,
+            startZone: startZone,
+            endDate: endDate,
+            endTime: endTime,
+            endZone: endZone,
+            deadlineDate: deadlineDate,
+            deadlineTime: deadlineTime,
+            deadlineZone: deadlineZone,
+            firstDate: firstDate,
+            lastDate: lastDate,
+            frequency: frequency,
+            interval: interval,
+            weekdays: weekdays,
+            endKind: endKind,
+            endDateRule: endDateRule,
+            endCount: endCount,
+            monthEndRule: monthEndRule,
+            weekStart: weekStart,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String workspaceId,
+            required String ownerId,
+            Value<int> version = const Value.absent(),
+            required DateTime createdAt,
+            required DateTime updatedAt,
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String?> deletedBy = const Value.absent(),
+            required String subjectType,
+            required String subjectId,
+            Value<String?> startDate = const Value.absent(),
+            Value<String?> startTime = const Value.absent(),
+            Value<String?> startZone = const Value.absent(),
+            Value<String?> endDate = const Value.absent(),
+            Value<String?> endTime = const Value.absent(),
+            Value<String?> endZone = const Value.absent(),
+            Value<String?> deadlineDate = const Value.absent(),
+            Value<String?> deadlineTime = const Value.absent(),
+            Value<String?> deadlineZone = const Value.absent(),
+            required String firstDate,
+            Value<String?> lastDate = const Value.absent(),
+            Value<String?> frequency = const Value.absent(),
+            Value<int> interval = const Value.absent(),
+            Value<String?> weekdays = const Value.absent(),
+            Value<String?> endKind = const Value.absent(),
+            Value<String?> endDateRule = const Value.absent(),
+            Value<int?> endCount = const Value.absent(),
+            Value<String> monthEndRule = const Value.absent(),
+            Value<int> weekStart = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SchedulesCompanion.insert(
+            id: id,
+            workspaceId: workspaceId,
+            ownerId: ownerId,
+            version: version,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            deletedBy: deletedBy,
+            subjectType: subjectType,
+            subjectId: subjectId,
+            startDate: startDate,
+            startTime: startTime,
+            startZone: startZone,
+            endDate: endDate,
+            endTime: endTime,
+            endZone: endZone,
+            deadlineDate: deadlineDate,
+            deadlineTime: deadlineTime,
+            deadlineZone: deadlineZone,
+            firstDate: firstDate,
+            lastDate: lastDate,
+            frequency: frequency,
+            interval: interval,
+            weekdays: weekdays,
+            endKind: endKind,
+            endDateRule: endDateRule,
+            endCount: endCount,
+            monthEndRule: monthEndRule,
+            weekStart: weekStart,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable<$SchedulesTable, Schedule>(table),
+                    BaseReferences<_$AppDatabase, $SchedulesTable, Schedule>(
+                        db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$SchedulesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $SchedulesTable,
+    Schedule,
+    $$SchedulesTableFilterComposer,
+    $$SchedulesTableOrderingComposer,
+    $$SchedulesTableAnnotationComposer,
+    $$SchedulesTableCreateCompanionBuilder,
+    $$SchedulesTableUpdateCompanionBuilder,
+    (Schedule, BaseReferences<_$AppDatabase, $SchedulesTable, Schedule>),
+    Schedule,
+    PrefetchHooks Function()>;
+typedef $$OccurrenceExceptionsTableCreateCompanionBuilder
+    = OccurrenceExceptionsCompanion Function({
+  required String id,
+  required String workspaceId,
+  required String ownerId,
+  Value<int> version,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String?> deletedBy,
+  required String subjectType,
+  required String subjectId,
+  required String originalDate,
+  required String kind,
+  Value<String?> moveDate,
+  Value<String?> moveTime,
+  Value<String?> patch,
+  Value<int> rowid,
+});
+typedef $$OccurrenceExceptionsTableUpdateCompanionBuilder
+    = OccurrenceExceptionsCompanion Function({
+  Value<String> id,
+  Value<String> workspaceId,
+  Value<String> ownerId,
+  Value<int> version,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String?> deletedBy,
+  Value<String> subjectType,
+  Value<String> subjectId,
+  Value<String> originalDate,
+  Value<String> kind,
+  Value<String?> moveDate,
+  Value<String?> moveTime,
+  Value<String?> patch,
+  Value<int> rowid,
+});
+
+class $$OccurrenceExceptionsTableFilterComposer
+    extends Composer<_$AppDatabase, $OccurrenceExceptionsTable> {
+  $$OccurrenceExceptionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerId => $composableBuilder(
+      column: $table.ownerId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deletedBy => $composableBuilder(
+      column: $table.deletedBy, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get subjectType => $composableBuilder(
+      column: $table.subjectType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get subjectId => $composableBuilder(
+      column: $table.subjectId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get originalDate => $composableBuilder(
+      column: $table.originalDate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get kind => $composableBuilder(
+      column: $table.kind, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get moveDate => $composableBuilder(
+      column: $table.moveDate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get moveTime => $composableBuilder(
+      column: $table.moveTime, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get patch => $composableBuilder(
+      column: $table.patch, builder: (column) => ColumnFilters(column));
+}
+
+class $$OccurrenceExceptionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $OccurrenceExceptionsTable> {
+  $$OccurrenceExceptionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get ownerId => $composableBuilder(
+      column: $table.ownerId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deletedBy => $composableBuilder(
+      column: $table.deletedBy, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get subjectType => $composableBuilder(
+      column: $table.subjectType, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get subjectId => $composableBuilder(
+      column: $table.subjectId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get originalDate => $composableBuilder(
+      column: $table.originalDate,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+      column: $table.kind, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get moveDate => $composableBuilder(
+      column: $table.moveDate, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get moveTime => $composableBuilder(
+      column: $table.moveTime, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get patch => $composableBuilder(
+      column: $table.patch, builder: (column) => ColumnOrderings(column));
+}
+
+class $$OccurrenceExceptionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $OccurrenceExceptionsTable> {
+  $$OccurrenceExceptionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerId =>
+      $composableBuilder(column: $table.ownerId, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get deletedBy =>
+      $composableBuilder(column: $table.deletedBy, builder: (column) => column);
+
+  GeneratedColumn<String> get subjectType => $composableBuilder(
+      column: $table.subjectType, builder: (column) => column);
+
+  GeneratedColumn<String> get subjectId =>
+      $composableBuilder(column: $table.subjectId, builder: (column) => column);
+
+  GeneratedColumn<String> get originalDate => $composableBuilder(
+      column: $table.originalDate, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get moveDate =>
+      $composableBuilder(column: $table.moveDate, builder: (column) => column);
+
+  GeneratedColumn<String> get moveTime =>
+      $composableBuilder(column: $table.moveTime, builder: (column) => column);
+
+  GeneratedColumn<String> get patch =>
+      $composableBuilder(column: $table.patch, builder: (column) => column);
+}
+
+class $$OccurrenceExceptionsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $OccurrenceExceptionsTable,
+    OccurrenceException,
+    $$OccurrenceExceptionsTableFilterComposer,
+    $$OccurrenceExceptionsTableOrderingComposer,
+    $$OccurrenceExceptionsTableAnnotationComposer,
+    $$OccurrenceExceptionsTableCreateCompanionBuilder,
+    $$OccurrenceExceptionsTableUpdateCompanionBuilder,
+    (
+      OccurrenceException,
+      BaseReferences<_$AppDatabase, $OccurrenceExceptionsTable,
+          OccurrenceException>
+    ),
+    OccurrenceException,
+    PrefetchHooks Function()> {
+  $$OccurrenceExceptionsTableTableManager(
+      _$AppDatabase db, $OccurrenceExceptionsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$OccurrenceExceptionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$OccurrenceExceptionsTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$OccurrenceExceptionsTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> workspaceId = const Value.absent(),
+            Value<String> ownerId = const Value.absent(),
+            Value<int> version = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String?> deletedBy = const Value.absent(),
+            Value<String> subjectType = const Value.absent(),
+            Value<String> subjectId = const Value.absent(),
+            Value<String> originalDate = const Value.absent(),
+            Value<String> kind = const Value.absent(),
+            Value<String?> moveDate = const Value.absent(),
+            Value<String?> moveTime = const Value.absent(),
+            Value<String?> patch = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              OccurrenceExceptionsCompanion(
+            id: id,
+            workspaceId: workspaceId,
+            ownerId: ownerId,
+            version: version,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            deletedBy: deletedBy,
+            subjectType: subjectType,
+            subjectId: subjectId,
+            originalDate: originalDate,
+            kind: kind,
+            moveDate: moveDate,
+            moveTime: moveTime,
+            patch: patch,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String workspaceId,
+            required String ownerId,
+            Value<int> version = const Value.absent(),
+            required DateTime createdAt,
+            required DateTime updatedAt,
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String?> deletedBy = const Value.absent(),
+            required String subjectType,
+            required String subjectId,
+            required String originalDate,
+            required String kind,
+            Value<String?> moveDate = const Value.absent(),
+            Value<String?> moveTime = const Value.absent(),
+            Value<String?> patch = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              OccurrenceExceptionsCompanion.insert(
+            id: id,
+            workspaceId: workspaceId,
+            ownerId: ownerId,
+            version: version,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            deletedBy: deletedBy,
+            subjectType: subjectType,
+            subjectId: subjectId,
+            originalDate: originalDate,
+            kind: kind,
+            moveDate: moveDate,
+            moveTime: moveTime,
+            patch: patch,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable<$OccurrenceExceptionsTable,
+                        OccurrenceException>(table),
+                    BaseReferences<_$AppDatabase, $OccurrenceExceptionsTable,
+                        OccurrenceException>(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$OccurrenceExceptionsTableProcessedTableManager
+    = ProcessedTableManager<
+        _$AppDatabase,
+        $OccurrenceExceptionsTable,
+        OccurrenceException,
+        $$OccurrenceExceptionsTableFilterComposer,
+        $$OccurrenceExceptionsTableOrderingComposer,
+        $$OccurrenceExceptionsTableAnnotationComposer,
+        $$OccurrenceExceptionsTableCreateCompanionBuilder,
+        $$OccurrenceExceptionsTableUpdateCompanionBuilder,
+        (
+          OccurrenceException,
+          BaseReferences<_$AppDatabase, $OccurrenceExceptionsTable,
+              OccurrenceException>
+        ),
+        OccurrenceException,
+        PrefetchHooks Function()>;
+typedef $$OccurrenceCompletionsTableCreateCompanionBuilder
+    = OccurrenceCompletionsCompanion Function({
+  required String id,
+  required String workspaceId,
+  required String ownerId,
+  Value<int> version,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String?> deletedBy,
+  required String taskId,
+  required String originalDate,
+  required DateTime completedAt,
+  Value<int> rowid,
+});
+typedef $$OccurrenceCompletionsTableUpdateCompanionBuilder
+    = OccurrenceCompletionsCompanion Function({
+  Value<String> id,
+  Value<String> workspaceId,
+  Value<String> ownerId,
+  Value<int> version,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String?> deletedBy,
+  Value<String> taskId,
+  Value<String> originalDate,
+  Value<DateTime> completedAt,
+  Value<int> rowid,
+});
+
+class $$OccurrenceCompletionsTableFilterComposer
+    extends Composer<_$AppDatabase, $OccurrenceCompletionsTable> {
+  $$OccurrenceCompletionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerId => $composableBuilder(
+      column: $table.ownerId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deletedBy => $composableBuilder(
+      column: $table.deletedBy, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get taskId => $composableBuilder(
+      column: $table.taskId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get originalDate => $composableBuilder(
+      column: $table.originalDate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get completedAt => $composableBuilder(
+      column: $table.completedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$OccurrenceCompletionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $OccurrenceCompletionsTable> {
+  $$OccurrenceCompletionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get ownerId => $composableBuilder(
+      column: $table.ownerId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deletedBy => $composableBuilder(
+      column: $table.deletedBy, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get taskId => $composableBuilder(
+      column: $table.taskId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get originalDate => $composableBuilder(
+      column: $table.originalDate,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get completedAt => $composableBuilder(
+      column: $table.completedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$OccurrenceCompletionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $OccurrenceCompletionsTable> {
+  $$OccurrenceCompletionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerId =>
+      $composableBuilder(column: $table.ownerId, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get deletedBy =>
+      $composableBuilder(column: $table.deletedBy, builder: (column) => column);
+
+  GeneratedColumn<String> get taskId =>
+      $composableBuilder(column: $table.taskId, builder: (column) => column);
+
+  GeneratedColumn<String> get originalDate => $composableBuilder(
+      column: $table.originalDate, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get completedAt => $composableBuilder(
+      column: $table.completedAt, builder: (column) => column);
+}
+
+class $$OccurrenceCompletionsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $OccurrenceCompletionsTable,
+    OccurrenceCompletion,
+    $$OccurrenceCompletionsTableFilterComposer,
+    $$OccurrenceCompletionsTableOrderingComposer,
+    $$OccurrenceCompletionsTableAnnotationComposer,
+    $$OccurrenceCompletionsTableCreateCompanionBuilder,
+    $$OccurrenceCompletionsTableUpdateCompanionBuilder,
+    (
+      OccurrenceCompletion,
+      BaseReferences<_$AppDatabase, $OccurrenceCompletionsTable,
+          OccurrenceCompletion>
+    ),
+    OccurrenceCompletion,
+    PrefetchHooks Function()> {
+  $$OccurrenceCompletionsTableTableManager(
+      _$AppDatabase db, $OccurrenceCompletionsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$OccurrenceCompletionsTableFilterComposer(
+                  $db: db, $table: table),
+          createOrderingComposer: () =>
+              $$OccurrenceCompletionsTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$OccurrenceCompletionsTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> workspaceId = const Value.absent(),
+            Value<String> ownerId = const Value.absent(),
+            Value<int> version = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String?> deletedBy = const Value.absent(),
+            Value<String> taskId = const Value.absent(),
+            Value<String> originalDate = const Value.absent(),
+            Value<DateTime> completedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              OccurrenceCompletionsCompanion(
+            id: id,
+            workspaceId: workspaceId,
+            ownerId: ownerId,
+            version: version,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            deletedBy: deletedBy,
+            taskId: taskId,
+            originalDate: originalDate,
+            completedAt: completedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String workspaceId,
+            required String ownerId,
+            Value<int> version = const Value.absent(),
+            required DateTime createdAt,
+            required DateTime updatedAt,
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String?> deletedBy = const Value.absent(),
+            required String taskId,
+            required String originalDate,
+            required DateTime completedAt,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              OccurrenceCompletionsCompanion.insert(
+            id: id,
+            workspaceId: workspaceId,
+            ownerId: ownerId,
+            version: version,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            deletedBy: deletedBy,
+            taskId: taskId,
+            originalDate: originalDate,
+            completedAt: completedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable<$OccurrenceCompletionsTable,
+                        OccurrenceCompletion>(table),
+                    BaseReferences<_$AppDatabase, $OccurrenceCompletionsTable,
+                        OccurrenceCompletion>(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$OccurrenceCompletionsTableProcessedTableManager
+    = ProcessedTableManager<
+        _$AppDatabase,
+        $OccurrenceCompletionsTable,
+        OccurrenceCompletion,
+        $$OccurrenceCompletionsTableFilterComposer,
+        $$OccurrenceCompletionsTableOrderingComposer,
+        $$OccurrenceCompletionsTableAnnotationComposer,
+        $$OccurrenceCompletionsTableCreateCompanionBuilder,
+        $$OccurrenceCompletionsTableUpdateCompanionBuilder,
+        (
+          OccurrenceCompletion,
+          BaseReferences<_$AppDatabase, $OccurrenceCompletionsTable,
+              OccurrenceCompletion>
+        ),
+        OccurrenceCompletion,
+        PrefetchHooks Function()>;
+typedef $$RemindersTableCreateCompanionBuilder = RemindersCompanion Function({
+  required String id,
+  required String workspaceId,
+  required String ownerId,
+  Value<int> version,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String?> deletedBy,
+  required String subjectType,
+  required String subjectId,
+  Value<int?> offsetMinutes,
+  Value<DateTime?> atUtc,
+  Value<int> rowid,
+});
+typedef $$RemindersTableUpdateCompanionBuilder = RemindersCompanion Function({
+  Value<String> id,
+  Value<String> workspaceId,
+  Value<String> ownerId,
+  Value<int> version,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String?> deletedBy,
+  Value<String> subjectType,
+  Value<String> subjectId,
+  Value<int?> offsetMinutes,
+  Value<DateTime?> atUtc,
+  Value<int> rowid,
+});
+
+class $$RemindersTableFilterComposer
+    extends Composer<_$AppDatabase, $RemindersTable> {
+  $$RemindersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerId => $composableBuilder(
+      column: $table.ownerId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deletedBy => $composableBuilder(
+      column: $table.deletedBy, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get subjectType => $composableBuilder(
+      column: $table.subjectType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get subjectId => $composableBuilder(
+      column: $table.subjectId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get offsetMinutes => $composableBuilder(
+      column: $table.offsetMinutes, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get atUtc => $composableBuilder(
+      column: $table.atUtc, builder: (column) => ColumnFilters(column));
+}
+
+class $$RemindersTableOrderingComposer
+    extends Composer<_$AppDatabase, $RemindersTable> {
+  $$RemindersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get ownerId => $composableBuilder(
+      column: $table.ownerId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deletedBy => $composableBuilder(
+      column: $table.deletedBy, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get subjectType => $composableBuilder(
+      column: $table.subjectType, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get subjectId => $composableBuilder(
+      column: $table.subjectId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get offsetMinutes => $composableBuilder(
+      column: $table.offsetMinutes,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get atUtc => $composableBuilder(
+      column: $table.atUtc, builder: (column) => ColumnOrderings(column));
+}
+
+class $$RemindersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RemindersTable> {
+  $$RemindersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerId =>
+      $composableBuilder(column: $table.ownerId, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get deletedBy =>
+      $composableBuilder(column: $table.deletedBy, builder: (column) => column);
+
+  GeneratedColumn<String> get subjectType => $composableBuilder(
+      column: $table.subjectType, builder: (column) => column);
+
+  GeneratedColumn<String> get subjectId =>
+      $composableBuilder(column: $table.subjectId, builder: (column) => column);
+
+  GeneratedColumn<int> get offsetMinutes => $composableBuilder(
+      column: $table.offsetMinutes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get atUtc =>
+      $composableBuilder(column: $table.atUtc, builder: (column) => column);
+}
+
+class $$RemindersTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $RemindersTable,
+    Reminder,
+    $$RemindersTableFilterComposer,
+    $$RemindersTableOrderingComposer,
+    $$RemindersTableAnnotationComposer,
+    $$RemindersTableCreateCompanionBuilder,
+    $$RemindersTableUpdateCompanionBuilder,
+    (Reminder, BaseReferences<_$AppDatabase, $RemindersTable, Reminder>),
+    Reminder,
+    PrefetchHooks Function()> {
+  $$RemindersTableTableManager(_$AppDatabase db, $RemindersTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RemindersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RemindersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RemindersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> workspaceId = const Value.absent(),
+            Value<String> ownerId = const Value.absent(),
+            Value<int> version = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String?> deletedBy = const Value.absent(),
+            Value<String> subjectType = const Value.absent(),
+            Value<String> subjectId = const Value.absent(),
+            Value<int?> offsetMinutes = const Value.absent(),
+            Value<DateTime?> atUtc = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              RemindersCompanion(
+            id: id,
+            workspaceId: workspaceId,
+            ownerId: ownerId,
+            version: version,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            deletedBy: deletedBy,
+            subjectType: subjectType,
+            subjectId: subjectId,
+            offsetMinutes: offsetMinutes,
+            atUtc: atUtc,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String workspaceId,
+            required String ownerId,
+            Value<int> version = const Value.absent(),
+            required DateTime createdAt,
+            required DateTime updatedAt,
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String?> deletedBy = const Value.absent(),
+            required String subjectType,
+            required String subjectId,
+            Value<int?> offsetMinutes = const Value.absent(),
+            Value<DateTime?> atUtc = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              RemindersCompanion.insert(
+            id: id,
+            workspaceId: workspaceId,
+            ownerId: ownerId,
+            version: version,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            deletedBy: deletedBy,
+            subjectType: subjectType,
+            subjectId: subjectId,
+            offsetMinutes: offsetMinutes,
+            atUtc: atUtc,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable<$RemindersTable, Reminder>(table),
+                    BaseReferences<_$AppDatabase, $RemindersTable, Reminder>(
+                        db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$RemindersTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $RemindersTable,
+    Reminder,
+    $$RemindersTableFilterComposer,
+    $$RemindersTableOrderingComposer,
+    $$RemindersTableAnnotationComposer,
+    $$RemindersTableCreateCompanionBuilder,
+    $$RemindersTableUpdateCompanionBuilder,
+    (Reminder, BaseReferences<_$AppDatabase, $RemindersTable, Reminder>),
+    Reminder,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -6294,4 +12517,16 @@ class $AppDatabaseManager {
       $$OpDedupeTableTableManager(_db, _db.opDedupe);
   $$RestoreSnapshotsTableTableManager get restoreSnapshots =>
       $$RestoreSnapshotsTableTableManager(_db, _db.restoreSnapshots);
+  $$CalendarsTableTableManager get calendars =>
+      $$CalendarsTableTableManager(_db, _db.calendars);
+  $$EventsTableTableManager get events =>
+      $$EventsTableTableManager(_db, _db.events);
+  $$SchedulesTableTableManager get schedules =>
+      $$SchedulesTableTableManager(_db, _db.schedules);
+  $$OccurrenceExceptionsTableTableManager get occurrenceExceptions =>
+      $$OccurrenceExceptionsTableTableManager(_db, _db.occurrenceExceptions);
+  $$OccurrenceCompletionsTableTableManager get occurrenceCompletions =>
+      $$OccurrenceCompletionsTableTableManager(_db, _db.occurrenceCompletions);
+  $$RemindersTableTableManager get reminders =>
+      $$RemindersTableTableManager(_db, _db.reminders);
 }

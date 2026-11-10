@@ -112,7 +112,7 @@ void main() {
       (jsonDecode(text) as Map).cast<String, Object?>();
   Map<String, Object?> payloadOf(String text) =>
       (envelope(text)['payload'] as Map).cast<String, Object?>();
-  ParsedExport parse(String text) => ProfileExport.parse(text, currentSchemaVersion: 3);
+  ParsedExport parse(String text) => ProfileExport.parse(text, currentSchemaVersion: AppDatabase.currentSchemaVersion);
   void expectRejected(String text, RestoreRejection kind, {String? mentions}) {
     try {
       parse(text);
@@ -131,6 +131,9 @@ void main() {
       expect(host.db.allTables.map((t) => t.entityName).toSet(), {
         ...['profiles', 'workspaces', 'task_lists', 'tasks', 'audit_log',
             'outbox', 'event_log', 'op_dedupe'],
+        // P02 T3 (schema v4)
+        ...['calendars', 'events', 'schedules', 'occurrence_exceptions',
+            'occurrence_completions', 'reminders'],
         'restore_snapshots',
       });
       expect(host.db.allTables.length,
@@ -146,7 +149,7 @@ void main() {
       final env = envelope(f.contents);
       expect(env['format'], 'lifeflow-export');
       expect(env['formatVersion'], 1);
-      expect(env['schemaVersion'], 3);
+      expect(env['schemaVersion'], AppDatabase.currentSchemaVersion);
       expect(env['checksumSha256'], matches(RegExp(r'^[0-9a-f]{64}$')));
       expect(env['notice'], contains('unencrypted'));
       final tasks = (payloadOf(f.contents)['tasks'] as List).cast<Map>();
@@ -292,7 +295,7 @@ void main() {
     });
 
     test('a file from a newer schema is rejected (AC-20a.2)', () {
-      final env = envelope(good)..['schemaVersion'] = 4;
+      final env = envelope(good)..['schemaVersion'] = AppDatabase.currentSchemaVersion + 1;
       expectRejected(jsonEncode(env), RestoreRejection.newerVersion);
     });
 
@@ -317,7 +320,7 @@ void main() {
 
     test('an oversized file is refused before parsing', () {
       try {
-        ProfileExport.parse(good, currentSchemaVersion: 3, maxBytes: 100);
+        ProfileExport.parse(good, currentSchemaVersion: AppDatabase.currentSchemaVersion, maxBytes: 100);
         fail('expected rejection');
       } on ExportRejected catch (e) {
         expect(e.kind, RestoreRejection.tooLarge);
@@ -331,7 +334,7 @@ void main() {
     });
 
     Map<String, Object?> sealedPayload() => payloadOf(good);
-    String reseal(Map<String, Object?> p) => ProfileExport.seal(p, schemaVersion: 3);
+    String reseal(Map<String, Object?> p) => ProfileExport.seal(p, schemaVersion: AppDatabase.currentSchemaVersion);
 
     test('a correctly sealed file with a parent cycle is rejected', () {
       final p = sealedPayload();
