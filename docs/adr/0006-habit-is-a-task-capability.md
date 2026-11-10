@@ -1,6 +1,6 @@
 # ADR-0006: Habit is a Task capability, not a separate aggregate
 
-- Status: Accepted (owner decision)
+- Status: Accepted (owner decision); amended 2026-11-10 (P03 D6, ADR-0036: a habit is its own flag)
 - Date: 2026-11-04
 - Deciders: Project owner
 - Evidence: [../architecture/bounded-contexts.md](../architecture/bounded-contexts.md) OQ-B2; [../assessment/legacy-component-matrix.md](../assessment/legacy-component-matrix.md) (legacy `habits`/`habit_occurrences` tables)
@@ -29,3 +29,13 @@ Task Management owns the Target and the Completion Policy for that Task. Executi
 ## Follow-ups
 - Domain batch: define `MeasurableTarget` and `CompletionPolicy` as capability value objects on Task.
 - UI batch: confirm the "Habits" view is a query (Tasks with recurrence + measurable target), not a new screen-level model.
+
+## Amendment (2026-11-10, owner decision P03 D6; ADR-0036)
+The core decision stands: a habit is still a **Task capability**, with no separate aggregate or table. What changes is **what makes a task a habit**.
+- **A habit is a flag of its own** (`Task.isHabit`), set by the user. It is independent of the repeat and of a measurable target. A habit **usually repeats but does not have to be measured**.
+  - "Drink warm water every morning" is a habit that repeats and is only tracked as done or missed.
+  - "Walk at least 6000 steps a day" is a habit that repeats and is measured.
+  - "Read 50 pages" is measured but not a habit.
+- The "Habits" view selects `isHabit` tasks, not "recurrence + target".
+- An unmeasured habit is tracked per occurrence: done when ticked, missed when its period ended unticked. A measured one is evaluated per period from its measurements. Both show a history, a completion rate and a streak.
+- A habit without a repeat is allowed (the editor suggests "every day"); it has one period.

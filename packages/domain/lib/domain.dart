@@ -3,5 +3,8 @@
 /// FF-ARCH-01). Task Management lands in P01; other contexts in their phases.
 library domain;
 
+export 'src/focus.dart';
+export 'src/goals.dart';
+export 'src/measurement.dart';
 export 'src/task.dart';
 export 'src/workspace.dart';

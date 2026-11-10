@@ -376,6 +376,27 @@ LocalDate? lastRuleDate(ScheduleSpec spec, RecurrenceRule rule) {
 bool isRuleDate(RecurrenceRule rule, ScheduleSpec spec, LocalDate date) =>
     _ruleDates(rule, _anchor(spec), date, date).isNotEmpty;
 
+/// P03 (owner decision D6, ADR-0036): the rule period that contains [date],
+/// both ends inclusive, or null when [date] is before the first period.
+/// Periods are the rule's own units: every N days = N-day cycles from the
+/// start; weekly = weeks by the series' week start (every N weeks = N-week
+/// blocks); monthly = from the start's day of the month to the day before it
+/// N months later (clamped at month ends); yearly likewise. Habit and
+/// measurable-target results are evaluated per period.
+DateWindow? rulePeriodOf(RecurrenceRule rule, ScheduleSpec spec, LocalDate date) {
+  final anchor = _anchor(spec);
+  var k = _periodBefore(rule, anchor, date);
+  if (_periodStart(rule, anchor, k).isAfter(date)) return null; // only k = 0 can be after
+  while (!_periodStart(rule, anchor, k + 1).isAfter(date)) {
+    k++;
+  }
+  return DateWindow(_periodStart(rule, anchor, k), _periodStart(rule, anchor, k + 1).addDays(-1));
+}
+
+/// The rule's dates inside [period] (respecting the series end), in order.
+List<LocalDate> ruleDatesIn(RecurrenceRule rule, ScheduleSpec spec, DateWindow period) =>
+    _ruleDates(rule, _anchor(spec), period.from, period.to).toList();
+
 /// The occurrences of a series that touch [window] (FR-PLAN-07/08/09).
 /// Pure and deterministic. A spec without a rule has one occurrence.
 /// Exceptions are keyed by original date; for one date the last one wins;
