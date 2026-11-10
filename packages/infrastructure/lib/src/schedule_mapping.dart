@@ -223,3 +223,20 @@ OccurrenceExceptionsCompanion exceptionFields(
     patch: Value(k is tk.EditOccurrence ? jsonEncode(k.patch) : null),
   );
 }
+
+/// The schedule columns of [spec]/[rule] as JSON (the field names of
+/// [Schedule.toJson]); used as a command payload.
+Map<String, Object?> scheduleFieldsJson(
+    String subjectType, String subjectId, tk.ScheduleSpec spec, tk.RecurrenceRule? rule) {
+  final f = scheduleFields(subjectType, subjectId, spec, rule);
+  return {
+    'startDate': f.startDate.value, 'startTime': f.startTime.value, 'startZone': f.startZone.value,
+    'endDate': f.endDate.value, 'endTime': f.endTime.value, 'endZone': f.endZone.value,
+    'deadlineDate': f.deadlineDate.value, 'deadlineTime': f.deadlineTime.value,
+    'deadlineZone': f.deadlineZone.value,
+    'firstDate': f.firstDate.value, 'lastDate': f.lastDate.value,
+    'frequency': f.frequency.value, 'interval': f.interval.value, 'weekdays': f.weekdays.value,
+    'endKind': f.endKind.value, 'endDateRule': f.endDateRule.value, 'endCount': f.endCount.value,
+    'monthEndRule': f.monthEndRule.value, 'weekStart': f.weekStart.value,
+  };
+}

@@ -16,6 +16,7 @@ import 'package:drift/native.dart';
 import 'package:foundation/foundation.dart';
 import 'package:infrastructure/infrastructure.dart';
 import 'package:test/test.dart';
+import 'package:time_kernel/time_kernel.dart' as tk;
 
 /// Runs the real handler, then fails: simulates a crash after the handler
 /// wrote the aggregate but before the transaction committed.
@@ -83,7 +84,12 @@ void main() {
         for (final r in await db.select(db.tasks).get()) r.toJson(),
         for (final r in await db.select(db.profiles).get()) r.toJson(),
         for (final r in await db.select(db.restoreSnapshots).get()) r.toJson(),
+        for (final k in recordKinds) ...await k.readAll(db),
       ].toString();
+
+  final weeklySchedule = scheduleFieldsJson('task', 't1',
+      tk.ScheduleSpec(start: tk.DatePoint(LocalDate(2026, 11, 9))),
+      const tk.RecurrenceRule(frequency: tk.Frequency.weekly));
 
   Future<int> versionOf(String table, String id) async => table == 'task'
       ? (await (db.select(db.tasks)..where((t) => t.id.equals(id))).getSingle()).version
@@ -129,6 +135,17 @@ void main() {
           (v, op) => command('CreateTask', {'op': 'create', 'id': 't3', 'title': 'C', 'parentId': 't1'}, opId: op, expected: v)),
       ('task.complete(all)', taskHandler, 'task', 't1',
           (v, op) => command('CompleteTaskWithDescendants', {'op': 'complete', 'id': 't1', 'cascade': 'all'}, opId: op, expected: v)),
+      // P02 T4: schedule ops on t1 (weekly from 2026-11-09).
+      ('task.setSchedule', taskHandler, 'task', 't1',
+          (v, op) => command('SetTaskSchedule', {'op': 'setSchedule', 'id': 't1', 'schedule': weeklySchedule}, opId: op, expected: v)),
+      ('task.setException', taskHandler, 'task', 't1',
+          (v, op) => command('SkipOccurrence', {'op': 'setException', 'id': 't1', 'originalDate': '2026-11-16', 'kind': 'skip'}, opId: op, expected: v)),
+      ('task.clearException', taskHandler, 'task', 't1',
+          (v, op) => command('ClearOccurrenceChange', {'op': 'clearException', 'id': 't1', 'originalDate': '2026-11-16'}, opId: op, expected: v)),
+      ('task.setOccurrenceDone', taskHandler, 'task', 't1',
+          (v, op) => command('CompleteOccurrence', {'op': 'setOccurrenceDone', 'id': 't1', 'originalDate': '2026-11-23', 'done': true}, opId: op, expected: v)),
+      ('task.clearSchedule', taskHandler, 'task', 't1',
+          (v, op) => command('ClearTaskSchedule', {'op': 'clearSchedule', 'id': 't1'}, opId: op, expected: v)),
       ('task.trash', taskHandler, 'task', 't2',
           (v, op) => command('TrashTask', {'op': 'trash', 'id': 't2'}, opId: op, expected: v)),
       ('task.trash(all)', taskHandler, 'task', 't1',
