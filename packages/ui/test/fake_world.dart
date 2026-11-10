@@ -17,7 +17,10 @@ class FakeWorld
         AccountService,
         DataTransferService,
         FileGateway,
-        SettingsService {
+        SettingsService,
+        TaskScheduling,
+        AgendaQueries,
+        ZoneCatalog {
   FakeWorld({
     required Map<String, List<TaskView>> tasks,
     required this.profiles,
@@ -149,6 +152,105 @@ class FakeWorld
     calls.add('setTrashPolicy:${policy.name}');
     trashPolicy = policy;
   }
+
+  PlanningSettings planning = const PlanningSettings();
+
+  @override
+  Future<PlanningSettings> planningSettings() async => planning;
+
+  @override
+  Future<void> setPlanningSettings(PlanningSettings settings) async {
+    final s = settings.clamped();
+    calls.add('setPlanning:${s.maxOccurrences}:${s.maxWindowDays}:'
+        '${s.defaultMonthEnd.name}:${s.firstDayOfWeek.name}');
+    planning = s;
+  }
+
+  // --- TaskScheduling + AgendaQueries + ZoneCatalog ---------------------------
+
+  /// What Today and Upcoming show (test setup; done flags follow the calls).
+  Agenda today = const Agenda([]);
+  Agenda upcoming = const Agenda([]);
+
+  @override
+  Future<CommandResult> setSchedule(String taskId, TaskScheduleInput? schedule) async {
+    calls.add('setSchedule:$taskId:${describeInput(schedule)}');
+    final f = _failure();
+    if (f != null) return f;
+    _replace(taskId, (t) => _copy(t, schedule: schedule, setSchedule: true));
+    return CommandOk(taskId, Version.initial, const []);
+  }
+
+  @override
+  Future<CommandResult> changeOccurrence(
+      String taskId, LocalDate originalDate, OccurrenceChange? change) async {
+    final what = switch (change) {
+      null => 'undo',
+      SkipThisOccurrence() => 'skip',
+      MoveThisOccurrence(:final toDate) => 'move>$toDate',
+    };
+    calls.add('change:$taskId@$originalDate:$what');
+    final f = _failure();
+    if (f != null) return f;
+    _changes.add(null);
+    return CommandOk(taskId, Version.initial, const []);
+  }
+
+  @override
+  Future<CommandResult> setOccurrenceDone(String taskId, LocalDate originalDate,
+      {required bool done}) async {
+    calls.add('occurrenceDone:$taskId@$originalDate:$done');
+    final f = _failure();
+    if (f != null) return f;
+    Agenda mark(Agenda a) => Agenda([
+          for (final i in a.items)
+            i.taskId == taskId && i.originalDate == originalDate
+                ? AgendaItem(
+                    taskId: i.taskId,
+                    title: i.title,
+                    originalDate: i.originalDate,
+                    start: i.start,
+                    end: i.end,
+                    deadline: i.deadline,
+                    isRepeating: i.isRepeating,
+                    isDone: done,
+                    isMoved: i.isMoved,
+                    isOverdue: i.isOverdue)
+                : i,
+        ], truncated: a.truncated);
+    today = mark(today);
+    upcoming = mark(upcoming);
+    _changes.add(null);
+    return CommandOk(taskId, Version.initial, const []);
+  }
+
+  @override
+  Future<TaskScheduleInput?> scheduleOf(String taskId) async =>
+      _mine().where((t) => t.id == taskId).firstOrNull?.schedule;
+
+  Stream<Agenda> _agenda(Agenda Function() read) async* {
+    yield read();
+    await for (final _ in _changes.stream) {
+      yield read();
+    }
+  }
+
+  @override
+  Stream<Agenda> watchToday() => _agenda(() => today);
+
+  @override
+  Stream<Agenda> watchUpcoming({int days = 14}) => _agenda(() => upcoming);
+
+  @override
+  Stream<Agenda> watchRange(LocalDate from, LocalDate to) => _agenda(() => const Agenda([]));
+
+  static const zones = ['Asia/Ho_Chi_Minh', 'Europe/Berlin', 'UTC'];
+
+  @override
+  List<String> zoneNames() => zones;
+
+  @override
+  bool isKnown(String zone) => zones.contains(zone);
 
   @override
   Future<ProfileView?> active() async =>
@@ -357,12 +459,15 @@ class FakeWorld
     _changes.add(null);
   }
 
-  TaskView _copy(TaskView t, {String? title, String? status}) => TaskView(
+  TaskView _copy(TaskView t,
+          {String? title, String? status, TaskScheduleInput? schedule, bool setSchedule = false}) =>
+      TaskView(
         id: t.id,
         title: title ?? t.title,
         status: status ?? t.status,
         parentId: t.parentId,
         createdAt: t.createdAt,
+        schedule: setSchedule ? schedule : t.schedule,
       );
 
   void dispose() => _changes.close();
@@ -380,13 +485,33 @@ extension on ProfileView {
 }
 
 TaskView task(String id, String title,
-        {String? parent, String status = 'inbox'}) =>
+        {String? parent, String status = 'inbox', TaskScheduleInput? schedule}) =>
     TaskView(
         id: id,
         title: title,
         status: status,
         parentId: parent,
-        createdAt: DateTime(2026));
+        createdAt: DateTime(2026),
+        schedule: schedule);
+
+/// A compact, comparable form of a schedule input for [FakeWorld.calls].
+String describeInput(TaskScheduleInput? s) {
+  if (s == null) return 'none';
+  final r = s.repeat;
+  final repeat = r == null
+      ? '-'
+      : '${r.frequency.name}/${r.interval}/'
+          '${r.weekdays == null ? '-' : (r.weekdays!.toList()..sort((a, b) => a.index - b.index)).map((d) => d.name).join('+')}/'
+          '${switch (r.end) { RepeatForever() => 'forever', RepeatUntil(:final date) => 'until $date', RepeatTimes(:final count) => '$count times' }}/'
+          '${r.monthEnd.name}/${r.weekStart.name}';
+  return 'start=${s.start ?? '-'};end=${s.end ?? '-'};due=${s.deadline ?? '-'};repeat=$repeat';
+}
+
+/// The fixed "today" of widget tests (a Monday).
+final testToday = LocalDate(2026, 11, 9);
+
+/// The device zone of widget tests.
+const testZone = 'Asia/Ho_Chi_Minh';
 
 ProfileView profile(String id, String name,
         {bool bound = false, String? provider}) =>
@@ -407,6 +532,11 @@ Widget appWith(FakeWorld world, {StorageNotice? notice}) => ProviderScope(
         dataTransferServiceProvider.overrideWithValue(world),
         fileGatewayProvider.overrideWithValue(world),
         settingsServiceProvider.overrideWithValue(world),
+        taskSchedulingProvider.overrideWithValue(world),
+        agendaQueriesProvider.overrideWithValue(world),
+        zoneCatalogProvider.overrideWithValue(world),
+        deviceZoneProvider.overrideWithValue(testZone),
+        todayProvider.overrideWithValue(() => testToday),
         storageNoticeProvider.overrideWithValue(notice),
       ],
       child: const LifeFlowApp(),

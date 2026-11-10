@@ -2,11 +2,17 @@ import 'package:application/application.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:foundation/foundation.dart';
+
 import '../messages.dart';
 import '../providers.dart';
+import '../schedule_text.dart';
 import '../task_tree.dart';
+import 'schedule_editor.dart';
 
-enum _RowAction { rename, addSubtask, trash }
+enum _RowAction { rename, schedule, addSubtask, trash }
+
+enum _AgendaAction { skip, move, undoChange, schedule }
 
 enum _CompleteChoice { withSubtasks, onlyThis }
 
@@ -40,7 +46,20 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
 
   Future<void> _addTask(String? parentId) async {
     final id = await _add(context, ref, parentId);
-    if (id != null && mounted) setState(() => _revealId = id);
+    if (id == null || !mounted) return;
+    // A task added in Today or Upcoming is planned there, so it does not
+    // vanish from the list it was added to.
+    final filter = ref.read(taskFilterProvider);
+    if (parentId == null && filter != TaskFilter.all) {
+      final today = ref.read(todayProvider)();
+      final day = filter == TaskFilter.today ? today : today.addDays(1);
+      await _report(
+          context,
+          ref.read(taskSchedulingProvider).setSchedule(
+              id, TaskScheduleInput(start: SchedulePointInput.date(day))));
+      return;
+    }
+    setState(() => _revealId = id);
   }
 
   /// Attached to the row being revealed, so it can be scrolled into view
@@ -72,15 +91,57 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final tasks = ref.watch(tasksProvider);
+    final filter = ref.watch(taskFilterProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Tasks')),
+      appBar: AppBar(
+        title: const Text('Tasks'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(56),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+            child: LayoutBuilder(builder: (context, box) {
+              // Icons only when there is room: with a phone width and a
+              // large system font the labels must stay on one line.
+              final icons = box.maxWidth / MediaQuery.textScalerOf(context).scale(1) >= 440;
+              Widget label(String s) => Text(s, maxLines: 1, softWrap: false, overflow: TextOverflow.fade);
+              return SegmentedButton<TaskFilter>(
+                key: const Key('task-filter'),
+                showSelectedIcon: false,
+                segments: [
+                  ButtonSegment(
+                      value: TaskFilter.all, label: label('All'), icon: icons ? const Icon(Icons.list) : null),
+                  ButtonSegment(
+                      value: TaskFilter.today,
+                      label: label('Today'),
+                      icon: icons ? const Icon(Icons.today) : null),
+                  ButtonSegment(
+                      value: TaskFilter.upcoming,
+                      label: label('Upcoming'),
+                      icon: icons ? const Icon(Icons.date_range) : null),
+                ],
+                selected: {filter},
+                onSelectionChanged: (s) => ref.read(taskFilterProvider.notifier).state = s.first,
+              );
+            }),
+          ),
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
         tooltip: 'Add task',
         onPressed: () => _addTask(null),
         child: const Icon(Icons.add),
       ),
-      body: tasks.when(
+      body: switch (filter) {
+        TaskFilter.all => _allTasks(context),
+        TaskFilter.today => const _AgendaList(upcoming: false),
+        TaskFilter.upcoming => const _AgendaList(upcoming: true),
+      },
+    );
+  }
+
+  Widget _allTasks(BuildContext context) {
+    final tasks = ref.watch(tasksProvider);
+    return tasks.when(
         loading: () => const Center(
           child: CircularProgressIndicator(semanticsLabel: 'Loading tasks'),
         ),
@@ -116,8 +177,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
             },
           );
         },
-      ),
-    );
+      );
   }
 }
 
@@ -135,6 +195,192 @@ class _EmptyState extends StatelessWidget {
           ),
         ),
       );
+}
+
+/// Today or Upcoming: occurrences of scheduled tasks, grouped by date
+/// (owner decision D9). Today puts overdue one-off tasks first.
+class _AgendaList extends ConsumerWidget {
+  const _AgendaList({required this.upcoming});
+  final bool upcoming;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final agenda = ref.watch(upcoming ? upcomingAgendaProvider : todayAgendaProvider);
+    final today = ref.watch(todayProvider)();
+    // For the open-subtasks question and the editor's current schedule.
+    final rows = {for (final r in orderTree(ref.watch(tasksProvider).value ?? const [])) r.task.id: r};
+    return agenda.when(
+      loading: () => const Center(
+        child: CircularProgressIndicator(semanticsLabel: 'Loading the agenda'),
+      ),
+      error: (e, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text('Could not load the agenda.', style: Theme.of(context).textTheme.bodyLarge),
+        ),
+      ),
+      data: (a) {
+        final children = <Widget>[
+          if (a.truncated)
+            Card(
+              key: const Key('agenda-truncated'),
+              margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+              child: const ListTile(
+                leading: Icon(Icons.info_outline),
+                title: Text('Not everything is shown'),
+                subtitle: Text('There are more items than the limit in Settings → Calendar.'),
+              ),
+            ),
+        ];
+        if (a.items.isEmpty) {
+          children.add(Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              upcoming
+                  ? 'Nothing planned for the next 14 days.'
+                  : 'Nothing planned for today. Tasks you plan for today show up here.',
+              key: const Key('agenda-empty'),
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+          ));
+        }
+        String? group;
+        for (final item in a.items) {
+          final g = item.isOverdue ? 'Overdue' : formatDate(item.date, today: today);
+          if (g != group) {
+            group = g;
+            children.add(Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+              child: Semantics(
+                header: true,
+                child: Text(
+                  item.isOverdue || upcoming ? g : '$g · ${formatDateLong(item.date, today: today)}',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+              ),
+            ));
+          }
+          children.add(_AgendaTile(item: item, row: rows[item.taskId], today: today));
+        }
+        return ListView(
+          key: Key(upcoming ? 'upcoming-list' : 'today-list'),
+          padding: const EdgeInsets.only(bottom: _fabClearance),
+          children: children,
+        );
+      },
+    );
+  }
+}
+
+class _AgendaTile extends ConsumerWidget {
+  const _AgendaTile({required this.item, required this.row, required this.today});
+  final AgendaItem item;
+  final TaskRow? row;
+  final LocalDate today;
+
+  String _subtitle(String zone) {
+    final s = item.start, e = item.end, d = item.deadline;
+    final parts = <String>[
+      if (item.isOverdue) 'Planned ${formatDate(item.date, today: today)}',
+      if (s != null && s.isTimed)
+        e != null && e.isTimed && e.date == s.date && e.zone == s.zone
+            ? '${formatTimeOnly(s, deviceZone: zone)}–${e.time}'
+            : formatTimeOnly(s, deviceZone: zone),
+      if (s != null && e != null && e.date != s.date)
+        'Until ${formatPoint(e, today: today, deviceZone: zone)}'
+      else if (s == null && e != null && e.isTimed)
+        'Ends ${formatTimeOnly(e, deviceZone: zone)}',
+      if (d != null) 'Due ${formatPoint(d, today: today, deviceZone: zone)}',
+      if (item.isRepeating) 'Repeats',
+      if (item.isMoved) 'Moved',
+    ];
+    return parts.join(' · ');
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final i = item;
+    final subtitle = _subtitle(ref.watch(deviceZoneProvider));
+    return ListTile(
+      key: ValueKey('agenda-${i.taskId}@${i.originalDate}'),
+      leading: Checkbox(
+        value: i.isDone,
+        semanticLabel: i.isDone ? 'Mark as not done: ${i.title}' : 'Complete ${i.title}',
+        onChanged: (_) => _toggle(context, ref),
+      ),
+      title: Text(
+        i.title,
+        style: i.isDone ? const TextStyle(decoration: TextDecoration.lineThrough) : null,
+      ),
+      subtitle: subtitle.isEmpty ? null : Text(subtitle),
+      trailing: PopupMenuButton<_AgendaAction>(
+        tooltip: 'Actions for ${i.title}',
+        onSelected: (a) => _onAction(context, ref, a),
+        itemBuilder: (_) => [
+          if (i.isRepeating) ...[
+            const PopupMenuItem(value: _AgendaAction.skip, child: Text('Skip this time')),
+            const PopupMenuItem(value: _AgendaAction.move, child: Text('Move this time…')),
+            if (i.isMoved)
+              const PopupMenuItem(
+                  value: _AgendaAction.undoChange, child: Text('Undo the change to this time')),
+          ],
+          PopupMenuItem(
+              value: _AgendaAction.schedule,
+              child: Text(i.isRepeating ? 'Edit the whole repeat…' : 'Schedule…')),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _toggle(BuildContext context, WidgetRef ref) async {
+    final i = item;
+    // D5: a repeating task is done one occurrence at a time; it stays open.
+    if (i.isRepeating) {
+      await _report(context,
+          ref.read(taskSchedulingProvider).setOccurrenceDone(i.taskId, i.originalDate, done: !i.isDone));
+      return;
+    }
+    if (i.isDone) {
+      await _report(context, ref.read(taskServiceProvider).reopen(i.taskId));
+      return;
+    }
+    final r = row;
+    if (r == null) {
+      await _report(context, ref.read(taskServiceProvider).complete(i.taskId, withDescendants: false));
+    } else {
+      await _complete(context, ref, r);
+    }
+  }
+
+  Future<void> _onAction(BuildContext context, WidgetRef ref, _AgendaAction a) async {
+    final i = item;
+    final scheduling = ref.read(taskSchedulingProvider);
+    switch (a) {
+      case _AgendaAction.skip:
+        await _report(context, scheduling.changeOccurrence(i.taskId, i.originalDate, const SkipThisOccurrence()));
+      case _AgendaAction.move:
+        final d = i.date;
+        final picked = await showDatePicker(
+          context: context,
+          helpText: 'Move this time to',
+          initialDate: DateTime(d.year, d.month, d.day),
+          firstDate: DateTime(1900),
+          lastDate: DateTime(2200, 12, 31),
+        );
+        if (picked == null || !context.mounted) return;
+        await _report(
+            context,
+            scheduling.changeOccurrence(i.taskId, i.originalDate,
+                MoveThisOccurrence(LocalDate(picked.year, picked.month, picked.day))));
+      case _AgendaAction.undoChange:
+        await _report(context, scheduling.changeOccurrence(i.taskId, i.originalDate, null));
+      case _AgendaAction.schedule:
+        final initial = row?.task.schedule ?? await scheduling.scheduleOf(i.taskId);
+        if (!context.mounted) return;
+        await openScheduleEditor(context, ref, taskId: i.taskId, title: i.title, initial: initial);
+    }
+  }
 }
 
 class _TaskTile extends ConsumerWidget {
@@ -164,11 +410,20 @@ class _TaskTile extends ConsumerWidget {
             ? const TextStyle(decoration: TextDecoration.lineThrough)
             : null,
       ),
+      subtitle: t.schedule == null
+          ? null
+          : Text(
+              describeSchedule(t.schedule!,
+                  today: ref.watch(todayProvider)(),
+                  deviceZone: ref.watch(deviceZoneProvider)),
+              key: ValueKey('schedule-${t.id}'),
+            ),
       trailing: PopupMenuButton<_RowAction>(
         tooltip: 'Actions for ${t.title}',
         onSelected: (a) => _onAction(context, ref, a),
         itemBuilder: (_) => const [
           PopupMenuItem(value: _RowAction.rename, child: Text('Rename')),
+          PopupMenuItem(value: _RowAction.schedule, child: Text('Schedule…')),
           PopupMenuItem(value: _RowAction.addSubtask, child: Text('Add subtask')),
           PopupMenuItem(value: _RowAction.trash, child: Text('Move to trash')),
         ],
@@ -185,6 +440,9 @@ class _TaskTile extends ConsumerWidget {
             title: 'Rename task', initial: t.title, confirmLabel: 'Save');
         if (title == null || !context.mounted) return;
         await _report(context, ref.read(taskServiceProvider).rename(t.id, title));
+      case _RowAction.schedule:
+        await openScheduleEditor(context, ref,
+            taskId: t.id, title: t.title, initial: t.schedule);
       case _RowAction.addSubtask:
         await onAddSubtask(t.id);
       case _RowAction.trash:

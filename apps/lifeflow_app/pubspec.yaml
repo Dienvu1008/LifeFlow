@@ -27,6 +27,8 @@ dependencies:
   supabase_flutter: 2.18.3
   url_launcher: 6.3.3
   file_picker: 13.3.2
+  # Device IANA time zone (Apache-2.0, ADR-0018 OK; spike S-05). Pinned.
+  flutter_timezone: 5.1.1
 
 dev_dependencies:
   flutter_test:

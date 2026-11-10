@@ -68,6 +68,8 @@ One branch per task, merge after the headless tests pass and the owner checks th
 | **T7** Reminders | Reminder capability on Task and Event, trigger computation in the kernel, `ReminderScheduler` port and adapter, rolling horizon, removal on trash, cancel, switch and lock. | unit tests of trigger times across DST; adapter fake in tests | **yes** (both platforms) | 2–3 |
 | **T8** Exit gate | p02-exit-gate.md (DoD line → proof), ADRs, risk register (R-DST, R-RECURRENCE-DUP), invariant matrix; owner review. | all suites, CI | yes | 1 |
 
+T6 is split for review on the devices: **T6a** schedule editor, Tasks filters, Settings → Calendar, device zone ([ADR-0032](../adr/0032-task-schedule-ui-and-device-settings.md)); **T6b** Calendar tab with buttons to Today and Upcoming, event editor, conflict badges. The reminder part of the editor comes with T7.
+
 Order: T1 → T2 → T3 → T4 → T5 → T6 → T7 → T8, with T0 run in parallel early. T7 depends on T0. Total about 18–28 person-days, inside the roadmap range.
 
 ## 6. Risks

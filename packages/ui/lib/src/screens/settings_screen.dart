@@ -1,6 +1,7 @@
 import 'package:application/application.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:foundation/foundation.dart';
 
 import '../providers.dart';
 
@@ -58,8 +59,166 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
           ),
+          const Divider(height: 32),
+          const _CalendarSettings(),
         ],
       ),
     );
   }
+}
+
+/// Owner decisions D1–D3: query limits, month-end rule and first day of the
+/// week. The rule and the week start are only defaults for NEW repeats; each
+/// repeat keeps its own.
+class _CalendarSettings extends ConsumerWidget {
+  const _CalendarSettings();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(planningSettingsProvider);
+    Future<void> save(PlanningSettings s) async {
+      await ref.read(settingsServiceProvider).setPlanningSettings(s);
+      ref.invalidate(planningSettingsProvider);
+      // Today/Upcoming re-query with the new limits.
+      ref.invalidate(todayAgendaProvider);
+      ref.invalidate(upcomingAgendaProvider);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+          child: Text('Calendar', style: Theme.of(context).textTheme.titleSmall),
+        ),
+        settings.when(
+          loading: () => const Padding(
+            padding: EdgeInsets.all(16),
+            child: LinearProgressIndicator(),
+          ),
+          error: (_, __) =>
+              const ListTile(title: Text('These settings could not be loaded.')),
+          data: (s) => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const ListTile(title: Text('Week starts on')),
+              RadioGroup<Weekday>(
+                groupValue: s.firstDayOfWeek,
+                onChanged: (d) => d == null ? null : save(s.copyWith(firstDayOfWeek: d)),
+                child: const Column(children: [
+                  RadioListTile<Weekday>(
+                      key: Key('week-start-monday'),
+                      value: Weekday.monday,
+                      title: Text('Monday')),
+                  RadioListTile<Weekday>(
+                      key: Key('week-start-sunday'),
+                      value: Weekday.sunday,
+                      title: Text('Sunday')),
+                ]),
+              ),
+              const ListTile(
+                title: Text('New monthly repeats in a month without that day'),
+                subtitle: Text('For example the 31st in April. Existing repeats keep their choice.'),
+              ),
+              RadioGroup<MonthEndChoice>(
+                groupValue: s.defaultMonthEnd,
+                onChanged: (m) => m == null ? null : save(s.copyWith(defaultMonthEnd: m)),
+                child: const Column(children: [
+                  RadioListTile<MonthEndChoice>(
+                      key: Key('month-end-skip'),
+                      value: MonthEndChoice.skip,
+                      title: Text('Skip that month')),
+                  RadioListTile<MonthEndChoice>(
+                      key: Key('month-end-lastDay'),
+                      value: MonthEndChoice.lastDay,
+                      title: Text('Use the last day of the month')),
+                ]),
+              ),
+              ListTile(
+                key: const Key('max-occurrences'),
+                title: const Text('Most items in one view'),
+                subtitle: Text('${s.maxOccurrences}'),
+                trailing: const Icon(Icons.edit),
+                onTap: () async {
+                  final r = PlanningSettings.occurrencesRange;
+                  final v = await _askNumber(context,
+                      title: 'Most items in one view', initial: s.maxOccurrences, min: r.min, max: r.max);
+                  if (v != null) await save(s.copyWith(maxOccurrences: v));
+                },
+              ),
+              ListTile(
+                key: const Key('max-window'),
+                title: const Text('Longest range in days'),
+                subtitle: Text('${s.maxWindowDays}'),
+                trailing: const Icon(Icons.edit),
+                onTap: () async {
+                  final r = PlanningSettings.windowDaysRange;
+                  final v = await _askNumber(context,
+                      title: 'Longest range in days', initial: s.maxWindowDays, min: r.min, max: r.max);
+                  if (v != null) await save(s.copyWith(maxWindowDays: v));
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+Future<int?> _askNumber(BuildContext context,
+        {required String title, required int initial, required int min, required int max}) =>
+    showDialog<int>(
+      context: context,
+      builder: (_) => _NumberDialog(title: title, initial: initial, min: min, max: max),
+    );
+
+class _NumberDialog extends StatefulWidget {
+  const _NumberDialog({required this.title, required this.initial, required this.min, required this.max});
+  final String title;
+  final int initial;
+  final int min;
+  final int max;
+  @override
+  State<_NumberDialog> createState() => _NumberDialogState();
+}
+
+class _NumberDialogState extends State<_NumberDialog> {
+  late final _c = TextEditingController(text: '${widget.initial}');
+  String? _error;
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final v = int.tryParse(_c.text.trim());
+    if (v == null || v < widget.min || v > widget.max) {
+      setState(() => _error = 'Enter a number from ${widget.min} to ${widget.max}.');
+      return;
+    }
+    Navigator.pop(context, v);
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+        title: Text(widget.title),
+        content: TextField(
+          key: const Key('number-field'),
+          controller: _c,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            helperText: 'From ${widget.min} to ${widget.max}',
+            errorText: _error,
+          ),
+          onSubmitted: (_) => _submit(),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          FilledButton(onPressed: _submit, child: const Text('Save')),
+        ],
+      );
 }

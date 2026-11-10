@@ -112,6 +112,10 @@ class DriftAgendaQueries implements AgendaQueries {
 
   LocalDate _today() => tk.dateAt(time.now(), time.zone());
 
+  /// Today's date in the device zone: the same "today" the agenda uses, for
+  /// the UI's date labels.
+  LocalDate today() => _today();
+
   Stream<Agenda> _watch(Future<Agenda> Function() compute) async* {
     yield await compute();
     yield* db

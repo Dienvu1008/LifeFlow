@@ -2,7 +2,10 @@
 // `ui` depends on these read models and service ports only — never on
 // infrastructure, Drift or domain internals. Implementations live in
 // infrastructure and are wired in the app composition root.
+import 'package:foundation/foundation.dart';
+
 import 'command.dart';
+import 'planning.dart';
 
 /// Read model of a task for list display. Plain data, no behavior.
 class TaskView {
@@ -12,6 +15,7 @@ class TaskView {
     required this.status,
     required this.parentId,
     required this.createdAt,
+    this.schedule,
   });
 
   final String id;
@@ -21,6 +25,9 @@ class TaskView {
   final String status;
   final String? parentId;
   final DateTime createdAt;
+
+  /// The task's schedule, if it has one (P02 T6a).
+  final TaskScheduleInput? schedule;
 
   bool get isDone => status == 'done';
 }
@@ -65,10 +72,78 @@ enum SubtaskTrashPolicy {
   keepSubtasks,
 }
 
+/// Calendar settings of this device (owner decisions D1–D3).
+class PlanningSettings {
+  const PlanningSettings({
+    this.maxOccurrences = defaultMaxOccurrences,
+    this.maxWindowDays = defaultMaxWindowDays,
+    this.defaultMonthEnd = MonthEndChoice.skip,
+    this.firstDayOfWeek = Weekday.monday,
+  });
+
+  /// D1: at most this many occurrences per query (clamped to the bounds).
+  final int maxOccurrences;
+
+  /// D1: at most this many days per query (clamped to the bounds).
+  final int maxWindowDays;
+
+  /// D2: month-end rule for NEW repeats (each repeat stores its own).
+  final MonthEndChoice defaultMonthEnd;
+
+  /// D3: first day of the week: for the week view, and the default week
+  /// start of new repeats (each repeat stores its own).
+  final Weekday firstDayOfWeek;
+
+  static const defaultMaxOccurrences = 1000;
+  static const defaultMaxWindowDays = 400;
+  static const occurrencesRange = (min: 100, max: 5000);
+  static const windowDaysRange = (min: 31, max: 1100);
+
+  PlanningSettings copyWith({
+    int? maxOccurrences,
+    int? maxWindowDays,
+    MonthEndChoice? defaultMonthEnd,
+    Weekday? firstDayOfWeek,
+  }) =>
+      PlanningSettings(
+        maxOccurrences: maxOccurrences ?? this.maxOccurrences,
+        maxWindowDays: maxWindowDays ?? this.maxWindowDays,
+        defaultMonthEnd: defaultMonthEnd ?? this.defaultMonthEnd,
+        firstDayOfWeek: firstDayOfWeek ?? this.firstDayOfWeek,
+      );
+
+  /// Within the hard bounds, so a query is always bounded (LF-INV-PLAN-010).
+  PlanningSettings clamped() => copyWith(
+        maxOccurrences: maxOccurrences.clamp(occurrencesRange.min, occurrencesRange.max),
+        maxWindowDays: maxWindowDays.clamp(windowDaysRange.min, windowDaysRange.max),
+      );
+
+  @override
+  bool operator ==(Object o) =>
+      o is PlanningSettings &&
+      o.maxOccurrences == maxOccurrences &&
+      o.maxWindowDays == maxWindowDays &&
+      o.defaultMonthEnd == defaultMonthEnd &&
+      o.firstDayOfWeek == firstDayOfWeek;
+  @override
+  int get hashCode => Object.hash(maxOccurrences, maxWindowDays, defaultMonthEnd, firstDayOfWeek);
+}
+
 /// App settings of this device (not profile data, not synced, not exported).
 abstract interface class SettingsService {
   Future<SubtaskTrashPolicy> subtaskTrashPolicy();
   Future<void> setSubtaskTrashPolicy(SubtaskTrashPolicy policy);
+  Future<PlanningSettings> planningSettings();
+
+  /// Stores [settings] after clamping them to the bounds.
+  Future<void> setPlanningSettings(PlanningSettings settings);
+}
+
+/// The IANA time zones this build knows, for a zone picker.
+abstract interface class ZoneCatalog {
+  /// All zone names, sorted.
+  List<String> zoneNames();
+  bool isKnown(String zone);
 }
 
 /// Read model of a local profile for the profile chooser.

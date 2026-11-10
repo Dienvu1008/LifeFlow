@@ -122,6 +122,7 @@ Every non-trivial statement carries one of these labels.
 | [adr/0029-planning-storage-schema-v4.md](adr/0029-planning-storage-schema-v4.md) | P02/T3: schema v4 for schedules, exceptions, completions, events, calendars, reminders; one registry of record tables for export and restore |
 | [adr/0030-task-scheduling-and-agenda.md](adr/0030-task-scheduling-and-agenda.md) | P02/T4: task schedule commands (set, clear, only this occurrence, occurrence done) and the agenda queries (Today, Upcoming, range) |
 | [adr/0031-events-calendars-conflicts.md](adr/0031-events-calendars-conflicts.md) | P02/T5: event and calendar commands, the calendar range query, conflicts between events and tasks |
+| [adr/0032-task-schedule-ui-and-device-settings.md](adr/0032-task-schedule-ui-and-device-settings.md) | P02/T6a: task schedule editor, Tasks filters All/Today/Upcoming, Settings → Calendar, device zone wiring |
 
 ## Batch 4 documents
 

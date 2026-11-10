@@ -56,6 +56,7 @@ Future<AppWiring> openSession({
   required FileGateway files,
   bool windowsPlainFallback = false,
   String initialRoute = '/tasks',
+  String deviceZone = 'UTC',
   void Function(String message)? onWarning,
 }) async {
   final store = await directory.openProfile(profileId);
@@ -76,6 +77,15 @@ Future<AppWiring> openSession({
     final notice = storageNoticeFrom(status);
     final accounts = DriftAccountService(
         db: db, gateway: gateway, auth: auth, directory: directory, host: host);
+
+    // P02 T6a: device settings (D1–D3) are read once so the agenda's query
+    // limits are known before the first query; saving them updates the cache.
+    final settings = DirectorySettingsService(directory);
+    await settings.planningSettings();
+    const zones = KernelZoneCatalog();
+    final zone = zones.deviceZoneOr(deviceZone);
+    final agenda = DriftAgendaQueries(db, SystemDeviceTime(() => zone),
+        limits: () => settings.limitsCache.limits);
     return AppWiring(
       profileId: profileId,
       db: db,
@@ -90,8 +100,12 @@ Future<AppWiring> openSession({
         dataTransferServiceProvider
             .overrideWithValue(DriftDataTransferService(db, directory, gateway: gateway)),
         fileGatewayProvider.overrideWithValue(files),
-        settingsServiceProvider
-            .overrideWithValue(DirectorySettingsService(directory)),
+        settingsServiceProvider.overrideWithValue(settings),
+        taskSchedulingProvider.overrideWithValue(DriftTaskScheduling(db, gateway)),
+        agendaQueriesProvider.overrideWithValue(agenda),
+        zoneCatalogProvider.overrideWithValue(zones),
+        deviceZoneProvider.overrideWithValue(zone),
+        todayProvider.overrideWithValue(agenda.today),
         storageNoticeProvider.overrideWithValue(notice),
         initialRouteProvider.overrideWithValue(initialRoute),
       ],
