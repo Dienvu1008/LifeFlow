@@ -7,6 +7,7 @@ import 'package:foundation/foundation.dart';
 
 import 'app_database.dart';
 import 'command_gateway.dart';
+import 'task_schedule_ops.dart';
 
 /// Applies Task commands within the gateway transaction (T3). Enforces the
 /// domain rules (status transitions, hierarchy depth/acyclicity) before
@@ -19,6 +20,8 @@ import 'command_gateway.dart';
 ///   reopen   : payload id (done/cancelled -> todo)
 ///   reparent : payload id, newParentId?
 ///   trash    : payload id, cascade ('all'|'parentOnly'; default parentOnly)
+///   P02 T4 schedule ops (task_schedule_ops.dart): setSchedule,
+///   clearSchedule, setException, clearException, setOccurrenceDone
 class TaskCommandHandler implements CommandHandler {
   @override
   String get entityType => 'task';
@@ -97,6 +100,9 @@ class TaskCommandHandler implements CommandHandler {
     final op = cmd.payload['op'] as String;
     final id = cmd.payload['id'] as String;
     final now = DateTime.now().toUtc();
+
+    // P02 T4: schedule, occurrence change and occurrence completion.
+    if (scheduleOps.contains(op)) return applyScheduleOp(db, cmd, newVersion, now);
 
     switch (op) {
       case 'create':
