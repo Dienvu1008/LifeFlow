@@ -125,6 +125,7 @@ Every non-trivial statement carries one of these labels.
 | [adr/0032-task-schedule-ui-and-device-settings.md](adr/0032-task-schedule-ui-and-device-settings.md) | P02/T6a: task schedule editor, Tasks filters All/Today/Upcoming, Settings → Calendar, device zone wiring |
 | [adr/0033-calendar-tab-and-event-editor.md](adr/0033-calendar-tab-and-event-editor.md) | P02/T6b: Calendar tab (day, week, month), event editor, only-this-time actions, conflict badges, calendars |
 | [adr/0034-reminders.md](adr/0034-reminders.md) | P02/T7: reminders of tasks and events (kernel trigger times across DST, rolling 14-day horizon, device adapter, permissions) |
+| [adr/0035-gpl-classpath-exception-for-android-desugaring.md](adr/0035-gpl-classpath-exception-for-android-desugaring.md) | P02/T8: GPL-2.0 + Classpath Exception accepted only for Android desugaring (ADR-0018 rule 7); notices shipped; FF-ARCH-07 license scan in CI |
 
 ## Batch 4 documents
 
@@ -174,7 +175,7 @@ Resolved in Batch 2: OQ-B1 (Time Kernel package, ADR-0013), OQ-R1 (subtask depth
 
 Resolved 2026-11-04 (pre-spike): OQ-S7 (sign-out → profile chooser, data stays on device), OQ-DATA-1 (random 256-bit key in secure storage, no passphrase). New non-blocking: OQ-DATA-3 (key/data backup).
 
-Resolved in P01: OQ-R4 (encryption at rest on Android and Windows, ADR-0021/0022), OQ-DATA-3 option (a) (user export as the backup, ADR-0025). **P01 done 2026-11-07** ([testing/p01-exit-gate.md](testing/p01-exit-gate.md)). P02 plan: [roadmap/p02-plan.md](roadmap/p02-plan.md). **P02 exit gate:** [testing/p02-exit-gate.md](testing/p02-exit-gate.md) (evidence complete; waiting for the owner's sign-off and license decision L-1).
+Resolved in P01: OQ-R4 (encryption at rest on Android and Windows, ADR-0021/0022), OQ-DATA-3 option (a) (user export as the backup, ADR-0025). **P01 done 2026-11-07** ([testing/p01-exit-gate.md](testing/p01-exit-gate.md)). P02 plan: [roadmap/p02-plan.md](roadmap/p02-plan.md). **P02 exit gate:** [testing/p02-exit-gate.md](testing/p02-exit-gate.md) (evidence complete; license decision L-1 taken, ADR-0035; waiting for the owner's sign-off).
 
 ## Unresolved decisions (summary)
 

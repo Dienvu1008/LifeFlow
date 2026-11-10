@@ -214,6 +214,15 @@ void main() {
       expect(find.textContaining('remind at 09:00'), findsOneWidget);
     });
 
+    testWidgets('About: the open-source licenses page opens (ADR-0035)', (tester) async {
+      final w = world([]);
+      await pumpApp(tester, w);
+      await tester.tap(find.text('Settings').first);
+      await tester.pumpAndSettle();
+      await tapKey(tester, 'open-source-licenses');
+      expect(find.byType(LicensePage), findsOneWidget);
+    });
+
     testWidgets('a device without notifications says so', (tester) async {
       final w = world([]);
       w.reminders.deviceStatus = const ReminderStatus(supported: false, allowed: false);

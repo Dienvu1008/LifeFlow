@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'auth/supabase_auth_gateway.dart';
 import 'bootstrap.dart';
 import 'file_picker_gateway.dart';
+import 'licenses.dart';
 import 'notifications.dart';
 import 'root.dart';
 import 'secure_key_store.dart';
@@ -21,6 +22,7 @@ const windowsPlainFallback = bool.fromEnvironment('LIFEFLOW_WINDOWS_PLAIN_DB');
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  registerBundledLicenses(); // ADR-0035
 
   final platform = storagePlatformFor(defaultTargetPlatform);
   // App-private support directory, not the user's Documents (privacy-model §2).

@@ -64,6 +64,19 @@ class SettingsScreen extends ConsumerWidget {
           const _CalendarSettings(),
           const Divider(height: 32),
           const _ReminderSettings(),
+          const Divider(height: 32),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+            child: Text('About', style: Theme.of(context).textTheme.titleSmall),
+          ),
+          ListTile(
+            key: const Key('open-source-licenses'),
+            leading: const Icon(Icons.description_outlined),
+            title: const Text('Open-source licenses'),
+            subtitle: const Text('The licenses of the software LifeFlow is built with.'),
+            onTap: () => showLicensePage(context: context, applicationName: 'LifeFlow'),
+          ),
+          const SizedBox(height: 24),
         ],
       ),
     );

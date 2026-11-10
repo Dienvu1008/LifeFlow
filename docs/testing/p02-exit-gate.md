@@ -1,6 +1,6 @@
 # P02 exit-gate evidence
 
-Maps each line of the P02 definition of done ([definition-of-done.md](definition-of-done.md)) and of the P02 plan ([p02-plan.md](../roadmap/p02-plan.md)) to the tests and checks that prove it. Status: **evidence complete; waiting for the owner's sign-off and one license decision (L-1 below).**
+Maps each line of the P02 definition of done ([definition-of-done.md](definition-of-done.md)) and of the P02 plan ([p02-plan.md](../roadmap/p02-plan.md)) to the tests and checks that prove it. Status: **evidence complete; L-1 decided (option (a), ADR-0035, 2026-11-10); waiting for the owner's sign-off.**
 
 How to reproduce:
 - `dart test` in `packages/foundation|time_kernel|domain|application|infrastructure`.
@@ -48,13 +48,20 @@ All seven also appear in [invariant-test-matrix.md](../invariants/invariant-test
 | Line | Status |
 |---|---|
 | Build passes on Windows and Android; analyze clean | Debug builds for Windows and Android at every task (T6a, T6b, T7), last on the T7 branch (`80336cb`); `dart analyze` / `flutter analyze` clean in every package. CI does not build for the devices (as in P01); the builds are local. |
-| Static fitness functions | FF-ARCH-01 and FF-ARCH-04 green. FF-ARCH-02, 03, 05 and 07 have no scripts yet, as at the P01 exit (P01 gate lists 01/04/06/09). **The missing FF-ARCH-07 license scan let L-1 through; proposed: add it now (see L-1).** |
-| All phase tests pass | foundation 13, time_kernel 87, domain 17, application 3, infrastructure 224, ui 145, app 18 (local and CI, T7 branch `80336cb` green: run 42771075523). |
+| Static fitness functions | FF-ARCH-01, 04 and **07 (license scan, added in T8, ADR-0035)** green in CI. FF-ARCH-02, 03 and 05 have no scripts yet, as at the P01 exit (P01 gate lists 01/04/06/09). |
+| All phase tests pass | foundation 13, time_kernel 87, domain 17, application 3, infrastructure 224, ui 146, app 19 (local and CI on the T8 branch), plus the FF-ARCH-07 self-test (11 cases). |
 | Every P02 invariant has a passing verification row | see "Invariants" above and the matrix |
-| New dependencies have a verified license | `timezone` 0.11.2 BSD-2 (VS-32), `flutter_local_notifications` 22.3.3 BSD-3 (VS-33), `flutter_timezone` 5.1.1 Apache-2.0 (VS-34). **Open: `desugar_jdk_libs` 2.1.4 (Android build), GPL-2.0 with the Classpath Exception (VS-35); not covered by ADR-0018. See L-1.** |
-| ADRs for decisions with trade-offs | ADR-0028 (time types, DST), 0029 (schema v4), 0030 (task scheduling, agenda), 0031 (events, calendars, conflicts), 0032 (schedule UI, device settings), 0033 (Calendar tab, event editor), 0034 (reminders); plan and owner decisions D1–D10 in p02-plan.md |
+| New dependencies have a verified license | `timezone` 0.11.2 BSD-2 (VS-32), `flutter_local_notifications` 22.3.3 BSD-3 (VS-33), `flutter_timezone` 5.1.1 Apache-2.0 (VS-34), `desugar_jdk_libs` 2.1.4 GPL-2.0 + Classpath Exception (VS-35, accepted by ADR-0035 with its notices shipped). All 125 shipped packages and libraries are in the FF-ARCH-07 inventory. |
+| ADRs for decisions with trade-offs | ADR-0028 (time types, DST), 0029 (schema v4), 0030 (task scheduling, agenda), 0031 (events, calendars, conflicts), 0032 (schedule UI, device settings), 0033 (Calendar tab, event editor), 0034 (reminders), 0035 (GPL-2.0 + Classpath Exception for Android desugaring, ADR-0018 rule 7); plan and owner decisions D1–D10 in p02-plan.md |
 
-## L-1: license decision needed (owner)
+## L-1: license decision (decided)
+**Decision (owner, 2026-11-10): option (a)**, recorded in [ADR-0035](../adr/0035-gpl-classpath-exception-for-android-desugaring.md) (ADR-0018 rule 7). The owner asked whether (a) blocks a commercial store release. It does not: the Classpath Exception allows distributing the combined app under terms of our choice; the conditions are unmodified use, no copied code, and the notices in the app.
+
+Done in T8:
+- The notices are fetched from a pinned commit with checked hashes and shown under Settings → Open-source licenses.
+- FF-ARCH-07 runs in CI over every shipped package and Android library.
+
+The analysis that led to the decision:
 `flutter_local_notifications` (10+) requires Android core-library desugaring, so T7 added `com.android.tools:desugar_jdk_libs:2.1.4` to the Android build. Its code is compiled into the APK.
 - **License:** GPL-2.0 with the Classpath Exception (OpenJDK libraries; files `LICENSE`, `ASSEMBLY_EXCEPTION`, `ADDITIONAL_LICENSE_INFO` of google/desugar_jdk_libs). The Classpath Exception allows linking it with independent modules under other licenses without the whole app becoming GPL. Copying its code into our files is not allowed.
 - **The gap:** ADR-0018 accepts MIT, Apache-2.0, BSD and MPL-2.0, and LGPL only with a compliance method. It says nothing about GPL with the Classpath Exception. By rule 4 (unknown or not covered → reject), the dependency should have been decided before T7 merged. I missed this in T7.
@@ -87,9 +94,9 @@ D1–D10 and the D2/D3 refinement (p02-plan.md §3), with the proofs listed in t
 ## Risks
 - R-DST and R-RECURRENCE-DUP: mitigations in place and validated (GS-04, GS-03); register updated.
 - R-BACKGROUND / R-FLUTTER-PLUGIN: S-05 PASS on both platforms; T7 Android device check PASS; register updated.
-- New: **R-LICENSE-SCAN** (a dependency outside ADR-0018 merged without a decision). It came from L-1; mitigation: FF-ARCH-07 in CI.
+- New: **R-LICENSE-SCAN** (a dependency outside ADR-0018 merged without a decision). It came from L-1 and is mitigated: FF-ARCH-07 in CI since T8.
 
 ## Owner sign-off
-- [ ] L-1 decided: (a), (b) or (c).
+- [x] L-1 decided: (a), ADR-0035 (owner, 2026-11-10).
 - [ ] T7 Windows device check confirmed.
 - [ ] Owner approves P02 as done.

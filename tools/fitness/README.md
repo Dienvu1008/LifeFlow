@@ -10,7 +10,7 @@ Status in the scaffold:
   - 04 ui does not import infrastructure/Drift
   - 05 no cyclic package dependency
   - 06 atomic command side-effects (test-based; LF-INV-GOV-003)
-  - 07 no AGPL/unknown-license dependency (license scan; ADR-0018)
+  - 07 no AGPL/unknown-license dependency (license scan; ADR-0018) — **runnable since P02 T8**: `dart run tools/fitness/ff_arch_07_licenses.dart` (inventory `license_inventory.txt`; `--detect` suggests lines for new packages; self-test `ff_arch_07_test.dart`; exceptions per ADR-0035)
   - 08 no Restricted item toward cloud AI (test-based; LF-INV-PRIV-002)
   - 09 authorize-before-domain (test-based; LF-INV-GOV-002)
 
