@@ -43,7 +43,7 @@ There is no silent cascade and no single command that branches on a flag. The UI
 ## 5. Domain services
 - `TaskHierarchyService`: reparent with cycle and depth checks; complete-all descendants (bounded walk).
 - `TaskCompletionService`: toggle/set completion; for measurable tasks, derive completion from the current period evaluation (reads Execution summaries) under the CompletionPolicy. Never writes Measurements.
-- `HabitView` (query helper, not a mutation): selects Tasks that have both a `RecurrenceRule` and a `MeasurableTarget` (ADR-0006).
+- `HabitView` (query helper, not a mutation): selects Tasks marked as habits (`isHabit`). Since P03 D6 (ADR-0006 amendment, ADR-0036) a habit is a flag of its own, independent of the repeat and of a `MeasurableTarget`.
 
 ## 6. Commands
 | Command | Actor | Args | Preconditions | Result | Events | Idempotency | Concurrency |

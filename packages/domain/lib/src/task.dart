@@ -24,26 +24,63 @@ enum TargetType { atLeast, atMost, about }
 /// Completion policy for a task (POL-COMPLETION).
 enum CompletionPolicy { manual, automatic, hybrid }
 
+/// How the measurements of one period are combined (P03 D7, FR-HAB-03).
+enum TargetAggregation { sum, max, latest, average }
+
+/// The longest unit text accepted (free text with suggestions, D7).
+const maxUnitLength = 40;
+
 /// Measurable-target capability (present only on measurable tasks).
+/// P03 (ADR-0036): which bounds a type needs, values >= 0 (D7), and the
+/// aggregation of a period's measurements (default sum).
 class MeasurableTarget {
   const MeasurableTarget({
     required this.type,
     this.min,
     this.max,
     required this.unit,
+    this.aggregation = TargetAggregation.sum,
   });
   final TargetType type;
   final double? min;
   final double? max;
   final String unit;
+  final TargetAggregation aggregation;
 
-  /// `about` requires min <= max when both are present (validation).
+  /// Why the target is invalid, or null:
+  ///  - atLeast needs min; atMost needs max; about needs both, min <= max;
+  ///  - bounds are finite and >= 0 (D7);
+  ///  - the unit is not empty and at most [maxUnitLength] characters.
   String? validate() {
-    if (type == TargetType.about && min != null && max != null && min! > max!) {
-      return 'about target requires min <= max';
+    final lo = min, hi = max;
+    switch (type) {
+      case TargetType.atLeast:
+        if (lo == null) return 'an "at least" target needs a minimum';
+      case TargetType.atMost:
+        if (hi == null) return 'an "at most" target needs a maximum';
+      case TargetType.about:
+        if (lo == null || hi == null) return 'an "about" target needs a minimum and a maximum';
+        if (lo > hi) return 'about target requires min <= max';
     }
+    for (final v in [lo, hi]) {
+      if (v != null && (!v.isFinite || v < 0)) return 'target values must be 0 or more';
+    }
+    final u = unit.trim();
+    if (u.isEmpty) return 'a target needs a unit';
+    if (u.length > maxUnitLength) return 'the unit is too long';
     return null;
   }
+
+  @override
+  bool operator ==(Object o) =>
+      o is MeasurableTarget &&
+      o.type == type &&
+      o.min == min &&
+      o.max == max &&
+      o.unit == unit &&
+      o.aggregation == aggregation;
+  @override
+  int get hashCode => Object.hash(type, min, max, unit, aggregation);
 }
 
 /// The maximum subtask depth, checked at command time only (LF-INV-TASK-002).
@@ -65,6 +102,7 @@ class Task {
     this.taskListId,
     this.target,
     this.completionPolicy = CompletionPolicy.manual,
+    this.isHabit = false,
     this.version = Version.initial,
   });
 
@@ -77,6 +115,10 @@ class Task {
   final EntityId? taskListId;
   final MeasurableTarget? target;
   final CompletionPolicy completionPolicy;
+
+  /// P03 D6 (amends ADR-0006): a habit is a flag of its own, independent of
+  /// the repeat and of a target. An unmeasured habit is tracked done/missed.
+  final bool isHabit;
   final Version version;
 
   bool get isMeasurable => target != null;
@@ -92,6 +134,7 @@ class Task {
       taskListId: taskListId,
       target: target,
       completionPolicy: completionPolicy,
+      isHabit: isHabit,
       version: version ?? this.version,
     );
   }

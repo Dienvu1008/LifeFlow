@@ -125,6 +125,7 @@ Every non-trivial statement carries one of these labels.
 | [adr/0032-task-schedule-ui-and-device-settings.md](adr/0032-task-schedule-ui-and-device-settings.md) | P02/T6a: task schedule editor, Tasks filters All/Today/Upcoming, Settings → Calendar, device zone wiring |
 | [adr/0033-calendar-tab-and-event-editor.md](adr/0033-calendar-tab-and-event-editor.md) | P02/T6b: Calendar tab (day, week, month), event editor, only-this-time actions, conflict badges, calendars |
 | [adr/0034-reminders.md](adr/0034-reminders.md) | P02/T7: reminders of tasks and events (kernel trigger times across DST, rolling 14-day horizon, device adapter, permissions) |
+| [adr/0036-execution-measurement-goal-rules.md](adr/0036-execution-measurement-goal-rules.md) | P03/T1: focus session rules and recovery, targets and evaluation, periods from the repeat, habit tracking, goal progress (pure domain); amends ADR-0006 (habit is its own flag) |
 | [adr/0035-gpl-classpath-exception-for-android-desugaring.md](adr/0035-gpl-classpath-exception-for-android-desugaring.md) | P02/T8: GPL-2.0 + Classpath Exception accepted only for Android desugaring (ADR-0018 rule 7); notices shipped; FF-ARCH-07 license scan in CI |
 
 ## Batch 4 documents
