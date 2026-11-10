@@ -12,10 +12,10 @@ environment:
 dependencies:
   foundation:
     path: ../foundation
-  # BSD-2-Clause (LICENSE checked 2026-11-07, ADR-0018). Pinned: the zone
+  # BSD-2-Clause (LICENSE checked 2026-11-09, ADR-0018). Pinned: the zone
   # database ships inside the package, so an upgrade changes DST data and is
   # a deliberate change (R-DST).
-  timezone: 0.9.4
+  timezone: 0.11.2
 
 dev_dependencies:
   test: ^1.25.0
