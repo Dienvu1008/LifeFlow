@@ -1,6 +1,6 @@
 # P02 exit-gate evidence
 
-Maps each line of the P02 definition of done ([definition-of-done.md](definition-of-done.md)) and of the P02 plan ([p02-plan.md](../roadmap/p02-plan.md)) to the tests and checks that prove it. Status: **evidence complete; L-1 decided (option (a), ADR-0035, 2026-11-10); waiting for the owner's sign-off.**
+Maps each line of the P02 definition of done ([definition-of-done.md](definition-of-done.md)) and of the P02 plan ([p02-plan.md](../roadmap/p02-plan.md)) to the tests and checks that prove it. Status: **signed off by the owner, 2026-11-10** (L-1 decided: option (a), ADR-0035; see the end of this document).
 
 How to reproduce:
 - `dart test` in `packages/foundation|time_kernel|domain|application|infrastructure`.
@@ -84,7 +84,7 @@ D1–D10 and the D2/D3 refinement (p02-plan.md §3), with the proofs listed in t
   - Cause: Windows drops scheduled toasts for an app id it has never shown a notification for ("Element not found" in its push-notification log). The S-05 probe had passed only because it showed a toast first.
   - Fix: the adapter registers the app id with one "Reminders are on" notification and reports "turned off in Windows settings" (ADR-0034, S-05 correction).
   - Verified by the agent end to end: real app, window closed normally, reminder delivered at the minute.
-- [ ] T7 Windows, owner re-check after the fix: set a reminder a few minutes ahead, close LifeFlow, the notification appears.
+- [x] T7 Windows, owner re-check after the fix: a reminder showed with LifeFlow closed (owner, 2026-11-10).
 
 ## Known limits carried out of P02
 - "This and following" edits of a repeat (D4): deferred to after P03.
@@ -103,5 +103,8 @@ D1–D10 and the D2/D3 refinement (p02-plan.md §3), with the proofs listed in t
 
 ## Owner sign-off
 - [x] L-1 decided: (a), ADR-0035 (owner, 2026-11-10).
-- [ ] T7 Windows device check confirmed after the fix.
-- [ ] Owner approves P02 as done.
+- [x] T7 Windows device check confirmed after the fix (owner, 2026-11-10).
+- [x] CI green on the T8 branch (`b070368`, run 42784381706).
+- [x] Owner approves P02 as done (2026-11-10).
+
+**P02 status: Done (2026-11-10).**

@@ -1,6 +1,6 @@
 # P02 plan: Planning & Calendar
 
-- Status: **Accepted by the owner 2026-11-07** (decisions D1–D10 and the D2/D3 refinement, section 3). T0–T7 done and merged; T8 exit gate: [p02-exit-gate.md](../testing/p02-exit-gate.md) (waiting for sign-off).
+- Status: **Accepted by the owner 2026-11-07** (decisions D1–D10 and the D2/D3 refinement, section 3). T0–T8 done; **P02 signed off by the owner 2026-11-10** ([p02-exit-gate.md](../testing/p02-exit-gate.md)).
 - Date: 2026-11-07
 - Inputs: [definition-of-done.md §P02](../testing/definition-of-done.md), [phase-breakdown.md](phase-breakdown.md), [planning-scheduling.md](../domains/planning-scheduling.md), [calendar-events.md](../domains/calendar-events.md), [task-management.md](../domains/task-management.md), ADR-0007, ADR-0010, ADR-0013, ADR-0015, invariant catalog §2–3, GS-03/04, UC-06/08, FR-PLAN-01..12, FR-CAL-01..04
 - Estimate (effort-estimation.md): 15–30 person-days

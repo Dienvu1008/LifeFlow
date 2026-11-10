@@ -27,7 +27,7 @@ A phase is done only when all its DoD items hold. Phases beyond P03 use the temp
 - Exit gate: the atomic-set crash/concurrency scenarios (GS-06/07/12) pass; encryption at rest verified (GS-19); export/restore round-trips (GS-20); guest→account binding keeps IDs and works offline (GS-22).
 
 ## P02 — Planning & Calendar
-- Status: **exit-gate evidence complete, waiting for the owner's sign-off** ([p02-exit-gate.md](p02-exit-gate.md)); license decision L-1 taken (ADR-0035). Task plan and owner decisions: [../roadmap/p02-plan.md](../roadmap/p02-plan.md).
+- **Status: Done (owner sign-off 2026-11-10).** Evidence: [p02-exit-gate.md](p02-exit-gate.md) (per-line proof and sign-off). License decision L-1: ADR-0035. Task plan and owner decisions: [../roadmap/p02-plan.md](../roadmap/p02-plan.md).
 - Scope: ScheduleSpec, RecurrenceRule, OccurrenceException, Time Kernel queries, Event/Calendar, conflict detection, reminders, DST.
 - Invariants: PLAN-004/010/011/012/013, CAL-001/002.
 - Golden scenarios: GS-03, GS-04.
