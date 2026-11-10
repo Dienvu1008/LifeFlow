@@ -328,6 +328,75 @@ void main() {
     expect(a.items, hasLength(400));
     expect((await agenda.range(d(2026, 1, 1), d(2026, 1, 31))).truncated, isFalse);
   });
+
+  group('T6a: task list, device settings, zones', () {
+    test('watchTasks carries each task\'s live schedule', () async {
+      final a = await task('Planned');
+      final b = await task('Plain');
+      final input = TaskScheduleInput(
+        start: SchedulePointInput.at(d(2026, 11, 9), TimeOfDayValue(18, 0), 'Asia/Ho_Chi_Minh'),
+        repeat: monWed10,
+      );
+      await scheduling.setSchedule(a, input);
+      var list = await svc.queries.watchTasks().first;
+      expect(list.map((t) => t.id), [a, b]); // order kept by the join
+      final s = list.first.schedule!;
+      expect(s.start, input.start);
+      expect(s.repeat!.weekdays, monWed10.weekdays);
+      expect(list.last.schedule, isNull);
+      // A cleared schedule (tombstone) is not shown, and the task stays once.
+      await scheduling.setSchedule(a, null);
+      list = await svc.queries.watchTasks().first;
+      expect(list.map((t) => t.id), [a, b]);
+      expect(list.first.schedule, isNull);
+    });
+
+    test('planning settings: defaults, round trip, clamped, and the limits cache', () async {
+      final settings = DirectorySettingsService(dir);
+      expect(await settings.planningSettings(), const PlanningSettings());
+      await settings.setPlanningSettings(const PlanningSettings(
+          maxOccurrences: 99999,
+          maxWindowDays: 1,
+          defaultMonthEnd: MonthEndChoice.lastDay,
+          firstDayOfWeek: Weekday.sunday));
+      const stored = PlanningSettings(
+          maxOccurrences: 5000,
+          maxWindowDays: 31,
+          defaultMonthEnd: MonthEndChoice.lastDay,
+          firstDayOfWeek: Weekday.sunday);
+      expect(settings.limitsCache.value, stored);
+      // A new service (next start) reads the same values.
+      final again = DirectorySettingsService(dir);
+      expect(again.limitsCache.value, const PlanningSettings());
+      expect(await again.planningSettings(), stored);
+      expect(again.limitsCache.limits.maxWindowDays, 31);
+    });
+
+    test('the agenda uses the limits from the settings (D1)', () async {
+      final settings = DirectorySettingsService(dir);
+      final limited = DriftAgendaQueries(host.db, time, limits: () => settings.limitsCache.limits);
+      final id = await task('Daily');
+      await scheduling.setSchedule(id, TaskScheduleInput(
+          start: SchedulePointInput.date(d(2026, 1, 1)), repeat: const RepeatInput(frequency: RepeatFrequency.daily)));
+      expect((await limited.range(d(2026, 1, 1), d(2026, 12, 31))).truncated, isFalse); // 365 < 400 days
+      await settings.setPlanningSettings(const PlanningSettings(maxWindowDays: 100));
+      final a = await limited.range(d(2026, 1, 1), d(2026, 12, 31));
+      expect(a.truncated, isTrue);
+      expect(a.items, hasLength(100));
+      await settings.setPlanningSettings(const PlanningSettings(maxOccurrences: 150, maxWindowDays: 1100));
+      expect((await limited.range(d(2026, 1, 1), d(2026, 12, 31))).items, hasLength(150));
+    });
+
+    test('device zone: a known name is kept (legacy aliases too), otherwise UTC', () {
+      const zones = KernelZoneCatalog();
+      expect(zones.deviceZoneOr('Asia/Ho_Chi_Minh'), 'Asia/Ho_Chi_Minh');
+      expect(zones.deviceZoneOr('Asia/Saigon'), 'Asia/Saigon'); // what Windows reports
+      expect(zones.deviceZoneOr('Nowhere/City'), 'UTC');
+      expect(zones.deviceZoneOr(null), 'UTC');
+      expect(zones.zoneNames(), contains('Europe/Berlin'));
+      expect(zones.zoneNames(), orderedEquals([...zones.zoneNames()]..sort()));
+    });
+  });
 }
 
 Future<void> _wait() => Future<void>.delayed(const Duration(milliseconds: 20));

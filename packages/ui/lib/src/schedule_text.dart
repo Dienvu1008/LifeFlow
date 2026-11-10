@@ -1,0 +1,88 @@
+// P02 T6a: how schedules read in the UI. English only for now (like
+// messages.dart); plain functions so they are easy to test.
+import 'package:application/application.dart';
+import 'package:foundation/foundation.dart';
+
+const _weekdayShort = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const _weekdayLong = [
+  'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
+];
+const _monthShort = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+];
+
+String weekdayShort(Weekday d) => _weekdayShort[d.index];
+String weekdayLong(Weekday d) => _weekdayLong[d.index];
+
+/// "Today", "Tomorrow", "Yesterday", otherwise "Mon 9 Nov" (with the year
+/// when it is not [today]'s year).
+String formatDate(LocalDate d, {required LocalDate today}) {
+  final diff = today.daysUntil(d);
+  if (diff == 0) return 'Today';
+  if (diff == 1) return 'Tomorrow';
+  if (diff == -1) return 'Yesterday';
+  return formatDateLong(d, today: today);
+}
+
+/// "Mon 9 Nov" (plus the year when it differs from [today]'s).
+String formatDateLong(LocalDate d, {required LocalDate today}) {
+  final base = '${weekdayShort(d.weekday)} ${d.day} ${_monthShort[d.month - 1]}';
+  return d.year == today.year ? base : '$base ${d.year}';
+}
+
+/// A date, plus its time; the zone is shown only when it is not the
+/// device's (D10), so a trip abroad stays visible.
+String formatPoint(SchedulePointInput p, {required LocalDate today, required String deviceZone}) {
+  final date = formatDate(p.date, today: today);
+  if (!p.isTimed) return date;
+  final zone = p.zone == deviceZone ? '' : ' (${p.zone})';
+  return '$date ${p.time}$zone';
+}
+
+/// Only the time (and a foreign zone), for rows already grouped by date.
+String formatTimeOnly(SchedulePointInput p, {required String deviceZone}) {
+  if (!p.isTimed) return '';
+  return p.zone == deviceZone ? '${p.time}' : '${p.time} (${p.zone})';
+}
+
+String describeRepeat(RepeatInput r) {
+  final n = r.interval;
+  final unit = switch (r.frequency) {
+    RepeatFrequency.daily => n == 1 ? 'day' : '$n days',
+    RepeatFrequency.weekly => n == 1 ? 'week' : '$n weeks',
+    RepeatFrequency.monthly => n == 1 ? 'month' : '$n months',
+    RepeatFrequency.yearly => n == 1 ? 'year' : '$n years',
+  };
+  final buf = StringBuffer('Every $unit');
+  final days = r.weekdays;
+  if (r.frequency == RepeatFrequency.weekly && days != null && days.isNotEmpty) {
+    final sorted = days.toList()..sort((a, b) => a.index.compareTo(b.index));
+    buf.write(' on ${sorted.map(weekdayShort).join(', ')}');
+  }
+  switch (r.end) {
+    case RepeatForever():
+      break;
+    case RepeatUntil(:final date):
+      buf.write(', until $date');
+    case RepeatTimes(:final count):
+      buf.write(count == 1 ? ', once' : ', $count times');
+  }
+  return buf.toString();
+}
+
+/// One line for a task row: "Start Today 09:00 · Due Fri 13 Nov · Every week".
+String describeSchedule(TaskScheduleInput s, {required LocalDate today, required String deviceZone}) {
+  String f(SchedulePointInput p) => formatPoint(p, today: today, deviceZone: deviceZone);
+  final parts = <String>[
+    if (s.start != null && s.end != null && s.start!.date == s.end!.date &&
+        s.start!.isTimed && s.start!.zone == s.end!.zone)
+      '${f(s.start!)}–${s.end!.time}'
+    else ...[
+      if (s.start != null) 'Start ${f(s.start!)}',
+      if (s.end != null) 'End ${f(s.end!)}',
+    ],
+    if (s.deadline != null) 'Due ${f(s.deadline!)}',
+    if (s.repeat != null) describeRepeat(s.repeat!),
+  ];
+  return parts.join(' · ');
+}

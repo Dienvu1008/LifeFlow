@@ -218,6 +218,67 @@ void main() {
     await finish(tester, w);
   });
 
+  testWidgets('P02 T6a: a schedule set in the UI is stored and shows in Today',
+      (tester) async {
+    final w = await pumpApp(tester, StoragePlatform.android);
+    await tester.tap(find.byTooltip('Add task'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Water the plants');
+    await tester.tap(find.widgetWithText(FilledButton, 'Add'));
+    await tester.pump();
+    await settle(tester);
+
+    // Not planned yet: Today is empty.
+    await tester.tap(find.text('Today'));
+    await settle(tester);
+    expect(find.byKey(const Key('agenda-empty')), findsOneWidget);
+    await tester.tap(find.text('All'));
+    await settle(tester);
+
+    await tester.tap(find.byTooltip('Actions for Water the plants'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Schedule…'));
+    await settle(tester);
+    await tester.tap(find.byKey(const Key('start-date')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('OK')); // today, in the device zone
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('repeat-switch')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('schedule-save')));
+    await tester.pump();
+    await settle(tester);
+    await tester.pumpAndSettle(); // the editor's closing transition
+    expect(find.text('Start Today · Every day'), findsOneWidget);
+
+    await tester.tap(find.text('Today'));
+    await settle(tester);
+    expect(find.text('Water the plants'), findsOneWidget);
+    expect(find.text('Repeats'), findsOneWidget);
+
+    // D5: ticking marks only today's occurrence; the task stays open.
+    await tester.tap(find.bySemanticsLabel('Complete Water the plants'));
+    await tester.pump();
+    await settle(tester);
+    expect(find.bySemanticsLabel('Mark as not done: Water the plants'), findsOneWidget);
+
+    final id = (await tester.runAsync(() => w.directory.active()))!.id;
+    final rows = await tester.runAsync(() async {
+      final s = await w.directory.openProfile(id);
+      final tasks = await s.db.select(s.db.tasks).get();
+      final schedules = await s.db.select(s.db.schedules).get();
+      final done = await s.db.select(s.db.occurrenceCompletions).get();
+      final audit = await s.db.select(s.db.auditLog).get();
+      await s.db.close();
+      return (tasks: tasks, schedules: schedules, done: done, audit: audit);
+    });
+    expect(rows!.tasks.single.status, isNot('done'));
+    expect(rows.schedules.single.frequency, 'daily');
+    expect(rows.done, hasLength(1));
+    expect(rows.audit.map((a) => a.action), containsAll(['SetTaskSchedule', 'CompleteOccurrence']));
+    await finish(tester, w);
+  });
+
   testWidgets('switching profile in the UI swaps the store (SR-03, ID-002)',
       (tester) async {
     final w = await pumpApp(tester, StoragePlatform.android);

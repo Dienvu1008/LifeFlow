@@ -1,5 +1,6 @@
 import 'package:application/application.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:foundation/foundation.dart';
 
 // Ports are supplied by the composition root (apps/lifeflow_app) through
 // ProviderScope overrides. The UI never builds an implementation itself
@@ -21,6 +22,46 @@ final fileGatewayProvider =
     Provider<FileGateway>((ref) => _notWired('fileGatewayProvider'));
 final settingsServiceProvider =
     Provider<SettingsService>((ref) => _notWired('settingsServiceProvider'));
+
+final taskSchedulingProvider =
+    Provider<TaskScheduling>((ref) => _notWired('taskSchedulingProvider'));
+final agendaQueriesProvider =
+    Provider<AgendaQueries>((ref) => _notWired('agendaQueriesProvider'));
+final zoneCatalogProvider =
+    Provider<ZoneCatalog>((ref) => _notWired('zoneCatalogProvider'));
+
+/// The device's IANA zone: the default zone of new timed items (D10).
+final deviceZoneProvider = Provider<String>((ref) => 'UTC');
+
+/// Calendar settings of this device (D1–D3). Invalidate after changing them.
+final planningSettingsProvider = FutureProvider.autoDispose<PlanningSettings>(
+  (ref) => ref.watch(settingsServiceProvider).planningSettings(),
+);
+
+/// Today's date on this device, for labels such as "Tomorrow". A function so
+/// it never goes stale after midnight; tests override it.
+final todayProvider = Provider<LocalDate Function()>((ref) => () {
+      final n = DateTime.now();
+      return LocalDate(n.year, n.month, n.day);
+    });
+
+/// Which tasks the Tasks tab shows (D9: Today and Upcoming are filters of
+/// Tasks; the Calendar tab can switch to them).
+enum TaskFilter { all, today, upcoming }
+
+final taskFilterProvider = StateProvider<TaskFilter>((ref) => TaskFilter.all);
+
+/// Today's agenda of the ACTIVE profile (re-subscribed on a profile switch).
+final todayAgendaProvider = StreamProvider.autoDispose<Agenda>((ref) {
+  ref.watch(activeProfileProvider);
+  return ref.watch(agendaQueriesProvider).watchToday();
+});
+
+/// The next 14 days after today.
+final upcomingAgendaProvider = StreamProvider.autoDispose<Agenda>((ref) {
+  ref.watch(activeProfileProvider);
+  return ref.watch(agendaQueriesProvider).watchUpcoming();
+});
 
 /// What happens to subtasks when their parent goes to the trash (device
 /// setting). Invalidate after changing it.

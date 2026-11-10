@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:infrastructure/infrastructure.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -52,6 +53,15 @@ Future<void> main() async {
   // runs fully as a guest. Initializing makes no network call.
   final auth = await SupabaseAuthGateway.initialize();
 
+  // Owner decision D10: new timed items use the device zone. Unknown to this
+  // build or unreadable -> UTC (openSession validates it).
+  String? deviceZone;
+  try {
+    deviceZone = (await FlutterTimezone.getLocalTimezone()).identifier;
+  } catch (e) {
+    debugPrint('[time] device zone unavailable: $e');
+  }
+
   // Never a locked (signed-out) profile: ProfileDirectory.open falls back to
   // a guest (ADR-0024).
   final active = (await directory.active())!;
@@ -65,6 +75,7 @@ Future<void> main() async {
       auth: auth,
       host: host,
       initialRoute: initialRoute,
+      deviceZone: deviceZone ?? 'UTC',
       files: const FilePickerGateway(),
       windowsPlainFallback: windowsPlainFallback,
       // Local log only; never uploaded (no telemetry, SR-15).
