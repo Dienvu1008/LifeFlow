@@ -30,6 +30,24 @@ final agendaQueriesProvider =
 final zoneCatalogProvider =
     Provider<ZoneCatalog>((ref) => _notWired('zoneCatalogProvider'));
 
+final eventServiceProvider = Provider<EventService>((ref) => _notWired('eventServiceProvider'));
+final calendarServiceProvider = Provider<CalendarService>((ref) => _notWired('calendarServiceProvider'));
+final calendarQueriesProvider = Provider<CalendarQueries>((ref) => _notWired('calendarQueriesProvider'));
+
+/// The calendars of the ACTIVE profile.
+final calendarsProvider = StreamProvider.autoDispose<List<CalendarView>>((ref) {
+  ref.watch(activeProfileProvider);
+  return ref.watch(calendarServiceProvider).watchCalendars();
+});
+
+/// Events, scheduled tasks and conflicts of from..to (inclusive), for the
+/// calendar views of the ACTIVE profile.
+final calendarRangeProvider =
+    StreamProvider.autoDispose.family<CalendarRange, ({LocalDate from, LocalDate to})>((ref, r) {
+  ref.watch(activeProfileProvider);
+  return ref.watch(calendarQueriesProvider).watchRange(r.from, r.to);
+});
+
 /// The device's IANA zone: the default zone of new timed items (D10).
 final deviceZoneProvider = Provider<String>((ref) => 'UTC');
 

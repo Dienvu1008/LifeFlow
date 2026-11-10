@@ -279,6 +279,86 @@ void main() {
     await finish(tester, w);
   });
 
+  testWidgets('P02 T6b: an event made in the Calendar tab is stored, shown, and overlaps a task',
+      (tester) async {
+    final w = await pumpApp(tester, StoragePlatform.android, width: 1200);
+    await tester.tap(find.byTooltip('Add task'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Gym');
+    await tester.tap(find.widgetWithText(FilledButton, 'Add'));
+    await tester.pump();
+    await settle(tester);
+
+    await tester.tap(find.byIcon(Icons.calendar_month_outlined));
+    await settle(tester);
+    expect(find.byKey(const Key('calendar-month')), findsOneWidget);
+    await tester.tap(find.descendant(of: find.byKey(const Key('calendar-mode')), matching: find.text('Day')));
+    await settle(tester);
+    expect(find.byKey(const Key('calendar-empty')), findsOneWidget);
+
+    // New event: the default is today 09:00–10:00 in the device zone.
+    await tester.tap(find.byTooltip('New event'));
+    await settle(tester);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('event-title')), 'Standup');
+    await tester.tap(find.byKey(const Key('event-save')));
+    await tester.pump();
+    await settle(tester);
+    await tester.pumpAndSettle();
+    expect(find.text('Standup'), findsOneWidget);
+    expect(find.text('09:00–10:00'), findsOneWidget);
+
+    // Plan the task today 09:00–10:30 through its schedule editor.
+    await tester.tap(find.byIcon(Icons.checklist_outlined));
+    await settle(tester);
+    await tester.tap(find.byTooltip('Actions for Gym'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Schedule…'));
+    await settle(tester);
+    await tester.pumpAndSettle();
+    for (final key in ['start-date', 'start-time', 'end-date']) {
+      await tester.tap(find.byKey(Key(key)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('OK')); // today; 09:00
+      await tester.pumpAndSettle();
+    }
+    await tester.tap(find.byKey(const Key('end-time')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.keyboard_outlined)); // type the time
+    await tester.pumpAndSettle();
+    final fields = find.descendant(of: find.byType(Dialog), matching: find.byType(TextField));
+    await tester.enterText(fields.at(0), '10');
+    await tester.enterText(fields.at(1), '30');
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('schedule-save')));
+    await tester.pump();
+    await settle(tester);
+    await tester.pumpAndSettle();
+    expect(find.text('Today 09:00–10:30'), findsOneWidget);
+
+    // Back in the calendar day: both rows show the overlap (D7).
+    await tester.tap(find.byIcon(Icons.calendar_month_outlined));
+    await settle(tester);
+    expect(find.text('Overlaps Gym'), findsOneWidget);
+    expect(find.text('Overlaps Standup'), findsOneWidget);
+
+    final id = (await tester.runAsync(() => w.directory.active()))!.id;
+    final rows = await tester.runAsync(() async {
+      final s = await w.directory.openProfile(id);
+      final events = await s.db.select(s.db.events).get();
+      final schedules = await s.db.select(s.db.schedules).get();
+      final tasks = await s.db.select(s.db.tasks).get();
+      await s.db.close();
+      return (events: events, schedules: schedules, tasks: tasks);
+    });
+    expect(rows!.events.single.title, 'Standup');
+    expect(rows.schedules.map((s) => s.subjectType).toSet(), {'event', 'task'});
+    // D6: the event is not a task, and has its own id.
+    expect(rows.tasks.map((t) => t.id), isNot(contains(rows.events.single.id)));
+    await finish(tester, w);
+  });
+
   testWidgets('switching profile in the UI swaps the store (SR-03, ID-002)',
       (tester) async {
     final w = await pumpApp(tester, StoragePlatform.android);

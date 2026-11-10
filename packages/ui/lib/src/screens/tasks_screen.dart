@@ -2,19 +2,14 @@ import 'package:application/application.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:foundation/foundation.dart';
-
 import '../messages.dart';
 import '../providers.dart';
 import '../schedule_text.dart';
+import '../task_actions.dart';
 import '../task_tree.dart';
 import 'schedule_editor.dart';
 
 enum _RowAction { rename, schedule, addSubtask, trash }
-
-enum _AgendaAction { skip, move, undoChange, schedule }
-
-enum _CompleteChoice { withSubtasks, onlyThis }
 
 /// Typical height of one row (one-line ListTile); only an estimate used to
 /// get close to a row that is not built yet.
@@ -53,7 +48,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     if (parentId == null && filter != TaskFilter.all) {
       final today = ref.read(todayProvider)();
       final day = filter == TaskFilter.today ? today : today.addDays(1);
-      await _report(
+      await reportResult(
           context,
           ref.read(taskSchedulingProvider).setSchedule(
               id, TaskScheduleInput(start: SchedulePointInput.date(day))));
@@ -127,6 +122,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'fab-tasks',
         tooltip: 'Add task',
         onPressed: () => _addTask(null),
         child: const Icon(Icons.add),
@@ -261,7 +257,7 @@ class _AgendaList extends ConsumerWidget {
               ),
             ));
           }
-          children.add(_AgendaTile(item: item, row: rows[item.taskId], today: today));
+          children.add(TaskOccurrenceTile(item: item, row: rows[item.taskId], today: today));
         }
         return ListView(
           key: Key(upcoming ? 'upcoming-list' : 'today-list'),
@@ -270,116 +266,6 @@ class _AgendaList extends ConsumerWidget {
         );
       },
     );
-  }
-}
-
-class _AgendaTile extends ConsumerWidget {
-  const _AgendaTile({required this.item, required this.row, required this.today});
-  final AgendaItem item;
-  final TaskRow? row;
-  final LocalDate today;
-
-  String _subtitle(String zone) {
-    final s = item.start, e = item.end, d = item.deadline;
-    final parts = <String>[
-      if (item.isOverdue) 'Planned ${formatDate(item.date, today: today)}',
-      if (s != null && s.isTimed)
-        e != null && e.isTimed && e.date == s.date && e.zone == s.zone
-            ? '${formatTimeOnly(s, deviceZone: zone)}–${e.time}'
-            : formatTimeOnly(s, deviceZone: zone),
-      if (s != null && e != null && e.date != s.date)
-        'Until ${formatPoint(e, today: today, deviceZone: zone)}'
-      else if (s == null && e != null && e.isTimed)
-        'Ends ${formatTimeOnly(e, deviceZone: zone)}',
-      if (d != null) 'Due ${formatPoint(d, today: today, deviceZone: zone)}',
-      if (item.isRepeating) 'Repeats',
-      if (item.isMoved) 'Moved',
-    ];
-    return parts.join(' · ');
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final i = item;
-    final subtitle = _subtitle(ref.watch(deviceZoneProvider));
-    return ListTile(
-      key: ValueKey('agenda-${i.taskId}@${i.originalDate}'),
-      leading: Checkbox(
-        value: i.isDone,
-        semanticLabel: i.isDone ? 'Mark as not done: ${i.title}' : 'Complete ${i.title}',
-        onChanged: (_) => _toggle(context, ref),
-      ),
-      title: Text(
-        i.title,
-        style: i.isDone ? const TextStyle(decoration: TextDecoration.lineThrough) : null,
-      ),
-      subtitle: subtitle.isEmpty ? null : Text(subtitle),
-      trailing: PopupMenuButton<_AgendaAction>(
-        tooltip: 'Actions for ${i.title}',
-        onSelected: (a) => _onAction(context, ref, a),
-        itemBuilder: (_) => [
-          if (i.isRepeating) ...[
-            const PopupMenuItem(value: _AgendaAction.skip, child: Text('Skip this time')),
-            const PopupMenuItem(value: _AgendaAction.move, child: Text('Move this time…')),
-            if (i.isMoved)
-              const PopupMenuItem(
-                  value: _AgendaAction.undoChange, child: Text('Undo the change to this time')),
-          ],
-          PopupMenuItem(
-              value: _AgendaAction.schedule,
-              child: Text(i.isRepeating ? 'Edit the whole repeat…' : 'Schedule…')),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _toggle(BuildContext context, WidgetRef ref) async {
-    final i = item;
-    // D5: a repeating task is done one occurrence at a time; it stays open.
-    if (i.isRepeating) {
-      await _report(context,
-          ref.read(taskSchedulingProvider).setOccurrenceDone(i.taskId, i.originalDate, done: !i.isDone));
-      return;
-    }
-    if (i.isDone) {
-      await _report(context, ref.read(taskServiceProvider).reopen(i.taskId));
-      return;
-    }
-    final r = row;
-    if (r == null) {
-      await _report(context, ref.read(taskServiceProvider).complete(i.taskId, withDescendants: false));
-    } else {
-      await _complete(context, ref, r);
-    }
-  }
-
-  Future<void> _onAction(BuildContext context, WidgetRef ref, _AgendaAction a) async {
-    final i = item;
-    final scheduling = ref.read(taskSchedulingProvider);
-    switch (a) {
-      case _AgendaAction.skip:
-        await _report(context, scheduling.changeOccurrence(i.taskId, i.originalDate, const SkipThisOccurrence()));
-      case _AgendaAction.move:
-        final d = i.date;
-        final picked = await showDatePicker(
-          context: context,
-          helpText: 'Move this time to',
-          initialDate: DateTime(d.year, d.month, d.day),
-          firstDate: DateTime(1900),
-          lastDate: DateTime(2200, 12, 31),
-        );
-        if (picked == null || !context.mounted) return;
-        await _report(
-            context,
-            scheduling.changeOccurrence(i.taskId, i.originalDate,
-                MoveThisOccurrence(LocalDate(picked.year, picked.month, picked.day))));
-      case _AgendaAction.undoChange:
-        await _report(context, scheduling.changeOccurrence(i.taskId, i.originalDate, null));
-      case _AgendaAction.schedule:
-        final initial = row?.task.schedule ?? await scheduling.scheduleOf(i.taskId);
-        if (!context.mounted) return;
-        await openScheduleEditor(context, ref, taskId: i.taskId, title: i.title, initial: initial);
-    }
   }
 }
 
@@ -401,8 +287,8 @@ class _TaskTile extends ConsumerWidget {
             t.isDone ? 'Mark as not done: ${t.title}' : 'Complete ${t.title}',
         // Unchecking a done task reopens it (a completion can be undone).
         onChanged: (_) => t.isDone
-            ? _report(context, ref.read(taskServiceProvider).reopen(t.id))
-            : _complete(context, ref, row),
+            ? reportResult(context, ref.read(taskServiceProvider).reopen(t.id))
+            : completeTask(context, ref, row),
       ),
       title: Text(
         t.title,
@@ -439,7 +325,7 @@ class _TaskTile extends ConsumerWidget {
         final title = await showTextDialog(context,
             title: 'Rename task', initial: t.title, confirmLabel: 'Save');
         if (title == null || !context.mounted) return;
-        await _report(context, ref.read(taskServiceProvider).rename(t.id, title));
+        await reportResult(context, ref.read(taskServiceProvider).rename(t.id, title));
       case _RowAction.schedule:
         await openScheduleEditor(context, ref,
             taskId: t.id, title: t.title, initial: t.schedule);
@@ -461,7 +347,7 @@ Future<String?> _add(BuildContext context, WidgetRef ref, String? parentId) asyn
       await ref.read(taskServiceProvider).create(title, parentId: parentId);
   if (!context.mounted) return null;
   if (result is CommandFailure) {
-    _show(context, describeFailure(result));
+    showMessage(context, describeFailure(result));
     return null;
   }
   return (result as CommandOk).entityId;
@@ -472,7 +358,7 @@ Future<String?> _add(BuildContext context, WidgetRef ref, String? parentId) asyn
 Future<void> _trash(BuildContext context, WidgetRef ref, TaskRow row) async {
   final service = ref.read(taskServiceProvider);
   if (row.subtaskCount == 0) {
-    await _report(context, service.trash(row.task.id));
+    await reportResult(context, service.trash(row.task.id));
     return;
   }
   var policy = SubtaskTrashPolicy.ask;
@@ -504,7 +390,7 @@ Future<void> _trash(BuildContext context, WidgetRef ref, TaskRow row) async {
         if (!context.mounted) return;
       }
   }
-  await _report(context, service.trash(row.task.id, withSubtasks: withSubtasks));
+  await reportResult(context, service.trash(row.task.id, withSubtasks: withSubtasks));
 }
 
 /// Asks what to do with the subtasks. Pops (withSubtasks, remember).
@@ -559,52 +445,6 @@ class _TrashDialogState extends State<_TrashDialog> {
       ],
     );
   }
-}
-
-/// OQ-R3: with open subtasks the user chooses between the two commands.
-Future<void> _complete(BuildContext context, WidgetRef ref, TaskRow row) async {
-  var withDescendants = false;
-  if (row.hasOpenChildren) {
-    final choice = await showDialog<_CompleteChoice>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('This task has open subtasks'),
-        content: const Text('Complete the subtasks too, or only this task?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, _CompleteChoice.onlyThis),
-              child: const Text('Only this task')),
-          FilledButton(
-              onPressed: () => Navigator.pop(ctx, _CompleteChoice.withSubtasks),
-              child: const Text('With subtasks')),
-        ],
-      ),
-    );
-    if (choice == null || !context.mounted) return;
-    withDescendants = choice == _CompleteChoice.withSubtasks;
-  }
-  await _report(
-    context,
-    ref
-        .read(taskServiceProvider)
-        .complete(row.task.id, withDescendants: withDescendants),
-  );
-}
-
-/// Shows a failure as a snackbar; success needs no message (the list updates).
-Future<void> _report(BuildContext context, Future<CommandResult> pending) async {
-  final result = await pending;
-  if (result is CommandFailure && context.mounted) {
-    _show(context, describeFailure(result));
-  }
-}
-
-void _show(BuildContext context, String message) {
-  ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(message)));
 }
 
 /// Small single-field dialog. Returns the trimmed text, or null if cancelled
