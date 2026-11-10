@@ -42,6 +42,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  # ADR-0035: notices that must travel with the app (shown under
+  # Settings > Open-source licenses).
+  assets:
+    - assets/licenses/desugar_jdk_libs/
 
 # SQLite3MultipleCiphers on every platform (prebuilt, hash-pinned by the
 # sqlite3 hook). Encryption is applied only where ADR-0021 requires it

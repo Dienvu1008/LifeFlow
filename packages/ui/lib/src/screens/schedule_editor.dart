@@ -54,6 +54,10 @@ Future<String?> ensureReminderPermission(WidgetRef ref) async {
     final status = await scheduler.status();
     if (!status.supported) return 'This device does not show reminders.';
     if (status.allowed) return null;
+    if (!status.canAsk) {
+      return 'Notifications are off for LifeFlow, so reminders will not show. '
+          'Turn LifeFlow on in your system\'s notification settings.';
+    }
     final ok = await scheduler.requestPermission();
     ref.invalidate(reminderStatusProvider);
     return ok ? null : 'Notifications are off for LifeFlow, so reminders will not show. '

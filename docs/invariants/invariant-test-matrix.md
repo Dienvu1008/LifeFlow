@@ -17,13 +17,13 @@ Maps every invariant to its verification method, golden scenario(s) and/or fitne
 | LF-INV-TASK-004 | SM | — | — | no |
 | LF-INV-TASK-010 | U, I | GS-01, GS-02 | — | no |
 | LF-INV-TASK-011 | U, I | GS-20 | — | no |
-| LF-INV-PLAN-004 | U, P | GS-04 | — | no |
-| LF-INV-PLAN-010 | P, U | GS-03 | — | no |
+| LF-INV-PLAN-004 | U, P, I | GS-04 | — | no |
+| LF-INV-PLAN-010 | P, U, I | GS-03 | — | no |
 | LF-INV-PLAN-011 | U, I | GS-03 | — | no |
 | LF-INV-PLAN-012 | P | GS-03 | — | no |
-| LF-INV-PLAN-013 | table/U | GS-04 | — | no |
-| LF-INV-CAL-001 | U | — | — | no |
-| LF-INV-CAL-002 | U | GS-04(adjacent) | — | no |
+| LF-INV-PLAN-013 | table/U, P, I | GS-04 | — | no |
+| LF-INV-CAL-001 | U, I | — | — | no |
+| LF-INV-CAL-002 | U, P, I | GS-04(adjacent) | — | no |
 | LF-INV-EXEC-001 | U, I | GS-20 | — | no |
 | LF-INV-EXEC-002 | U, Crash | GS-13 | — | no |
 | LF-INV-EXEC-003 | Crash | GS-13 | — | no |
@@ -70,6 +70,9 @@ Maps every invariant to its verification method, golden scenario(s) and/or fitne
 | LF-INV-PRIV-003 | I | GS-16 | FF-ARCH-08 | no |
 | LF-INV-AI-001 | I, A | GS-15(context), injection | FF-ARCH-03 | no |
 | LF-INV-AI-002 | I | GS-15 | — | no |
+
+## P02 status (2026-11-10)
+PLAN-004/010/011/012/013 and CAL-001/002 are enforced and tested; the test files for each are listed in [p02-exit-gate.md](../testing/p02-exit-gate.md).
 
 ## Coverage summary
 - 62 invariants (60 harvested + LF-INV-DOC-005 + LF-INV-SEC-011). Every one has at least one verification method. **0 critical gaps.**

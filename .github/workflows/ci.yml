@@ -51,6 +51,10 @@ jobs:
         run: dart run tools/fitness/ff_arch_04_ui_isolation.dart
       - name: FF-ARCH-06 + FF-ARCH-09 (atomic set per handler; authorize before domain)
         run: dart run tools/fitness/ff_arch_06_09.dart
+      - name: FF-ARCH-07 (license scan of every shipped package and Android library; ADR-0018/0035)
+        run: |
+          dart run tools/fitness/ff_arch_07_test.dart
+          dart run tools/fitness/ff_arch_07_licenses.dart
 
   flutter-ui-and-app:
     runs-on: ubuntu-latest
