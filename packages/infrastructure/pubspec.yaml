@@ -18,6 +18,9 @@ dependencies:
     path: ../application
   domain:
     path: ../domain
+  # Schedules are stored by mapping to and from the Time Kernel types (P02 T3).
+  time_kernel:
+    path: ../time_kernel
   uuid: ^4.5.0
   # SHA-256 for the export checksum (BSD-3, Dart team).
   crypto: 3.0.8

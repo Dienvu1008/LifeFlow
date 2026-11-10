@@ -18,5 +18,7 @@ export 'src/registry_database.dart';
 export 'src/profile_directory.dart';
 export 'src/profile_export.dart';
 export 'src/profile_restore.dart';
+export 'src/record_kinds.dart';
+export 'src/schedule_mapping.dart';
 export 'src/data_transfer_service.dart';
 export 'src/app_service_impl.dart';

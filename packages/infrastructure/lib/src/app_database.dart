@@ -10,32 +10,60 @@ part 'app_database.g.dart';
 ///   v1 (P01 T1)  initial schema
 ///   v2 (P01 T6c) profiles.signed_out — sign-out locks the profile, binding kept
 ///   v3 (P01 T7b) restore_snapshots — undo of the last restore (ADR-0025)
+///   v4 (P02 T3)  calendars, events, schedules, occurrence_exceptions,
+///                occurrence_completions, reminders (ADR-0029)
 @DriftDatabase(
   tables: [
     Profiles, Workspaces, TaskLists, Tasks, AuditLog, Outbox, EventLog,
     OpDedupe, RestoreSnapshots,
+    Calendars, Events, Schedules, OccurrenceExceptions, OccurrenceCompletions,
+    Reminders,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
+  /// The schema this build writes (and the newest export it accepts).
+  static const currentSchemaVersion = 4;
+
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => currentSchemaVersion;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async {
           await m.createAll();
           await _createTaskTitleFts();
+          await _createPlanningIndexes();
         },
         onUpgrade: (m, from, to) async {
           if (from < 2) await m.addColumn(profiles, profiles.signedOut);
           if (from < 3) await m.createTable(restoreSnapshots);
+          if (from < 4) {
+            for (final TableInfo t in [calendars, events, schedules,
+                occurrenceExceptions, occurrenceCompletions, reminders]) {
+              await m.createTable(t);
+            }
+            await _createPlanningIndexes();
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
         },
       );
+
+  /// Range pre-filter for window queries (only rows whose series can touch
+  /// the window are expanded), and lookups by subject.
+  Future<void> _createPlanningIndexes() async {
+    await customStatement(
+        'CREATE INDEX schedules_range ON schedules (workspace_id, first_date, last_date)');
+    await customStatement(
+        'CREATE INDEX exceptions_subject ON occurrence_exceptions (subject_type, subject_id)');
+    await customStatement(
+        'CREATE INDEX completions_task ON occurrence_completions (task_id)');
+    await customStatement(
+        'CREATE INDEX reminders_subject ON reminders (subject_type, subject_id)');
+  }
 
   /// FTS5 index over task titles (external-content). Kept in sync by triggers.
   Future<void> _createTaskTitleFts() async {

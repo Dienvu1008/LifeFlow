@@ -1,4 +1,5 @@
 // P01 T7 (UC-20a, FR-DATA-01/02, ADR-0025): export and restore of ONE profile.
+// P02 T3 (ADR-0029): the record tables are listed once in record_kinds.dart.
 //
 // The export is a DECRYPTED, versioned, checksummed JSON document, so it is
 // portable and does not need the database key (OQ-DATA-3 option a). It holds
@@ -11,8 +12,13 @@ import 'dart:convert';
 import 'package:application/application.dart' show RestoreRejection;
 import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart' show Value;
+import 'package:foundation/foundation.dart' show LocalDate;
 
 import 'app_database.dart';
+import 'record_kinds.dart';
+import 'schedule_mapping.dart';
+
+export 'record_kinds.dart' show Row;
 
 const exportFormat = 'lifeflow-export';
 
@@ -26,18 +32,16 @@ const exportNotice =
     'This file is an unencrypted copy of one LifeFlow profile. Keep it '
     'somewhere safe. It contains no password, key or sign-in token.';
 
-/// The tables an export carries, in write order. A test guards that this list
-/// covers every table of the schema, so a new table cannot be forgotten
-/// (LF-INV-SEC-010).
-const exportedTables = [
+const _governanceTables = ['auditLog', 'outbox', 'eventLog', 'opDedupe'];
+
+/// The tables an export carries. A test guards that this list plus
+/// [notExportedTables] covers every table of the schema, so a new table
+/// cannot be forgotten (LF-INV-SEC-010).
+final List<String> exportedTables = [
   'profiles',
   'workspaces',
-  'taskLists',
-  'tasks',
-  'auditLog',
-  'outbox',
-  'eventLog',
-  'opDedupe',
+  for (final k in recordKinds) k.exportKey,
+  ..._governanceTables,
 ];
 
 /// Tables that are deliberately NOT exported. `restoreSnapshots` holds the
@@ -58,7 +62,7 @@ class ExportRejected implements Exception {
 /// A validated export. Construct only through [ProfileExport.parse].
 class ParsedExport {
   ParsedExport._(this.schemaVersion, this.exportedAt, this._payload,
-      this.profile, this.workspaces, this.taskLists, this.tasks, this.auditLog,
+      this.profile, this.workspaces, this.records, this.auditLog,
       this.outbox, this.eventLog, this.opDedupe);
 
   final int schemaVersion;
@@ -67,17 +71,21 @@ class ParsedExport {
 
   final Profile profile;
   final List<Workspace> workspaces;
-  final List<TaskList> taskLists;
-  final List<Task> tasks;
+
+  /// Validated record rows by kind name (see [recordKinds]), as JSON.
+  final Map<String, List<Row>> records;
   final List<AuditLogData> auditLog;
   final List<OutboxData> outbox;
   final List<EventLogData> eventLog;
   final List<OpDedupeData> opDedupe;
 
+  List<TaskList> get taskLists => [for (final r in records['taskList']!) TaskList.fromJson(r)];
+  List<Task> get tasks => [for (final r in records['task']!) Task.fromJson(r)];
+
   String get profileId => profile.id;
   String get workspaceId => profile.activeWorkspaceId;
   String get displayName => profile.displayName;
-  int get taskCount => tasks.length;
+  int get taskCount => records['task']!.length;
 
   /// The validated payload (read-only use).
   Map<String, Object?> get payload => _payload;
@@ -89,9 +97,9 @@ class ParsedExport {
   /// The same records placed in ANOTHER profile and workspace: the profile of
   /// the same account on another device (ADR-0025, T7c). Until sync (P04)
   /// each device gives an account its own profile and workspace ids, so the
-  /// container ids are mapped; record ids (tasks, lists) are kept, which is
-  /// what lets two exports of the same device compare. Governance history is
-  /// kept as written (it records what happened where it happened).
+  /// container ids are mapped; record ids are kept, which is what lets two
+  /// exports of the same device compare. Governance history is kept as
+  /// written (it records what happened where it happened).
   ParsedExport rebasedOnto({required String profileId, required String workspaceId}) {
     final fromWs = this.workspaceId;
     final fromProfile = this.profileId;
@@ -107,14 +115,15 @@ class ParsedExport {
         for (final w in workspaces)
           if (w.id != fromWs) w.copyWith(ownerId: owner(w.ownerId))
       ],
-      [
-        for (final l in taskLists)
-          l.copyWith(workspaceId: ws(l.workspaceId), ownerId: owner(l.ownerId))
-      ],
-      [
-        for (final t in tasks)
-          t.copyWith(workspaceId: ws(t.workspaceId), ownerId: owner(t.ownerId))
-      ],
+      {
+        for (final e in records.entries)
+          e.key: [
+            for (final r in e.value)
+              Row.of(r)
+                ..['workspaceId'] = ws(r['workspaceId'] as String)
+                ..['ownerId'] = owner(r['ownerId'] as String)
+          ]
+      },
       auditLog,
       [for (final o in outbox) o.copyWith(workspaceId: ws(o.workspaceId))],
       eventLog,
@@ -136,13 +145,12 @@ class ProfileExport {
   }
 
   /// The export payload of [db], read in the CALLER's transaction (if any).
+  /// Includes tombstones: they are part of the data (SYNC-004).
   static Future<Map<String, Object?>> payloadOf(AppDatabase db) async =>
       <String, Object?>{
         'profiles': [for (final r in await db.select(db.profiles).get()) r.toJson()],
         'workspaces': [for (final r in await db.select(db.workspaces).get()) r.toJson()],
-        'taskLists': [for (final r in await db.select(db.taskLists).get()) r.toJson()],
-        // Includes trashed tasks: tombstones are part of the data (SYNC-004).
-        'tasks': [for (final r in await db.select(db.tasks).get()) r.toJson()],
+        for (final k in recordKinds) k.exportKey: await k.readAll(db),
         'auditLog': [for (final r in await db.select(db.auditLog).get()) r.toJson()],
         'outbox': [for (final r in await db.select(db.outbox).get()) r.toJson()],
         'eventLog': [for (final r in await db.select(db.eventLog).get()) r.toJson()],
@@ -230,11 +238,17 @@ class ProfileExport {
   }
 
   /// Brings a payload written by an older schema up to the current one by
-  /// filling the columns added since (additive migrations only, VS-04).
+  /// filling what was added since (additive migrations only, VS-04).
   static void _upgradeOlderSchema(Map<String, Object?> map, int fromSchema) {
     if (fromSchema < 2) {
       for (final p in (map['profiles'] as List).cast<Map<String, Object?>>()) {
         p.putIfAbsent('signedOut', () => false); // schema v2 (ADR-0024)
+      }
+    }
+    if (fromSchema < 4) {
+      // Schema v4 (P02 T3): planning and calendar tables did not exist.
+      for (final k in recordKinds) {
+        map.putIfAbsent(k.exportKey, () => <Object?>[]);
       }
     }
   }
@@ -257,12 +271,28 @@ class ProfileExport {
 
     final profiles = rows('profiles', Profile.fromJson);
     final workspaces = rows('workspaces', Workspace.fromJson);
-    final taskLists = rows('taskLists', TaskList.fromJson);
-    final tasks = rows('tasks', Task.fromJson);
     final audit = rows('auditLog', AuditLogData.fromJson);
     final outbox = rows('outbox', OutboxData.fromJson);
     final events = rows('eventLog', EventLogData.fromJson);
     final dedupe = rows('opDedupe', OpDedupeData.fromJson);
+
+    // Record tables: each row must parse with its table's own reader; the
+    // JSON round trip normalizes it.
+    final records = <String, List<Row>>{};
+    for (final k in recordKinds) {
+      final raw = map[k.exportKey];
+      if (raw is! List) bad('missing ${k.exportKey}');
+      final list = <Row>[];
+      try {
+        for (final r in raw) {
+          list.add((r as Map).cast<String, dynamic>());
+        }
+        k.checkRows(list);
+      } catch (_) {
+        bad('unreadable ${k.exportKey}');
+      }
+      records[k.name] = list;
+    }
 
     // One profile per store (SR-03, WA-001).
     if (profiles.length != 1) bad('expected one profile');
@@ -285,28 +315,31 @@ class ProfileExport {
       }
     }
 
-    unique(taskLists.map((r) => r.id), 'task lists');
-    unique(tasks.map((r) => r.id), 'tasks');
+    final ids = <String, Set<String>>{};
+    for (final k in recordKinds) {
+      unique(records[k.name]!.map((r) => r['id'] as String), k.exportKey);
+      ids[k.name] = {for (final r in records[k.name]!) r['id'] as String};
+      if (records[k.name]!.any((r) => !wsIds.contains(r['workspaceId']))) {
+        bad('a row points to an unknown workspace');
+      }
+    }
     unique(audit.map((r) => r.auditId), 'audit rows');
     unique(events.map((r) => r.eventId), 'events');
     unique(dedupe.map((r) => r.operationId), 'operations');
     unique(outbox.map((r) => '${r.operationId}/${r.entityId}'), 'outbox rows');
-
-    // References resolve inside the file.
-    final listIds = {for (final l in taskLists) l.id};
-    final taskIds = {for (final t in tasks) t.id};
-    if (taskLists.any((l) => !wsIds.contains(l.workspaceId)) ||
-        tasks.any((t) => !wsIds.contains(t.workspaceId)) ||
-        outbox.any((o) => !wsIds.contains(o.workspaceId)) ||
+    if (outbox.any((o) => !wsIds.contains(o.workspaceId)) ||
         dedupe.any((d) => !wsIds.contains(d.workspaceId))) {
       bad('a row points to an unknown workspace');
     }
-    if (tasks.any((t) => t.taskListId != null && !listIds.contains(t.taskListId))) {
+
+    // References resolve inside the file.
+    final tasks = [for (final r in records['task']!) Task.fromJson(r)];
+    if (tasks.any((t) => t.taskListId != null && !ids['taskList']!.contains(t.taskListId))) {
       bad('a task points to an unknown list');
     }
     final parent = <String, String?>{};
     for (final t in tasks) {
-      if (t.parentTaskId != null && !taskIds.contains(t.parentTaskId)) {
+      if (t.parentTaskId != null && !ids['task']!.contains(t.parentTaskId)) {
         bad('a task points to an unknown parent');
       }
       parent[t.id] = t.parentTaskId;
@@ -321,9 +354,48 @@ class ProfileExport {
         if (++steps > parent.length) bad('the task hierarchy has a cycle');
       }
     }
+    for (final e in records['event']!) {
+      final c = e['calendarId'];
+      if (c != null && !ids['calendar']!.contains(c)) bad('an event points to an unknown calendar');
+    }
+    // Dependent rows point to an existing task or event.
+    for (final kind in ['schedule', 'exception', 'completion', 'reminder']) {
+      for (final r in records[kind]!) {
+        final (type, id) = subjectOf(kind, r)!;
+        if ((type != 'task' && type != 'event') || !ids[type]!.contains(id)) {
+          bad('a $kind points to an unknown item');
+        }
+      }
+    }
+    // Schedules and exceptions are well-formed and valid (dates, zones, rule).
+    final scheduled = <String>{};
+    try {
+      for (final r in records['schedule']!) {
+        readSchedule(Schedule.fromJson(r));
+        scheduled.add(r['id'] as String);
+      }
+      for (final r in records['exception']!) {
+        exceptionOf(OccurrenceException.fromJson(r));
+        if (!scheduled.contains(scheduleIdOf(r['subjectType'] as String, r['subjectId'] as String))) {
+          bad('an exception belongs to an item without a schedule');
+        }
+      }
+      for (final r in records['completion']!) {
+        final c = OccurrenceCompletion.fromJson(r);
+        if (c.id != completionIdOf(c.taskId, LocalDate.parse(c.originalDate))) {
+          bad('a completion id does not match its task and date');
+        }
+      }
+    } on BadScheduleRow catch (e) {
+      bad(e.why);
+    } on FormatException {
+      bad('a date cannot be read');
+    } on ArgumentError {
+      bad('a date does not exist');
+    }
 
     return ParsedExport._(schemaVersion, exportedAt, map, profile, workspaces,
-        taskLists, tasks, audit, outbox, events, dedupe);
+        records, audit, outbox, events, dedupe);
   }
 
   // --- import: write ----------------------------------------------------------
@@ -347,8 +419,9 @@ class ProfileExport {
           )
         ]);
         b.insertAll(db.workspaces, data.workspaces);
-        b.insertAll(db.taskLists, data.taskLists);
-        b.insertAll(db.tasks, data.tasks); // FTS triggers index the titles
+        for (final k in recordKinds) {
+          k.insertAll(b, db, data.records[k.name]!); // FTS triggers index titles
+        }
         b.insertAll(db.opDedupe, data.opDedupe);
         b.insertAll(db.auditLog, data.auditLog);
         b.insertAll(db.outbox, data.outbox);

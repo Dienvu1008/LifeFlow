@@ -65,7 +65,7 @@ void main() {
     final env = (jsonDecode(text) as Map).cast<String, Object?>();
     final payload = (env['payload'] as Map).cast<String, Object?>();
     edit((payload['tasks'] as List).cast<Map<String, dynamic>>());
-    return ProfileExport.seal(payload, schemaVersion: 3);
+    return ProfileExport.seal(payload, schemaVersion: AppDatabase.currentSchemaVersion);
   }
 
   Map<String, dynamic> byTitle(List<Map<String, dynamic>> tasks, String t) =>
