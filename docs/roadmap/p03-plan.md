@@ -1,6 +1,6 @@
 # P03 plan: Execution, Goals & Focus (MVP exit)
 
-- Status: **Proposed. The owner accepted D1–D5 and D7–D12 (2026-11-10) and revised D6; waiting for confirmation of D6a–D6c (section 3)**
+- Status: **Accepted by the owner 2026-11-10** (D1–D5 and D7–D12 as proposed; D6 revised by the owner; D6a–D6c as proposed)
 - Date: 2026-11-10
 - Inputs: [definition-of-done.md §P03](../testing/definition-of-done.md), [phase-breakdown.md](phase-breakdown.md) (P03 = end of the MVP), [execution-measurement.md](../domains/execution-measurement.md), [goals-projects.md](../domains/goals-projects.md), [task-management.md](../domains/task-management.md), ADR-0005 (Goals/Projects in MVP), ADR-0006 (Habit = Task capability), ADR-0009, ADR-0011/0014, ADR-0025, ADR-0029/0030, invariant catalog (EXEC, GOAL, HEALTH-002/004, TASK-010), GS-01/02/05/13/21, FR-EXEC-01..05, FR-FOCUS-01..08, FR-HAB-01..10, FR-GOAL-01..06, UC-02/03/17/21
 - Estimate (effort-estimation.md): 15–30 person-days
@@ -26,7 +26,7 @@ Out of scope: health-sourced measurements and hybrid completion (P08), AI analyt
 - Navigation is Tasks, Calendar, Profiles, Settings (P02 D9); Tasks has All / Today / Upcoming.
 - No spike is assigned to P03 in the spike plan.
 
-## 3. Owner decisions (proposals; please confirm or change)
+## 3. Owner decisions (accepted 2026-11-10)
 
 | # | Question | Proposal |
 |---|---|---|
