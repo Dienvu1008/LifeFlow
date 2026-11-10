@@ -1,6 +1,6 @@
 # P03 plan: Execution, Goals & Focus (MVP exit)
 
-- Status: **Proposed, waiting for the owner's decisions D1–D12 (section 3)**
+- Status: **Proposed. The owner accepted D1–D5 and D7–D12 (2026-11-10) and revised D6; waiting for confirmation of D6a–D6c (section 3)**
 - Date: 2026-11-10
 - Inputs: [definition-of-done.md §P03](../testing/definition-of-done.md), [phase-breakdown.md](phase-breakdown.md) (P03 = end of the MVP), [execution-measurement.md](../domains/execution-measurement.md), [goals-projects.md](../domains/goals-projects.md), [task-management.md](../domains/task-management.md), ADR-0005 (Goals/Projects in MVP), ADR-0006 (Habit = Task capability), ADR-0009, ADR-0011/0014, ADR-0025, ADR-0029/0030, invariant catalog (EXEC, GOAL, HEALTH-002/004, TASK-010), GS-01/02/05/13/21, FR-EXEC-01..05, FR-FOCUS-01..08, FR-HAB-01..10, FR-GOAL-01..06, UC-02/03/17/21
 - Estimate (effort-estimation.md): 15–30 person-days
@@ -49,10 +49,12 @@ Out of scope: health-sourced measurements and hybrid completion (P08), AI analyt
 ## 4. Technical design choices (no owner input needed; ADR-0036 and later)
 - **Domain** (`packages/domain`, pure Dart, FF-ARCH-01):
   - `FocusSession` and `FocusSessionMachine` (start, pause, resume, end, cancel, recover). Elapsed time is derived from instants (`now − start − paused`), never a counter (EXEC-002).
-  - `MeasurableTarget` gains `aggregation`. Pure functions `aggregate(measurements, policy)` and `evaluate(target, aggregate, periodEnded)` give achieved / not achieved / no data / in progress (GS-02 table).
+  - `Task` gains an **`isHabit`** flag (D6), independent of `target` and of the repeat; ADR-0006 is amended in T1. The Habits filter selects `isHabit` tasks.
+  - `MeasurableTarget` gains `aggregation`. Pure functions `aggregate(measurements, policy)` and `evaluate(target, aggregate, periodEnded)` give achieved / not achieved / no data / in progress (GS-02 table). For an unmeasured habit, the period result is done / missed from the occurrence completion (D6c).
+  - Habit statistics (D6b): completion rate and current streak, pure functions over the period results.
   - `GoalProgress`, a pure function of the linked items' states (GOAL-001).
   - Period boundaries come from the task's recurrence via `time_kernel` (occurrence dates and the next occurrence).
-- **Storage** (schema **v5**, additive): `focus_sessions`, `execution_records`, `measurements` (with `supersedes_id`, `source`, `provenance`, `local_date`, occurrence key), `habit_period_results` (target snapshot), `goals` (kind goal|project), `milestones`, `goal_links`; `tasks.target_aggregation`. All are syncable records in export and restore (LF-INV-SEC-010), with a migration test from a real v4 file.
+- **Storage** (schema **v5**, additive): `focus_sessions`, `execution_records`, `measurements` (with `supersedes_id`, `source`, `provenance`, `local_date`, occurrence key), `period_results` (for habits and measurable tasks; target snapshot when measured), `goals` (kind goal|project), `milestones`, `goal_links`; `tasks.is_habit`, `tasks.target_aggregation`. All are syncable records in export and restore (LF-INV-SEC-010), with a migration test from a real v4 file.
 - **Writes**:
   - Through the gateway with audit, outbox and events (ADR-0011/0014).
   - `FocusCommandHandler`, `MeasurementCommandHandler` (record, correct), `GoalCommandHandler`, and target ops on `TaskCommandHandler` (set target, completion policy).
@@ -75,9 +77,9 @@ One branch per task; merge after the headless tests pass and, where marked, the 
 | **T1** Domain rules | Focus machine and recovery; target evaluation and aggregation; period boundaries from the repeat; goal progress. All pure. | GS-02 table (min == max, open bounds); EXEC-002 property tests (pauses, clock changes); HEALTH-002 (no data ≠ 0); progress as a pure function (GOAL-001) | no | 2–3 |
 | **T2** Storage v5 | New tables, `target_aggregation`, migration v4 → v5, export/restore of the new tables. | migration test on a real v4 file; export guard; GS-20 round trip with sessions, measurements, results, goals | no | 2 |
 | **T3** Focus commands | Start, pause, resume, end (count / don't), cancel, recover on launch (D1), one active session (D2), records (D5). | GS-13 headless (kill at any step, relaunch, elapsed within 1 s, one record); FF-ARCH-06/09 | no | 2–3 |
-| **T4** Targets, measurements, habits | Set target and policy; record and correct measurements (D10); period evaluation and closed results (D6–D9); automatic completion derived. | GS-01 (achieved exactly when the aggregate crosses the target, never set by the data); GS-05 manual path; EXEC-001 (history kept); TASK-010 | no | 3–4 |
+| **T4** Targets, measurements, habits | Mark or unmark a habit (D6); set target and policy; record and correct measurements (D10); period evaluation and closed results for habits and measurable tasks, done / missed for unmeasured habits (D6–D9, D6c); automatic completion derived. | GS-01 (achieved exactly when the aggregate crosses the target, never set by the data); GS-05 manual path; EXEC-001 (history kept); TASK-010 | no | 3–4 |
 | **T5** Goals and projects | Goals/projects, milestones, links, progress, archive and trash (D11). | GS-21 (pure progress; trashing keeps tasks); GOAL-003 (other-workspace link refused) | no | 2 |
-| **T6a** UI: habits | Target editor in the task editor, Habits filter, measurement entry, history and corrections, period states in Today and the calendar. | widget tests; app integration test on real stores | **yes** | 2–3 |
+| **T6a** UI: habits | "Habit" switch and target editor in the task editor, Habits filter, measurement entry, history and corrections, habit history, rate and streak (D6b), period states in Today and the calendar. | widget tests; app integration test on real stores | **yes** | 2–3 |
 | **T6b** UI: focus | Focus screen, focus bar on every screen, end notification, recovery dialog (D1, D4). | widget tests; kill and relaunch on both devices | **yes** | 2–3 |
 | **T6c** UI: goals | Goals tab: list, detail, milestones, links, progress, "part of" on tasks. | widget tests; app integration test | **yes** | 2 |
 | **T7** MVP exit gate | p03-exit-gate.md (DoD line → proof), ADRs, risk register, invariant matrix; MVP review with the owner. | all suites, CI | yes | 1 |
