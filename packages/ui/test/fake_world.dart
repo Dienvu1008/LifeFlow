@@ -476,10 +476,136 @@ class FakeWorld
   /// Reminders and the device's notifications (P02 T7).
   late final FakeReminders reminders = FakeReminders(calls);
 
+  /// Habits, targets and measurements (P03 T6a).
+  late final FakeHabits habits = FakeHabits(calls);
+
   void dispose() {
     _changes.close();
     calendar.dispose();
+    habits.dispose();
   }
+}
+
+/// In-memory tracking views. Writes are recorded in the shared [calls] and
+/// change the views a little, so the screens update; a test sets [views].
+class FakeHabits implements HabitService, HabitQueries {
+  FakeHabits(this.calls);
+  final List<String> calls;
+  final views = <String, TrackingView>{};
+  CommandFailure? failNext;
+
+  /// Dates whose period is closed: a measurement there needs confirmation.
+  final closedDates = <LocalDate>{};
+
+  final _changes = StreamController<void>.broadcast();
+  void changed() => _changes.add(null);
+  void dispose() => _changes.close();
+
+  CommandResult _ok(String id) {
+    changed();
+    return CommandOk(id, Version.initial, const []);
+  }
+
+  CommandFailure? _failure() {
+    final f = failNext;
+    failNext = null;
+    return f;
+  }
+
+  TrackingView _view(String id) => views[id] ?? TrackingView(taskId: id, title: id, isHabit: false, isRepeating: false);
+
+  TrackingView copy(TrackingView v,
+          {bool? isHabit, TargetInput? target, bool clearTarget = false, CompletionMode? completion}) =>
+      TrackingView(
+        taskId: v.taskId,
+        title: v.title,
+        isHabit: isHabit ?? v.isHabit,
+        isRepeating: v.isRepeating,
+        target: clearTarget ? null : (target ?? v.target),
+        completion: clearTarget ? CompletionMode.manual : (completion ?? v.completion),
+        trackedSince: v.trackedSince,
+        current: v.current,
+        results: v.results,
+        measurements: v.measurements,
+        rate30: v.rate30,
+        rateAll: v.rateAll,
+        streak: v.streak,
+        isCompleteNow: v.isCompleteNow,
+      );
+
+  @override
+  Future<CommandResult> setHabit(String taskId, {required bool isHabit}) async {
+    calls.add('habit:$taskId:$isHabit');
+    final f = _failure();
+    if (f != null) return f;
+    views[taskId] = copy(_view(taskId), isHabit: isHabit);
+    return _ok(taskId);
+  }
+
+  @override
+  Future<CommandResult> setTarget(String taskId, TargetInput? target) async {
+    calls.add('target:$taskId:${target == null ? 'none' : '${target.kind.name},${target.min},${target.max},${target.unit},${target.aggregation.name}'}');
+    final f = _failure();
+    if (f != null) return f;
+    views[taskId] = copy(_view(taskId), target: target, clearTarget: target == null);
+    return _ok(taskId);
+  }
+
+  @override
+  Future<CommandResult> setCompletion(String taskId, CompletionMode mode) async {
+    calls.add('completion:$taskId:${mode.name}');
+    final f = _failure();
+    if (f != null) return f;
+    views[taskId] = copy(_view(taskId), completion: mode);
+    return _ok(taskId);
+  }
+
+  @override
+  Future<CommandResult> recordMeasurement(String taskId, double value,
+      {LocalDate? date, String? note, bool confirmClosed = false}) async {
+    calls.add('measure:$taskId:$value:$date:$note:$confirmClosed');
+    final f = _failure();
+    if (f != null) return f;
+    if (date != null && closedDates.contains(date) && !confirmClosed) {
+      return const CommandFailure(CommandFailureKind.validationFailed, reason: closedPeriodNeedsConfirmation);
+    }
+    return _ok('m-$taskId');
+  }
+
+  @override
+  Future<CommandResult> correctMeasurement(String measurementId, double? value,
+      {String? note, bool confirmClosed = false}) async {
+    calls.add('correct:$measurementId:$value:$confirmClosed');
+    final f = _failure();
+    if (f != null) return f;
+    return _ok(measurementId);
+  }
+
+  @override
+  Future<int> closePeriods({String? taskId}) async {
+    calls.add('close:$taskId');
+    return 0;
+  }
+
+  Stream<T> _follow<T>(T Function() read) async* {
+    yield read();
+    await for (final _ in _changes.stream) {
+      yield read();
+    }
+  }
+
+  @override
+  Future<TrackingView?> tracking(String taskId) async => views[taskId];
+
+  @override
+  Stream<TrackingView?> watchTracking(String taskId) => _follow(() => views[taskId] ?? _view(taskId));
+
+  @override
+  Stream<List<TrackingView>> watchHabits() => _follow(() => [for (final v in views.values) if (v.isHabit) v]);
+
+  @override
+  Stream<List<TrackingView>> watchTracked() =>
+      _follow(() => [for (final v in views.values) if (v.isHabit || v.target != null) v]);
 }
 
 /// In-memory events, calendars and calendar range. Writes are recorded in
@@ -762,6 +888,8 @@ Widget appWith(FakeWorld world, {StorageNotice? notice}) => ProviderScope(
         calendarQueriesProvider.overrideWithValue(world.calendar),
         reminderServiceProvider.overrideWithValue(world.reminders),
         reminderSchedulerProvider.overrideWithValue(world.reminders),
+        habitServiceProvider.overrideWithValue(world.habits),
+        habitQueriesProvider.overrideWithValue(world.habits),
         storageNoticeProvider.overrideWithValue(notice),
       ],
       child: const LifeFlowApp(),

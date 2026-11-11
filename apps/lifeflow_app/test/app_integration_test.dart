@@ -295,6 +295,77 @@ void main() {
     await finish(tester, w);
   });
 
+  testWidgets('P03 T6a: a habit with a target made in the UI is stored; measurements and automatic completion',
+      (tester) async {
+    final w = await pumpApp(tester, StoragePlatform.android);
+    // Added in the Habits filter: a daily habit (D6a).
+    await tester.tap(find.text('Habits'));
+    await settle(tester);
+    expect(find.byKey(const Key('habits-empty')), findsOneWidget);
+    await tester.tap(find.byTooltip('Add task'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Walk');
+    await tester.tap(find.widgetWithText(FilledButton, 'Add'));
+    await tester.pump();
+    await settle(tester, 10);
+    expect(find.byKey(const Key('habit-list')), findsOneWidget);
+
+    // The habit page: a target and automatic completion.
+    await tester.tap(find.text('Walk'));
+    await settle(tester);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('target-edit')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('target-min')), '6000');
+    await tester.tap(find.byKey(const ValueKey('unit-steps')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('target-save')));
+    await tester.pump();
+    await settle(tester);
+    await tester.pumpAndSettle();
+    expect(find.text('At least 6000 steps'), findsOneWidget);
+    await tester.tap(find.text('From measurements'));
+    await tester.pump();
+    await settle(tester);
+
+    for (final v in ['4000', '2500']) {
+      await tester.tap(find.byKey(const Key('measure-add')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('measure-value')), v);
+      await tester.tap(find.byKey(const Key('measure-save')));
+      await tester.pump();
+      await settle(tester);
+      await tester.pumpAndSettle();
+    }
+    expect(find.text('6500 / 6000 steps · Achieved'), findsOneWidget);
+    expect(find.text('Done automatically'), findsOneWidget);
+    await tester.tap(find.byTooltip('Close'));
+    await tester.pumpAndSettle();
+
+    // Today: the box shows the derived state and cannot be ticked (D8).
+    await tester.tap(find.text('Today'));
+    await settle(tester);
+    expect(find.bySemanticsLabel('Done from measurements: Walk'), findsOneWidget);
+
+    final id = (await tester.runAsync(() => w.directory.active()))!.id;
+    final rows = await tester.runAsync(() async {
+      final s = await w.directory.openProfile(id);
+      final tasks = await s.db.select(s.db.tasks).get();
+      final m = await s.db.select(s.db.measurements).get();
+      final audit = await s.db.select(s.db.auditLog).get();
+      await s.db.close();
+      return (tasks: tasks, m: m, audit: audit);
+    });
+    final t = rows!.tasks.single;
+    expect((t.isHabit, t.targetType, t.targetMin, t.unit, t.completionPolicy),
+        (true, 'atLeast', 6000.0, 'steps', 'automatic'));
+    expect(t.status, isNot('done'), reason: 'never set by the data (LF-INV-TASK-010)');
+    expect(rows.m.map((m) => (m.value, m.source)).toSet(), {(4000.0, 'manual'), (2500.0, 'manual')});
+    expect(rows.audit.map((a) => a.action),
+        containsAll(['SetTaskHabit', 'SetTaskSchedule', 'SetTaskTarget', 'SetTaskCompletion', 'RecordMeasurement']));
+    await finish(tester, w);
+  });
+
   testWidgets('P02 T6b: an event made in the Calendar tab is stored, shown, and overlaps a task',
       (tester) async {
     final w = await pumpApp(tester, StoragePlatform.android, width: 1200);

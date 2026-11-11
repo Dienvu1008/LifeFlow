@@ -2,14 +2,16 @@ import 'package:application/application.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../habit_text.dart';
 import '../messages.dart';
 import '../providers.dart';
 import '../schedule_text.dart';
 import '../task_actions.dart';
 import '../task_tree.dart';
+import 'habit_page.dart';
 import 'schedule_editor.dart';
 
-enum _RowAction { rename, schedule, addSubtask, trash }
+enum _RowAction { rename, schedule, tracking, addSubtask, trash }
 
 /// Typical height of one row (one-line ListTile); only an estimate used to
 /// get close to a row that is not built yet.
@@ -45,6 +47,18 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     // A task added in Today or Upcoming is planned there, so it does not
     // vanish from the list it was added to.
     final filter = ref.read(taskFilterProvider);
+    if (parentId == null && filter == TaskFilter.habits) {
+      // D6a: a habit added here repeats every day from today; both can be
+      // changed later.
+      final today = ref.read(todayProvider)();
+      final made = await reportResult(context, ref.read(habitServiceProvider).setHabit(id, isHabit: true));
+      if (made is CommandFailure || !mounted) return;
+      await reportResult(
+          context,
+          ref.read(taskSchedulingProvider).setSchedule(id,
+              TaskScheduleInput(start: SchedulePointInput.date(today), repeat: const RepeatInput(frequency: RepeatFrequency.daily))));
+      return;
+    }
     if (parentId == null && filter != TaskFilter.all) {
       final today = ref.read(todayProvider)();
       final day = filter == TaskFilter.today ? today : today.addDays(1);
@@ -97,7 +111,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
             child: LayoutBuilder(builder: (context, box) {
               // Icons only when there is room: with a phone width and a
               // large system font the labels must stay on one line.
-              final icons = box.maxWidth / MediaQuery.textScalerOf(context).scale(1) >= 440;
+              final icons = box.maxWidth / MediaQuery.textScalerOf(context).scale(1) >= 560;
               Widget label(String s) => Text(s, maxLines: 1, softWrap: false, overflow: TextOverflow.fade);
               return SegmentedButton<TaskFilter>(
                 key: const Key('task-filter'),
@@ -113,6 +127,10 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                       value: TaskFilter.upcoming,
                       label: label('Upcoming'),
                       icon: icons ? const Icon(Icons.date_range) : null),
+                  ButtonSegment(
+                      value: TaskFilter.habits,
+                      label: label('Habits'),
+                      icon: icons ? const Icon(Icons.track_changes) : null),
                 ],
                 selected: {filter},
                 onSelectionChanged: (s) => ref.read(taskFilterProvider.notifier).state = s.first,
@@ -131,6 +149,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
         TaskFilter.all => _allTasks(context),
         TaskFilter.today => const _AgendaList(upcoming: false),
         TaskFilter.upcoming => const _AgendaList(upcoming: true),
+        TaskFilter.habits => const _HabitList(),
       },
     );
   }
@@ -269,6 +288,68 @@ class _AgendaList extends ConsumerWidget {
   }
 }
 
+/// P03 T6a: the habits of the profile (D12: the 4th filter of Tasks), each
+/// with its running period and statistics (D6b). Tapping opens the habit.
+class _HabitList extends ConsumerWidget {
+  const _HabitList();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final habits = ref.watch(habitsProvider);
+    return habits.when(
+      loading: () => const Center(child: CircularProgressIndicator(semanticsLabel: 'Loading habits')),
+      error: (e, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text('Could not load the habits.', style: Theme.of(context).textTheme.bodyLarge),
+        ),
+      ),
+      data: (list) {
+        if (list.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                'No habits yet. Add one with +, or open a task\'s menu and choose "Habit and target…".',
+                key: const Key('habits-empty'),
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+            ),
+          );
+        }
+        return ListView(
+          key: const Key('habit-list'),
+          padding: const EdgeInsets.only(bottom: _fabClearance),
+          children: [
+            for (final h in list)
+              ListTile(
+                key: ValueKey('habit-${h.taskId}'),
+                leading: Icon(h.target == null ? Icons.check_circle_outline : Icons.trending_up),
+                title: Text(h.title),
+                subtitle: Text([
+                  if (currentPeriodLine(h) case final line?) line,
+                  if (!h.isRepeating) 'No repeat',
+                  statsLine(h),
+                ].join('\n')),
+                isThreeLine: currentPeriodLine(h) != null || !h.isRepeating,
+                onTap: () => openHabitPage(context, taskId: h.taskId, title: h.title),
+                trailing: h.target != null && h.current != null
+                    ? IconButton(
+                        key: ValueKey('habit-measure-${h.taskId}'),
+                        tooltip: 'Add a measurement for ${h.title}',
+                        icon: const Icon(Icons.add_circle_outline),
+                        onPressed: () => addMeasurement(context, ref, h),
+                      )
+                    : null,
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 class _TaskTile extends ConsumerWidget {
   const _TaskTile({required this.row, required this.onAddSubtask});
   final TaskRow row;
@@ -277,32 +358,46 @@ class _TaskTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = row.task;
+    // P03 D8: with automatic completion the box shows the derived state of
+    // a one-off task and is never ticked by hand.
+    final tracked = ref.watch(trackedProvider).valueOrNull?[t.id];
+    final auto = tracked != null && tracked.completion == CompletionMode.automatic;
+    final period = tracked == null ? null : currentPeriodLine(tracked);
+    final schedule = t.schedule == null
+        ? null
+        : describeSchedule(t.schedule!, today: ref.watch(todayProvider)(), deviceZone: ref.watch(deviceZoneProvider));
     return ListTile(
       key: ValueKey('task-${t.id}'),
       contentPadding:
           EdgeInsetsDirectional.only(start: 16 + row.depth * 24.0, end: 8),
-      leading: Checkbox(
-        value: t.isDone,
-        semanticLabel:
-            t.isDone ? 'Mark as not done: ${t.title}' : 'Complete ${t.title}',
-        // Unchecking a done task reopens it (a completion can be undone).
-        onChanged: (_) => t.isDone
-            ? reportResult(context, ref.read(taskServiceProvider).reopen(t.id))
-            : completeTask(context, ref, row),
-      ),
+      leading: auto
+          ? Checkbox(
+              value: tracked.isRepeating ? false : tracked.isCompleteNow,
+              semanticLabel: 'Done from measurements: ${t.title}',
+              onChanged: null,
+            )
+          : Checkbox(
+              value: t.isDone,
+              semanticLabel: t.isDone ? 'Mark as not done: ${t.title}' : 'Complete ${t.title}',
+              // Unchecking a done task reopens it (a completion can be undone).
+              onChanged: (_) => t.isDone
+                  ? reportResult(context, ref.read(taskServiceProvider).reopen(t.id))
+                  : completeTask(context, ref, row),
+            ),
       title: Text(
         t.title,
         style: t.isDone
             ? const TextStyle(decoration: TextDecoration.lineThrough)
             : null,
       ),
-      subtitle: t.schedule == null
+      subtitle: schedule == null && period == null
           ? null
-          : Text(
-              describeSchedule(t.schedule!,
-                  today: ref.watch(todayProvider)(),
-                  deviceZone: ref.watch(deviceZoneProvider)),
-              key: ValueKey('schedule-${t.id}'),
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (schedule != null) Text(schedule, key: ValueKey('schedule-${t.id}')),
+                if (period != null) Text(period, key: ValueKey('period-${t.id}')),
+              ],
             ),
       trailing: PopupMenuButton<_RowAction>(
         tooltip: 'Actions for ${t.title}',
@@ -310,6 +405,7 @@ class _TaskTile extends ConsumerWidget {
         itemBuilder: (_) => const [
           PopupMenuItem(value: _RowAction.rename, child: Text('Rename')),
           PopupMenuItem(value: _RowAction.schedule, child: Text('Schedule…')),
+          PopupMenuItem(value: _RowAction.tracking, child: Text('Habit and target…')),
           PopupMenuItem(value: _RowAction.addSubtask, child: Text('Add subtask')),
           PopupMenuItem(value: _RowAction.trash, child: Text('Move to trash')),
         ],
@@ -329,6 +425,8 @@ class _TaskTile extends ConsumerWidget {
       case _RowAction.schedule:
         await openScheduleEditor(context, ref,
             taskId: t.id, title: t.title, initial: t.schedule);
+      case _RowAction.tracking:
+        await openHabitPage(context, taskId: t.id, title: t.title);
       case _RowAction.addSubtask:
         await onAddSubtask(t.id);
       case _RowAction.trash:

@@ -201,6 +201,13 @@ abstract interface class HabitService {
 abstract interface class HabitQueries {
   Future<TrackingView?> tracking(String taskId);
 
+  /// One task's tracking, kept up to date (null when the task is gone).
+  Stream<TrackingView?> watchTracking(String taskId);
+
   /// The habits of the active profile, kept up to date.
   Stream<List<TrackingView>> watchHabits();
+
+  /// Every tracked task (a habit or a target), kept up to date: for the
+  /// period states in the task lists and the agenda.
+  Stream<List<TrackingView>> watchTracked();
 }
