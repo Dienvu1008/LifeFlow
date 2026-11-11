@@ -64,6 +64,10 @@ class Tasks extends Table with SyncableColumns {
   TextColumn get unit => text().nullable()();
   TextColumn get completionPolicy =>
       text().withDefault(const Constant('manual'))();
+  // P03 (schema v5): how a period's measurements are combined (D7), and
+  // the habit flag (D6, ADR-0006 amendment).
+  TextColumn get targetAggregation => text().withDefault(const Constant('sum'))();
+  BoolColumn get isHabit => boolean().withDefault(const Constant(false))();
   TextColumn get tags => text().withDefault(const Constant('[]'))(); // JSON array of strings (opaque)
   @override
   Set<Column> get primaryKey => {id};
@@ -230,6 +234,116 @@ class Reminders extends Table with SyncableColumns {
   TextColumn get subjectId => text()();
   IntColumn get offsetMinutes => integer().nullable()();
   DateTimeColumn get atUtc => dateTime().nullable()();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// --- P03 (schema v5, ADR-0037): execution, measurement, habits, goals --------
+
+/// A focus session (execution-measurement.md §3, ADR-0036). Written at start
+/// and on every transition, so a kill at any point leaves a recoverable row
+/// (LF-INV-EXEC-003). Times are UTC instants; durations in milliseconds.
+@DataClassName('FocusSessionRow')
+class FocusSessions extends Table with SyncableColumns {
+  TextColumn get taskId => text().nullable()();
+  TextColumn get occurrenceDate => text().nullable()(); // original date of a repeating task
+  TextColumn get mode => text()(); // pomodoro | stopwatch
+  TextColumn get state => text()(); // running | paused | ended | cancelled | unrecoverable
+  DateTimeColumn get startedAt => dateTime()();
+  IntColumn get plannedMs => integer().nullable()();
+  IntColumn get pausedMs => integer().withDefault(const Constant(0))();
+  DateTimeColumn get pausedAt => dateTime().nullable()();
+  DateTimeColumn get endedAt => dateTime().nullable()();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// What was actually done (FR-EXEC-01). id = 'session:<sessionId>' when it
+/// comes from a focus session, so a session has at most one record
+/// (LF-INV-EXEC-004).
+@DataClassName('ExecutionRecordRow')
+class ExecutionRecords extends Table with SyncableColumns {
+  TextColumn get sessionId => text().nullable()();
+  TextColumn get taskId => text().nullable()();
+  TextColumn get occurrenceDate => text().nullable()();
+  DateTimeColumn get actualStart => dateTime()();
+  DateTimeColumn get actualEnd => dateTime()();
+  IntColumn get focusMs => integer()();
+  TextColumn get note => text().nullable()();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// One observed value for a measurable task (FR-HAB-02/03). Never
+/// overwritten: a correction is a new row that supersedes the old one
+/// (LF-INV-EXEC-001); provenance is required (LF-INV-HEALTH-004).
+@DataClassName('MeasurementRow')
+class Measurements extends Table with SyncableColumns {
+  TextColumn get taskId => text()();
+  RealColumn get value => real()();
+  TextColumn get localDate => text()(); // the day it counts for (D10)
+  DateTimeColumn get recordedAt => dateTime()();
+  TextColumn get source => text()(); // manual | focusSession | import
+  TextColumn get deviceId => text().nullable()();
+  TextColumn get note => text().nullable()();
+  TextColumn get supersedesId => text().nullable()();
+  BoolColumn get withdrawn => boolean().withDefault(const Constant(false))();
+  TextColumn get recordId => text().nullable()(); // optional execution record
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// The stored result of an ended period (D9) or habit occurrence (D6c).
+/// id = 'task:<taskId>@<key>#<kind>', key = the period's first day (or
+/// 'once' for a one-off task) or the occurrence's original date. Written
+/// once per period; a later change is a new version, recorded.
+@DataClassName('PeriodResultRow')
+class PeriodResults extends Table with SyncableColumns {
+  TextColumn get taskId => text()();
+  TextColumn get periodKey => text()();
+  TextColumn get kind => text()(); // period | occurrence
+  TextColumn get outcome => text()(); // done | missed | achieved | notAchieved | noData
+  RealColumn get value => real().nullable()(); // the aggregate, when measured
+  TextColumn get target => text().nullable()(); // JSON copy of the target used
+  DateTimeColumn get evaluatedAt => dateTime()();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// A goal or a project (goals-projects.md, D11).
+@DataClassName('GoalRow')
+class Goals extends Table with SyncableColumns {
+  TextColumn get kind => text()(); // goal | project
+  TextColumn get title => text()();
+  TextColumn get description => text().nullable()();
+  TextColumn get status => text().withDefault(const Constant('active'))(); // active | done | archived
+  TextColumn get startDate => text().nullable()();
+  TextColumn get targetDate => text().nullable()();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// A milestone of a goal or project, completed by hand (D11, OQ-GOAL-1).
+@DataClassName('MilestoneRow')
+class Milestones extends Table with SyncableColumns {
+  TextColumn get goalId => text()();
+  TextColumn get title => text()();
+  TextColumn get dueDate => text().nullable()();
+  BoolColumn get isCompleted => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get completedAt => dateTime().nullable()();
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// A link from a goal or project to a task (habits are tasks) or an event.
+/// id = '<goalId>|<itemType>:<itemId>'; unlinking writes a tombstone. A link
+/// never owns the item (LF-INV-GOAL-002).
+@DataClassName('GoalLinkRow')
+class GoalLinks extends Table with SyncableColumns {
+  TextColumn get goalId => text()();
+  TextColumn get itemType => text()(); // task | event
+  TextColumn get itemId => text()();
   @override
   Set<Column> get primaryKey => {id};
 }

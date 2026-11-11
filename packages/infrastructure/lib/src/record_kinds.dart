@@ -55,6 +55,13 @@ class RecordKind {
     'exception': OccurrenceException.fromJson,
     'completion': OccurrenceCompletion.fromJson,
     'reminder': Reminder.fromJson,
+    'focusSession': FocusSessionRow.fromJson,
+    'executionRecord': ExecutionRecordRow.fromJson,
+    'measurement': MeasurementRow.fromJson,
+    'periodResult': PeriodResultRow.fromJson,
+    'goal': GoalRow.fromJson,
+    'milestone': MilestoneRow.fromJson,
+    'goalLink': GoalLinkRow.fromJson,
   };
   Object _parse(Row r) => _parsers[name]!(r);
 }
@@ -93,6 +100,19 @@ final List<RecordKind> recordKinds = [
       OccurrenceCompletion.fromJson, (d) => d.toCompanion(false)),
   _kind('reminder', 'reminders', (db) => db.reminders, Reminder.fromJson,
       (d) => d.toCompanion(false)),
+  // P03 (schema v5, ADR-0037).
+  _kind('focusSession', 'focusSessions', (db) => db.focusSessions, FocusSessionRow.fromJson,
+      (d) => d.toCompanion(false)),
+  _kind('executionRecord', 'executionRecords', (db) => db.executionRecords, ExecutionRecordRow.fromJson,
+      (d) => d.toCompanion(false)),
+  _kind('measurement', 'measurements', (db) => db.measurements, MeasurementRow.fromJson,
+      (d) => d.toCompanion(false)),
+  _kind('periodResult', 'periodResults', (db) => db.periodResults, PeriodResultRow.fromJson,
+      (d) => d.toCompanion(false)),
+  _kind('goal', 'goals', (db) => db.goals, GoalRow.fromJson, (d) => d.toCompanion(false)),
+  _kind('milestone', 'milestones', (db) => db.milestones, MilestoneRow.fromJson,
+      (d) => d.toCompanion(false)),
+  _kind('goalLink', 'goalLinks', (db) => db.goalLinks, GoalLinkRow.fromJson, (d) => d.toCompanion(false)),
 ];
 
 final Map<String, RecordKind> recordKindByName = {for (final k in recordKinds) k.name: k};
@@ -100,9 +120,31 @@ final Map<String, RecordKind> recordKindByName = {for (final k in recordKinds) k
 /// Kinds whose rows belong to another record (a task or an event).
 const subjectKinds = {'schedule', 'exception', 'reminder'};
 
+/// Kinds a row can point to, for reference checks.
+const referableKinds = {'task', 'event', 'calendar', 'goal', 'focusSession', 'executionRecord', 'measurement'};
+
 /// The record a dependent row belongs to, as (kind, id), or null.
 (String, String)? subjectOf(String kind, Row r) => switch (kind) {
       'schedule' || 'exception' || 'reminder' => (r['subjectType'] as String, r['subjectId'] as String),
-      'completion' => ('task', r['taskId'] as String),
+      'completion' || 'measurement' || 'periodResult' => ('task', r['taskId'] as String),
+      'milestone' => ('goal', r['goalId'] as String),
       _ => null,
     };
+
+/// Every record a row must point to (kind, id): it cannot exist without
+/// them. A goal link needs both its goal and its item.
+List<(String, String)> requiredRefsOf(String kind, Row r) => [
+      if (subjectOf(kind, r) case final s?) s,
+      if (kind == 'goalLink') ...[('goal', r['goalId'] as String), (r['itemType'] as String, r['itemId'] as String)],
+    ];
+
+/// Optional references (kind, row field, target kind): kept when the target
+/// exists, otherwise cleared (an event's calendar; a session or record of a
+/// task; a measurement's record). History is never dropped for them.
+const optionalRefs = <(String, String, String)>[
+  ('event', 'calendarId', 'calendar'),
+  ('focusSession', 'taskId', 'task'),
+  ('executionRecord', 'taskId', 'task'),
+  ('executionRecord', 'sessionId', 'focusSession'),
+  ('measurement', 'recordId', 'executionRecord'),
+];
