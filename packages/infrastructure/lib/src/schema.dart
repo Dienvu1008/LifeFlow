@@ -68,6 +68,9 @@ class Tasks extends Table with SyncableColumns {
   // the habit flag (D6, ADR-0006 amendment).
   TextColumn get targetAggregation => text().withDefault(const Constant('sum'))();
   BoolColumn get isHabit => boolean().withDefault(const Constant(false))();
+  // P03 T4 (schema v6, ADR-0039): the day tracking began (it became a habit
+  // or got a target). Periods that ended before it get no result.
+  TextColumn get trackedSince => text().nullable()();
   TextColumn get tags => text().withDefault(const Constant('[]'))(); // JSON array of strings (opaque)
   @override
   Set<Column> get primaryKey => {id};

@@ -263,6 +263,15 @@ class ProfileExport {
         }
       }
     }
+    if (fromSchema < 6) {
+      // Schema v6 (P03 T4): tasks had no tracking start.
+      final tasks = map['tasks'];
+      if (tasks is List) {
+        for (final t in tasks) {
+          if (t is Map) t.putIfAbsent('trackedSince', () => null);
+        }
+      }
+    }
   }
 
   static ParsedExport _decode(

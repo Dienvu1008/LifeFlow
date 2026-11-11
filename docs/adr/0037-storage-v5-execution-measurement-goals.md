@@ -21,7 +21,7 @@ T1 added the P03 rules as pure domain code. T3–T5 need somewhere to keep focus
 | `milestones` | a milestone of a goal, done by hand | random |
 | `goal_links` | a goal → task or event link; never owns the item (LF-INV-GOAL-002) | `<goalId>\|<itemType>:<itemId>` |
 
-`tasks` gains `targetAggregation` (default `sum`, D7) and `isHabit` (default false, D6, ADR-0006 amendment).
+`tasks` gains `targetAggregation` (default `sum`, D7) and `isHabit` (default false, D6, ADR-0006 amendment). Schema v6 ([ADR-0039](0039-habits-targets-measurements-period-results.md)) adds `tasks.trackedSince`.
 
 Indexes: `measurements (task_id, local_date)`, `focus_sessions (state)`, `execution_records (task_id)`, `period_results (task_id, period_key)`, `milestones (goal_id)`, `goal_links (goal_id)`, `goal_links (item_type, item_id)`. They are created on a new store and by the upgrade.
 

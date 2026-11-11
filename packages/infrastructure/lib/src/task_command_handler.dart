@@ -7,7 +7,10 @@ import 'package:foundation/foundation.dart';
 
 import 'app_database.dart';
 import 'command_gateway.dart';
+import 'execution_rows.dart';
+import 'habit_tracking.dart';
 import 'task_schedule_ops.dart';
+import 'task_target_ops.dart';
 
 /// Applies Task commands within the gateway transaction (T3). Enforces the
 /// domain rules (status transitions, hierarchy depth/acyclicity) before
@@ -21,7 +24,10 @@ import 'task_schedule_ops.dart';
 ///   reparent : payload id, newParentId?
 ///   trash    : payload id, cascade ('all'|'parentOnly'; default parentOnly)
 ///   P02 T4 schedule ops (task_schedule_ops.dart): setSchedule,
-///   clearSchedule, setException, clearException, setOccurrenceDone
+///   clearSchedule, setException, clearException, setOccurrenceDone,
+///   setReminders
+///   P03 T4 target ops (task_target_ops.dart): setHabit, setTarget,
+///   setCompletion
 class TaskCommandHandler implements CommandHandler {
   @override
   String get entityType => 'task';
@@ -61,6 +67,17 @@ class TaskCommandHandler implements CommandHandler {
       cur = row?.parentTaskId;
     }
     return chain;
+  }
+
+  /// P03 D6c: a one-off habit ticked or unticked after its period closed:
+  /// its stored result follows, recorded as a new version.
+  Future<void> _lateTick(AppDatabase db, Command cmd, String id, {required bool done, required DateTime now}) async {
+    final stored = await (db.select(db.periodResults)
+          ..where((r) => r.id.equals(periodResultIdOf(id, oncePeriodKey, 'occurrence')) & r.deletedAt.isNull()))
+        .getSingleOrNull();
+    if (stored == null) return;
+    await rewriteStoredResult(db, stored, done ? HabitOutcome.done : HabitOutcome.missed, null,
+        operationId: cmd.operationId, workspaceId: cmd.workspaceId, actor: cmd.actor.toString(), now: now);
   }
 
   /// Writes [change] to another task in the same command, moving its version
@@ -103,6 +120,8 @@ class TaskCommandHandler implements CommandHandler {
 
     // P02 T4: schedule, occurrence change and occurrence completion.
     if (scheduleOps.contains(op)) return applyScheduleOp(db, cmd, newVersion, now);
+    // P03 T4: habit flag, target and completion policy.
+    if (targetOps.contains(op)) return applyTargetOp(db, cmd, newVersion, now);
 
     switch (op) {
       case 'create':
@@ -151,12 +170,18 @@ class TaskCommandHandler implements CommandHandler {
       case 'complete':
         final cascade = cmd.payload['cascade'] as String? ?? 'parentOnly';
         final current = await (db.select(db.tasks)..where((t) => t.id.equals(id))).getSingle();
+        // P03 D8: with automatic completion the state is derived from the
+        // measurements and cannot be ticked by hand (LF-INV-TASK-010).
+        if (current.completionPolicy == 'automatic') {
+          throw DomainRejection('the completion is derived from the measurements');
+        }
         final from = TaskStatus.values.byName(current.status);
         if (!isValidTransition(from, TaskStatus.done)) {
           throw DomainRejection('invalid transition ${current.status} -> done');
         }
         await (db.update(db.tasks)..where((t) => t.id.equals(id))).write(
             TasksCompanion(status: const Value('done'), version: Value(newVersion.value), updatedAt: Value(now)));
+        await _lateTick(db, cmd, id, done: true, now: now);
         var openChildren = <String>[];
         if (cascade == 'all') {
           final children = await (db.select(db.tasks)
@@ -196,6 +221,7 @@ class TaskCommandHandler implements CommandHandler {
         }
         await (db.update(db.tasks)..where((t) => t.id.equals(id))).write(
             TasksCompanion(status: const Value('todo'), version: Value(newVersion.value), updatedAt: Value(now)));
+        await _lateTick(db, cmd, id, done: false, now: now);
         return HandlerOutcome(
           entityId: id,
           operationType: 'update',

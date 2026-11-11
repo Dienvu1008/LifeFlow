@@ -29,7 +29,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   /// The schema this build writes (and the newest export it accepts).
-  static const currentSchemaVersion = 5;
+  static const currentSchemaVersion = 6;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -61,6 +61,7 @@ class AppDatabase extends _$AppDatabase {
             }
             await _createExecutionIndexes();
           }
+          if (from < 6) await m.addColumn(tasks, tasks.trackedSince);
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');

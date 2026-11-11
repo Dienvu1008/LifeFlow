@@ -1365,6 +1365,12 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('CHECK ("is_habit" IN (0, 1))'),
       defaultValue: const Constant(false));
+  static const VerificationMeta _trackedSinceMeta =
+      const VerificationMeta('trackedSince');
+  @override
+  late final GeneratedColumn<String> trackedSince = GeneratedColumn<String>(
+      'tracked_since', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _tagsMeta = const VerificationMeta('tags');
   @override
   late final GeneratedColumn<String> tags = GeneratedColumn<String>(
@@ -1395,6 +1401,7 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
         completionPolicy,
         targetAggregation,
         isHabit,
+        trackedSince,
         tags
       ];
   @override
@@ -1516,6 +1523,12 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
       context.handle(_isHabitMeta,
           isHabit.isAcceptableOrUnknown(data['is_habit']!, _isHabitMeta));
     }
+    if (data.containsKey('tracked_since')) {
+      context.handle(
+          _trackedSinceMeta,
+          trackedSince.isAcceptableOrUnknown(
+              data['tracked_since']!, _trackedSinceMeta));
+    }
     if (data.containsKey('tags')) {
       context.handle(
           _tagsMeta, tags.isAcceptableOrUnknown(data['tags']!, _tagsMeta));
@@ -1571,6 +1584,8 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
           DriftSqlType.string, data['${effectivePrefix}target_aggregation'])!,
       isHabit: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_habit'])!,
+      trackedSince: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}tracked_since']),
       tags: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}tags'])!,
     );
@@ -1604,6 +1619,7 @@ class Task extends DataClass implements Insertable<Task> {
   final String completionPolicy;
   final String targetAggregation;
   final bool isHabit;
+  final String? trackedSince;
   final String tags;
   const Task(
       {required this.id,
@@ -1627,6 +1643,7 @@ class Task extends DataClass implements Insertable<Task> {
       required this.completionPolicy,
       required this.targetAggregation,
       required this.isHabit,
+      this.trackedSince,
       required this.tags});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1668,6 +1685,9 @@ class Task extends DataClass implements Insertable<Task> {
     map['completion_policy'] = Variable<String>(completionPolicy);
     map['target_aggregation'] = Variable<String>(targetAggregation);
     map['is_habit'] = Variable<bool>(isHabit);
+    if (!nullToAbsent || trackedSince != null) {
+      map['tracked_since'] = Variable<String>(trackedSince);
+    }
     map['tags'] = Variable<String>(tags);
     return map;
   }
@@ -1709,6 +1729,9 @@ class Task extends DataClass implements Insertable<Task> {
       completionPolicy: Value(completionPolicy),
       targetAggregation: Value(targetAggregation),
       isHabit: Value(isHabit),
+      trackedSince: trackedSince == null && nullToAbsent
+          ? const Value.absent()
+          : Value(trackedSince),
       tags: Value(tags),
     );
   }
@@ -1738,6 +1761,7 @@ class Task extends DataClass implements Insertable<Task> {
       completionPolicy: serializer.fromJson<String>(json['completionPolicy']),
       targetAggregation: serializer.fromJson<String>(json['targetAggregation']),
       isHabit: serializer.fromJson<bool>(json['isHabit']),
+      trackedSince: serializer.fromJson<String?>(json['trackedSince']),
       tags: serializer.fromJson<String>(json['tags']),
     );
   }
@@ -1766,6 +1790,7 @@ class Task extends DataClass implements Insertable<Task> {
       'completionPolicy': serializer.toJson<String>(completionPolicy),
       'targetAggregation': serializer.toJson<String>(targetAggregation),
       'isHabit': serializer.toJson<bool>(isHabit),
+      'trackedSince': serializer.toJson<String?>(trackedSince),
       'tags': serializer.toJson<String>(tags),
     };
   }
@@ -1792,6 +1817,7 @@ class Task extends DataClass implements Insertable<Task> {
           String? completionPolicy,
           String? targetAggregation,
           bool? isHabit,
+          Value<String?> trackedSince = const Value.absent(),
           String? tags}) =>
       Task(
         id: id ?? this.id,
@@ -1816,6 +1842,8 @@ class Task extends DataClass implements Insertable<Task> {
         completionPolicy: completionPolicy ?? this.completionPolicy,
         targetAggregation: targetAggregation ?? this.targetAggregation,
         isHabit: isHabit ?? this.isHabit,
+        trackedSince:
+            trackedSince.present ? trackedSince.value : this.trackedSince,
         tags: tags ?? this.tags,
       );
   Task copyWithCompanion(TasksCompanion data) {
@@ -1851,6 +1879,9 @@ class Task extends DataClass implements Insertable<Task> {
           ? data.targetAggregation.value
           : this.targetAggregation,
       isHabit: data.isHabit.present ? data.isHabit.value : this.isHabit,
+      trackedSince: data.trackedSince.present
+          ? data.trackedSince.value
+          : this.trackedSince,
       tags: data.tags.present ? data.tags.value : this.tags,
     );
   }
@@ -1879,6 +1910,7 @@ class Task extends DataClass implements Insertable<Task> {
           ..write('completionPolicy: $completionPolicy, ')
           ..write('targetAggregation: $targetAggregation, ')
           ..write('isHabit: $isHabit, ')
+          ..write('trackedSince: $trackedSince, ')
           ..write('tags: $tags')
           ..write(')'))
         .toString();
@@ -1907,6 +1939,7 @@ class Task extends DataClass implements Insertable<Task> {
         completionPolicy,
         targetAggregation,
         isHabit,
+        trackedSince,
         tags
       ]);
   @override
@@ -1934,6 +1967,7 @@ class Task extends DataClass implements Insertable<Task> {
           other.completionPolicy == this.completionPolicy &&
           other.targetAggregation == this.targetAggregation &&
           other.isHabit == this.isHabit &&
+          other.trackedSince == this.trackedSince &&
           other.tags == this.tags);
 }
 
@@ -1959,6 +1993,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
   final Value<String> completionPolicy;
   final Value<String> targetAggregation;
   final Value<bool> isHabit;
+  final Value<String?> trackedSince;
   final Value<String> tags;
   final Value<int> rowid;
   const TasksCompanion({
@@ -1983,6 +2018,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
     this.completionPolicy = const Value.absent(),
     this.targetAggregation = const Value.absent(),
     this.isHabit = const Value.absent(),
+    this.trackedSince = const Value.absent(),
     this.tags = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -2008,6 +2044,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
     this.completionPolicy = const Value.absent(),
     this.targetAggregation = const Value.absent(),
     this.isHabit = const Value.absent(),
+    this.trackedSince = const Value.absent(),
     this.tags = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
@@ -2038,6 +2075,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
     Expression<String>? completionPolicy,
     Expression<String>? targetAggregation,
     Expression<bool>? isHabit,
+    Expression<String>? trackedSince,
     Expression<String>? tags,
     Expression<int>? rowid,
   }) {
@@ -2063,6 +2101,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
       if (completionPolicy != null) 'completion_policy': completionPolicy,
       if (targetAggregation != null) 'target_aggregation': targetAggregation,
       if (isHabit != null) 'is_habit': isHabit,
+      if (trackedSince != null) 'tracked_since': trackedSince,
       if (tags != null) 'tags': tags,
       if (rowid != null) 'rowid': rowid,
     });
@@ -2090,6 +2129,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
       Value<String>? completionPolicy,
       Value<String>? targetAggregation,
       Value<bool>? isHabit,
+      Value<String?>? trackedSince,
       Value<String>? tags,
       Value<int>? rowid}) {
     return TasksCompanion(
@@ -2114,6 +2154,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
       completionPolicy: completionPolicy ?? this.completionPolicy,
       targetAggregation: targetAggregation ?? this.targetAggregation,
       isHabit: isHabit ?? this.isHabit,
+      trackedSince: trackedSince ?? this.trackedSince,
       tags: tags ?? this.tags,
       rowid: rowid ?? this.rowid,
     );
@@ -2185,6 +2226,9 @@ class TasksCompanion extends UpdateCompanion<Task> {
     if (isHabit.present) {
       map['is_habit'] = Variable<bool>(isHabit.value);
     }
+    if (trackedSince.present) {
+      map['tracked_since'] = Variable<String>(trackedSince.value);
+    }
     if (tags.present) {
       map['tags'] = Variable<String>(tags.value);
     }
@@ -2218,6 +2262,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
           ..write('completionPolicy: $completionPolicy, ')
           ..write('targetAggregation: $targetAggregation, ')
           ..write('isHabit: $isHabit, ')
+          ..write('trackedSince: $trackedSince, ')
           ..write('tags: $tags, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -14227,6 +14272,7 @@ typedef $$TasksTableCreateCompanionBuilder = TasksCompanion Function({
   Value<String> completionPolicy,
   Value<String> targetAggregation,
   Value<bool> isHabit,
+  Value<String?> trackedSince,
   Value<String> tags,
   Value<int> rowid,
 });
@@ -14252,6 +14298,7 @@ typedef $$TasksTableUpdateCompanionBuilder = TasksCompanion Function({
   Value<String> completionPolicy,
   Value<String> targetAggregation,
   Value<bool> isHabit,
+  Value<String?> trackedSince,
   Value<String> tags,
   Value<int> rowid,
 });
@@ -14328,6 +14375,9 @@ class $$TasksTableFilterComposer extends Composer<_$AppDatabase, $TasksTable> {
 
   ColumnFilters<bool> get isHabit => $composableBuilder(
       column: $table.isHabit, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get trackedSince => $composableBuilder(
+      column: $table.trackedSince, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get tags => $composableBuilder(
       column: $table.tags, builder: (column) => ColumnFilters(column));
@@ -14408,6 +14458,10 @@ class $$TasksTableOrderingComposer
   ColumnOrderings<bool> get isHabit => $composableBuilder(
       column: $table.isHabit, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get trackedSince => $composableBuilder(
+      column: $table.trackedSince,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get tags => $composableBuilder(
       column: $table.tags, builder: (column) => ColumnOrderings(column));
 }
@@ -14484,6 +14538,9 @@ class $$TasksTableAnnotationComposer
   GeneratedColumn<bool> get isHabit =>
       $composableBuilder(column: $table.isHabit, builder: (column) => column);
 
+  GeneratedColumn<String> get trackedSince => $composableBuilder(
+      column: $table.trackedSince, builder: (column) => column);
+
   GeneratedColumn<String> get tags =>
       $composableBuilder(column: $table.tags, builder: (column) => column);
 }
@@ -14532,6 +14589,7 @@ class $$TasksTableTableManager extends RootTableManager<
             Value<String> completionPolicy = const Value.absent(),
             Value<String> targetAggregation = const Value.absent(),
             Value<bool> isHabit = const Value.absent(),
+            Value<String?> trackedSince = const Value.absent(),
             Value<String> tags = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -14557,6 +14615,7 @@ class $$TasksTableTableManager extends RootTableManager<
             completionPolicy: completionPolicy,
             targetAggregation: targetAggregation,
             isHabit: isHabit,
+            trackedSince: trackedSince,
             tags: tags,
             rowid: rowid,
           ),
@@ -14582,6 +14641,7 @@ class $$TasksTableTableManager extends RootTableManager<
             Value<String> completionPolicy = const Value.absent(),
             Value<String> targetAggregation = const Value.absent(),
             Value<bool> isHabit = const Value.absent(),
+            Value<String?> trackedSince = const Value.absent(),
             Value<String> tags = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -14607,6 +14667,7 @@ class $$TasksTableTableManager extends RootTableManager<
             completionPolicy: completionPolicy,
             targetAggregation: targetAggregation,
             isHabit: isHabit,
+            trackedSince: trackedSince,
             tags: tags,
             rowid: rowid,
           ),

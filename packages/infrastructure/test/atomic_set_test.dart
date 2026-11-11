@@ -11,7 +11,8 @@ library;
 // new handler cannot skip this test.
 //   handlers covered: TaskCommandHandler, ProfileCommandHandler,
 //                     ProfileRestoreHandler, EventCommandHandler,
-//                     CalendarCommandHandler, FocusCommandHandler
+//                     CalendarCommandHandler, FocusCommandHandler,
+//                     MeasurementCommandHandler, PeriodCloseHandler
 import 'package:application/application.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -114,6 +115,8 @@ void main() {
   const eventHandler = EventCommandHandler();
   const calendarHandler = CalendarCommandHandler();
   const focusHandler = FocusCommandHandler();
+  const measurementHandler = MeasurementCommandHandler();
+  const closeHandler = PeriodCloseHandler();
 
   Command command(String type, Map<String, Object?> payload,
           {String? opId, Version? expected}) =>
@@ -159,6 +162,24 @@ void main() {
           (v, op) => command('ClearOccurrenceChange', {'op': 'clearException', 'id': 't1', 'originalDate': '2026-11-16'}, opId: op, expected: v)),
       ('task.setOccurrenceDone', taskHandler, 'task', 't1',
           (v, op) => command('CompleteOccurrence', {'op': 'setOccurrenceDone', 'id': 't1', 'originalDate': '2026-11-23', 'done': true}, opId: op, expected: v)),
+      // P03 T4: habit, target, completion, measurements and a closed period
+      // (t1 repeats weekly from Monday 2026-11-09).
+      ('task.setHabit', taskHandler, 'task', 't1',
+          (v, op) => command('SetTaskHabit', {'op': 'setHabit', 'id': 't1', 'isHabit': true, 'today': '2026-11-11'}, opId: op, expected: v)),
+      ('task.setTarget', taskHandler, 'task', 't1',
+          (v, op) => command('SetTaskTarget', {'op': 'setTarget', 'id': 't1', 'target': {'type': 'atLeast', 'min': 3, 'unit': 'times'}, 'today': '2026-11-11'}, opId: op, expected: v)),
+      ('task.setCompletion', taskHandler, 'task', 't1',
+          (v, op) => command('SetTaskCompletion', {'op': 'setCompletion', 'id': 't1', 'policy': 'automatic'}, opId: op, expected: v)),
+      ('measurement.record', measurementHandler, 'measurement', 'm1',
+          (v, op) => command('RecordMeasurement', {'op': 'record', 'id': 'm1', 'taskId': 't1', 'value': 2, 'date': '2026-11-10', 'today': '2026-11-11'}, opId: op, expected: v)),
+      ('measurement.correct', measurementHandler, 'measurement', 'm2',
+          (v, op) => command('CorrectMeasurement', {'op': 'correct', 'id': 'm2', 'supersedesId': 'm1', 'value': 4, 'today': '2026-11-11'}, opId: op, expected: v)),
+      ('period.close', closeHandler, 'periodResult', 'task:t1@2026-11-09#period',
+          (v, op) => command('ClosePeriod', {'op': 'close', 'id': 'task:t1@2026-11-09#period', 'taskId': 't1', 'today': '2026-11-20'}, opId: op, expected: v)),
+      ('measurement.record(closed)', measurementHandler, 'measurement', 'm3',
+          (v, op) => command('RecordMeasurement', {'op': 'record', 'id': 'm3', 'taskId': 't1', 'value': 1, 'date': '2026-11-12', 'today': '2026-11-20', 'confirmClosed': true}, opId: op, expected: v)),
+      ('task.setCompletion(manual)', taskHandler, 'task', 't1',
+          (v, op) => command('SetTaskCompletion', {'op': 'setCompletion', 'id': 't1', 'policy': 'manual'}, opId: op, expected: v)),
       // P02 T7: reminders (two, then one: writes and a tombstone).
       ('task.setReminders', taskHandler, 'task', 't1',
           (v, op) => command('SetTaskReminders', {'op': 'setReminders', 'id': 't1', 'reminders': [{'before': 10}, {'before': 60}]}, opId: op, expected: v)),
@@ -231,7 +252,11 @@ void main() {
         await (db.update(db.focusSessions)..where((s) => s.id.equals('s3')))
             .write(const FocusSessionsCompanion(state: Value('paused')));
       }
-      final current = label.endsWith('.create') || label.startsWith('task.create') || label.startsWith('focus.start')
+      final current = label.endsWith('.create') ||
+              label.startsWith('task.create') ||
+              label.startsWith('focus.start') ||
+              label.startsWith('measurement.') ||
+              label == 'period.close'
           ? null
           : Version(await versionOf(table, id));
 

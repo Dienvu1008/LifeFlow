@@ -31,3 +31,7 @@ export 'src/reminder_service.dart';
 export 'src/execution_rows.dart';
 export 'src/focus_command_handler.dart';
 export 'src/focus_service.dart';
+export 'src/habit_tracking.dart';
+export 'src/task_target_ops.dart';
+export 'src/measurement_command_handler.dart';
+export 'src/habit_service.dart';

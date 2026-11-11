@@ -42,6 +42,8 @@ String? executionRowsError(Map<String, List<Row>> records) {
   for (final t in records['task'] ?? const <Row>[]) {
     final a = t['targetAggregation'];
     if (a != null && !aggregations.contains(a)) return 'a task has an unknown aggregation';
+    final since = t['trackedSince'];
+    if (since != null && !_isDate(since)) return 'a task has a bad tracking start';
   }
   final sessions = {for (final s in records['focusSession'] ?? const <Row>[]) s['id'] as String: s};
   for (final s in sessions.values) {

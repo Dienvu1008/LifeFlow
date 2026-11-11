@@ -186,7 +186,7 @@ void main() {
       expect(await store.db.select(store.db.schedules).get(), isEmpty);
     });
 
-    for (final from in [2, 3, 4]) {
+    for (final from in [2, 3, 4, 5]) {
       test('an existing v$from profile store upgrades to the latest schema, '
           'data intact (ADR-0025, ADR-0029)', () async {
         var dir = await openDirectory(base, keys);
@@ -221,7 +221,7 @@ void main() {
         expect(idx, hasLength(11));
         // P03 task columns get their defaults on existing rows (ADR-0037).
         final task = (await db.select(db.tasks).get()).single;
-        expect((task.targetAggregation, task.isHabit), ('sum', false));
+        expect((task.targetAggregation, task.isHabit, task.trackedSince), ('sum', false, null));
         final v = await db.customSelect('PRAGMA user_version').getSingle();
         expect(v.data.values.first, AppDatabase.currentSchemaVersion);
         // The upgraded store works: a task with a schedule can be written.
