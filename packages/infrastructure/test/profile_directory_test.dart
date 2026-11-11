@@ -186,7 +186,7 @@ void main() {
       expect(await store.db.select(store.db.schedules).get(), isEmpty);
     });
 
-    for (final from in [2, 3]) {
+    for (final from in [2, 3, 4]) {
       test('an existing v$from profile store upgrades to the latest schema, '
           'data intact (ADR-0025, ADR-0029)', () async {
         var dir = await openDirectory(base, keys);
@@ -206,14 +206,22 @@ void main() {
         expect((await db.select(db.tasks).get()).single.title, 'Kept across upgrade');
         expect(await db.select(db.restoreSnapshots).get(), isEmpty);
         for (final TableInfo t in [db.calendars, db.events, db.schedules,
-            db.occurrenceExceptions, db.occurrenceCompletions, db.reminders]) {
+            db.occurrenceExceptions, db.occurrenceCompletions, db.reminders,
+            db.focusSessions, db.executionRecords, db.measurements, db.periodResults,
+            db.goals, db.milestones, db.goalLinks]) {
           expect(await db.select(t).get(), isEmpty, reason: t.actualTableName);
         }
-        // The planning indexes exist after the upgrade, as on a new store.
+        // The planning (v4) and execution (v5) indexes exist after the
+        // upgrade, as on a new store.
         final idx = await db.customSelect(
             "SELECT name FROM sqlite_master WHERE type = 'index' AND name IN "
-            "('schedules_range','exceptions_subject','completions_task','reminders_subject')").get();
-        expect(idx, hasLength(4));
+            "('schedules_range','exceptions_subject','completions_task','reminders_subject',"
+            "'measurements_task_date','focus_sessions_state','execution_records_task','period_results_task',"
+            "'milestones_goal','goal_links_goal','goal_links_item')").get();
+        expect(idx, hasLength(11));
+        // P03 task columns get their defaults on existing rows (ADR-0037).
+        final task = (await db.select(db.tasks).get()).single;
+        expect((task.targetAggregation, task.isHabit), ('sum', false));
         final v = await db.customSelect('PRAGMA user_version').getSingle();
         expect(v.data.values.first, AppDatabase.currentSchemaVersion);
         // The upgraded store works: a task with a schedule can be written.

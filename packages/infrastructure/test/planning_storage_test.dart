@@ -215,9 +215,12 @@ void main() {
     return {'task': task, 'other': other};
   }
 
+  // The P02 planning kinds (P03 kinds have their own round trip in
+  // execution_storage_test.dart).
+  const planningKinds = {'calendar', 'event', 'schedule', 'exception', 'completion', 'reminder'};
   Future<Map<String, List<String>>> planningSnapshot(AppDatabase db) async => {
         for (final k in recordKinds)
-          if (k.name != 'task' && k.name != 'taskList')
+          if (planningKinds.contains(k.name))
             k.name: [for (final r in await k.readAll(db)) jsonEncode(r)]..sort(),
       };
 

@@ -15,6 +15,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:foundation/foundation.dart' show LocalDate;
 
 import 'app_database.dart';
+import 'execution_rows.dart';
 import 'record_kinds.dart';
 import 'schedule_mapping.dart';
 
@@ -245,10 +246,21 @@ class ProfileExport {
         p.putIfAbsent('signedOut', () => false); // schema v2 (ADR-0024)
       }
     }
-    if (fromSchema < 4) {
+    if (fromSchema < 5) {
       // Schema v4 (P02 T3): planning and calendar tables did not exist.
+      // Schema v5 (P03 T2): execution, measurement, habit and goal tables
+      // did not exist, and tasks had no aggregation or habit flag.
       for (final k in recordKinds) {
         map.putIfAbsent(k.exportKey, () => <Object?>[]);
+      }
+      final tasks = map['tasks'];
+      if (tasks is List) {
+        for (final t in tasks) {
+          if (t is Map) {
+            t.putIfAbsent('targetAggregation', () => 'sum');
+            t.putIfAbsent('isHabit', () => false);
+          }
+        }
       }
     }
   }
@@ -358,15 +370,28 @@ class ProfileExport {
       final c = e['calendarId'];
       if (c != null && !ids['calendar']!.contains(c)) bad('an event points to an unknown calendar');
     }
-    // Dependent rows point to an existing task or event.
-    for (final kind in ['schedule', 'exception', 'completion', 'reminder']) {
-      for (final r in records[kind]!) {
-        final (type, id) = subjectOf(kind, r)!;
-        if ((type != 'task' && type != 'event') || !ids[type]!.contains(id)) {
-          bad('a $kind points to an unknown item');
+    // Dependent rows point to existing records (a task or an event; a goal;
+    // both ends of a goal link).
+    for (final k in recordKinds) {
+      for (final r in records[k.name]!) {
+        for (final (type, id) in requiredRefsOf(k.name, r)) {
+          final allowed = k.name == 'milestone' || (k.name == 'goalLink' && type == 'goal')
+              ? type == 'goal'
+              : type == 'task' || type == 'event';
+          if (!allowed || !(ids[type]?.contains(id) ?? false)) bad('a ${k.name} points to an unknown item');
         }
       }
     }
+    // Optional references, when set, resolve inside the file too.
+    for (final (kind, field, target) in optionalRefs) {
+      for (final r in records[kind]!) {
+        final v = r[field];
+        if (v != null && !ids[target]!.contains(v)) bad('a $kind points to an unknown $target');
+      }
+    }
+    // P03 rows are well-formed (values, states, keyed ids).
+    final p03 = executionRowsError(records);
+    if (p03 != null) bad(p03);
     // Schedules and exceptions are well-formed and valid (dates, zones, rule).
     final scheduled = <String>{};
     try {

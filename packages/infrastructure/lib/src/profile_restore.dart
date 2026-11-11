@@ -226,24 +226,40 @@ class RestorePlanner {
     return RestorePlan(changes, const []);
   }
 
-  /// P02 T3: a dependent row from the file (schedule, exception, completion,
-  /// reminder) is not written when the task or event it belongs to will not
-  /// exist after the restore (for example merge (a) without (b)). An event
-  /// whose calendar will not exist keeps no calendar. Device rows are never
-  /// dropped here.
+  /// P02 T3 / P03 T2: a dependent row from the file is not written when a
+  /// record it needs will not exist after the restore (for example merge
+  /// (a) without (b)): schedules, exceptions, completions and reminders need
+  /// their task or event; measurements and period results their task;
+  /// milestones their goal; goal links both their goal and their item.
+  /// Optional references to a record that will not exist are cleared, so
+  /// history is kept (an event's calendar; a session's or record's task; a
+  /// record's session; a measurement's record). A measurement correcting a
+  /// measurement that will not exist is not written either. Device rows are
+  /// never dropped here.
   static void _dropOrphans(RecordSet device, List<RowChange> changes) {
-    final finalIds = {
-      for (final kind in ['task', 'event', 'calendar']) kind: _finalIds(device, changes, kind),
-    };
-    changes.removeWhere((c) {
-      if (!c.fromFile) return false;
-      final s = subjectOf(c.kind, c.after);
-      return s != null && !(finalIds[s.$1]?.contains(s.$2) ?? false);
-    });
+    // Required references first; repeat, since dropping a row can orphan
+    // another (a goal link to a dropped goal).
+    var dropped = true;
+    while (dropped) {
+      final finalIds = {for (final kind in referableKinds) kind: _finalIds(device, changes, kind)};
+      final before = changes.length;
+      changes.removeWhere((c) {
+        if (!c.fromFile) return false;
+        for (final (kind, id) in requiredRefsOf(c.kind, c.after)) {
+          if (!(finalIds[kind]?.contains(id) ?? false)) return true;
+        }
+        final sup = c.kind == 'measurement' ? c.after['supersedesId'] : null;
+        return sup != null && !finalIds['measurement']!.contains(sup);
+      });
+      dropped = changes.length != before;
+    }
+    final finalIds = {for (final kind in referableKinds) kind: _finalIds(device, changes, kind)};
     for (final c in changes) {
-      if (c.kind == 'event' && c.fromFile) {
-        final cal = c.after['calendarId'];
-        if (cal != null && !finalIds['calendar']!.contains(cal)) c.after['calendarId'] = null;
+      if (!c.fromFile) continue;
+      for (final (kind, field, target) in optionalRefs) {
+        if (c.kind != kind) continue;
+        final v = c.after[field];
+        if (v != null && !finalIds[target]!.contains(v)) c.after[field] = null;
       }
     }
   }

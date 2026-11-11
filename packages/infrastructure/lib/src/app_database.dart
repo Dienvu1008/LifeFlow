@@ -12,19 +12,24 @@ part 'app_database.g.dart';
 ///   v3 (P01 T7b) restore_snapshots — undo of the last restore (ADR-0025)
 ///   v4 (P02 T3)  calendars, events, schedules, occurrence_exceptions,
 ///                occurrence_completions, reminders (ADR-0029)
+///   v5 (P03 T2)  focus_sessions, execution_records, measurements,
+///                period_results, goals, milestones, goal_links;
+///                tasks.target_aggregation, tasks.is_habit (ADR-0037)
 @DriftDatabase(
   tables: [
     Profiles, Workspaces, TaskLists, Tasks, AuditLog, Outbox, EventLog,
     OpDedupe, RestoreSnapshots,
     Calendars, Events, Schedules, OccurrenceExceptions, OccurrenceCompletions,
     Reminders,
+    FocusSessions, ExecutionRecords, Measurements, PeriodResults, Goals,
+    Milestones, GoalLinks,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   /// The schema this build writes (and the newest export it accepts).
-  static const currentSchemaVersion = 4;
+  static const currentSchemaVersion = 5;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -35,6 +40,7 @@ class AppDatabase extends _$AppDatabase {
           await m.createAll();
           await _createTaskTitleFts();
           await _createPlanningIndexes();
+          await _createExecutionIndexes();
         },
         onUpgrade: (m, from, to) async {
           if (from < 2) await m.addColumn(profiles, profiles.signedOut);
@@ -45,6 +51,15 @@ class AppDatabase extends _$AppDatabase {
               await m.createTable(t);
             }
             await _createPlanningIndexes();
+          }
+          if (from < 5) {
+            await m.addColumn(tasks, tasks.targetAggregation);
+            await m.addColumn(tasks, tasks.isHabit);
+            for (final TableInfo t in [focusSessions, executionRecords, measurements,
+                periodResults, goals, milestones, goalLinks]) {
+              await m.createTable(t);
+            }
+            await _createExecutionIndexes();
           }
         },
         beforeOpen: (details) async {
@@ -63,6 +78,17 @@ class AppDatabase extends _$AppDatabase {
         'CREATE INDEX completions_task ON occurrence_completions (task_id)');
     await customStatement(
         'CREATE INDEX reminders_subject ON reminders (subject_type, subject_id)');
+  }
+
+  /// P03: lookups by task, by period, by state and by goal.
+  Future<void> _createExecutionIndexes() async {
+    await customStatement('CREATE INDEX measurements_task_date ON measurements (task_id, local_date)');
+    await customStatement('CREATE INDEX focus_sessions_state ON focus_sessions (state)');
+    await customStatement('CREATE INDEX execution_records_task ON execution_records (task_id)');
+    await customStatement('CREATE INDEX period_results_task ON period_results (task_id, period_key)');
+    await customStatement('CREATE INDEX milestones_goal ON milestones (goal_id)');
+    await customStatement('CREATE INDEX goal_links_goal ON goal_links (goal_id)');
+    await customStatement('CREATE INDEX goal_links_item ON goal_links (item_type, item_id)');
   }
 
   /// FTS5 index over task titles (external-content). Kept in sync by triggers.

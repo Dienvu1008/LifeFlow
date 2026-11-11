@@ -127,6 +127,7 @@ Every non-trivial statement carries one of these labels.
 | [adr/0034-reminders.md](adr/0034-reminders.md) | P02/T7: reminders of tasks and events (kernel trigger times across DST, rolling 14-day horizon, device adapter, permissions) |
 | [adr/0036-execution-measurement-goal-rules.md](adr/0036-execution-measurement-goal-rules.md) | P03/T1: focus session rules and recovery, targets and evaluation, periods from the repeat, habit tracking, goal progress (pure domain); amends ADR-0006 (habit is its own flag) |
 | [adr/0035-gpl-classpath-exception-for-android-desugaring.md](adr/0035-gpl-classpath-exception-for-android-desugaring.md) | P02/T8: GPL-2.0 + Classpath Exception accepted only for Android desugaring (ADR-0018 rule 7); notices shipped; FF-ARCH-07 license scan in CI |
+| [adr/0037-storage-v5-execution-measurement-goals.md](adr/0037-storage-v5-execution-measurement-goals.md) | P03/T2: schema v5 (focus sessions, execution records, measurements, period results, goals, milestones, goal links; task aggregation and habit flag), upgrade v1–v4, export/restore with required and optional references |
 
 ## Batch 4 documents
 

@@ -97,6 +97,14 @@ class Services {
 /// Turns a current profile store back into what a build with schema [version]
 /// wrote (for migration tests). Data in the tables that remain is kept.
 Future<void> rewindProfileStore(AppDatabase db, int version) async {
+  if (version < 5) {
+    for (final t in ['focus_sessions', 'execution_records', 'measurements', 'period_results',
+        'goals', 'milestones', 'goal_links']) {
+      await db.customStatement('DROP TABLE $t'); // drops its indexes too
+    }
+    await db.customStatement('ALTER TABLE tasks DROP COLUMN target_aggregation');
+    await db.customStatement('ALTER TABLE tasks DROP COLUMN is_habit');
+  }
   if (version < 4) {
     for (final t in ['calendars', 'events', 'schedules', 'occurrence_exceptions',
         'occurrence_completions', 'reminders']) {
