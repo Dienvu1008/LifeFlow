@@ -1,6 +1,6 @@
 # ADR-0041: Habits in the UI (Habits filter, habit page, period states)
 
-- Status: Accepted (P03 task T6a, 2026-11-11; within the owner-accepted P03 plan, decisions D6–D10, D12); device check by the owner pending
+- Status: Accepted (P03 task T6a, 2026-11-11; within the owner-accepted P03 plan, decisions D6–D10, D12). Merged before the device check at the owner's request (2026-11-11): the owner checks every P03 screen on the devices in one pass before the MVP exit (T7).
 - Date: 2026-11-11
 - Deciders: Project owner (plan), implementation
 - Related: [ADR-0039](0039-habits-targets-measurements-period-results.md) (the commands and reads), [ADR-0019](0019-ui-state-management-and-navigation.md), [p03-plan.md](../roadmap/p03-plan.md)
@@ -49,4 +49,4 @@ T4 gave the habit, target and measurement commands and the tracking reads. T6a p
   - automatic and manual boxes in Today and All.
 - `apps/lifeflow_app/test/app_integration_test.dart` (real stores): a habit made in the Habits filter gets a target, automatic completion and two measurements. The page shows "Achieved", Today's box is derived, and the store has the rows and audit actions.
 - UI mutations: 12/13 killed. The survivor is the negative check in the measurement dialog, which cannot be reached: the field accepts only digits, "." and ",". The command refuses negatives anyway (ADR-0039).
-- Device check (Windows, Android): pending, by the owner.
+- Device check (Windows, Android): deferred by the owner to one pass over all P03 screens before T7.
