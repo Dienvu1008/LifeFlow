@@ -419,6 +419,75 @@ void main() {
     await finish(tester, w);
   });
 
+  testWidgets('P03 T6c: a goal made in the Goals tab links a task; progress is derived; the trash keeps the task',
+      (tester) async {
+    final w = await pumpApp(tester, StoragePlatform.android);
+    await tester.tap(find.byTooltip('Add task'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Buy shoes');
+    await tester.tap(find.widgetWithText(FilledButton, 'Add'));
+    await tester.pump();
+    await settle(tester);
+
+    await tester.tap(find.text('Goals'));
+    await settle(tester);
+    await tester.tap(find.byTooltip('New goal or project'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('goal-title')), 'Get fit');
+    await tester.tap(find.byKey(const Key('goal-save')));
+    await tester.pump();
+    await settle(tester);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('goal-page')), findsOneWidget);
+    expect(find.text('No progress yet'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('link-task')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Buy shoes').last);
+    await tester.pump();
+    await settle(tester);
+    await tester.pumpAndSettle();
+    expect(find.text('0% · from linked tasks and habits'), findsOneWidget);
+
+    // A milestone wins over the links; ticked by hand.
+    await tester.tap(find.byKey(const Key('milestone-add')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('milestone-title')), 'Run 5 km');
+    await tester.tap(find.byKey(const Key('milestone-save')));
+    await tester.pump();
+    await settle(tester);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Run 5 km'));
+    await tester.pump();
+    await settle(tester);
+    await tester.pumpAndSettle();
+    expect(find.text('100% · 1 of 1 milestones'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Actions for Get fit'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Move to trash').last);
+    await tester.pump();
+    await settle(tester);
+    await tester.pumpAndSettle();
+
+    final id = (await tester.runAsync(() => w.directory.active()))!.id;
+    final rows = await tester.runAsync(() async {
+      final s = await w.directory.openProfile(id);
+      final goals = await s.db.select(s.db.goals).get();
+      final links = await s.db.select(s.db.goalLinks).get();
+      final milestones = await s.db.select(s.db.milestones).get();
+      final tasks = await s.db.select(s.db.tasks).get();
+      await s.db.close();
+      return (goals: goals, links: links, milestones: milestones, tasks: tasks);
+    });
+    expect(rows!.goals.single.deletedAt, isNotNull);
+    expect(rows.links.single.deletedAt, isNull, reason: 'kept with the goal for a restore');
+    expect(rows.milestones.single.isCompleted, isTrue);
+    final t = rows.tasks.single;
+    expect((t.title, t.deletedAt, t.status), ('Buy shoes', null, 'inbox'), reason: 'LF-INV-GOAL-001/002');
+    await finish(tester, w);
+  });
+
   testWidgets('P02 T6b: an event made in the Calendar tab is stored, shown, and overlaps a task',
       (tester) async {
     final w = await pumpApp(tester, StoragePlatform.android, width: 1200);

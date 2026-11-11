@@ -14,6 +14,8 @@ const _destinations = [
   _Destination('Tasks', Icons.checklist_outlined, Icons.checklist),
   // Owner decision D9: Tasks, Calendar, Profiles, Settings.
   _Destination('Calendar', Icons.calendar_month_outlined, Icons.calendar_month),
+  // P03 D12: Goals is the 5th tab, before Profiles and Settings.
+  _Destination('Goals', Icons.flag_outlined, Icons.flag),
   _Destination('Profiles', Icons.people_outline, Icons.people),
   _Destination('Settings', Icons.settings_outlined, Icons.settings),
 ];

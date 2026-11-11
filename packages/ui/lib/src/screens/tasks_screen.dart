@@ -9,10 +9,11 @@ import '../schedule_text.dart';
 import '../task_actions.dart';
 import '../task_tree.dart';
 import 'focus_page.dart';
+import 'goals_screen.dart';
 import 'habit_page.dart';
 import 'schedule_editor.dart';
 
-enum _RowAction { focus, rename, schedule, tracking, addSubtask, trash }
+enum _RowAction { focus, rename, schedule, tracking, goals, addSubtask, trash }
 
 /// Typical height of one row (one-line ListTile); only an estimate used to
 /// get close to a row that is not built yet.
@@ -419,6 +420,7 @@ class _TaskTile extends ConsumerWidget {
           const PopupMenuItem(value: _RowAction.rename, child: Text('Rename')),
           const PopupMenuItem(value: _RowAction.schedule, child: Text('Schedule…')),
           const PopupMenuItem(value: _RowAction.tracking, child: Text('Habit and target…')),
+          const PopupMenuItem(value: _RowAction.goals, child: Text('Goals…')),
           const PopupMenuItem(value: _RowAction.addSubtask, child: Text('Add subtask')),
           const PopupMenuItem(value: _RowAction.trash, child: Text('Move to trash')),
         ],
@@ -442,6 +444,8 @@ class _TaskTile extends ConsumerWidget {
             taskId: t.id, title: t.title, initial: t.schedule);
       case _RowAction.tracking:
         await openHabitPage(context, taskId: t.id, title: t.title);
+      case _RowAction.goals:
+        await showGoalsOfTask(context, ref, taskId: t.id, title: t.title);
       case _RowAction.addSubtask:
         await onAddSubtask(t.id);
       case _RowAction.trash:
