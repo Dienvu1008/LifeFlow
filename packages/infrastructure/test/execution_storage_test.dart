@@ -59,11 +59,13 @@ void main() {
         id: 'ev-1', workspaceId: ws, ownerId: profileId, createdAt: t0, updatedAt: t0, title: 'Gym class'));
     await db.into(db.focusSessions).insert(FocusSessionsCompanion.insert(
         id: 's1', workspaceId: ws, ownerId: profileId, createdAt: t0, updatedAt: t0,
-        taskId: Value(walk), mode: 'pomodoro', state: 'ended', startedAt: t0,
-        plannedMs: const Value(25 * 60000), pausedMs: const Value(60000), endedAt: Value(t0.add(const Duration(minutes: 26)))));
+        taskId: Value(walk), mode: 'pomodoro', state: 'ended', startedAt: t0.millisecondsSinceEpoch + 250,
+        plannedMs: const Value(25 * 60000), pausedMs: const Value(60000),
+        endedAt: Value(t0.add(const Duration(minutes: 26)).millisecondsSinceEpoch + 250)));
     await db.into(db.focusSessions).insert(FocusSessionsCompanion.insert(
         id: 's2', workspaceId: ws, ownerId: profileId, createdAt: t0, updatedAt: t0,
-        mode: 'stopwatch', state: 'paused', startedAt: t0, pausedAt: Value(t0.add(const Duration(minutes: 3)))));
+        mode: 'stopwatch', state: 'paused', startedAt: t0.millisecondsSinceEpoch,
+        pausedAt: Value(t0.add(const Duration(minutes: 3)).millisecondsSinceEpoch)));
     await db.into(db.executionRecords).insert(ExecutionRecordsCompanion.insert(
         id: executionRecordIdOf('s1'), workspaceId: ws, ownerId: profileId, createdAt: t0, updatedAt: t0,
         sessionId: const Value('s1'), taskId: Value(walk), occurrenceDate: const Value('2026-11-10'),

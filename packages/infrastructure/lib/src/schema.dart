@@ -242,18 +242,21 @@ class Reminders extends Table with SyncableColumns {
 
 /// A focus session (execution-measurement.md §3, ADR-0036). Written at start
 /// and on every transition, so a kill at any point leaves a recoverable row
-/// (LF-INV-EXEC-003). Times are UTC instants; durations in milliseconds.
+/// (LF-INV-EXEC-003). The instants are UTC milliseconds, not DateTime
+/// columns (kept to the second): the elapsed time is derived from them and
+/// must stay within 1 s after any number of pauses (LF-INV-EXEC-002, ADR-0038).
+/// Durations are in milliseconds.
 @DataClassName('FocusSessionRow')
 class FocusSessions extends Table with SyncableColumns {
   TextColumn get taskId => text().nullable()();
   TextColumn get occurrenceDate => text().nullable()(); // original date of a repeating task
   TextColumn get mode => text()(); // pomodoro | stopwatch
   TextColumn get state => text()(); // running | paused | ended | cancelled | unrecoverable
-  DateTimeColumn get startedAt => dateTime()();
+  IntColumn get startedAt => integer()(); // UTC ms
   IntColumn get plannedMs => integer().nullable()();
   IntColumn get pausedMs => integer().withDefault(const Constant(0))();
-  DateTimeColumn get pausedAt => dateTime().nullable()();
-  DateTimeColumn get endedAt => dateTime().nullable()();
+  IntColumn get pausedAt => integer().nullable()(); // UTC ms
+  IntColumn get endedAt => integer().nullable()(); // UTC ms
   @override
   Set<Column> get primaryKey => {id};
 }

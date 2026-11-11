@@ -744,4 +744,36 @@ void main() {
     expect(storagePlatformFor(TargetPlatform.windows), StoragePlatform.windows);
     expect(storagePlatformFor(TargetPlatform.macOS), StoragePlatform.other);
   });
+
+  focusRecoveryOnOpen();
+}
+
+class _NoHost implements ProfileHost {
+  @override
+  Future<void> activate(String profileId, {bool showProfiles = false}) async {}
+}
+
+/// P03 T3 (D1): opening a profile brings back the focus session a kill left.
+void focusRecoveryOnOpen() {
+  test('P03 T3: openSession recovers the running focus session (D1, LF-INV-EXEC-003)', () async {
+    final w = World();
+    await w.open(StoragePlatform.android);
+    addTearDown(w.dispose);
+    final id = (await w.directory.active())!.id;
+    Future<AppWiring> open() => openSession(
+        directory: w.directory, profileId: id, platform: StoragePlatform.android,
+        auth: w.auth, host: _NoHost(), files: w.files);
+
+    final first = await open();
+    expect(first.focusLaunch, isA<NoActiveFocus>());
+    final focus = DriftFocusService(first.db, DriftCommandGateway(first.db, WorkspaceOwnerAuthorization(first.db)));
+    final started = await focus.start(mode: FocusSessionMode.stopwatch);
+    expect(started, isA<CommandOk>());
+    await first.db.close(); // killed: no end, no cleanup
+
+    final again = await open();
+    addTearDown(again.close);
+    expect(again.focusLaunch,
+        isA<FocusResumed>().having((l) => l.session.id, 'id', (started as CommandOk).entityId));
+  });
 }
