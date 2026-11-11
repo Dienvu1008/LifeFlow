@@ -11,8 +11,9 @@ library;
 // new handler cannot skip this test.
 //   handlers covered: TaskCommandHandler, ProfileCommandHandler,
 //                     ProfileRestoreHandler, EventCommandHandler,
-//                     CalendarCommandHandler
+//                     CalendarCommandHandler, FocusCommandHandler
 import 'package:application/application.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:foundation/foundation.dart';
 import 'package:infrastructure/infrastructure.dart';
@@ -102,6 +103,7 @@ void main() {
         'task' => (await (db.select(db.tasks)..where((t) => t.id.equals(id))).getSingle()).version,
         'event' => (await (db.select(db.events)..where((t) => t.id.equals(id))).getSingle()).version,
         'calendar' => (await (db.select(db.calendars)..where((t) => t.id.equals(id))).getSingle()).version,
+        'focusSession' => (await (db.select(db.focusSessions)..where((t) => t.id.equals(id))).getSingle()).version,
         _ => (await (db.select(db.profiles)..where((t) => t.id.equals(id))).getSingle()).version,
       };
 
@@ -111,6 +113,7 @@ void main() {
   const restoreHandler = ProfileRestoreHandler();
   const eventHandler = EventCommandHandler();
   const calendarHandler = CalendarCommandHandler();
+  const focusHandler = FocusCommandHandler();
 
   Command command(String type, Map<String, Object?> payload,
           {String? opId, Version? expected}) =>
@@ -184,6 +187,23 @@ void main() {
           (v, op) => command('TrashEvent', {'op': 'trash', 'id': 'e1'}, opId: op, expected: v)),
       ('event.restore', eventHandler, 'event', 'e1',
           (v, op) => command('RestoreEvent', {'op': 'restore', 'id': 'e1'}, opId: op, expected: v)),
+      // P03 T3: focus sessions (s3 is made untrustworthy before it is marked).
+      ('focus.start', focusHandler, 'focusSession', 's1',
+          (v, op) => command('StartFocusSession', {'op': 'start', 'id': 's1', 'mode': 'stopwatch'}, opId: op, expected: v)),
+      ('focus.pause', focusHandler, 'focusSession', 's1',
+          (v, op) => command('PauseFocusSession', {'op': 'pause', 'id': 's1'}, opId: op, expected: v)),
+      ('focus.resume', focusHandler, 'focusSession', 's1',
+          (v, op) => command('ResumeFocusSession', {'op': 'resume', 'id': 's1'}, opId: op, expected: v)),
+      ('focus.end(count)', focusHandler, 'focusSession', 's1',
+          (v, op) => command('EndFocusSession', {'op': 'end', 'id': 's1', 'count': true}, opId: op, expected: v)),
+      ('focus.start(pomodoro)', focusHandler, 'focusSession', 's2',
+          (v, op) => command('StartFocusSession', {'op': 'start', 'id': 's2', 'mode': 'pomodoro', 'plannedMs': 1500000}, opId: op, expected: v)),
+      ('focus.cancel', focusHandler, 'focusSession', 's2',
+          (v, op) => command('CancelFocusSession', {'op': 'cancel', 'id': 's2'}, opId: op, expected: v)),
+      ('focus.start(s3)', focusHandler, 'focusSession', 's3',
+          (v, op) => command('StartFocusSession', {'op': 'start', 'id': 's3', 'mode': 'stopwatch'}, opId: op, expected: v)),
+      ('focus.markUnrecoverable', focusHandler, 'focusSession', 's3',
+          (v, op) => command('MarkFocusSessionUnrecoverable', {'op': 'markUnrecoverable', 'id': 's3', 'cause': 'untrusted'}, opId: op, expected: v)),
       ('calendar.trash', calendarHandler, 'calendar', 'c1',
           (v, op) => command('TrashCalendar', {'op': 'trash', 'id': 'c1'}, opId: op, expected: v)),
       ('task.trash', taskHandler, 'task', 't2',
@@ -206,7 +226,12 @@ void main() {
   test('every handler operation writes the whole atomic set, and a failure '
       'after the handler leaves nothing (FF-ARCH-06, GS-06/07)', () async {
     for (final (label, handler, table, id, build) in steps) {
-      final current = label.endsWith('.create') || label.startsWith('task.create')
+      if (label == 'focus.markUnrecoverable') {
+        // A stored row that cannot be trusted: paused without a pause time.
+        await (db.update(db.focusSessions)..where((s) => s.id.equals('s3')))
+            .write(const FocusSessionsCompanion(state: Value('paused')));
+      }
+      final current = label.endsWith('.create') || label.startsWith('task.create') || label.startsWith('focus.start')
           ? null
           : Version(await versionOf(table, id));
 

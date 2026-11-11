@@ -13,7 +13,7 @@ T1 added the P03 rules as pure domain code. T3–T5 need somewhere to keep focus
 
 | Table | Holds | Id |
 |---|---|---|
-| `focus_sessions` | a session, written at start and on every transition (LF-INV-EXEC-003); `plannedMs`, `pausedMs`, `pausedAt` in UTC/ms | random |
+| `focus_sessions` | a session, written at start and on every transition (LF-INV-EXEC-003); `plannedMs`, `pausedMs` in ms; `startedAt`, `pausedAt`, `endedAt` as integer UTC ms (amended by [ADR-0038](0038-focus-commands-and-recovery.md)) | random |
 | `execution_records` | what was actually done; optional session, task and occurrence | `session:<sessionId>` when from a session (LF-INV-EXEC-004) |
 | `measurements` | one value with its date, source and device; a correction supersedes, a withdrawal flags; optional execution record | random |
 | `period_results` | the stored outcome of an ended period or habit occurrence, with the aggregate and a JSON copy of the target (D9) | `task:<taskId>@<key>#<period\|occurrence>` |

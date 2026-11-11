@@ -8640,9 +8640,9 @@ class $FocusSessionsTable extends FocusSessions
   static const VerificationMeta _startedAtMeta =
       const VerificationMeta('startedAt');
   @override
-  late final GeneratedColumn<DateTime> startedAt = GeneratedColumn<DateTime>(
+  late final GeneratedColumn<int> startedAt = GeneratedColumn<int>(
       'started_at', aliasedName, false,
-      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+      type: DriftSqlType.int, requiredDuringInsert: true);
   static const VerificationMeta _plannedMsMeta =
       const VerificationMeta('plannedMs');
   @override
@@ -8660,15 +8660,15 @@ class $FocusSessionsTable extends FocusSessions
   static const VerificationMeta _pausedAtMeta =
       const VerificationMeta('pausedAt');
   @override
-  late final GeneratedColumn<DateTime> pausedAt = GeneratedColumn<DateTime>(
+  late final GeneratedColumn<int> pausedAt = GeneratedColumn<int>(
       'paused_at', aliasedName, true,
-      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+      type: DriftSqlType.int, requiredDuringInsert: false);
   static const VerificationMeta _endedAtMeta =
       const VerificationMeta('endedAt');
   @override
-  late final GeneratedColumn<DateTime> endedAt = GeneratedColumn<DateTime>(
+  late final GeneratedColumn<int> endedAt = GeneratedColumn<int>(
       'ended_at', aliasedName, true,
-      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+      type: DriftSqlType.int, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -8820,15 +8820,15 @@ class $FocusSessionsTable extends FocusSessions
       state: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}state'])!,
       startedAt: attachedDatabase.typeMapping
-          .read(DriftSqlType.dateTime, data['${effectivePrefix}started_at'])!,
+          .read(DriftSqlType.int, data['${effectivePrefix}started_at'])!,
       plannedMs: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}planned_ms']),
       pausedMs: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}paused_ms'])!,
       pausedAt: attachedDatabase.typeMapping
-          .read(DriftSqlType.dateTime, data['${effectivePrefix}paused_at']),
+          .read(DriftSqlType.int, data['${effectivePrefix}paused_at']),
       endedAt: attachedDatabase.typeMapping
-          .read(DriftSqlType.dateTime, data['${effectivePrefix}ended_at']),
+          .read(DriftSqlType.int, data['${effectivePrefix}ended_at']),
     );
   }
 
@@ -8851,11 +8851,11 @@ class FocusSessionRow extends DataClass implements Insertable<FocusSessionRow> {
   final String? occurrenceDate;
   final String mode;
   final String state;
-  final DateTime startedAt;
+  final int startedAt;
   final int? plannedMs;
   final int pausedMs;
-  final DateTime? pausedAt;
-  final DateTime? endedAt;
+  final int? pausedAt;
+  final int? endedAt;
   const FocusSessionRow(
       {required this.id,
       required this.workspaceId,
@@ -8897,16 +8897,16 @@ class FocusSessionRow extends DataClass implements Insertable<FocusSessionRow> {
     }
     map['mode'] = Variable<String>(mode);
     map['state'] = Variable<String>(state);
-    map['started_at'] = Variable<DateTime>(startedAt);
+    map['started_at'] = Variable<int>(startedAt);
     if (!nullToAbsent || plannedMs != null) {
       map['planned_ms'] = Variable<int>(plannedMs);
     }
     map['paused_ms'] = Variable<int>(pausedMs);
     if (!nullToAbsent || pausedAt != null) {
-      map['paused_at'] = Variable<DateTime>(pausedAt);
+      map['paused_at'] = Variable<int>(pausedAt);
     }
     if (!nullToAbsent || endedAt != null) {
-      map['ended_at'] = Variable<DateTime>(endedAt);
+      map['ended_at'] = Variable<int>(endedAt);
     }
     return map;
   }
@@ -8962,11 +8962,11 @@ class FocusSessionRow extends DataClass implements Insertable<FocusSessionRow> {
       occurrenceDate: serializer.fromJson<String?>(json['occurrenceDate']),
       mode: serializer.fromJson<String>(json['mode']),
       state: serializer.fromJson<String>(json['state']),
-      startedAt: serializer.fromJson<DateTime>(json['startedAt']),
+      startedAt: serializer.fromJson<int>(json['startedAt']),
       plannedMs: serializer.fromJson<int?>(json['plannedMs']),
       pausedMs: serializer.fromJson<int>(json['pausedMs']),
-      pausedAt: serializer.fromJson<DateTime?>(json['pausedAt']),
-      endedAt: serializer.fromJson<DateTime?>(json['endedAt']),
+      pausedAt: serializer.fromJson<int?>(json['pausedAt']),
+      endedAt: serializer.fromJson<int?>(json['endedAt']),
     );
   }
   @override
@@ -8985,11 +8985,11 @@ class FocusSessionRow extends DataClass implements Insertable<FocusSessionRow> {
       'occurrenceDate': serializer.toJson<String?>(occurrenceDate),
       'mode': serializer.toJson<String>(mode),
       'state': serializer.toJson<String>(state),
-      'startedAt': serializer.toJson<DateTime>(startedAt),
+      'startedAt': serializer.toJson<int>(startedAt),
       'plannedMs': serializer.toJson<int?>(plannedMs),
       'pausedMs': serializer.toJson<int>(pausedMs),
-      'pausedAt': serializer.toJson<DateTime?>(pausedAt),
-      'endedAt': serializer.toJson<DateTime?>(endedAt),
+      'pausedAt': serializer.toJson<int?>(pausedAt),
+      'endedAt': serializer.toJson<int?>(endedAt),
     };
   }
 
@@ -9006,11 +9006,11 @@ class FocusSessionRow extends DataClass implements Insertable<FocusSessionRow> {
           Value<String?> occurrenceDate = const Value.absent(),
           String? mode,
           String? state,
-          DateTime? startedAt,
+          int? startedAt,
           Value<int?> plannedMs = const Value.absent(),
           int? pausedMs,
-          Value<DateTime?> pausedAt = const Value.absent(),
-          Value<DateTime?> endedAt = const Value.absent()}) =>
+          Value<int?> pausedAt = const Value.absent(),
+          Value<int?> endedAt = const Value.absent()}) =>
       FocusSessionRow(
         id: id ?? this.id,
         workspaceId: workspaceId ?? this.workspaceId,
@@ -9135,11 +9135,11 @@ class FocusSessionsCompanion extends UpdateCompanion<FocusSessionRow> {
   final Value<String?> occurrenceDate;
   final Value<String> mode;
   final Value<String> state;
-  final Value<DateTime> startedAt;
+  final Value<int> startedAt;
   final Value<int?> plannedMs;
   final Value<int> pausedMs;
-  final Value<DateTime?> pausedAt;
-  final Value<DateTime?> endedAt;
+  final Value<int?> pausedAt;
+  final Value<int?> endedAt;
   final Value<int> rowid;
   const FocusSessionsCompanion({
     this.id = const Value.absent(),
@@ -9174,7 +9174,7 @@ class FocusSessionsCompanion extends UpdateCompanion<FocusSessionRow> {
     this.occurrenceDate = const Value.absent(),
     required String mode,
     required String state,
-    required DateTime startedAt,
+    required int startedAt,
     this.plannedMs = const Value.absent(),
     this.pausedMs = const Value.absent(),
     this.pausedAt = const Value.absent(),
@@ -9201,11 +9201,11 @@ class FocusSessionsCompanion extends UpdateCompanion<FocusSessionRow> {
     Expression<String>? occurrenceDate,
     Expression<String>? mode,
     Expression<String>? state,
-    Expression<DateTime>? startedAt,
+    Expression<int>? startedAt,
     Expression<int>? plannedMs,
     Expression<int>? pausedMs,
-    Expression<DateTime>? pausedAt,
-    Expression<DateTime>? endedAt,
+    Expression<int>? pausedAt,
+    Expression<int>? endedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -9243,11 +9243,11 @@ class FocusSessionsCompanion extends UpdateCompanion<FocusSessionRow> {
       Value<String?>? occurrenceDate,
       Value<String>? mode,
       Value<String>? state,
-      Value<DateTime>? startedAt,
+      Value<int>? startedAt,
       Value<int?>? plannedMs,
       Value<int>? pausedMs,
-      Value<DateTime?>? pausedAt,
-      Value<DateTime?>? endedAt,
+      Value<int?>? pausedAt,
+      Value<int?>? endedAt,
       Value<int>? rowid}) {
     return FocusSessionsCompanion(
       id: id ?? this.id,
@@ -9311,7 +9311,7 @@ class FocusSessionsCompanion extends UpdateCompanion<FocusSessionRow> {
       map['state'] = Variable<String>(state.value);
     }
     if (startedAt.present) {
-      map['started_at'] = Variable<DateTime>(startedAt.value);
+      map['started_at'] = Variable<int>(startedAt.value);
     }
     if (plannedMs.present) {
       map['planned_ms'] = Variable<int>(plannedMs.value);
@@ -9320,10 +9320,10 @@ class FocusSessionsCompanion extends UpdateCompanion<FocusSessionRow> {
       map['paused_ms'] = Variable<int>(pausedMs.value);
     }
     if (pausedAt.present) {
-      map['paused_at'] = Variable<DateTime>(pausedAt.value);
+      map['paused_at'] = Variable<int>(pausedAt.value);
     }
     if (endedAt.present) {
-      map['ended_at'] = Variable<DateTime>(endedAt.value);
+      map['ended_at'] = Variable<int>(endedAt.value);
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -17608,11 +17608,11 @@ typedef $$FocusSessionsTableCreateCompanionBuilder = FocusSessionsCompanion
   Value<String?> occurrenceDate,
   required String mode,
   required String state,
-  required DateTime startedAt,
+  required int startedAt,
   Value<int?> plannedMs,
   Value<int> pausedMs,
-  Value<DateTime?> pausedAt,
-  Value<DateTime?> endedAt,
+  Value<int?> pausedAt,
+  Value<int?> endedAt,
   Value<int> rowid,
 });
 typedef $$FocusSessionsTableUpdateCompanionBuilder = FocusSessionsCompanion
@@ -17629,11 +17629,11 @@ typedef $$FocusSessionsTableUpdateCompanionBuilder = FocusSessionsCompanion
   Value<String?> occurrenceDate,
   Value<String> mode,
   Value<String> state,
-  Value<DateTime> startedAt,
+  Value<int> startedAt,
   Value<int?> plannedMs,
   Value<int> pausedMs,
-  Value<DateTime?> pausedAt,
-  Value<DateTime?> endedAt,
+  Value<int?> pausedAt,
+  Value<int?> endedAt,
   Value<int> rowid,
 });
 
@@ -17683,7 +17683,7 @@ class $$FocusSessionsTableFilterComposer
   ColumnFilters<String> get state => $composableBuilder(
       column: $table.state, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<DateTime> get startedAt => $composableBuilder(
+  ColumnFilters<int> get startedAt => $composableBuilder(
       column: $table.startedAt, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get plannedMs => $composableBuilder(
@@ -17692,10 +17692,10 @@ class $$FocusSessionsTableFilterComposer
   ColumnFilters<int> get pausedMs => $composableBuilder(
       column: $table.pausedMs, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<DateTime> get pausedAt => $composableBuilder(
+  ColumnFilters<int> get pausedAt => $composableBuilder(
       column: $table.pausedAt, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<DateTime> get endedAt => $composableBuilder(
+  ColumnFilters<int> get endedAt => $composableBuilder(
       column: $table.endedAt, builder: (column) => ColumnFilters(column));
 }
 
@@ -17745,7 +17745,7 @@ class $$FocusSessionsTableOrderingComposer
   ColumnOrderings<String> get state => $composableBuilder(
       column: $table.state, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<DateTime> get startedAt => $composableBuilder(
+  ColumnOrderings<int> get startedAt => $composableBuilder(
       column: $table.startedAt, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<int> get plannedMs => $composableBuilder(
@@ -17754,10 +17754,10 @@ class $$FocusSessionsTableOrderingComposer
   ColumnOrderings<int> get pausedMs => $composableBuilder(
       column: $table.pausedMs, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<DateTime> get pausedAt => $composableBuilder(
+  ColumnOrderings<int> get pausedAt => $composableBuilder(
       column: $table.pausedAt, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<DateTime> get endedAt => $composableBuilder(
+  ColumnOrderings<int> get endedAt => $composableBuilder(
       column: $table.endedAt, builder: (column) => ColumnOrderings(column));
 }
 
@@ -17806,7 +17806,7 @@ class $$FocusSessionsTableAnnotationComposer
   GeneratedColumn<String> get state =>
       $composableBuilder(column: $table.state, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get startedAt =>
+  GeneratedColumn<int> get startedAt =>
       $composableBuilder(column: $table.startedAt, builder: (column) => column);
 
   GeneratedColumn<int> get plannedMs =>
@@ -17815,10 +17815,10 @@ class $$FocusSessionsTableAnnotationComposer
   GeneratedColumn<int> get pausedMs =>
       $composableBuilder(column: $table.pausedMs, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get pausedAt =>
+  GeneratedColumn<int> get pausedAt =>
       $composableBuilder(column: $table.pausedAt, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get endedAt =>
+  GeneratedColumn<int> get endedAt =>
       $composableBuilder(column: $table.endedAt, builder: (column) => column);
 }
 
@@ -17860,11 +17860,11 @@ class $$FocusSessionsTableTableManager extends RootTableManager<
             Value<String?> occurrenceDate = const Value.absent(),
             Value<String> mode = const Value.absent(),
             Value<String> state = const Value.absent(),
-            Value<DateTime> startedAt = const Value.absent(),
+            Value<int> startedAt = const Value.absent(),
             Value<int?> plannedMs = const Value.absent(),
             Value<int> pausedMs = const Value.absent(),
-            Value<DateTime?> pausedAt = const Value.absent(),
-            Value<DateTime?> endedAt = const Value.absent(),
+            Value<int?> pausedAt = const Value.absent(),
+            Value<int?> endedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               FocusSessionsCompanion(
@@ -17900,11 +17900,11 @@ class $$FocusSessionsTableTableManager extends RootTableManager<
             Value<String?> occurrenceDate = const Value.absent(),
             required String mode,
             required String state,
-            required DateTime startedAt,
+            required int startedAt,
             Value<int?> plannedMs = const Value.absent(),
             Value<int> pausedMs = const Value.absent(),
-            Value<DateTime?> pausedAt = const Value.absent(),
-            Value<DateTime?> endedAt = const Value.absent(),
+            Value<int?> pausedAt = const Value.absent(),
+            Value<int?> endedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               FocusSessionsCompanion.insert(

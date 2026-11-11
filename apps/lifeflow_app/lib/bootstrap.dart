@@ -19,10 +19,16 @@ class AppWiring {
     required this.overrides,
     required this.onSessionRevoked,
     this.reminders,
+    this.focusLaunch = const NoActiveFocus(),
   });
 
   final String profileId;
   final AppDatabase db;
+
+  /// P03 T3: the focus session found when this profile opened (D1). An
+  /// untrusted one is already kept as unrecoverable; an overdue pomodoro
+  /// waits for the user's choice (the UI comes in T6).
+  final FocusLaunch focusLaunch;
 
   /// Keeps the device's reminders equal to this profile's plan (ADR-0034).
   final ReminderSync? reminders;
@@ -92,6 +98,9 @@ Future<AppWiring> openSession({
     final gateway = DriftCommandGateway(db, WorkspaceOwnerAuthorization(db));
     await gateway.dispatchPendingEvents();
 
+    // P03 T3 (D1, LF-INV-EXEC-003): bring back the session a kill left.
+    final focusLaunch = await DriftFocusService(db, gateway).recoverOnLaunch();
+
     final notice = storageNoticeFrom(status);
     final accounts = DriftAccountService(
         db: db, gateway: gateway, auth: auth, directory: directory, host: host);
@@ -116,6 +125,7 @@ Future<AppWiring> openSession({
       notice: notice,
       onSessionRevoked: accounts.handleSessionRevoked,
       reminders: reminderSync,
+      focusLaunch: focusLaunch,
       overrides: [
         reminderServiceProvider.overrideWithValue(DriftReminderService(db, gateway)),
         reminderSchedulerProvider.overrideWithValue(reminders),
