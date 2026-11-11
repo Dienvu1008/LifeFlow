@@ -9,6 +9,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:application/application.dart';
+import 'package:domain/domain.dart' show FocusSessionMachine;
 import 'package:drift/drift.dart';
 import 'package:foundation/foundation.dart';
 import 'package:time_kernel/time_kernel.dart' as tk;
@@ -16,6 +17,7 @@ import 'package:uuid/uuid.dart';
 
 import 'app_database.dart';
 import 'event_command_handlers.dart';
+import 'focus_command_handler.dart' show focusSessionOfRow;
 import 'profile_store.dart';
 import 'reminder_rows.dart';
 import 'schedule_mapping.dart';
@@ -107,13 +109,35 @@ class DriftReminderPlanner {
     final now = time.now();
     final zone = time.zone();
 
+    // P03 T6b (D4, ADR-0042): a running pomodoro reminds when its interval
+    // is over, even with the app closed. A pause moves the end; a paused
+    // pomodoro reminds of nothing until it runs again.
+    final focus = <PlannedReminder>[];
+    for (final r in await (db.select(db.focusSessions)
+          ..where((s) => s.workspaceId.equals(ws) & s.state.equals('running') & s.mode.equals('pomodoro') & s.deletedAt.isNull()))
+        .get()) {
+      final s = focusSessionOfRow(r);
+      final end = s == null ? null : FocusSessionMachine.plannedEnd(s, now);
+      if (end == null || !end.utc.isAfter(now.utc)) continue;
+      final task = r.taskId == null
+          ? null
+          : await (db.select(db.tasks)..where((t) => t.id.equals(r.taskId!) & t.deletedAt.isNull())).getSingleOrNull();
+      final key = 'focus:${r.id}';
+      focus.add(PlannedReminder(
+          id: notificationIdOf(key),
+          key: key,
+          at: end,
+          title: 'Focus time is over',
+          body: task == null ? 'Your pomodoro has ended.' : 'Your pomodoro for "${task.title}" has ended.'));
+    }
+
     final bySubject = <(String, String), List<Reminder>>{};
     for (final r in await (db.select(db.reminders)
           ..where((r) => r.workspaceId.equals(ws) & r.deletedAt.isNull()))
         .get()) {
       bySubject.putIfAbsent((r.subjectType, r.subjectId), () => []).add(r);
     }
-    if (bySubject.isEmpty) return const [];
+    if (bySubject.isEmpty) return focus;
     final taskIds = [for (final k in bySubject.keys) if (k.$1 == 'task') k.$2];
     final eventIds = [for (final k in bySubject.keys) if (k.$1 == 'event') k.$2];
 
@@ -192,9 +216,10 @@ class DriftReminderPlanner {
       final c = a.$1.at.utc.compareTo(b.$1.at.utc);
       return c != 0 ? c : a.$1.key.compareTo(b.$1.key);
     });
-    final used = <int>{};
+    final used = {for (final f in focus) f.id};
     return [
-      for (final (trig, title, body) in out.take(maxPending))
+      ...focus,
+      for (final (trig, title, body) in out.take(maxPending - focus.length))
         PlannedReminder(id: _unique(notificationIdOf(trig.key), used), key: trig.key, at: trig.at, title: title, body: body),
     ];
   }
@@ -274,6 +299,7 @@ class ReminderSync {
     _sub = db
         .tableUpdates(TableUpdateQuery.onAllTables([
           db.tasks, db.events, db.schedules, db.occurrenceExceptions, db.occurrenceCompletions, db.reminders,
+          db.focusSessions, // P03 T6b: the pomodoro end (D4)
         ]))
         .listen((_) => _soon());
     _periodic = Timer.periodic(refresh, (_) => syncNow());

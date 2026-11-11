@@ -10,6 +10,7 @@ import 'habit_text.dart';
 import 'messages.dart';
 import 'providers.dart';
 import 'schedule_text.dart';
+import 'screens/focus_page.dart';
 import 'screens/schedule_editor.dart';
 import 'task_tree.dart';
 import 'widgets/schedule_fields.dart';
@@ -56,7 +57,7 @@ void showMessage(BuildContext context, String message, {SnackBarAction? action})
     ..showSnackBar(SnackBar(content: Text(message), action: action));
 }
 
-enum _OccurrenceAction { skip, move, undoChange, schedule }
+enum _OccurrenceAction { focus, skip, move, undoChange, schedule }
 
 /// One occurrence of a scheduled task (Today, Upcoming, Calendar). A
 /// repeating task is ticked one occurrence at a time (D5); "only this time"
@@ -142,6 +143,7 @@ class TaskOccurrenceTile extends ConsumerWidget {
         tooltip: 'Actions for ${i.title}',
         onSelected: (a) => _onAction(context, ref, a),
         itemBuilder: (_) => [
+          if (!done) const PopupMenuItem(value: _OccurrenceAction.focus, child: Text('Focus…')),
           if (i.isRepeating) ...[
             const PopupMenuItem(value: _OccurrenceAction.skip, child: Text('Skip this time')),
             const PopupMenuItem(value: _OccurrenceAction.move, child: Text('Move this time…')),
@@ -186,6 +188,10 @@ class TaskOccurrenceTile extends ConsumerWidget {
         final picked = await pickLocalDate(context, current: i.date, today: today, help: 'Move this time to');
         if (picked == null || !context.mounted) return;
         await reportResult(context, scheduling.changeOccurrence(i.taskId, i.originalDate, MoveThisOccurrence(picked)));
+      case _OccurrenceAction.focus:
+        // D5: the session is for this occurrence of a repeating task.
+        await startFocus(context, ref,
+            taskId: i.taskId, taskTitle: i.title, occurrenceDate: i.isRepeating ? i.originalDate : null);
       case _OccurrenceAction.undoChange:
         await reportResult(context, scheduling.changeOccurrence(i.taskId, i.originalDate, null));
       case _OccurrenceAction.schedule:

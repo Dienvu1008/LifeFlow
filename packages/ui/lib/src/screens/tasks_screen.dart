@@ -8,10 +8,11 @@ import '../providers.dart';
 import '../schedule_text.dart';
 import '../task_actions.dart';
 import '../task_tree.dart';
+import 'focus_page.dart';
 import 'habit_page.dart';
 import 'schedule_editor.dart';
 
-enum _RowAction { rename, schedule, tracking, addSubtask, trash }
+enum _RowAction { focus, rename, schedule, tracking, addSubtask, trash }
 
 /// Typical height of one row (one-line ListTile); only an estimate used to
 /// get close to a row that is not built yet.
@@ -104,6 +105,17 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Tasks'),
+        actions: [
+          // D12: focus without a task.
+          IconButton(
+            key: const Key('focus-open'),
+            tooltip: 'Focus',
+            icon: const Icon(Icons.timer_outlined),
+            onPressed: () => ref.read(activeFocusProvider).valueOrNull != null
+                ? openFocusPage(context)
+                : startFocus(context, ref),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
           child: Padding(
@@ -402,12 +414,13 @@ class _TaskTile extends ConsumerWidget {
       trailing: PopupMenuButton<_RowAction>(
         tooltip: 'Actions for ${t.title}',
         onSelected: (a) => _onAction(context, ref, a),
-        itemBuilder: (_) => const [
-          PopupMenuItem(value: _RowAction.rename, child: Text('Rename')),
-          PopupMenuItem(value: _RowAction.schedule, child: Text('Schedule…')),
-          PopupMenuItem(value: _RowAction.tracking, child: Text('Habit and target…')),
-          PopupMenuItem(value: _RowAction.addSubtask, child: Text('Add subtask')),
-          PopupMenuItem(value: _RowAction.trash, child: Text('Move to trash')),
+        itemBuilder: (_) => [
+          if (!t.isDone) const PopupMenuItem(value: _RowAction.focus, child: Text('Focus…')),
+          const PopupMenuItem(value: _RowAction.rename, child: Text('Rename')),
+          const PopupMenuItem(value: _RowAction.schedule, child: Text('Schedule…')),
+          const PopupMenuItem(value: _RowAction.tracking, child: Text('Habit and target…')),
+          const PopupMenuItem(value: _RowAction.addSubtask, child: Text('Add subtask')),
+          const PopupMenuItem(value: _RowAction.trash, child: Text('Move to trash')),
         ],
       ),
     );
@@ -417,6 +430,8 @@ class _TaskTile extends ConsumerWidget {
       BuildContext context, WidgetRef ref, _RowAction a) async {
     final t = row.task;
     switch (a) {
+      case _RowAction.focus:
+        await startFocus(context, ref, taskId: t.id, taskTitle: t.title);
       case _RowAction.rename:
         final title = await showTextDialog(context,
             title: 'Rename task', initial: t.title, confirmLabel: 'Save');

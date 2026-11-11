@@ -20,6 +20,27 @@ import 'package:time_kernel/time_kernel.dart' as tk;
 import 'fake_auth.dart';
 import 'profile_harness.dart';
 
+class _Time implements DeviceTime {
+  _Time(this.clock);
+  final FixedClock clock;
+  @override
+  Instant now() => clock.now();
+  @override
+  String zone() => 'UTC';
+}
+
+class _Device implements ReminderScheduler {
+  final plans = <List<PlannedReminder>>[];
+  @override
+  Future<void> sync(List<PlannedReminder> planned) async => plans.add(planned);
+  @override
+  Future<ReminderStatus> status() async => const ReminderStatus(supported: true, allowed: true);
+  @override
+  Future<bool> requestPermission() async => true;
+  @override
+  Future<void> requestExact() async {}
+}
+
 /// Runs the real handler, then fails before the commit: a kill mid-step.
 class _KilledBeforeCommit implements CommandHandler {
   _KilledBeforeCommit(this.inner);
@@ -404,6 +425,51 @@ void main() {
       final r = (await records()).single;
       expect((r.taskId, r.occurrenceDate), (daily, '2026-11-11'));
     });
+  });
+
+  test('D4: a running pomodoro reminds at its planned end; a pause moves it, a paused or ended one reminds of nothing',
+      () async {
+    final task = idOf(await svc().tasks.create('Write the report'));
+    final planner = DriftReminderPlanner(host.db, _Time(clock));
+    Future<List<PlannedReminder>> focusPlan() async =>
+        [for (final p in await planner.plan()) if (p.key.startsWith('focus:')) p];
+
+    final id = idOf(await focus().start(mode: FocusSessionMode.pomodoro, planned: defaultPomodoroInterval, taskId: task));
+    var plan = await focusPlan();
+    expect(plan.single.key, 'focus:$id');
+    expect(plan.single.at, Instant(t0.utc.add(const Duration(minutes: 25))));
+    expect(plan.single.body, contains('Write the report'));
+
+    advance(const Duration(minutes: 5));
+    idOf(await focus().pause(id));
+    expect(await focusPlan(), isEmpty, reason: 'paused');
+    advance(const Duration(minutes: 3));
+    idOf(await focus().resume(id));
+    plan = await focusPlan();
+    expect(plan.single.at, Instant(t0.utc.add(const Duration(minutes: 28))), reason: 'moved by the pause');
+    expect(plan.single.id, notificationIdOf('focus:$id'), reason: 'the same notification, rescheduled');
+
+    advance(const Duration(minutes: 30));
+    expect(await focusPlan(), isEmpty, reason: 'the end is past');
+    idOf(await focus().end(id, count: true));
+    expect(await focusPlan(), isEmpty);
+    // A stopwatch never reminds.
+    idOf(await focus().start(mode: FocusSessionMode.stopwatch));
+    expect(await focusPlan(), isEmpty);
+  });
+
+  test('D4: the reminder sync hands the pomodoro end to the device when a session starts', () async {
+    final device = _Device();
+    final sync = ReminderSync(host.db, DriftReminderPlanner(host.db, _Time(clock)), device,
+        debounce: const Duration(milliseconds: 10));
+    await sync.start();
+    expect(device.plans.last, isEmpty);
+    final id = idOf(await focus().start(mode: FocusSessionMode.pomodoro, planned: defaultPomodoroInterval));
+    for (var i = 0; i < 100 && !(device.plans.lastOrNull?.any((p) => p.key == 'focus:$id') ?? false); i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+    }
+    expect(device.plans.last.single.key, 'focus:$id');
+    await sync.stop();
   });
 
   test('every change is audited with its command and events (ADR-0011/0014)', () async {
