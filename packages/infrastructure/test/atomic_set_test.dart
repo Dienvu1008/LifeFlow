@@ -12,7 +12,8 @@ library;
 //   handlers covered: TaskCommandHandler, ProfileCommandHandler,
 //                     ProfileRestoreHandler, EventCommandHandler,
 //                     CalendarCommandHandler, FocusCommandHandler,
-//                     MeasurementCommandHandler, PeriodCloseHandler
+//                     MeasurementCommandHandler, PeriodCloseHandler,
+//                     GoalCommandHandler
 import 'package:application/application.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -105,6 +106,7 @@ void main() {
         'event' => (await (db.select(db.events)..where((t) => t.id.equals(id))).getSingle()).version,
         'calendar' => (await (db.select(db.calendars)..where((t) => t.id.equals(id))).getSingle()).version,
         'focusSession' => (await (db.select(db.focusSessions)..where((t) => t.id.equals(id))).getSingle()).version,
+        'goal' => (await (db.select(db.goals)..where((t) => t.id.equals(id))).getSingle()).version,
         _ => (await (db.select(db.profiles)..where((t) => t.id.equals(id))).getSingle()).version,
       };
 
@@ -117,6 +119,7 @@ void main() {
   const focusHandler = FocusCommandHandler();
   const measurementHandler = MeasurementCommandHandler();
   const closeHandler = PeriodCloseHandler();
+  const goalHandler = GoalCommandHandler();
 
   Command command(String type, Map<String, Object?> payload,
           {String? opId, Version? expected}) =>
@@ -208,6 +211,31 @@ void main() {
           (v, op) => command('TrashEvent', {'op': 'trash', 'id': 'e1'}, opId: op, expected: v)),
       ('event.restore', eventHandler, 'event', 'e1',
           (v, op) => command('RestoreEvent', {'op': 'restore', 'id': 'e1'}, opId: op, expected: v)),
+      // P03 T5: goals, milestones and links (t1 and e1 are live here).
+      ('goal.create', goalHandler, 'goal', 'g1',
+          (v, op) => command('CreateProject', {'op': 'create', 'id': 'g1', 'kind': 'project', 'title': 'Move', 'startDate': '2026-11-01'}, opId: op, expected: v)),
+      ('goal.update', goalHandler, 'goal', 'g1',
+          (v, op) => command('UpdateGoal', {'op': 'update', 'id': 'g1', 'title': 'Move house', 'targetDate': '2026-12-31'}, opId: op, expected: v)),
+      ('goal.addMilestone', goalHandler, 'goal', 'g1',
+          (v, op) => command('AddMilestone', {'op': 'addMilestone', 'id': 'g1', 'milestoneId': 'ms1', 'title': 'Pack'}, opId: op, expected: v)),
+      ('goal.updateMilestone', goalHandler, 'goal', 'g1',
+          (v, op) => command('UpdateMilestone', {'op': 'updateMilestone', 'id': 'g1', 'milestoneId': 'ms1', 'title': 'Pack all'}, opId: op, expected: v)),
+      ('goal.setMilestoneDone', goalHandler, 'goal', 'g1',
+          (v, op) => command('CompleteMilestone', {'op': 'setMilestoneDone', 'id': 'g1', 'milestoneId': 'ms1', 'done': true}, opId: op, expected: v)),
+      ('goal.link(task)', goalHandler, 'goal', 'g1',
+          (v, op) => command('LinkToGoal', {'op': 'link', 'id': 'g1', 'itemType': 'task', 'itemId': 't1'}, opId: op, expected: v)),
+      ('goal.link(event)', goalHandler, 'goal', 'g1',
+          (v, op) => command('LinkToGoal', {'op': 'link', 'id': 'g1', 'itemType': 'event', 'itemId': 'e1'}, opId: op, expected: v)),
+      ('goal.unlink', goalHandler, 'goal', 'g1',
+          (v, op) => command('UnlinkFromGoal', {'op': 'unlink', 'id': 'g1', 'itemType': 'event', 'itemId': 'e1'}, opId: op, expected: v)),
+      ('goal.removeMilestone', goalHandler, 'goal', 'g1',
+          (v, op) => command('RemoveMilestone', {'op': 'removeMilestone', 'id': 'g1', 'milestoneId': 'ms1'}, opId: op, expected: v)),
+      ('goal.setStatus', goalHandler, 'goal', 'g1',
+          (v, op) => command('SetGoalStatus', {'op': 'setStatus', 'id': 'g1', 'status': 'archived'}, opId: op, expected: v)),
+      ('goal.trash', goalHandler, 'goal', 'g1',
+          (v, op) => command('TrashGoal', {'op': 'trash', 'id': 'g1'}, opId: op, expected: v)),
+      ('goal.restore', goalHandler, 'goal', 'g1',
+          (v, op) => command('RestoreGoal', {'op': 'restore', 'id': 'g1'}, opId: op, expected: v)),
       // P03 T3: focus sessions (s3 is made untrustworthy before it is marked).
       ('focus.start', focusHandler, 'focusSession', 's1',
           (v, op) => command('StartFocusSession', {'op': 'start', 'id': 's1', 'mode': 'stopwatch'}, opId: op, expected: v)),
