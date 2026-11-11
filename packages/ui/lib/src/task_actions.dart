@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:foundation/foundation.dart';
 
+import 'habit_text.dart';
 import 'messages.dart';
 import 'providers.dart';
 import 'schedule_text.dart';
@@ -106,23 +107,34 @@ class TaskOccurrenceTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final i = item;
     final subtitle = _subtitle(ref.watch(deviceZoneProvider));
+    // P03 T6a: a tracked task shows its running period; with automatic
+    // completion the box shows the derived state and is not ticked (D8).
+    final tracked = ref.watch(trackedProvider).valueOrNull?[i.taskId];
+    final auto = tracked != null && tracked.completion == CompletionMode.automatic;
+    final done = auto ? isDoneAutomatically(tracked, i.originalDate) : i.isDone;
+    final period = tracked == null || !inCurrentPeriod(tracked, i.originalDate) ? null : currentPeriodLine(tracked);
     return ListTile(
       key: ValueKey('agenda-${i.taskId}@${i.originalDate}'),
       leading: Checkbox(
-        value: i.isDone,
-        semanticLabel: i.isDone ? 'Mark as not done: ${i.title}' : 'Complete ${i.title}',
-        onChanged: (_) => _toggle(context, ref),
+        value: done,
+        semanticLabel: auto
+            ? (done ? 'Done from measurements: ${i.title}' : 'Not reached yet: ${i.title}')
+            : i.isDone
+                ? 'Mark as not done: ${i.title}'
+                : 'Complete ${i.title}',
+        onChanged: auto ? null : (_) => _toggle(context, ref),
       ),
       title: Text(
         i.title,
-        style: i.isDone ? const TextStyle(decoration: TextDecoration.lineThrough) : null,
+        style: done ? const TextStyle(decoration: TextDecoration.lineThrough) : null,
       ),
-      subtitle: subtitle.isEmpty && conflictWith.isEmpty
+      subtitle: subtitle.isEmpty && conflictWith.isEmpty && period == null
           ? null
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (subtitle.isNotEmpty) Text(subtitle),
+                if (period != null) Text(period, key: ValueKey('period-${i.taskId}')),
                 if (conflictWith.isNotEmpty) ConflictBadge(conflictWith),
               ],
             ),

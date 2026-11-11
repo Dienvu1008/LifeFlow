@@ -223,12 +223,14 @@ class DriftHabitQueries implements HabitQueries {
     );
   }
 
-  Future<List<TrackingView>> _habits() async {
+  Future<List<TrackingView>> _habits({bool tracked = false}) async {
     final profile = await _store.getActiveProfile();
     if (profile == null) return const [];
     final rows = await (db.select(db.tasks)
           ..where((t) =>
-              t.workspaceId.equals(profile.activeWorkspaceId.value) & t.deletedAt.isNull() & t.isHabit.equals(true))
+              t.workspaceId.equals(profile.activeWorkspaceId.value) &
+              t.deletedAt.isNull() &
+              (tracked ? t.isHabit.equals(true) | t.targetType.isNotNull() : t.isHabit.equals(true)))
           ..orderBy([(t) => OrderingTerm(expression: const CustomExpression<int>('tasks.rowid'))]))
         .get();
     final today = _today();
@@ -245,9 +247,8 @@ class DriftHabitQueries implements HabitQueries {
     ];
   }
 
-  @override
-  Stream<List<TrackingView>> watchHabits() async* {
-    yield await _habits();
+  Stream<T> _follow<T>(Future<T> Function() read) async* {
+    yield await read();
     yield* db
         .tableUpdates(TableUpdateQuery.onAllTables([
           db.tasks,
@@ -257,6 +258,15 @@ class DriftHabitQueries implements HabitQueries {
           db.measurements,
           db.periodResults,
         ]))
-        .asyncMap((_) => _habits());
+        .asyncMap((_) => read());
   }
+
+  @override
+  Stream<List<TrackingView>> watchHabits() => _follow(_habits);
+
+  @override
+  Stream<List<TrackingView>> watchTracked() => _follow(() => _habits(tracked: true));
+
+  @override
+  Stream<TrackingView?> watchTracking(String taskId) => _follow(() => tracking(taskId));
 }

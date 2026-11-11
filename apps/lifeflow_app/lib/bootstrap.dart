@@ -138,6 +138,8 @@ Future<AppWiring> openSession({
       overrides: [
         reminderServiceProvider.overrideWithValue(DriftReminderService(db, gateway)),
         reminderSchedulerProvider.overrideWithValue(reminders),
+        habitServiceProvider.overrideWithValue(habits),
+        habitQueriesProvider.overrideWithValue(DriftHabitQueries(db, deviceTime)),
         taskQueriesProvider.overrideWithValue(DriftTaskQueries(db)),
         taskServiceProvider.overrideWithValue(DriftTaskService(db, gateway)),
         profileServiceProvider

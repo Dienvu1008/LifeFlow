@@ -76,7 +76,7 @@ final todayProvider = Provider<LocalDate Function()>((ref) => () {
 
 /// Which tasks the Tasks tab shows (D9: Today and Upcoming are filters of
 /// Tasks; the Calendar tab can switch to them).
-enum TaskFilter { all, today, upcoming }
+enum TaskFilter { all, today, upcoming, habits }
 
 final taskFilterProvider = StateProvider<TaskFilter>((ref) => TaskFilter.all);
 
@@ -127,4 +127,28 @@ final profilesProvider = FutureProvider.autoDispose<List<ProfileView>>(
 final tasksProvider = StreamProvider.autoDispose<List<TaskView>>((ref) {
   ref.watch(activeProfileProvider);
   return ref.watch(taskQueriesProvider).watchTasks();
+});
+
+// --- P03 T6a: habits, targets and measurements (ADR-0039/0041) -------------
+
+final habitServiceProvider = Provider<HabitService>((ref) => _notWired('habitServiceProvider'));
+final habitQueriesProvider = Provider<HabitQueries>((ref) => _notWired('habitQueriesProvider'));
+
+/// The habits of the ACTIVE profile (the Habits filter).
+final habitsProvider = StreamProvider.autoDispose<List<TrackingView>>((ref) {
+  ref.watch(activeProfileProvider);
+  return ref.watch(habitQueriesProvider).watchHabits();
+});
+
+/// Every tracked task (habit or target) by task id: period states in the
+/// task lists and the agenda. Empty while loading or when not wired.
+final trackedProvider = StreamProvider.autoDispose<Map<String, TrackingView>>((ref) {
+  ref.watch(activeProfileProvider);
+  return ref.watch(habitQueriesProvider).watchTracked().map((l) => {for (final v in l) v.taskId: v});
+});
+
+/// One task's tracking (the habit page).
+final trackingProvider = StreamProvider.autoDispose.family<TrackingView?, String>((ref, taskId) {
+  ref.watch(activeProfileProvider);
+  return ref.watch(habitQueriesProvider).watchTracking(taskId);
 });
