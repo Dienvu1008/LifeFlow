@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../messages.dart';
+import '../shell.dart' show shellMenuButton;
 import '../providers.dart';
 import 'account_card.dart';
 import 'data_card.dart';
@@ -17,7 +18,7 @@ class ProfilesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profiles = ref.watch(profilesProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Profiles')),
+      appBar: AppBar(leading: shellMenuButton(context), title: const Text('Profiles')),
       body: profiles.when(
         loading: () => const Center(
           child: CircularProgressIndicator(semanticsLabel: 'Loading profiles'),

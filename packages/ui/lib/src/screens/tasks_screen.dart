@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../habit_text.dart';
 import '../messages.dart';
+import '../shell.dart' show shellMenuButton;
 import '../providers.dart';
 import '../schedule_text.dart';
 import '../task_actions.dart';
@@ -105,6 +106,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     final filter = ref.watch(taskFilterProvider);
     return Scaffold(
       appBar: AppBar(
+        leading: shellMenuButton(context),
         title: const Text('Tasks'),
         actions: [
           // D12: focus without a task.

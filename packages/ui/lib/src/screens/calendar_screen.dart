@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 
 import '../calendar_layout.dart';
 import '../layout.dart';
+import '../shell.dart' show shellMenuButton;
 import '../providers.dart';
 import '../schedule_text.dart';
 import '../task_actions.dart';
@@ -47,6 +48,7 @@ class CalendarScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        leading: shellMenuButton(context),
         title: Text(periodTitle(pos.mode, pos.anchor, first), key: const Key('calendar-title')),
         actions: [
           IconButton(

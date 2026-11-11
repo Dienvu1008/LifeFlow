@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:foundation/foundation.dart';
 
 import 'fake_world.dart';
+import 'nav.dart';
 
 FakeWorld world({List<TaskView>? tasks}) =>
     FakeWorld(tasks: {'A': tasks ?? []}, profiles: [profile('A', 'Guest')], activeId: 'A');
@@ -22,8 +23,7 @@ Future<void> pumpCalendar(WidgetTester tester, FakeWorld w, {double width = 1000
   addTearDown(w.dispose);
   await tester.pumpWidget(appWith(w));
   await tester.pumpAndSettle();
-  await tester.tap(find.byIcon(Icons.calendar_month_outlined));
-  await tester.pumpAndSettle();
+  await goToTab(tester, 'Calendar');
 }
 
 LocalDate day(int d, [int m = 11]) => LocalDate(2026, m, d);
