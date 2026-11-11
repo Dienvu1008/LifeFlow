@@ -35,3 +35,5 @@ export 'src/habit_tracking.dart';
 export 'src/task_target_ops.dart';
 export 'src/measurement_command_handler.dart';
 export 'src/habit_service.dart';
+export 'src/goal_command_handler.dart';
+export 'src/goal_service.dart';
