@@ -15,7 +15,11 @@ import 'package:drift/drift.dart';
 import 'package:foundation/foundation.dart';
 import 'package:time_kernel/time_kernel.dart' as tk;
 
+import 'package:domain/domain.dart' as d;
+
 import 'app_database.dart';
+import 'execution_rows.dart';
+import 'habit_tracking.dart';
 import 'reminder_rows.dart';
 import 'schedule_mapping.dart';
 import 'schedule_rows.dart';
@@ -98,6 +102,10 @@ Future<HandlerOutcome> applyScheduleOp(
       );
 
     case 'setOccurrenceDone':
+      // P03 D8: automatic completion is derived, never ticked by hand.
+      if (task.completionPolicy == 'automatic') {
+        throw DomainRejection('the completion is derived from the measurements');
+      }
       final (_, original) = await rows.occurrence();
       final done = cmd.payload['done'] == true;
       final id = completionIdOf(taskId, original);
@@ -122,10 +130,18 @@ Future<HandlerOutcome> applyScheduleOp(
       await db.into(db.occurrenceCompletions).insertOnConflictUpdate(row.toCompanion(false));
       await rows.outbox('completion', id, done ? (existing == null ? 'create' : 'update') : 'delete',
           existing?.version, row.toJson());
+      // P03 D6c: a tick after the occurrence's result was stored changes it
+      // (missed -> done, or back), recorded as a new version.
+      final stored = await (db.select(db.periodResults)
+            ..where((r) => r.id.equals(periodResultIdOf(taskId, '$original', 'occurrence')) & r.deletedAt.isNull()))
+          .getSingleOrNull();
+      final changed = stored != null &&
+          await rewriteStoredResult(db, stored, done ? d.HabitOutcome.done : d.HabitOutcome.missed, null,
+              operationId: cmd.operationId, workspaceId: cmd.workspaceId, actor: cmd.actor.toString(), now: now);
       return HandlerOutcome(
         entityId: taskId,
         operationType: 'update',
-        changeSet: {'id': taskId, 'occurrence': '$original', 'done': done},
+        changeSet: {'id': taskId, 'occurrence': '$original', 'done': done, if (changed) 'closedResultChanged': true},
         events: [DomainEvent(done ? 'OccurrenceCompleted' : 'OccurrenceReopened',
             {'id': taskId, 'originalDate': '$original'})],
       );

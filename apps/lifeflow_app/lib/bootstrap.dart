@@ -119,6 +119,15 @@ Future<AppWiring> openSession({
     final reminderSync = ReminderSync(db, DriftReminderPlanner(db, deviceTime), reminders,
         onError: (e) => onWarning?.call('[reminders] $e'));
     await reminderSync.start();
+
+    // P03 T4 (D9): store the results of the periods that ended while the
+    // app was closed.
+    final habits = DriftHabitService(db, gateway, deviceTime, deviceId: platform.name);
+    try {
+      await habits.closePeriods();
+    } catch (e) {
+      onWarning?.call('[habits] $e'); // never blocks opening the profile
+    }
     return AppWiring(
       profileId: profileId,
       db: db,

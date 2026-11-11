@@ -108,7 +108,7 @@ void main() {
       };
 
   test('a new store has the v5 tables; tasks default to sum and not a habit', () async {
-    expect(AppDatabase.currentSchemaVersion, 5);
+    expect(AppDatabase.currentSchemaVersion, 6);
     final id = (await svc.tasks.create('Plain') as CommandOk).entityId;
     final t = await (host.db.select(host.db.tasks)..where((x) => x.id.equals(id))).getSingle();
     expect((t.targetAggregation, t.isHabit), ('sum', false));
@@ -224,6 +224,7 @@ void main() {
       ('a link id that is not its pair\'s', (p) => (p['goalLinks'] as List).first['id'] = 'g1|task:other', 'does not match'),
       ('an unknown goal status', (p) => (p['goals'] as List).first['status'] = 'paused', 'unknown status'),
       ('an unknown aggregation', (p) => (p['tasks'] as List).first['targetAggregation'] = 'median', 'aggregation'),
+      ('a bad tracking start', (p) => (p['tasks'] as List).first['trackedSince'] = '2026-13-01', 'tracking start'),
     ];
     for (final (why, tamper, mentions) in cases) {
       test(why, () {

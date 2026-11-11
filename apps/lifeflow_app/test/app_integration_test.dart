@@ -746,6 +746,7 @@ void main() {
   });
 
   focusRecoveryOnOpen();
+  habitPeriodsCloseOnOpen();
 }
 
 class _NoHost implements ProfileHost {
@@ -775,5 +776,47 @@ void focusRecoveryOnOpen() {
     addTearDown(again.close);
     expect(again.focusLaunch,
         isA<FocusResumed>().having((l) => l.session.id, 'id', (started as CommandOk).entityId));
+  });
+}
+
+/// P03 T4 (D9): opening a profile stores the results of periods that ended.
+void habitPeriodsCloseOnOpen() {
+  test('P03 T4: openSession closes the ended periods of a habit', () async {
+    final w = World();
+    await w.open(StoragePlatform.android);
+    addTearDown(w.dispose);
+    final id = (await w.directory.active())!.id;
+    Future<AppWiring> open() => openSession(
+        directory: w.directory, profileId: id, platform: StoragePlatform.android,
+        auth: w.auth, host: _NoHost(), files: w.files);
+
+    final first = await open();
+    final db = first.db;
+    final gw = DriftCommandGateway(db, WorkspaceOwnerAuthorization(db));
+    final task = (await DriftTaskService(db, gw).create('Warm water') as CommandOk).entityId;
+    final now = DateTime.now().toUtc();
+    final start = LocalDate(now.year, now.month, now.day).addDays(-3);
+    final p = (await ProfileStore(db).getActiveProfile())!;
+    Command cmd(String op, Map<String, Object?> payload, int v) => Command(
+        operationId: op,
+        actor: ActorRef(ActorKind.owner, p.profileId.value),
+        workspaceId: p.activeWorkspaceId.value,
+        type: op,
+        payload: {'id': task, ...payload},
+        expectedVersion: Version(v),
+        issuedAt: Instant.now());
+    expect(
+        await DriftTaskScheduling(db, gw).setSchedule(task,
+            TaskScheduleInput(start: SchedulePointInput.date(start), repeat: const RepeatInput(frequency: RepeatFrequency.daily))),
+        isA<CommandOk>());
+    expect(await gw.execute(cmd('SetTaskHabit', {'op': 'setHabit', 'isHabit': true, 'today': '$start'}, 2), TaskCommandHandler()),
+        isA<CommandOk>());
+    await first.db.close();
+
+    final again = await open();
+    addTearDown(again.close);
+    final results = await again.db.select(again.db.periodResults).get();
+    expect(results.map((r) => r.outcome).toSet(), {'missed'});
+    expect(results, hasLength(greaterThanOrEqualTo(2)), reason: 'the days before today (device zone)');
   });
 }
