@@ -176,3 +176,20 @@ final focusClockProvider = Provider<Instant Function()>((ref) => Instant.now);
 /// A new stream per display, so each one's timer stops with it.
 final focusTickerProvider =
     Provider<Stream<void> Function()>((ref) => () => Stream<void>.periodic(const Duration(seconds: 1)));
+
+// --- P03 T6c: goals and projects (ADR-0040/0043) ---------------------------
+
+final goalServiceProvider = Provider<GoalService>((ref) => _notWired('goalServiceProvider'));
+final goalQueriesProvider = Provider<GoalQueries>((ref) => _notWired('goalQueriesProvider'));
+
+/// The goals of the ACTIVE profile (archived ones only when asked).
+final goalsProvider = StreamProvider.autoDispose.family<List<GoalView>, bool>((ref, includeArchived) {
+  ref.watch(activeProfileProvider);
+  return ref.watch(goalQueriesProvider).watchGoals(includeArchived: includeArchived);
+});
+
+/// Goals in the trash. Invalidate after a trash or a restore.
+final trashedGoalsProvider = FutureProvider.autoDispose<List<GoalView>>((ref) {
+  ref.watch(activeProfileProvider);
+  return ref.watch(goalQueriesProvider).trashed();
+});

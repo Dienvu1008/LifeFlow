@@ -72,9 +72,12 @@ void main() {
       await tester.tap(find.byIcon(Icons.calendar_month_outlined));
       await tester.pump();
       expect(picked, 1);
+      await tester.tap(find.byIcon(Icons.flag_outlined));
+      await tester.pump();
+      expect(picked, 2, reason: 'P03 D12: Goals is the 3rd destination');
       await tester.tap(find.byIcon(Icons.people_outline));
       await tester.pump();
-      expect(picked, 2);
+      expect(picked, 3);
     });
   });
 

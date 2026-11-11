@@ -493,13 +493,157 @@ class FakeWorld
   /// The focus session found at start (D1).
   FocusLaunch launch = const NoActiveFocus();
 
+  /// Goals and projects (P03 T6c).
+  late final FakeGoals goals = FakeGoals(calls);
+
   void dispose() {
     _changes.close();
     calendar.dispose();
     habits.dispose();
     focus.dispose();
+    goals.dispose();
     ticks.close();
   }
+}
+
+/// In-memory goals: the calls are recorded and change the views a little
+/// (status, trash, milestones, links), so the screens update. Progress is
+/// whatever the test puts in the view.
+class FakeGoals implements GoalService, GoalQueries {
+  FakeGoals(this.calls);
+  final List<String> calls;
+  final goals = <String, GoalView>{};
+  final trashedIds = <String>{};
+  CommandFailure? failNext;
+  final _changes = StreamController<void>.broadcast();
+  var _n = 0;
+
+  void changed() => _changes.add(null);
+  void dispose() => _changes.close();
+
+  CommandResult _ok(String id) {
+    changed();
+    return CommandOk(id, Version.initial, const []);
+  }
+
+  CommandFailure? _failure() {
+    final f = failNext;
+    failNext = null;
+    return f;
+  }
+
+  GoalView copy(GoalView g,
+          {String? title, GoalState? status, List<MilestoneView>? milestones, List<GoalLinkView>? links, bool? trashed}) =>
+      GoalView(
+        id: g.id,
+        kind: g.kind,
+        title: title ?? g.title,
+        description: g.description,
+        status: status ?? g.status,
+        startDate: g.startDate,
+        targetDate: g.targetDate,
+        isTrashed: trashed ?? g.isTrashed,
+        milestones: milestones ?? g.milestones,
+        links: links ?? g.links,
+        progressBasis: g.progressBasis,
+        progress: g.progress,
+      );
+
+  CommandResult _change(String call, String id, GoalView Function(GoalView) f) {
+    calls.add(call);
+    final e = _failure();
+    if (e != null) return e;
+    goals[id] = f(goals[id]!);
+    return _ok(id);
+  }
+
+  @override
+  Future<CommandResult> create(
+      {required GoalKindInput kind, required String title, String? description, LocalDate? startDate, LocalDate? targetDate}) async {
+    calls.add('goal.create:${kind.name}:$title:$description:$startDate:$targetDate');
+    final e = _failure();
+    if (e != null) return e;
+    final id = 'g${_n++}';
+    goals[id] = GoalView(
+        id: id, kind: kind, title: title, description: description, status: GoalState.active, startDate: startDate, targetDate: targetDate);
+    return _ok(id);
+  }
+
+  @override
+  Future<CommandResult> update(String id, {required String title, String? description, LocalDate? startDate, LocalDate? targetDate}) async =>
+      _change('goal.update:$id:$title:$description:$startDate:$targetDate', id, (g) => copy(g, title: title));
+
+  @override
+  Future<CommandResult> setStatus(String id, GoalState status) async =>
+      _change('goal.status:$id:${status.name}', id, (g) => copy(g, status: status));
+
+  @override
+  Future<CommandResult> trash(String id) async {
+    trashedIds.add(id);
+    return _change('goal.trash:$id', id, (g) => copy(g, trashed: true));
+  }
+
+  @override
+  Future<CommandResult> restore(String id) async {
+    trashedIds.remove(id);
+    return _change('goal.restore:$id', id, (g) => copy(g, trashed: false));
+  }
+
+  @override
+  Future<CommandResult> addMilestone(String goalId, String title, {LocalDate? dueDate}) async =>
+      _change('goal.milestone.add:$goalId:$title:$dueDate', goalId,
+          (g) => copy(g, milestones: [...g.milestones, MilestoneView(id: 'm${_n++}', title: title, dueDate: dueDate)]));
+
+  @override
+  Future<CommandResult> updateMilestone(String goalId, String milestoneId, {required String title, LocalDate? dueDate}) async =>
+      _change('goal.milestone.update:$goalId:$milestoneId:$title:$dueDate', goalId, (g) => g);
+
+  @override
+  Future<CommandResult> setMilestoneDone(String goalId, String milestoneId, {required bool done}) async =>
+      _change('goal.milestone.done:$goalId:$milestoneId:$done', goalId,
+          (g) => copy(g, milestones: [
+                for (final m in g.milestones)
+                  m.id == milestoneId ? MilestoneView(id: m.id, title: m.title, dueDate: m.dueDate, isCompleted: done) : m,
+              ]));
+
+  @override
+  Future<CommandResult> removeMilestone(String goalId, String milestoneId) async =>
+      _change('goal.milestone.remove:$goalId:$milestoneId', goalId,
+          (g) => copy(g, milestones: [for (final m in g.milestones) if (m.id != milestoneId) m]));
+
+  @override
+  Future<CommandResult> link(String goalId, GoalItemType type, String itemId) async =>
+      _change('goal.link:$goalId:${type.name}:$itemId', goalId,
+          (g) => copy(g, links: [...g.links, GoalLinkView(itemType: type, itemId: itemId, title: itemId, state: LinkedItemState.open)]));
+
+  @override
+  Future<CommandResult> unlink(String goalId, GoalItemType type, String itemId) async =>
+      _change('goal.unlink:$goalId:${type.name}:$itemId', goalId,
+          (g) => copy(g, links: [for (final l in g.links) if (!(l.itemType == type && l.itemId == itemId)) l]));
+
+  @override
+  Stream<List<GoalView>> watchGoals({bool includeArchived = false}) async* {
+    List<GoalView> read() => [
+          for (final g in goals.values)
+            if (!trashedIds.contains(g.id) && (includeArchived || g.status != GoalState.archived)) g
+        ];
+    yield read();
+    await for (final _ in _changes.stream) {
+      yield read();
+    }
+  }
+
+  @override
+  Future<GoalView?> goal(String id) async => goals[id];
+
+  @override
+  Future<List<GoalView>> goalsOf(GoalItemType type, String itemId) async => [
+        for (final g in goals.values)
+          if (!trashedIds.contains(g.id) && g.links.any((l) => l.itemType == type && l.itemId == itemId)) g
+      ];
+
+  @override
+  Future<List<GoalView>> trashed() async => [for (final id in trashedIds) goals[id]!];
 }
 
 /// In-memory focus sessions: the calls are recorded and the active session
@@ -1014,6 +1158,8 @@ Widget appWith(FakeWorld world, {StorageNotice? notice}) => ProviderScope(
         focusClockProvider.overrideWithValue(() => world.now),
         focusTickerProvider.overrideWithValue(() => world.ticks.stream),
         focusLaunchProvider.overrideWithValue(world.launch),
+        goalServiceProvider.overrideWithValue(world.goals),
+        goalQueriesProvider.overrideWithValue(world.goals),
         storageNoticeProvider.overrideWithValue(notice),
       ],
       child: const LifeFlowApp(),

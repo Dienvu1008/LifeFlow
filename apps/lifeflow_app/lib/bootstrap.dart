@@ -142,6 +142,8 @@ Future<AppWiring> openSession({
         focusServiceProvider.overrideWithValue(DriftFocusService(db, gateway)),
         focusQueriesProvider.overrideWithValue(DriftFocusQueries(db)),
         focusLaunchProvider.overrideWithValue(focusLaunch),
+        goalServiceProvider.overrideWithValue(DriftGoalService(db, gateway)),
+        goalQueriesProvider.overrideWithValue(DriftGoalQueries(db, deviceTime)),
         habitQueriesProvider.overrideWithValue(DriftHabitQueries(db, deviceTime)),
         taskQueriesProvider.overrideWithValue(DriftTaskQueries(db)),
         taskServiceProvider.overrideWithValue(DriftTaskService(db, gateway)),
