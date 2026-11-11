@@ -183,7 +183,7 @@ Resolved in Batch 2: OQ-B1 (Time Kernel package, ADR-0013), OQ-R1 (subtask depth
 
 Resolved 2026-11-04 (pre-spike): OQ-S7 (sign-out → profile chooser, data stays on device), OQ-DATA-1 (random 256-bit key in secure storage, no passphrase). New non-blocking: OQ-DATA-3 (key/data backup).
 
-Resolved in P01: OQ-R4 (encryption at rest on Android and Windows, ADR-0021/0022), OQ-DATA-3 option (a) (user export as the backup, ADR-0025). **P01 done 2026-11-07** ([testing/p01-exit-gate.md](testing/p01-exit-gate.md)). P02 plan: [roadmap/p02-plan.md](roadmap/p02-plan.md). **P02 done 2026-11-10** ([testing/p02-exit-gate.md](testing/p02-exit-gate.md); license decision L-1: ADR-0035). P03 plan (accepted 2026-11-10): [roadmap/p03-plan.md](roadmap/p03-plan.md).
+Resolved in P01: OQ-R4 (encryption at rest on Android and Windows, ADR-0021/0022), OQ-DATA-3 option (a) (user export as the backup, ADR-0025). **P01 done 2026-11-07** ([testing/p01-exit-gate.md](testing/p01-exit-gate.md)). P02 plan: [roadmap/p02-plan.md](roadmap/p02-plan.md). **P02 done 2026-11-10** ([testing/p02-exit-gate.md](testing/p02-exit-gate.md); license decision L-1: ADR-0035). P03 plan (accepted 2026-11-10): [roadmap/p03-plan.md](roadmap/p03-plan.md). **P03 exit gate (MVP exit) in review since 2026-11-11** ([testing/p03-exit-gate.md](testing/p03-exit-gate.md)): headless evidence complete; the owner's device pass and sign-off pending.
 
 ## Unresolved decisions (summary)
 
