@@ -152,3 +152,27 @@ final trackingProvider = StreamProvider.autoDispose.family<TrackingView?, String
   ref.watch(activeProfileProvider);
   return ref.watch(habitQueriesProvider).watchTracking(taskId);
 });
+
+// --- P03 T6b: focus sessions (ADR-0038/0042) --------------------------------
+
+final focusServiceProvider = Provider<FocusService>((ref) => _notWired('focusServiceProvider'));
+final focusQueriesProvider = Provider<FocusQueries>((ref) => _notWired('focusQueriesProvider'));
+
+/// What was found when this profile opened (D1). The app sets it; the
+/// shell asks the user once.
+final focusLaunchProvider = Provider<FocusLaunch>((ref) => const NoActiveFocus());
+
+/// The running or paused session of the ACTIVE profile, or null.
+final activeFocusProvider = StreamProvider.autoDispose<FocusSessionView?>((ref) {
+  ref.watch(activeProfileProvider);
+  return ref.watch(focusQueriesProvider).watchActive();
+});
+
+/// "Now" for the focus displays (tests set it).
+final focusClockProvider = Provider<Instant Function()>((ref) => Instant.now);
+
+/// Redraws the running time. Only the display ticks: the time itself is
+/// derived from the stored instants (LF-INV-EXEC-002). Tests replace it.
+/// A new stream per display, so each one's timer stops with it.
+final focusTickerProvider =
+    Provider<Stream<void> Function()>((ref) => () => Stream<void>.periodic(const Duration(seconds: 1)));

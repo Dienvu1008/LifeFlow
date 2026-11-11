@@ -479,11 +479,130 @@ class FakeWorld
   /// Habits, targets and measurements (P03 T6a).
   late final FakeHabits habits = FakeHabits(calls);
 
+  /// Focus sessions (P03 T6b).
+  late final FakeFocus focus = FakeFocus(calls);
+
+  /// What the focus displays take as "now"; [tick] redraws them.
+  Instant now = Instant(DateTime.utc(2026, 11, 9, 2));
+  final ticks = StreamController<void>.broadcast();
+  void tick(Duration d) {
+    now = Instant(now.utc.add(d));
+    ticks.add(null);
+  }
+
+  /// The focus session found at start (D1).
+  FocusLaunch launch = const NoActiveFocus();
+
   void dispose() {
     _changes.close();
     calendar.dispose();
     habits.dispose();
+    focus.dispose();
+    ticks.close();
   }
+}
+
+/// In-memory focus sessions: the calls are recorded and the active session
+/// follows them, with times from [clock].
+class FakeFocus implements FocusService, FocusQueries {
+  FakeFocus(this.calls);
+  final List<String> calls;
+  FocusSessionView? active;
+  CommandFailure? failNext;
+  late Instant Function() clock;
+  final _changes = StreamController<void>.broadcast();
+  var _n = 0;
+
+  void changed() => _changes.add(null);
+  void dispose() => _changes.close();
+
+  CommandResult _ok(String id) {
+    changed();
+    return CommandOk(id, Version.initial, const []);
+  }
+
+  CommandFailure? _failure() {
+    final f = failNext;
+    failNext = null;
+    return f;
+  }
+
+  FocusSessionView _with(FocusSessionView s, {FocusSessionStatus? status, Duration? pausedTotal, Instant? pausedAt, bool clearPause = false}) =>
+      FocusSessionView(
+        id: s.id,
+        mode: s.mode,
+        status: status ?? s.status,
+        startedAt: s.startedAt,
+        taskId: s.taskId,
+        taskTitle: s.taskTitle,
+        occurrenceDate: s.occurrenceDate,
+        planned: s.planned,
+        pausedTotal: pausedTotal ?? s.pausedTotal,
+        pausedAt: clearPause ? null : (pausedAt ?? s.pausedAt),
+      );
+
+  @override
+  Future<CommandResult> start(
+      {required FocusSessionMode mode, Duration? planned, String? taskId, LocalDate? occurrenceDate}) async {
+    calls.add('focus.start:${mode.name}:${planned?.inMinutes}:$taskId:$occurrenceDate');
+    final f = _failure();
+    if (f != null) return f;
+    final id = 'fs${_n++}';
+    active = FocusSessionView(
+        id: id, mode: mode, status: FocusSessionStatus.running, startedAt: clock(), taskId: taskId, taskTitle: taskId, planned: planned, occurrenceDate: occurrenceDate);
+    return _ok(id);
+  }
+
+  @override
+  Future<CommandResult> pause(String id) async {
+    calls.add('focus.pause:$id');
+    active = _with(active!, status: FocusSessionStatus.paused, pausedAt: clock());
+    return _ok(id);
+  }
+
+  @override
+  Future<CommandResult> resume(String id) async {
+    calls.add('focus.resume:$id');
+    final s = active!;
+    active = _with(s,
+        status: FocusSessionStatus.running, pausedTotal: s.pausedTotal + clock().utc.difference(s.pausedAt!.utc), clearPause: true);
+    return _ok(id);
+  }
+
+  @override
+  Future<CommandResult> end(String id, {required bool count}) async {
+    calls.add('focus.end:$id:$count');
+    active = null;
+    return _ok(id);
+  }
+
+  @override
+  Future<CommandResult> cancel(String id) async {
+    calls.add('focus.cancel:$id');
+    active = null;
+    return _ok(id);
+  }
+
+  @override
+  Future<FocusLaunch> recoverOnLaunch() async => const NoActiveFocus();
+
+  @override
+  Future<CommandResult> resolveOverdue(String id, OverdueChoice choice) async {
+    calls.add('focus.overdue:$id:${choice.name}');
+    active = null;
+    return _ok(id);
+  }
+
+  @override
+  Stream<FocusSessionView?> watchActive() async* {
+    yield active;
+    await for (final _ in _changes.stream) {
+      yield active;
+    }
+  }
+
+  @override
+  Future<List<FocusSessionView>> unrecoverable() async => const [];
 }
 
 /// In-memory tracking views. Writes are recorded in the shared [calls] and
@@ -890,6 +1009,11 @@ Widget appWith(FakeWorld world, {StorageNotice? notice}) => ProviderScope(
         reminderSchedulerProvider.overrideWithValue(world.reminders),
         habitServiceProvider.overrideWithValue(world.habits),
         habitQueriesProvider.overrideWithValue(world.habits),
+        focusServiceProvider.overrideWithValue(world.focus..clock = () => world.now),
+        focusQueriesProvider.overrideWithValue(world.focus),
+        focusClockProvider.overrideWithValue(() => world.now),
+        focusTickerProvider.overrideWithValue(() => world.ticks.stream),
+        focusLaunchProvider.overrideWithValue(world.launch),
         storageNoticeProvider.overrideWithValue(notice),
       ],
       child: const LifeFlowApp(),

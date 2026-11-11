@@ -366,6 +366,59 @@ void main() {
     await finish(tester, w);
   });
 
+  testWidgets('P03 T6b: a focus session started in the UI shows in the bar and is saved as one record',
+      (tester) async {
+    final w = await pumpApp(tester, StoragePlatform.android);
+    await tester.tap(find.byTooltip('Add task'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Write the report');
+    await tester.tap(find.widgetWithText(FilledButton, 'Add'));
+    await tester.pump();
+    await settle(tester);
+
+    await tester.tap(find.byTooltip('Actions for Write the report'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Focus…').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('focus-start'))); // pomodoro, 25 minutes
+    await tester.pump();
+    await settle(tester);
+    await tester.pumpAndSettle();
+    expect(find.text('Write the report'), findsWidgets);
+    // The real clock runs: 25:00 or a second or two less.
+    final shown = tester.widget<Text>(find.byKey(const Key('focus-time'))).data!;
+    expect(shown, matches(RegExp(r'^2[45]:\d\d$')));
+    await tester.tap(find.byTooltip('Close'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('focus-bar')), findsOneWidget);
+    // The device gets the pomodoro end (D4).
+    await settle(tester, 8);
+    expect(w.device.pending.where((p) => p.key.startsWith('focus:')), hasLength(1));
+
+    await tester.tap(find.byTooltip('End focus'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('focus-end-save')));
+    await tester.pump();
+    await settle(tester);
+    expect(find.byKey(const Key('focus-bar')), findsNothing);
+    await settle(tester, 8);
+    expect(w.device.pending.where((p) => p.key.startsWith('focus:')), isEmpty);
+
+    final id = (await tester.runAsync(() => w.directory.active()))!.id;
+    final rows = await tester.runAsync(() async {
+      final s = await w.directory.openProfile(id);
+      final sessions = await s.db.select(s.db.focusSessions).get();
+      final records = await s.db.select(s.db.executionRecords).get();
+      final tasks = await s.db.select(s.db.tasks).get();
+      await s.db.close();
+      return (sessions: sessions, records: records, tasks: tasks);
+    });
+    expect(rows!.sessions.single.state, 'ended');
+    expect(rows.records.single.taskId, rows.tasks.single.id);
+    expect(rows.tasks.single.status, isNot('done'), reason: 'a session never completes its task (D5)');
+    await finish(tester, w);
+  });
+
   testWidgets('P02 T6b: an event made in the Calendar tab is stored, shown, and overlaps a task',
       (tester) async {
     final w = await pumpApp(tester, StoragePlatform.android, width: 1200);

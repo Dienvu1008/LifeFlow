@@ -29,11 +29,15 @@ class AdaptiveScaffold extends StatelessWidget {
     required this.onSelected,
     required this.body,
     this.notice,
+    this.focusBar,
   });
 
   final int selectedIndex;
   final ValueChanged<int> onSelected;
   final Widget body;
+
+  /// Shown under the content, above the navigation (P03 D4).
+  final Widget? focusBar;
 
   /// Startup at-rest encryption notice (ADR-0021); shown above the content.
   final StorageNotice? notice;
@@ -55,6 +59,7 @@ class AdaptiveScaffold extends StatelessWidget {
               child: body,
             ),
           ),
+          if (focusBar != null) focusBar!,
         ],
       );
 

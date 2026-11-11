@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'providers.dart';
 import 'screens/calendar_screen.dart';
+import 'screens/focus_page.dart';
 import 'screens/profiles_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/tasks_screen.dart';
@@ -34,7 +35,10 @@ GoRouter createRouter({String initialLocation = '/tasks'}) => GoRouter(
               onSelected: (i) =>
                   shell.goBranch(i, initialLocation: i == shell.currentIndex),
               notice: ref.watch(storageNoticeProvider),
-              body: shell,
+              // P03 T6b (D1, D4): the focus bar on every screen, and the
+              // question about a session found at start.
+              focusBar: const FocusBar(),
+              body: FocusLaunchPrompt(child: shell),
             ),
           ),
           branches: [
