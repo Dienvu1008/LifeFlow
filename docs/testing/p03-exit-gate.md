@@ -10,7 +10,7 @@ How to reproduce:
 - `dart run tools/fitness/<script>.dart` for each fitness script.
 - CI runs the same on every push (`.github/workflows/ci.yml`).
 
-`main` at the start of T7: `3f447b8` (T6c merged).
+`main` at the start of T7: `3f447b8` (T6c merged); the navigation drawer (ADR-0044) was merged during the review (`7c20d04`).
 
 ## Exit gate (DoD §P03)
 
@@ -49,6 +49,7 @@ All ten also appear in [invariant-test-matrix.md](../invariants/invariant-test-m
 | T6a UI habits | `ui/test/habit_flow_test.dart` 13, app integration | 0041 |
 | T6b UI focus | `ui/test/focus_flow_test.dart` 11, pomodoro-end notification and sync tests, app integration | 0042 |
 | T6c UI goals | `ui/test/goal_flow_test.dart` 8, `shell_test.dart` order, app integration | 0043 |
+| Navigation drawer on phones (owner request during the exit review) | `ui/test/shell_test.dart` drawer tests; phone-width flows through the drawer | 0044 |
 
 Mutation checks: each task's key rules were mutated one at a time (T1 13/13, T2 20/20, T3 21/21, T4 30/31, T5 17/17, T6a 12/13, T6b 14/14, T6c 10/10).
 - The two survivors are recorded in their ADRs and cannot be killed: one would only remove an optimisation, the other is a UI check that the input field already makes unreachable.
@@ -72,7 +73,7 @@ Mutation checks: each task's key rules were mutated one at a time (T1 13/13, T2 
 |---|---|
 | Build passes on Windows and Android; analyze clean | Windows debug build at T6a, T6b and T6c (last on `8ccdca4`); `dart analyze` / `flutter analyze` clean in every package. The Android build and both device runs are part of the owner's device pass. CI does not build for devices (as in P01/P02). |
 | Static fitness functions | FF-ARCH-01, 04 and 07 green in CI. FF-ARCH-02, 03 and 05 have no scripts yet, as at the P01 and P02 exits. |
-| All phase tests pass | foundation 13, time_kernel 92, domain 61, application 3, infrastructure 299, ui 180, app 25 (local and CI on the T6c branch), plus the FF-ARCH-07 self-test |
+| All phase tests pass | foundation 13, time_kernel 92, domain 61, application 3, infrastructure 299, ui 186, app 25 (local and CI on the T6c branch), plus the FF-ARCH-07 self-test |
 | Every P03 invariant has a passing verification row | see "Invariants" above and the matrix |
 | New dependencies have a verified license | none added in P03 |
 | ADRs for decisions with trade-offs | ADR-0036 (rules; ADR-0006 amended: habit is its own flag), 0037 (schema v5), 0038 (focus commands, exact instants), 0039 (habits, targets, measurements, closed results; schema v6), 0040 (goals), 0041 (habits UI), 0042 (focus UI, notification, recovery), 0043 (goals UI); owner decisions D1–D12 in p03-plan.md |
@@ -104,11 +105,17 @@ Run on Windows and on Android (`flutter run -d windows …`, `flutter run -d RF8
 - [ ] Starting a second session offers to open the running one.
 
 **Goals (T6c)**
-- [ ] Goals tab (5th): "+" makes a project with a start and target date.
+- [ ] Goals (5th tab; on a phone in the navigation drawer): "+" makes a project with a start and target date.
 - [ ] Link a task and a habit; complete the task: the progress changes. Add a milestone: progress counts the milestones.
 - [ ] A task's "Goals…" shows the goal ticked; unticking unlinks it.
 - [ ] Archive (read only), then unarchive. Move to trash (the task is still in Tasks), then restore from Trash.
-- [ ] Phone width: the five tabs and the goal page fit.
+- [ ] Phone width: the goal page fits.
+
+**Navigation on a phone (ADR-0044)**
+- [ ] No bottom bar; the menu button (or a swipe from the left edge) opens the drawer.
+- [ ] The drawer starts with the profile (picture with initials, name, status); a tap opens Profiles.
+- [ ] Tasks, Calendar, Goals, Settings switch tabs and close the drawer; the current tab is marked.
+- [ ] Windows and a wide window keep the rail with all five destinations.
 
 **Regression (P01/P02 on the same build)**
 - [ ] Tasks, subtasks, schedule, Today/Upcoming, Calendar and events, reminders with the app closed, export/restore, profile switch.
