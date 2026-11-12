@@ -6,7 +6,8 @@ import '../messages.dart';
 import '../shell.dart' show shellMenuButton;
 import '../providers.dart';
 import 'account_card.dart';
-import 'data_card.dart';
+import 'data_card.dart';
+import '../l10n.dart';
 
 /// Profile chooser (OQ-S7): every profile on the device stays listed and its
 /// data stays on the device. Switching re-scopes the whole app to that
@@ -18,12 +19,12 @@ class ProfilesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profiles = ref.watch(profilesProvider);
     return Scaffold(
-      appBar: AppBar(leading: shellMenuButton(context), title: const Text('Profiles')),
+      appBar: AppBar(leading: shellMenuButton(context), title: Text(context.l10n.profiles)),
       body: profiles.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(semanticsLabel: 'Loading profiles'),
+        loading: () => Center(
+          child: CircularProgressIndicator(semanticsLabel: context.l10n.loadingProfiles),
         ),
-        error: (e, _) => const Center(child: Text('Could not load profiles.')),
+        error: (e, _) => Center(child: Text(context.l10n.couldNotLoadProfiles)),
         data: (list) {
           final active = list.where((p) => p.isActive).firstOrNull;
           return ListView(
@@ -32,7 +33,7 @@ class ProfilesScreen extends ConsumerWidget {
               if (active != null) const DataCard(),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-                child: Text('Profiles on this device',
+                child: Text(context.l10n.profilesOnThisDevice,
                     style: Theme.of(context).textTheme.titleSmall),
               ),
               for (final p in list) _ProfileTile(profile: p),
@@ -70,18 +71,18 @@ class _ProfileTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final p = profile;
     final Widget action = p.isActive
-        ? const Chip(label: Text('Active'))
+        ? Chip(label: Text(context.l10n.active))
         : p.isLocked
             ? FilledButton.tonalIcon(
                 // Signing in with this profile's account unlocks and opens
                 // it (ADR-0024); another account goes to its own profile.
                 onPressed: () => startSignIn(context, ref),
                 icon: const Icon(Icons.login),
-                label: const Text('Sign in to open'),
+                label: Text(context.l10n.signInToOpen),
               )
             : FilledButton.tonal(
                 onPressed: () => _switch(context, ref),
-                child: const Text('Switch'),
+                child: Text(context.l10n.switchLabel),
               );
     return ListTile(
       key: ValueKey('profile-${p.id}'),
@@ -101,7 +102,7 @@ class _ProfileTile extends ConsumerWidget {
           // The open profile cannot be deleted (switch first, ADR-0027).
           if (!p.isActive)
             IconButton(
-              tooltip: 'Delete ${_title(p)}',
+              tooltip: context.l10n.deleteValue2(_title(p)),
               icon: const Icon(Icons.delete_outline),
               onPressed: () => _delete(context, ref),
             ),
@@ -116,7 +117,7 @@ class _ProfileTile extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         key: const Key('delete-profile'),
-        title: Text('Delete "${_title(p)}"?'),
+        title: Text(context.l10n.deleteValue(_title(p))),
         content: Text(
           'All tasks and history of this profile are deleted from this '
           'device. This cannot be undone.'
@@ -127,14 +128,14 @@ class _ProfileTile extends ConsumerWidget {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
+              child: Text(context.l10n.cancel)),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(ctx).colorScheme.error,
               foregroundColor: Theme.of(ctx).colorScheme.onError,
             ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete profile'),
+            child: Text(context.l10n.deleteProfile),
           ),
         ],
       ),

@@ -55,6 +55,8 @@ jobs:
         run: |
           dart run tools/fitness/ff_arch_07_test.dart
           dart run tools/fitness/ff_arch_07_licenses.dart
+      - name: FF-ARCH-10 (UI strings come from the ARB file; ratchet, ADR-0045)
+        run: dart run tools/fitness/ff_arch_10_ui_strings.dart
 
   flutter-ui-and-app:
     runs-on: ubuntu-latest

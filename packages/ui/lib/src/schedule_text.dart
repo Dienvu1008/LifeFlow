@@ -1,18 +1,17 @@
-// P02 T6a: how schedules read in the UI. English only for now (like
-// messages.dart); plain functions so they are easy to test.
+// P02 T6a: how schedules read in the UI; plain functions so they are easy
+// to test. P03 UX U1 (ADR-0045): weekday and month names come from `intl`
+// in the current locale (English until another language exists); the
+// remaining English phrases move to the ARB file with their screens.
 import 'package:application/application.dart';
 import 'package:foundation/foundation.dart';
+import 'package:intl/intl.dart';
 
-const _weekdayShort = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const _weekdayLong = [
-  'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
-];
-const _monthShort = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-];
+/// A Monday (2024-01-01) plus [d]'s index: a date with that weekday.
+DateTime _dayOf(Weekday d) => DateTime(2024, 1, 1 + d.index);
 
-String weekdayShort(Weekday d) => _weekdayShort[d.index];
-String weekdayLong(Weekday d) => _weekdayLong[d.index];
+String weekdayShort(Weekday d) => DateFormat.E().format(_dayOf(d));
+String weekdayLong(Weekday d) => DateFormat.EEEE().format(_dayOf(d));
+String monthShort(int month) => DateFormat.MMM().format(DateTime(2024, month));
 
 /// "Today", "Tomorrow", "Yesterday", otherwise "Mon 9 Nov" (with the year
 /// when it is not [today]'s year).
@@ -26,7 +25,7 @@ String formatDate(LocalDate d, {required LocalDate today}) {
 
 /// "Mon 9 Nov" (plus the year when it differs from [today]'s).
 String formatDateLong(LocalDate d, {required LocalDate today}) {
-  final base = '${weekdayShort(d.weekday)} ${d.day} ${_monthShort[d.month - 1]}';
+  final base = '${weekdayShort(d.weekday)} ${d.day} ${monthShort(d.month)}';
   return d.year == today.year ? base : '$base ${d.year}';
 }
 

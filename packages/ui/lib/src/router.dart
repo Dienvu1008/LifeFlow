@@ -1,6 +1,10 @@
+import 'package:application/application.dart' show ThemePreference;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import 'l10n.dart';
+import 'theme/lifeflow_theme.dart';
 
 import 'providers.dart';
 import 'screens/calendar_screen.dart';
@@ -93,16 +97,22 @@ class LifeFlowApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    const seed = Colors.teal;
+    // P03 UX U1 (ADR-0045): one theme module; the brightness follows the
+    // device setting (System by default, also while it loads).
+    final preference = ref.watch(themePreferenceProvider).valueOrNull ?? ThemePreference.system;
     return MaterialApp.router(
       title: 'LifeFlow',
       routerConfig: ref.watch(routerProvider),
-      theme: ThemeData(colorSchemeSeed: seed, useMaterial3: true),
-      darkTheme: ThemeData(
-        colorSchemeSeed: seed,
-        brightness: Brightness.dark,
-        useMaterial3: true,
-      ),
+      // U-D11: English only for now; a new ARB file adds a language.
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      theme: lifeFlowTheme(Brightness.light),
+      darkTheme: lifeFlowTheme(Brightness.dark),
+      themeMode: switch (preference) {
+        ThemePreference.system => ThemeMode.system,
+        ThemePreference.light => ThemeMode.light,
+        ThemePreference.dark => ThemeMode.dark,
+      },
     );
   }
 }

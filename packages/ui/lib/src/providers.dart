@@ -193,3 +193,10 @@ final trashedGoalsProvider = FutureProvider.autoDispose<List<GoalView>>((ref) {
   ref.watch(activeProfileProvider);
   return ref.watch(goalQueriesProvider).trashed();
 });
+
+// --- P03 UX U1: appearance (ADR-0045) ---------------------------------------
+
+/// Light, dark or as the system (device setting). Invalidate after a change.
+final themePreferenceProvider = FutureProvider<ThemePreference>(
+  (ref) => ref.watch(settingsServiceProvider).themePreference(),
+);

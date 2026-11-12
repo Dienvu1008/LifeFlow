@@ -10,3 +10,4 @@ export 'src/providers.dart';
 export 'src/router.dart';
 export 'src/shell.dart';
 export 'src/task_tree.dart';
+export 'src/theme/lifeflow_theme.dart';

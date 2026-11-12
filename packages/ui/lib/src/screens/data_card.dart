@@ -2,7 +2,8 @@ import 'package:application/application.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../providers.dart';
+import '../providers.dart';
+import '../l10n.dart';
 
 /// Backup of the ACTIVE profile (UC-20a, OQ-DATA-3 option a). If the device or
 /// its secure storage is lost, an export is the only way back to the data, so
@@ -23,7 +24,7 @@ class DataCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Your data', style: theme.textTheme.titleMedium),
+            Text(context.l10n.yourData, style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             const Text(
               'Your data is encrypted on this device. If you lose the device, '
@@ -38,19 +39,19 @@ class DataCard extends ConsumerWidget {
                 FilledButton.tonalIcon(
                   onPressed: () => startExport(context, ref),
                   icon: const Icon(Icons.upload_file),
-                  label: const Text('Export this profile'),
+                  label: Text(context.l10n.exportThisProfile),
                 ),
                 OutlinedButton.icon(
                   onPressed: () => startRestore(context, ref),
                   icon: const Icon(Icons.download),
-                  label: const Text('Restore from a file'),
+                  label: Text(context.l10n.restoreFromAFile),
                 ),
                 if (canUndo)
                   TextButton.icon(
                     key: const Key('undo-restore'),
                     onPressed: () => startUndoRestore(context, ref),
                     icon: const Icon(Icons.undo),
-                    label: const Text('Undo last restore'),
+                    label: Text(context.l10n.undoLastRestore),
                   ),
               ],
             ),
@@ -65,7 +66,7 @@ Future<void> startExport(BuildContext context, WidgetRef ref) async {
   final ok = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: const Text('Export this profile?'),
+      title: Text(context.l10n.exportThisProfile2),
       content: const Text(
         'The file is an UNENCRYPTED copy of this profile: tasks, subtasks, '
         'trash and history. It contains no password, key or sign-in token. '
@@ -75,10 +76,10 @@ Future<void> startExport(BuildContext context, WidgetRef ref) async {
       actions: [
         TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel')),
+            child: Text(context.l10n.cancel)),
         FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Export')),
+            child: Text(context.l10n.exportLabel)),
       ],
     ),
   );
@@ -256,36 +257,33 @@ class _ChoiceDialogState extends State<_ChoiceDialog> {
     final canGo = !merge || _takeNewer || _addMissing;
     return AlertDialog(
       key: const Key('restore-choice'),
-      title: const Text('This file differs from this profile'),
+      title: Text(context.l10n.thisFileDiffersFromThisProfile),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Only in the file: ${d.onlyInFile}'),
-            Text('Only on this device: ${d.onlyOnDevice}'),
-            Text('In both, but different: ${d.differing} '
-                '(newer in the file: ${d.newerInFile})'),
+            Text(context.l10n.restoreOnlyInFile(d.onlyInFile)),
+            Text(context.l10n.restoreOnlyOnDevice(d.onlyOnDevice)),
+            Text(context.l10n.restoreInBothDifferent(d.differing, d.newerInFile)),
             const SizedBox(height: 12),
             RadioGroup<RestoreMode>(
               groupValue: _mode,
               onChanged: (m) => setState(() => _mode = m ?? _mode),
-              child: const Column(
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   RadioListTile<RestoreMode>(
                     key: Key('mode-overwrite'),
                     value: RestoreMode.overwrite,
-                    title: Text('Overwrite everything'),
-                    subtitle: Text('This profile becomes exactly the file. '
-                        'Items only on this device move to the trash.'),
+                    title: Text(context.l10n.overwriteEverything),
+                    subtitle: Text(context.l10n.restoreOverwriteHint),
                   ),
                   RadioListTile<RestoreMode>(
                     key: Key('mode-merge'),
                     value: RestoreMode.merge,
-                    title: Text('Merge'),
-                    subtitle: Text('Keep this device\'s data and take from '
-                        'the file what you choose below.'),
+                    title: Text(context.l10n.merge),
+                    subtitle: Text(context.l10n.restoreMergeHint),
                   ),
                 ],
               ),
@@ -294,26 +292,24 @@ class _ChoiceDialogState extends State<_ChoiceDialog> {
               key: const Key('opt-newer'),
               value: _takeNewer,
               onChanged: merge ? (v) => setState(() => _takeNewer = v!) : null,
-              title: const Text('Use the newer version'),
-              subtitle: const Text('For items in both, keep the one changed '
-                  'most recently.'),
+              title: Text(context.l10n.useTheNewerVersion),
+              subtitle: Text(context.l10n.restoreNewerHint),
             ),
             CheckboxListTile(
               key: const Key('opt-missing'),
               value: _addMissing,
               onChanged: merge ? (v) => setState(() => _addMissing = v!) : null,
-              title: const Text('Add what is only in the file'),
+              title: Text(context.l10n.addWhatIsOnlyInThe),
             ),
             const SizedBox(height: 8),
-            const Text('The current data is kept, so you can undo this '
-                'restore afterwards.'),
+            Text(context.l10n.restoreUndoHint),
           ],
         ),
       ),
       actions: [
         TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel')),
+            child: Text(context.l10n.cancel)),
         FilledButton(
           key: const Key('restore-go'),
           onPressed: canGo
@@ -338,7 +334,7 @@ Future<bool?> _hierarchyDialog(BuildContext context, List<String> titles) {
     context: context,
     builder: (ctx) => AlertDialog(
       key: const Key('hierarchy-conflict'),
-      title: const Text('Some subtasks would not fit'),
+      title: Text(context.l10n.someSubtasksWouldNotFit),
       content: Text(
         'Merging would put ${titles.length} ${_items(titles.length, 'task')} '
         'in a loop, under a missing parent, or too deep:\n$shown$more\n\n'
@@ -348,10 +344,10 @@ Future<bool?> _hierarchyDialog(BuildContext context, List<String> titles) {
       actions: [
         TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel')),
+            child: Text(context.l10n.cancel)),
         FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Keep this device\'s parents')),
+            child: Text(context.l10n.keepThisDeviceSParents)),
       ],
     ),
   );
@@ -367,7 +363,7 @@ Future<bool?> _confirm(
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
+              child: Text(context.l10n.cancel)),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, true), child: Text(action)),
         ],
@@ -382,7 +378,7 @@ Future<void> _result(BuildContext context, String title, String message) =>
         content: Text(message),
         actions: [
           FilledButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('OK')),
+              onPressed: () => Navigator.pop(ctx), child: Text(context.l10n.ok)),
         ],
       ),
     );

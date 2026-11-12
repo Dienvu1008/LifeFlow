@@ -57,6 +57,17 @@ class DirectorySettingsService implements SettingsService {
   Future<void> setSubtaskTrashPolicy(SubtaskTrashPolicy policy) =>
       directory.writeSetting(_subtaskTrash, policy.name);
 
+  static const _theme = 'ui.theme';
+
+  @override
+  Future<ThemePreference> themePreference() async {
+    final v = await directory.readSetting(_theme);
+    return ThemePreference.values.where((p) => p.name == v).firstOrNull ?? ThemePreference.system;
+  }
+
+  @override
+  Future<void> setThemePreference(ThemePreference preference) => directory.writeSetting(_theme, preference.name);
+
   static const _maxOcc = 'planning.maxOccurrences';
   static const _maxDays = 'planning.maxWindowDays';
   static const _monthEnd = 'planning.defaultMonthEnd';

@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../messages.dart';
-import '../providers.dart';
+import '../providers.dart';
+import '../l10n.dart';
 
 /// Sign-in state of the ACTIVE profile, with sign-in / sign-out (ADR-0008,
 /// OQ-S7). Signing in is optional: the app is fully usable as a guest.
@@ -29,7 +30,7 @@ class AccountCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Account', style: theme.textTheme.titleMedium),
+            Text(context.l10n.account, style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
               profile.isBound
@@ -41,16 +42,16 @@ class AccountCard extends ConsumerWidget {
               OutlinedButton.icon(
                 onPressed: () => _signOut(context, ref),
                 icon: const Icon(Icons.logout),
-                label: const Text('Sign out'),
+                label: Text(context.l10n.signOut),
               )
             else if (accounts.signInAvailable)
               FilledButton.icon(
                 onPressed: () => startSignIn(context, ref),
                 icon: const Icon(Icons.login),
-                label: const Text('Sign in'),
+                label: Text(context.l10n.signIn),
               )
             else
-              Text('Sign-in is not configured in this build.',
+              Text(context.l10n.signInIsNotConfiguredIn,
                   style: theme.textTheme.bodySmall),
           ],
         ),
@@ -62,17 +63,17 @@ class AccountCard extends ConsumerWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Sign out?'),
+        title: Text(context.l10n.signOut2),
         content: const Text(
             'Your data stays on this device, locked until you sign in again '
             'with this account. LifeFlow switches to a guest profile.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
+              child: Text(context.l10n.cancel)),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Sign out')),
+              child: Text(context.l10n.signOut)),
         ],
       ),
     );
@@ -109,7 +110,7 @@ Future<void> startSignIn(BuildContext context, WidgetRef ref) async {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: const Text('Move your data to this account?'),
+        title: Text(context.l10n.moveYourDataToThisAccount),
         content: const Text(
           'Move the data you are using now to this account?\n\n'
           'Move: this profile and everything in it now belongs to the account.\n'
@@ -119,13 +120,13 @@ Future<void> startSignIn(BuildContext context, WidgetRef ref) async {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel')),
+              child: Text(context.l10n.cancel)),
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('New space')),
+              child: Text(context.l10n.newSpace)),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Move my data')),
+              child: Text(context.l10n.moveMyData)),
         ],
       ),
     );
@@ -162,7 +163,7 @@ Future<T> _withProgress<T>(BuildContext context, Future<T> work,
       canPop: false,
       child: AlertDialog(
         content: Row(children: [
-          const CircularProgressIndicator(semanticsLabel: 'Signing in'),
+          CircularProgressIndicator(semanticsLabel: context.l10n.signingIn),
           const SizedBox(width: 16),
           Expanded(
             child: Text(waitingForBrowser
@@ -221,7 +222,7 @@ class _SignInDialogState extends State<SignInDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-        title: const Text('Sign in'),
+        title: Text(context.l10n.signIn),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -231,21 +232,21 @@ class _SignInDialogState extends State<SignInDialog> {
                 onPressed: () =>
                     Navigator.pop(context, const OAuthSignIn('github')),
                 icon: const Icon(Icons.code),
-                label: const Text('Continue with GitHub'),
+                label: Text(context.l10n.continueWithGithub),
               ),
               const SizedBox(height: 16),
-              const Text('or use email'),
+              Text(context.l10n.orUseEmail),
               TextField(
                 controller: _email,
                 keyboardType: TextInputType.emailAddress,
                 autofillHints: const [AutofillHints.email],
-                decoration: const InputDecoration(labelText: 'Email'),
+                decoration: InputDecoration(labelText: context.l10n.email),
               ),
               TextField(
                 controller: _password,
                 obscureText: true,
                 autofillHints: const [AutofillHints.password],
-                decoration: InputDecoration(labelText: 'Password', errorText: _error),
+                decoration: InputDecoration(labelText: context.l10n.password, errorText: _error),
                 onSubmitted: (_) => _submitEmail(),
               ),
             ],
@@ -254,8 +255,8 @@ class _SignInDialogState extends State<SignInDialog> {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
-          FilledButton(onPressed: _submitEmail, child: const Text('Sign in')),
+              child: Text(context.l10n.cancel)),
+          FilledButton(onPressed: _submitEmail, child: Text(context.l10n.signIn)),
         ],
       );
 }

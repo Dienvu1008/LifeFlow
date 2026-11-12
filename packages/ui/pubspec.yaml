@@ -17,7 +17,13 @@ dependencies:
     path: ../foundation
   application:
     path: ../application
+  flutter_localizations:
+    sdk: flutter
+  intl: 0.20.3 # BSD-3-Clause; P03 UX U1 (dates, plurals)
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+
+flutter:
+  generate: true
