@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'fake_world.dart';
+import 'nav.dart';
 
 FakeWorld world(List<TaskView> tasks) =>
     FakeWorld(tasks: {'A': tasks}, profiles: [profile('A', 'Guest')], activeId: 'A');
@@ -29,10 +30,7 @@ Future<void> tapKey(WidgetTester tester, String key) async {
   await tester.pumpAndSettle();
 }
 
-Future<void> openGoals(WidgetTester tester) async {
-  await tester.tap(find.text('Goals'));
-  await tester.pumpAndSettle();
-}
+Future<void> openGoals(WidgetTester tester) => goToTab(tester, 'Goals');
 
 GoalView fit({
   GoalState status = GoalState.active,
@@ -250,13 +248,12 @@ void main() {
     expect(w.calls.last, 'goal.unlink:g1:task:t1');
   });
 
-  testWidgets('five tabs fit a phone with a large font', (tester) async {
+  testWidgets('a phone with a large font: Goals through the drawer', (tester) async {
     final w = world([]);
     tester.platformDispatcher.textScaleFactorTestValue = 1.3;
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     await pumpApp(tester, w, width: 360);
-    expect(find.text('Goals'), findsOneWidget);
-    await openGoals(tester);
+    await goToTab(tester, 'Goals');
     expect(find.byKey(const Key('goals-empty')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
