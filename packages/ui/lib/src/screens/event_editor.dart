@@ -11,7 +11,8 @@ import 'package:foundation/foundation.dart';
 import '../messages.dart';
 import '../providers.dart';
 import '../widgets/schedule_fields.dart';
-import 'schedule_editor.dart';
+import 'schedule_editor.dart';
+import '../l10n.dart';
 
 /// Opens the editor: a new event on [date], or the event [eventId].
 Future<void> openEventEditor(BuildContext context, WidgetRef ref, {String? eventId, LocalDate? date}) async {
@@ -121,7 +122,7 @@ class _EventEditorPageState extends ConsumerState<EventEditorPage> {
       if (r is CommandFailure && existing == null) {
         // The event exists now: close (saving again would make a second one)
         // and say what was not saved.
-        messenger.showSnackBar(SnackBar(content: Text('Event saved; its reminders were not: ${describeFailure(r)}')));
+        messenger.showSnackBar(SnackBar(content: Text(context.l10n.eventSavedRemindersFailed(describeFailure(r)))));
         return saved;
       }
       return r;
@@ -137,8 +138,8 @@ class _EventEditorPageState extends ConsumerState<EventEditorPage> {
       messenger
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(
-          content: const Text('Event moved to the trash.'),
-          action: SnackBarAction(label: 'Undo', onPressed: () => events.restore(id)),
+          content: Text(context.l10n.eventMovedToTheTrash),
+          action: SnackBarAction(label: context.l10n.undo, onPressed: () => events.restore(id)),
         ));
     }
   }
@@ -180,10 +181,10 @@ class _EventEditorPageState extends ConsumerState<EventEditorPage> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-            tooltip: 'Cancel', icon: const Icon(Icons.close), onPressed: () => Navigator.of(context).pop()),
+            tooltip: context.l10n.cancel, icon: const Icon(Icons.close), onPressed: () => Navigator.of(context).pop()),
         title: Text(editing ? 'Edit event' : 'New event'),
         actions: [
-          TextButton(key: const Key('event-save'), onPressed: _busy ? null : _save, child: const Text('Save')),
+          TextButton(key: const Key('event-save'), onPressed: _busy ? null : _save, child: Text(context.l10n.save)),
         ],
       ),
       body: ListView(
@@ -191,10 +192,9 @@ class _EventEditorPageState extends ConsumerState<EventEditorPage> {
         children: [
           if (_error != null) EditorError(_error!),
           if (editing && (widget.existing!.input.repeat != null))
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: Text('Changes here apply to every time this event repeats. '
-                  'To change one time only, use its actions in the calendar.'),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Text(context.l10n.eventRepeatHint),
             ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -203,16 +203,16 @@ class _EventEditorPageState extends ConsumerState<EventEditorPage> {
               controller: _title,
               autofocus: !editing,
               textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(labelText: 'Title'),
+              decoration: InputDecoration(labelText: context.l10n.title),
             ),
           ),
           const EditorSection('When'),
           point('Start', 'event-start', _start, removable: false),
           point('End', 'event-end', _end),
           if (!_start.hasTime && !_end.hasTime && _start.date != null)
-            const Padding(
+            Padding(
               padding: EdgeInsets.fromLTRB(16, 0, 16, 4),
-              child: Text('All day. All-day events never count as overlapping.'),
+              child: Text(context.l10n.allDayAllDayEventsNever),
             ),
           if (_start.hasTime || _end.hasTime)
             ZoneField(
@@ -227,7 +227,7 @@ class _EventEditorPageState extends ConsumerState<EventEditorPage> {
             child: TextField(
               key: const Key('event-location'),
               controller: _location,
-              decoration: const InputDecoration(labelText: 'Location (optional)'),
+              decoration: InputDecoration(labelText: context.l10n.locationOptional),
             ),
           ),
           Padding(
@@ -235,9 +235,9 @@ class _EventEditorPageState extends ConsumerState<EventEditorPage> {
             child: DropdownButtonFormField<String?>(
               key: const Key('event-calendar'),
               initialValue: calendars.any((c) => c.id == _calendarId) ? _calendarId : null,
-              decoration: const InputDecoration(labelText: 'Calendar'),
+              decoration: InputDecoration(labelText: context.l10n.calendar),
               items: [
-                const DropdownMenuItem<String?>(value: null, child: Text('No calendar')),
+                DropdownMenuItem<String?>(value: null, child: Text(context.l10n.noCalendar)),
                 for (final c in calendars)
                   DropdownMenuItem<String?>(
                     value: c.id,
@@ -277,7 +277,7 @@ class _EventEditorPageState extends ConsumerState<EventEditorPage> {
                 key: const Key('event-trash'),
                 onPressed: _busy ? null : _trash,
                 icon: const Icon(Icons.delete_outline),
-                label: const Text('Move to trash'),
+                label: Text(context.l10n.moveToTrash),
               ),
             ),
           ],

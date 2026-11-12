@@ -31,6 +31,7 @@ Each: rule, mechanism, CI stage, failure condition, severity, owner.
 | FF-ARCH-07 | No AGPL or unknown-license dependency in the resolved set | license scan over the dependency tree (ADR-0018) | static-analysis | AGPL/unknown present | critical | platform |
 | FF-ARCH-08 | No egress path includes a Restricted item toward cloud AI | **test** over the Context Builder (GS-16) | integration test | a Restricted item reaches a cloud request | critical | privacy |
 | FF-ARCH-09 | Every mutation is authorized before the domain method runs | targeted test over the gateway + review | integration test | a mutation path skips authorization | critical | governance |
+| FF-ARCH-10 | User-facing UI text comes from the ARB file (`context.l10n`), not literals; a ratchet over the files not migrated yet | script `tools/fitness/ff_arch_10_ui_strings.dart` + baseline `ui_strings_baseline.txt` (P03 UX U1, ADR-0045) | static scan in CI | a UI file gains a raw string, or a new file has one | medium | i18n |
 
 ## 3. Static vs test-based
 - FF-ARCH-01/02/03/04/05/07 are **static** (import/graph/license scans) — fast, run on every push.

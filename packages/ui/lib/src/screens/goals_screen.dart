@@ -15,7 +15,8 @@ import '../messages.dart';
 import '../shell.dart' show shellMenuButton;
 import '../providers.dart';
 import '../schedule_text.dart';
-import '../task_actions.dart';
+import '../task_actions.dart';
+import '../l10n.dart';
 import 'schedule_editor.dart' show EditorSection;
 
 enum _GoalList { active, archived, trash }
@@ -54,7 +55,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
   var _list = _GoalList.active;
 
   Future<void> _create() async {
-    final input = await showDialog<_GoalInput>(context: context, builder: (_) => const _GoalDialog());
+    final input = await showDialog<_GoalInput>(context: context, builder: (_) => _GoalDialog());
     if (input == null || !mounted) return;
     final r = await ref.read(goalServiceProvider).create(
         kind: input.kind,
@@ -82,18 +83,18 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: shellMenuButton(context),
-        title: const Text('Goals'),
+        title: Text(context.l10n.goals),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(56),
+          preferredSize: Size.fromHeight(56),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+            padding: EdgeInsets.fromLTRB(12, 0, 12, 8),
             child: SegmentedButton<_GoalList>(
-              key: const Key('goal-filter'),
+              key: Key('goal-filter'),
               showSelectedIcon: false,
-              segments: const [
-                ButtonSegment(value: _GoalList.active, label: Text('Active')),
-                ButtonSegment(value: _GoalList.archived, label: Text('Archived')),
-                ButtonSegment(value: _GoalList.trash, label: Text('Trash')),
+              segments: [
+                ButtonSegment(value: _GoalList.active, label: Text(context.l10n.active)),
+                ButtonSegment(value: _GoalList.archived, label: Text(context.l10n.archived)),
+                ButtonSegment(value: _GoalList.trash, label: Text(context.l10n.trash)),
               ],
               selected: {_list},
               onSelectionChanged: (s) {
@@ -106,13 +107,13 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'fab-goals',
-        tooltip: 'New goal or project',
+        tooltip: context.l10n.newGoalOrProject,
         onPressed: _create,
         child: const Icon(Icons.add),
       ),
       body: goals.when(
-        loading: () => const Center(child: CircularProgressIndicator(semanticsLabel: 'Loading goals')),
-        error: (e, _) => const Center(child: Text('Could not load the goals.')),
+        loading: () => Center(child: CircularProgressIndicator(semanticsLabel: context.l10n.loadingGoals)),
+        error: (e, _) => Center(child: Text(context.l10n.couldNotLoadTheGoals)),
         data: (list) {
           if (list.isEmpty) {
             return Center(
@@ -148,7 +149,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
                             await reportResult(context, ref.read(goalServiceProvider).restore(g.id));
                             ref.invalidate(trashedGoalsProvider);
                           },
-                          child: const Text('Restore'),
+                          child: Text(context.l10n.restore),
                         ),
                       )
                     : _GoalTile(goal: g, today: today),
@@ -192,7 +193,7 @@ class _ProgressBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
         container: true,
-        label: 'Progress: ${progressText(goal)}',
+        label: context.l10n.progressValue(progressText(goal)),
         excludeSemantics: true,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           LinearProgressIndicator(value: goal.progress ?? 0, minHeight: 6),
@@ -218,23 +219,23 @@ class GoalPage extends ConsumerWidget {
         actions: [
           if (g != null)
             PopupMenuButton<_GoalAction>(
-              tooltip: 'Actions for ${g.title}',
+              tooltip: context.l10n.actionsForTitle(g.title),
               onSelected: (a) => _act(context, ref, g, a),
               itemBuilder: (_) => [
-                if (g.status != GoalState.archived) const PopupMenuItem(value: _GoalAction.edit, child: Text('Edit…')),
-                if (g.status == GoalState.active) const PopupMenuItem(value: _GoalAction.done, child: Text('Mark as done')),
-                if (g.status == GoalState.done) const PopupMenuItem(value: _GoalAction.reopen, child: Text('Mark as active')),
-                if (g.status != GoalState.archived) const PopupMenuItem(value: _GoalAction.archive, child: Text('Archive')),
-                if (g.status == GoalState.archived) const PopupMenuItem(value: _GoalAction.unarchive, child: Text('Unarchive')),
-                const PopupMenuItem(value: _GoalAction.trash, child: Text('Move to trash')),
+                if (g.status != GoalState.archived) PopupMenuItem(value: _GoalAction.edit, child: Text(context.l10n.edit)),
+                if (g.status == GoalState.active) PopupMenuItem(value: _GoalAction.done, child: Text(context.l10n.markAsDone)),
+                if (g.status == GoalState.done) PopupMenuItem(value: _GoalAction.reopen, child: Text(context.l10n.markAsActive)),
+                if (g.status != GoalState.archived) PopupMenuItem(value: _GoalAction.archive, child: Text(context.l10n.archive)),
+                if (g.status == GoalState.archived) PopupMenuItem(value: _GoalAction.unarchive, child: Text(context.l10n.unarchive)),
+                PopupMenuItem(value: _GoalAction.trash, child: Text(context.l10n.moveToTrash)),
               ],
             ),
         ],
       ),
       body: goals.isLoading && g == null
-          ? const Center(child: CircularProgressIndicator(semanticsLabel: 'Loading'))
+          ? Center(child: CircularProgressIndicator(semanticsLabel: context.l10n.loading))
           : g == null
-              ? const Center(child: Text('This goal is in the trash or no longer exists.', key: Key('goal-gone')))
+              ? Center(child: Text(context.l10n.thisGoalIsInTheTrash, key: Key('goal-gone')))
               : _GoalBody(goal: g),
     );
   }
@@ -264,7 +265,7 @@ class GoalPage extends ConsumerWidget {
         ref.invalidate(trashedGoalsProvider);
         Navigator.of(context).pop();
         // LF-INV-GOAL-002: the linked tasks and events stay.
-        showMessage(context, '"${g.title}" moved to the trash. Its tasks and events are kept.');
+        showMessage(context, context.l10n.goalTrashedKeepsItems(g.title));
     }
   }
 }
@@ -282,7 +283,7 @@ class _GoalBody extends ConsumerWidget {
     final theme = Theme.of(context);
     return ListView(
       key: const Key('goal-page'),
-      padding: const EdgeInsets.only(bottom: 32),
+      padding: EdgeInsets.only(bottom: 32),
       children: [
         ListTile(
           title: Text([
@@ -294,31 +295,31 @@ class _GoalBody extends ConsumerWidget {
           subtitle: g.description == null ? null : Text(g.description!),
         ),
         if (archived)
-          const ListTile(
+          ListTile(
             leading: Icon(Icons.inventory_2_outlined),
-            title: Text('Archived: unarchive it to change it.'),
+            title: Text(context.l10n.archivedUnarchiveItToChangeIt),
           ),
-        Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: _ProgressBar(goal: g)),
+        Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: _ProgressBar(goal: g)),
         if (g.progressBasis == GoalProgressBasis.milestones)
-          const Padding(
+          Padding(
             padding: EdgeInsets.fromLTRB(16, 4, 16, 0),
-            child: Text('With milestones, progress counts the milestones you have ticked.'),
+            child: Text(context.l10n.withMilestonesProgressCountsTheMilestones),
           ),
-        const EditorSection('Milestones'),
+        EditorSection('Milestones'),
         if (g.milestones.isEmpty)
-          const ListTile(title: Text('No milestones. Without them, progress comes from the linked tasks and habits.')),
+          ListTile(title: Text(context.l10n.noMilestonesWithoutThemProgressComes)),
         for (final m in g.milestones)
           CheckboxListTile(
             key: ValueKey('milestone-${m.id}'),
             controlAffinity: ListTileControlAffinity.leading,
             value: m.isCompleted,
             title: Text(m.title),
-            subtitle: m.dueDate == null ? null : Text('Due ${formatDate(m.dueDate!, today: today)}'),
+            subtitle: m.dueDate == null ? null : Text(context.l10n.dueValue(formatDate(m.dueDate!, today: today))),
             onChanged: archived ? null : (v) => reportResult(context, service.setMilestoneDone(g.id, m.id, done: v == true)),
             secondary: archived
                 ? null
                 : PopupMenuButton<String>(
-                    tooltip: 'Actions for the milestone ${m.title}',
+                    tooltip: context.l10n.actionsForTheMilestoneTitle(m.title),
                     onSelected: (a) async {
                       if (a == 'remove') {
                         await reportResult(context, service.removeMilestone(g.id, m.id));
@@ -329,9 +330,9 @@ class _GoalBody extends ConsumerWidget {
                       if (input == null || !context.mounted) return;
                       await reportResult(context, service.updateMilestone(g.id, m.id, title: input.title, dueDate: input.dueDate));
                     },
-                    itemBuilder: (_) => const [
-                      PopupMenuItem(value: 'edit', child: Text('Edit…')),
-                      PopupMenuItem(value: 'remove', child: Text('Remove')),
+                    itemBuilder: (_) => [
+                      PopupMenuItem(value: 'edit', child: Text(context.l10n.edit)),
+                      PopupMenuItem(value: 'remove', child: Text(context.l10n.remove)),
                     ],
                   ),
           ),
@@ -348,12 +349,12 @@ class _GoalBody extends ConsumerWidget {
                   await reportResult(context, service.addMilestone(g.id, input.title, dueDate: input.dueDate));
                 },
                 icon: const Icon(Icons.add),
-                label: const Text('Add milestone'),
+                label: Text(context.l10n.addMilestone),
               ),
             ),
           ),
         const EditorSection('Linked tasks, habits and events'),
-        if (g.links.isEmpty) const ListTile(title: Text('Nothing linked yet.')),
+        if (g.links.isEmpty) ListTile(title: Text(context.l10n.nothingLinkedYet)),
         for (final l in g.links)
           ListTile(
             key: ValueKey('link-${l.itemId}'),
@@ -371,7 +372,7 @@ class _GoalBody extends ConsumerWidget {
             trailing: archived
                 ? null
                 : IconButton(
-                    tooltip: 'Unlink ${l.title ?? 'item'}',
+                    tooltip: context.l10n.goalUnlink(l.title ?? context.l10n.goalUnlinkItem),
                     icon: const Icon(Icons.link_off),
                     onPressed: () => reportResult(context, service.unlink(g.id, l.itemType, l.itemId)),
                   ),
@@ -384,13 +385,13 @@ class _GoalBody extends ConsumerWidget {
                 key: const Key('link-task'),
                 onPressed: () => _linkTask(context, ref),
                 icon: const Icon(Icons.add_task),
-                label: const Text('Link a task or habit'),
+                label: Text(context.l10n.linkATaskOrHabit),
               ),
               TextButton.icon(
                 key: const Key('link-event'),
                 onPressed: () => _linkEvent(context, ref),
                 icon: const Icon(Icons.event),
-                label: const Text('Link an event'),
+                label: Text(context.l10n.linkAnEvent),
               ),
             ]),
           ),
@@ -479,21 +480,21 @@ class _GoalsOfTaskDialog extends ConsumerWidget {
     final goals = ref.watch(goalsProvider(false));
     final service = ref.read(goalServiceProvider);
     return AlertDialog(
-      title: Text('Goals for $title'),
+      title: Text(context.l10n.goalsForTitle(title)),
       content: SizedBox(
         width: 400,
         child: goals.when(
-          loading: () => const Center(child: CircularProgressIndicator(semanticsLabel: 'Loading goals')),
-          error: (e, _) => const Text('Could not load the goals.'),
+          loading: () => Center(child: CircularProgressIndicator(semanticsLabel: context.l10n.loadingGoals)),
+          error: (e, _) => Text(context.l10n.couldNotLoadTheGoals),
           data: (list) => list.isEmpty
-              ? const Text('No goals yet. Add one in the Goals tab.', key: Key('task-goals-empty'))
+              ? Text(context.l10n.noGoalsYetAddOneIn, key: Key('task-goals-empty'))
               : ListView(shrinkWrap: true, children: [
                   for (final g in list)
                     CheckboxListTile(
                       key: ValueKey('task-goal-${g.id}'),
                       value: g.links.any((l) => l.itemType == GoalItemType.task && l.itemId == taskId),
                       title: Text(g.title),
-                      subtitle: Text('${goalKindLabel(g.kind)} · ${progressText(g)}'),
+                      subtitle: Text(context.l10n.twoPartsDot(goalKindLabel(g.kind), progressText(g))),
                       onChanged: (on) => reportResult(
                           context,
                           on == true
@@ -503,7 +504,7 @@ class _GoalsOfTaskDialog extends ConsumerWidget {
                 ]),
         ),
       ),
-      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+      actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.close))],
     );
   }
 }
@@ -546,12 +547,12 @@ class _DateField extends StatelessWidget {
         },
         trailing: date == null
             ? null
-            : IconButton(tooltip: 'Clear $label', icon: const Icon(Icons.clear), onPressed: () => onChanged(null)),
+            : IconButton(tooltip: context.l10n.clearLabel(label), icon: Icon(Icons.clear), onPressed: () => onChanged(null)),
       );
 }
 
 class _GoalDialog extends ConsumerStatefulWidget {
-  const _GoalDialog({this.initial});
+  _GoalDialog({this.initial});
   final GoalView? initial;
   @override
   ConsumerState<_GoalDialog> createState() => _GoalDialogState();
@@ -593,11 +594,11 @@ class _GoalDialogState extends ConsumerState<_GoalDialog> {
       content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         if (!editing)
           SegmentedButton<GoalKindInput>(
-            key: const Key('goal-kind'),
+            key: Key('goal-kind'),
             showSelectedIcon: false,
-            segments: const [
-              ButtonSegment(value: GoalKindInput.goal, label: Text('Goal'), icon: Icon(Icons.flag_outlined)),
-              ButtonSegment(value: GoalKindInput.project, label: Text('Project'), icon: Icon(Icons.work_outline)),
+            segments: [
+              ButtonSegment(value: GoalKindInput.goal, label: Text(context.l10n.goal), icon: Icon(Icons.flag_outlined)),
+              ButtonSegment(value: GoalKindInput.project, label: Text(context.l10n.project), icon: Icon(Icons.work_outline)),
             ],
             selected: {_kind},
             onSelectionChanged: (s) => setState(() => _kind = s.first),
@@ -607,21 +608,21 @@ class _GoalDialogState extends ConsumerState<_GoalDialog> {
           controller: _title,
           autofocus: true,
           maxLength: 200,
-          decoration: InputDecoration(labelText: 'Title', errorText: _error),
+          decoration: InputDecoration(labelText: context.l10n.title, errorText: _error),
         ),
         TextField(
           key: const Key('goal-description'),
           controller: _description,
           maxLines: 3,
           minLines: 1,
-          decoration: const InputDecoration(labelText: 'Description (optional)'),
+          decoration: InputDecoration(labelText: context.l10n.descriptionOptional),
         ),
         if (_kind == GoalKindInput.project)
-          _DateField(fieldKey: 'goal-start', label: 'Start', date: _start, today: today, onChanged: (d) => setState(() => _start = d)),
-        _DateField(fieldKey: 'goal-target', label: 'Target date', date: _target, today: today, onChanged: (d) => setState(() => _target = d)),
+          _DateField(fieldKey: 'goal-start', label: context.l10n.start, date: _start, today: today, onChanged: (d) => setState(() => _start = d)),
+        _DateField(fieldKey: 'goal-target', label: context.l10n.targetDate, date: _target, today: today, onChanged: (d) => setState(() => _target = d)),
       ]),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.cancel)),
         FilledButton(key: const Key('goal-save'), onPressed: _ok, child: Text(editing ? 'Save' : 'Create')),
       ],
     );
@@ -671,15 +672,15 @@ class _MilestoneDialogState extends State<_MilestoneDialog> {
             controller: _title,
             autofocus: true,
             maxLength: 200,
-            decoration: InputDecoration(labelText: 'Title', errorText: _error),
+            decoration: InputDecoration(labelText: context.l10n.title, errorText: _error),
             onSubmitted: (_) => _ok(),
           ),
           _DateField(
-              fieldKey: 'milestone-due', label: 'Due', date: _due, today: widget.today, onChanged: (d) => setState(() => _due = d)),
+              fieldKey: 'milestone-due', label: context.l10n.due, date: _due, today: widget.today, onChanged: (d) => setState(() => _due = d)),
         ]),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          FilledButton(key: const Key('milestone-save'), onPressed: _ok, child: const Text('Save')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.cancel)),
+          FilledButton(key: const Key('milestone-save'), onPressed: _ok, child: Text(context.l10n.save)),
         ],
       );
 }

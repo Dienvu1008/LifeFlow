@@ -7,7 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../messages.dart';
 import '../providers.dart';
-import '../widgets/schedule_fields.dart';
+import '../widgets/schedule_fields.dart';
+import '../l10n.dart';
 
 /// The device's calendar settings, or the built-in defaults.
 Future<PlanningSettings> readPlanningDefaults(WidgetRef ref) async {
@@ -203,16 +204,16 @@ class _ScheduleEditorPageState extends ConsumerState<ScheduleEditorPage> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          tooltip: 'Cancel',
+          tooltip: context.l10n.cancel,
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text('Schedule: ${widget.taskTitle}', overflow: TextOverflow.ellipsis),
+        title: Text(context.l10n.schedulePageTitle(widget.taskTitle), overflow: TextOverflow.ellipsis),
         actions: [
           TextButton(
             key: const Key('schedule-save'),
             onPressed: _busy ? null : _save,
-            child: const Text('Save'),
+            child: Text(context.l10n.save),
           ),
         ],
       ),
@@ -257,7 +258,7 @@ class _ScheduleEditorPageState extends ConsumerState<ScheduleEditorPage> {
                 key: const Key('schedule-remove'),
                 onPressed: _busy ? null : _remove,
                 icon: const Icon(Icons.event_busy),
-                label: const Text('Remove schedule'),
+                label: Text(context.l10n.removeSchedule),
               ),
             ),
           ],

@@ -1,7 +1,8 @@
 import 'package:application/application.dart';
 import 'package:flutter/material.dart';
 
-import 'layout.dart';
+import 'layout.dart';
+import 'l10n.dart';
 
 class _Destination {
   const _Destination(this.label, this.icon, this.selectedIcon);
@@ -43,7 +44,7 @@ Widget? shellMenuButton(BuildContext context) {
   if (open == null) return null;
   return IconButton(
     key: const Key('nav-menu'),
-    tooltip: 'Open navigation menu',
+    tooltip: context.l10n.openNavigationMenu,
     icon: const Icon(Icons.menu),
     onPressed: open,
   );
@@ -216,7 +217,7 @@ class DrawerProfileHeader extends StatelessWidget {
       container: true,
       button: true,
       selected: selected,
-      label: 'Profile: $name${p == null ? '' : ', ${statusOf(p)}'}. Open profiles',
+      label: p == null ? context.l10n.drawerProfileLabel(name) : context.l10n.drawerProfileLabelWithStatus(name, statusOf(p)),
       excludeSemantics: true,
       child: Material(
         key: const Key('drawer-profile'),
@@ -278,7 +279,7 @@ class StorageBanner extends StatelessWidget {
     return Semantics(
       container: true,
       liveRegion: true,
-      label: 'Storage warning. $message',
+      label: context.l10n.storageWarningMessage(message),
       child: Material(
         key: const Key('storage-banner'),
         color: background,

@@ -13,7 +13,8 @@ import '../habit_text.dart';
 import '../messages.dart';
 import '../providers.dart';
 import '../schedule_text.dart';
-import '../task_actions.dart';
+import '../task_actions.dart';
+import '../l10n.dart';
 import 'schedule_editor.dart' show EditorSection;
 
 Future<void> openHabitPage(BuildContext context, {required String taskId, required String title}) =>
@@ -41,12 +42,11 @@ Future<void> _withClosedPeriodConfirmation(BuildContext context, Future<CommandR
     final yes = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text('Change a closed period?'),
-        content: const Text('This period has ended and its result is saved. '
-            'The change will be judged with the target it had, and the change is recorded.'),
+        title: Text(context.l10n.changeAClosedPeriod),
+        content: Text(context.l10n.closedPeriodContent),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
-          FilledButton(key: const Key('closed-confirm'), onPressed: () => Navigator.pop(c, true), child: const Text('Change it')),
+          TextButton(onPressed: () => Navigator.pop(c, false), child: Text(context.l10n.cancel)),
+          FilledButton(key: const Key('closed-confirm'), onPressed: () => Navigator.pop(c, true), child: Text(context.l10n.changeIt)),
         ],
       ),
     );
@@ -68,14 +68,14 @@ class HabitPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-            tooltip: 'Close', icon: const Icon(Icons.close), onPressed: () => Navigator.of(context).pop()),
-        title: Text('Habit and target: $taskTitle', overflow: TextOverflow.ellipsis),
+            tooltip: context.l10n.close, icon: const Icon(Icons.close), onPressed: () => Navigator.of(context).pop()),
+        title: Text(context.l10n.habitPageTitle(taskTitle), overflow: TextOverflow.ellipsis),
       ),
       body: tracking.when(
-        loading: () => const Center(child: CircularProgressIndicator(semanticsLabel: 'Loading')),
-        error: (e, _) => const Center(child: Text('Could not load this task.')),
+        loading: () => Center(child: CircularProgressIndicator(semanticsLabel: context.l10n.loading)),
+        error: (e, _) => Center(child: Text(context.l10n.couldNotLoadThisTask)),
         data: (v) => v == null
-            ? const Center(child: Text('This task no longer exists.'))
+            ? Center(child: Text(context.l10n.thisTaskNoLongerExists))
             : _HabitBody(view: v),
       ),
     );
@@ -100,8 +100,8 @@ class _HabitBody extends ConsumerWidget {
         const EditorSection('Habit'),
         SwitchListTile(
           key: const Key('habit-switch'),
-          title: const Text('Track as a habit'),
-          subtitle: const Text('Each period is saved as done or missed (or achieved, with a target).'),
+          title: Text(context.l10n.trackAsAHabit),
+          subtitle: Text(context.l10n.eachPeriodIsSavedAsDone),
           value: v.isHabit,
           onChanged: (on) => reportResult(context, service.setHabit(v.taskId, isHabit: on)),
         ),
@@ -109,29 +109,29 @@ class _HabitBody extends ConsumerWidget {
           ListTile(
             key: const Key('habit-no-repeat'),
             leading: const Icon(Icons.repeat),
-            title: const Text('Habits usually repeat'),
-            subtitle: const Text('Without a repeat, this habit has one period.'),
+            title: Text(context.l10n.habitsUsuallyRepeat),
+            subtitle: Text(context.l10n.withoutARepeatThisHabitHas),
             trailing: TextButton(
               key: const Key('habit-repeat-daily'),
               onPressed: () => _repeatDaily(context, ref),
-              child: const Text('Every day'),
+              child: Text(context.l10n.everyDay),
             ),
           ),
         const EditorSection('Target'),
         ListTile(
           key: const Key('target-summary'),
           title: Text(target == null ? 'No target' : describeTarget(target)),
-          subtitle: target == null ? const Text('Add a target to measure progress.') : null,
+          subtitle: target == null ? Text(context.l10n.addATargetToMeasureProgress) : null,
           trailing: Wrap(spacing: 4, children: [
             if (target != null)
               IconButton(
                 key: const Key('target-remove'),
-                tooltip: 'Remove target',
+                tooltip: context.l10n.removeTarget,
                 icon: const Icon(Icons.delete_outline),
                 onPressed: () => reportResult(context, service.setTarget(v.taskId, null)),
               ),
             TextButton(
-              key: const Key('target-edit'),
+              key: Key('target-edit'),
               onPressed: () => _editTarget(context, ref),
               child: Text(target == null ? 'Set target' : 'Change'),
             ),
@@ -139,13 +139,13 @@ class _HabitBody extends ConsumerWidget {
         ),
         if (target != null)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            padding: EdgeInsets.fromLTRB(16, 4, 16, 8),
             child: SegmentedButton<CompletionMode>(
-              key: const Key('completion'),
+              key: Key('completion'),
               showSelectedIcon: false,
-              segments: const [
-                ButtonSegment(value: CompletionMode.manual, label: Text('I tick it')),
-                ButtonSegment(value: CompletionMode.automatic, label: Text('From measurements')),
+              segments: [
+                ButtonSegment(value: CompletionMode.manual, label: Text(context.l10n.iTickIt)),
+                ButtonSegment(value: CompletionMode.automatic, label: Text(context.l10n.fromMeasurements)),
               ],
               selected: {v.completion},
               onSelectionChanged: (s) => reportResult(context, service.setCompletion(v.taskId, s.first)),
@@ -163,16 +163,16 @@ class _HabitBody extends ConsumerWidget {
               key: const Key('measure-add'),
               onPressed: () => addMeasurement(context, ref, v),
               icon: const Icon(Icons.add),
-              label: const Text('Add'),
+              label: Text(context.l10n.add),
             ),
           ),
         ] else if (target != null)
           ListTile(
-            title: const Text('No running period'),
+            title: Text(context.l10n.noRunningPeriod),
             trailing: TextButton(
               key: const Key('measure-add'),
               onPressed: () => addMeasurement(context, ref, v),
-              child: const Text('Add a past value'),
+              child: Text(context.l10n.addAPastValue),
             ),
           ),
         if (v.isHabit || target != null) ...[
@@ -180,14 +180,14 @@ class _HabitBody extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Wrap(spacing: 8, runSpacing: 8, children: [
-              _Stat(key: const Key('stat-streak'), label: 'Current streak', value: '${v.streak}'),
-              _Stat(key: const Key('stat-30'), label: 'Last 30 days', value: formatRate(v.rate30)),
-              _Stat(key: const Key('stat-all'), label: 'All time', value: formatRate(v.rateAll)),
+              _Stat(key: const Key('stat-streak'), label: context.l10n.currentStreak, value: '${v.streak}'),
+              _Stat(key: const Key('stat-30'), label: context.l10n.last30Days, value: formatRate(v.rate30)),
+              _Stat(key: const Key('stat-all'), label: context.l10n.allTime, value: formatRate(v.rateAll)),
             ]),
           ),
           const EditorSection('History'),
           if (v.results.isEmpty)
-            const ListTile(title: Text('No ended periods yet.'))
+            ListTile(title: Text(context.l10n.noEndedPeriodsYet))
           else
             for (final r in v.results.take(60))
               ListTile(
@@ -206,7 +206,7 @@ class _HabitBody extends ConsumerWidget {
         if (target != null || v.measurements.isNotEmpty) ...[
           const EditorSection('Measurements'),
           if (v.measurements.isEmpty)
-            const ListTile(title: Text('No measurements yet.'))
+            ListTile(title: Text(context.l10n.noMeasurementsYet))
           else
             for (final m in v.measurements.take(100)) _MeasurementTile(view: v, m: m, today: today),
         ],
@@ -242,12 +242,12 @@ class _Stat extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
         container: true,
-        label: '$label: $value',
+        label: context.l10n.labelValue(label, value),
         excludeSemantics: true,
         child: Card(
           margin: EdgeInsets.zero,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(value, style: Theme.of(context).textTheme.titleLarge),
               Text(label, style: Theme.of(context).textTheme.bodySmall),
@@ -260,7 +260,7 @@ class _Stat extends StatelessWidget {
 enum _MeasureAction { correct, withdraw }
 
 class _MeasurementTile extends ConsumerWidget {
-  const _MeasurementTile({required this.view, required this.m, required this.today});
+  _MeasurementTile({required this.view, required this.m, required this.today});
   final TrackingView view;
   final MeasurementView m;
   final LocalDate today;
@@ -280,7 +280,7 @@ class _MeasurementTile extends ConsumerWidget {
       key: ValueKey('measurement-${m.id}'),
       dense: true,
       title: Text(value,
-          style: m.isCurrent || m.withdrawn ? null : const TextStyle(decoration: TextDecoration.lineThrough)),
+          style: m.isCurrent || m.withdrawn ? null : TextStyle(decoration: TextDecoration.lineThrough)),
       subtitle: Text([
         formatDate(m.date, today: today),
         if (status != null) status,
@@ -288,11 +288,11 @@ class _MeasurementTile extends ConsumerWidget {
       ].join(' · ')),
       trailing: m.isCurrent && !m.withdrawn
           ? PopupMenuButton<_MeasureAction>(
-              tooltip: 'Actions for the value ${formatValue(m.value)} of ${formatDate(m.date, today: today)}',
+              tooltip: context.l10n.measurementActions(formatValue(m.value), formatDate(m.date, today: today)),
               onSelected: (a) => _act(context, ref, a),
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: _MeasureAction.correct, child: Text('Correct…')),
-                PopupMenuItem(value: _MeasureAction.withdraw, child: Text('Withdraw')),
+              itemBuilder: (_) => [
+                PopupMenuItem(value: _MeasureAction.correct, child: Text(context.l10n.correct)),
+                PopupMenuItem(value: _MeasureAction.withdraw, child: Text(context.l10n.withdraw)),
               ],
             )
           : null,
@@ -306,7 +306,7 @@ class _MeasurementTile extends ConsumerWidget {
       final entry = await showDialog<_MeasurementEntry>(
           context: context,
           builder: (_) => _MeasurementDialog(
-              unit: view.target?.unit ?? '', today: today, initial: m.value, fixedDate: m.date, title: 'Correct the value'));
+              unit: view.target?.unit ?? '', today: today, initial: m.value, fixedDate: m.date, title: context.l10n.correctTheValue));
       if (entry == null || !context.mounted) return;
       value = entry.value;
     }
@@ -380,7 +380,7 @@ class _MeasurementDialogState extends State<_MeasurementDialog> {
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
             decoration: InputDecoration(
-                labelText: 'Value', suffixText: widget.unit.isEmpty ? null : widget.unit, errorText: _error),
+                labelText: context.l10n.value2, suffixText: widget.unit.isEmpty ? null : widget.unit, errorText: _error),
             onSubmitted: (_) => _ok(),
           ),
           if (widget.fixedDate == null) ...[
@@ -390,20 +390,20 @@ class _MeasurementDialogState extends State<_MeasurementDialog> {
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.event),
               title: Text(formatDate(_date, today: widget.today)),
-              subtitle: const Text('The day it counts for'),
+              subtitle: Text(context.l10n.theDayItCountsFor),
               onTap: _pickDate,
             ),
             TextField(
               key: const Key('measure-note'),
               controller: _note,
               maxLength: 500,
-              decoration: const InputDecoration(labelText: 'Note (optional)'),
+              decoration: InputDecoration(labelText: context.l10n.noteOptional),
             ),
           ],
         ]),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          FilledButton(key: const Key('measure-save'), onPressed: _ok, child: const Text('Save')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.cancel)),
+          FilledButton(key: const Key('measure-save'), onPressed: _ok, child: Text(context.l10n.save)),
         ],
       );
 }
@@ -462,13 +462,13 @@ class _TargetDialogState extends State<_TargetDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-        title: const Text('Target'),
+        title: Text(context.l10n.target),
         scrollable: true,
         content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           DropdownButtonFormField<TargetKind>(
             key: const Key('target-kind'),
             initialValue: _kind,
-            decoration: const InputDecoration(labelText: 'Type'),
+            decoration: InputDecoration(labelText: context.l10n.typeLabel),
             items: [for (final k in TargetKind.values) DropdownMenuItem(value: k, child: Text(targetKindLabel(k)))],
             onChanged: (k) => setState(() => _kind = k ?? _kind),
           ),
@@ -478,7 +478,7 @@ class _TargetDialogState extends State<_TargetDialog> {
             key: const Key('target-unit'),
             controller: _unit,
             maxLength: 40,
-            decoration: const InputDecoration(labelText: 'Unit'),
+            decoration: InputDecoration(labelText: context.l10n.unit),
           ),
           Wrap(spacing: 6, children: [
             for (final u in unitSuggestions)
@@ -492,7 +492,7 @@ class _TargetDialogState extends State<_TargetDialog> {
           DropdownButtonFormField<TargetAggregationKind>(
             key: const Key('target-aggregation'),
             initialValue: _aggregation,
-            decoration: const InputDecoration(labelText: 'Each period counts the'),
+            decoration: InputDecoration(labelText: context.l10n.eachPeriodCountsThe),
             items: [
               for (final a in TargetAggregationKind.values)
                 DropdownMenuItem(value: a, child: Text(aggregationLabel(a).toLowerCase())),
@@ -509,8 +509,8 @@ class _TargetDialogState extends State<_TargetDialog> {
             ),
         ]),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          FilledButton(key: const Key('target-save'), onPressed: _ok, child: const Text('Save')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.cancel)),
+          FilledButton(key: const Key('target-save'), onPressed: _ok, child: Text(context.l10n.save)),
         ],
       );
 }

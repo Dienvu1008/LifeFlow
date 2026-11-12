@@ -1,0 +1,548 @@
+{
+    "@@locale":  "en",
+    "profiles":  "Profiles",
+    "couldNotLoadProfiles":  "Could not load profiles.",
+    "profilesOnThisDevice":  "Profiles on this device",
+    "active":  "Active",
+    "signInToOpen":  "Sign in to open",
+    "switchLabel":  "Switch",
+    "deleteValue":  "Delete \"{value}\"?",
+    "@deleteValue":  {
+                         "placeholders":  {
+                                              "value":  {
+                                                            "type":  "Object"
+                                                        }
+                                          }
+                     },
+    "cancel":  "Cancel",
+    "deleteProfile":  "Delete profile",
+    "loadingProfiles":  "Loading profiles",
+    "deleteValue2":  "Delete {value}",
+    "@deleteValue2":  {
+                          "placeholders":  {
+                                               "value":  {
+                                                             "type":  "Object"
+                                                         }
+                                           }
+                      },
+    "appearance":  "Appearance",
+    "system":  "System",
+    "light":  "Light",
+    "dark":  "Dark",
+    "settings":  "Settings",
+    "tasks":  "Tasks",
+    "movingATaskWithSubtasksTo":  "Moving a task with subtasks to the trash",
+    "keptSubtasksMoveUpOneLevel":  "Kept subtasks move up one level.",
+    "thisSettingCouldNotBeLoaded":  "This setting could not be loaded.",
+    "askEveryTime":  "Ask every time",
+    "moveTheSubtasksToTheTrash":  "Move the subtasks to the trash too",
+    "keepTheSubtasks":  "Keep the subtasks",
+    "about":  "About",
+    "openSourceLicenses":  "Open-source licenses",
+    "theLicensesOfTheSoftwareLifeflow":  "The licenses of the software LifeFlow is built with.",
+    "calendar":  "Calendar",
+    "theseSettingsCouldNotBeLoaded":  "These settings could not be loaded.",
+    "weekStartsOn":  "Week starts on",
+    "monday":  "Monday",
+    "sunday":  "Sunday",
+    "newMonthlyRepeatsInAMonth":  "New monthly repeats in a month without that day",
+    "forExampleThe31stInApril":  "For example the 31st in April. Existing repeats keep their choice.",
+    "skipThatMonth":  "Skip that month",
+    "useTheLastDayOfThe":  "Use the last day of the month",
+    "mostItemsInOneView":  "Most items in one view",
+    "settingMaxOccurrences":  "{maxOccurrences}",
+    "@settingMaxOccurrences":  {
+                            "placeholders":  {
+                                                 "maxOccurrences":  {
+                                                                        "type":  "Object"
+                                                                    }
+                                             }
+                        },
+    "longestRangeInDays":  "Longest range in days",
+    "settingMaxWindowDays":  "{maxWindowDays}",
+    "@settingMaxWindowDays":  {
+                           "placeholders":  {
+                                                "maxWindowDays":  {
+                                                                      "type":  "Object"
+                                                                  }
+                                            }
+                       },
+    "reminders":  "Reminders",
+    "theReminderStatusCouldNotBe":  "The reminder status could not be read.",
+    "thisDeviceDoesNotShowReminders":  "This device does not show reminders.",
+    "notificationsAreOffForLifeflow":  "Notifications are off for LifeFlow",
+    "turnLifeflowOnInYourSystem":  "Turn LifeFlow on in your system\u0027s notification settings to see reminders.",
+    "remindersWillNotShowUntilYou":  "Reminders will not show until you allow them.",
+    "allow":  "Allow",
+    "remindersAreOn":  "Reminders are on",
+    "remindersMayArriveAFewMinutes":  "Reminders may arrive a few minutes late",
+    "allowExactRemindersToGetThem":  "Allow exact reminders to get them at the minute.",
+    "save":  "Save",
+    "fromMinToMax":  "From {min} to {max}",
+    "@fromMinToMax":  {
+                          "placeholders":  {
+                                               "min":  {
+                                                           "type":  "Object"
+                                                       },
+                                               "max":  {
+                                                           "type":  "Object"
+                                                       }
+                                           }
+                      },
+    "account":  "Account",
+    "signOut":  "Sign out",
+    "signIn":  "Sign in",
+    "signInIsNotConfiguredIn":  "Sign-in is not configured in this build.",
+    "signOut2":  "Sign out?",
+    "moveYourDataToThisAccount":  "Move your data to this account?",
+    "newSpace":  "New space",
+    "moveMyData":  "Move my data",
+    "continueWithGithub":  "Continue with GitHub",
+    "orUseEmail":  "or use email",
+    "signingIn":  "Signing in",
+    "email":  "Email",
+    "password":  "Password",
+    "yourData":  "Your data",
+    "exportThisProfile":  "Export this profile",
+    "restoreFromAFile":  "Restore from a file",
+    "undoLastRestore":  "Undo last restore",
+    "exportThisProfile2":  "Export this profile?",
+    "exportLabel":  "Export",
+    "thisFileDiffersFromThisProfile":  "This file differs from this profile",
+    "restoreOnlyInFile":  "Only in the file: {onlyInFile}",
+    "@restoreOnlyInFile":  {
+                                     "placeholders":  {
+                                                          "onlyInFile":  {
+                                                                             "type":  "Object"
+                                                                         }
+                                                      }
+                                 },
+    "restoreOnlyOnDevice":  "Only on this device: {onlyOnDevice}",
+    "@restoreOnlyOnDevice":  {
+                                          "placeholders":  {
+                                                               "onlyOnDevice":  {
+                                                                                    "type":  "Object"
+                                                                                }
+                                                           }
+                                      },
+    "overwriteEverything":  "Overwrite everything",
+    "merge":  "Merge",
+    "useTheNewerVersion":  "Use the newer version",
+    "addWhatIsOnlyInThe":  "Add what is only in the file",
+    "someSubtasksWouldNotFit":  "Some subtasks would not fit",
+    "keepThisDeviceSParents":  "Keep this device\u0027s parents",
+    "ok":  "OK",
+    "aFocusSessionIsRunning":  "A focus session is running",
+    "endItFirstOnlyOneSession":  "End it first: only one session can run at a time.",
+    "openIt":  "Open it",
+    "endTheSession":  "End the session?",
+    "keepGoing":  "Keep going",
+    "pomodoro":  "Pomodoro",
+    "stopwatch":  "Stopwatch",
+    "countsUpUntilYouEndIt":  "Counts up until you end it.",
+    "start":  "Start",
+    "focus":  "Focus",
+    "timeIsUp":  "Time is up",
+    "paused":  "Paused",
+    "focusedValue":  "Focused {value}",
+    "@focusedValue":  {
+                          "placeholders":  {
+                                               "value":  {
+                                                             "type":  "Object"
+                                                         }
+                                           }
+                      },
+    "end":  "End",
+    "cancelTheSession":  "Cancel the session?",
+    "nothingIsRecorded":  "Nothing is recorded.",
+    "keepIt":  "Keep it",
+    "cancelIt":  "Cancel it",
+    "cancelSession":  "Cancel session",
+    "yourStopwatchIsStillRunning":  "Your stopwatch is still running",
+    "endNow":  "End now",
+    "resume":  "Resume",
+    "yourPomodoroEndedWhileLifeflowWas":  "Your pomodoro ended while LifeFlow was closed",
+    "discard":  "Discard",
+    "countUntilNow":  "Count until now",
+    "countUntilItEnded":  "Count until it ended",
+    "aFocusSessionCouldNotBe":  "A focus session could not be recovered",
+    "minutes":  "Minutes",
+    "close":  "Close",
+    "endFocus":  "End focus",
+    "changeAClosedPeriod":  "Change a closed period?",
+    "changeIt":  "Change it",
+    "habitPageTitle":  "Habit and target: {taskTitle}",
+    "@habitPageTitle":  {
+                                     "placeholders":  {
+                                                          "taskTitle":  {
+                                                                            "type":  "Object"
+                                                                        }
+                                                      }
+                                 },
+    "couldNotLoadThisTask":  "Could not load this task.",
+    "thisTaskNoLongerExists":  "This task no longer exists.",
+    "trackAsAHabit":  "Track as a habit",
+    "eachPeriodIsSavedAsDone":  "Each period is saved as done or missed (or achieved, with a target).",
+    "habitsUsuallyRepeat":  "Habits usually repeat",
+    "withoutARepeatThisHabitHas":  "Without a repeat, this habit has one period.",
+    "everyDay":  "Every day",
+    "addATargetToMeasureProgress":  "Add a target to measure progress.",
+    "iTickIt":  "I tick it",
+    "fromMeasurements":  "From measurements",
+    "add":  "Add",
+    "noRunningPeriod":  "No running period",
+    "addAPastValue":  "Add a past value",
+    "noEndedPeriodsYet":  "No ended periods yet.",
+    "noMeasurementsYet":  "No measurements yet.",
+    "correct":  "Correct…",
+    "withdraw":  "Withdraw",
+    "theDayItCountsFor":  "The day it counts for",
+    "target":  "Target",
+    "loading":  "Loading",
+    "removeTarget":  "Remove target",
+    "currentStreak":  "Current streak",
+    "last30Days":  "Last 30 days",
+    "allTime":  "All time",
+    "labelValue":  "{label}: {value}",
+    "@labelValue":  {
+                        "placeholders":  {
+                                             "label":  {
+                                                           "type":  "Object"
+                                                       },
+                                             "value":  {
+                                                           "type":  "Object"
+                                                       }
+                                         }
+                    },
+    "measurementActions":  "Actions for the value {value} of {value2}",
+    "@measurementActions":  {
+                                       "placeholders":  {
+                                                            "value":  {
+                                                                          "type":  "Object"
+                                                                      },
+                                                            "value2":  {
+                                                                           "type":  "Object"
+                                                                       }
+                                                        }
+                                   },
+    "correctTheValue":  "Correct the value",
+    "value2":  "Value",
+    "noteOptional":  "Note (optional)",
+    "typeLabel":  "Type",
+    "unit":  "Unit",
+    "eachPeriodCountsThe":  "Each period counts the",
+    "goals":  "Goals",
+    "archived":  "Archived",
+    "trash":  "Trash",
+    "couldNotLoadTheGoals":  "Could not load the goals.",
+    "restore":  "Restore",
+    "edit":  "Edit…",
+    "markAsDone":  "Mark as done",
+    "markAsActive":  "Mark as active",
+    "archive":  "Archive",
+    "unarchive":  "Unarchive",
+    "moveToTrash":  "Move to trash",
+    "thisGoalIsInTheTrash":  "This goal is in the trash or no longer exists.",
+    "archivedUnarchiveItToChangeIt":  "Archived: unarchive it to change it.",
+    "withMilestonesProgressCountsTheMilestones":  "With milestones, progress counts the milestones you have ticked.",
+    "noMilestonesWithoutThemProgressComes":  "No milestones. Without them, progress comes from the linked tasks and habits.",
+    "dueValue":  "Due {value}",
+    "@dueValue":  {
+                      "placeholders":  {
+                                           "value":  {
+                                                         "type":  "Object"
+                                                     }
+                                       }
+                  },
+    "remove":  "Remove",
+    "addMilestone":  "Add milestone",
+    "nothingLinkedYet":  "Nothing linked yet.",
+    "linkATaskOrHabit":  "Link a task or habit",
+    "linkAnEvent":  "Link an event",
+    "goalsForTitle":  "Goals for {title}",
+    "@goalsForTitle":  {
+                           "placeholders":  {
+                                                "title":  {
+                                                              "type":  "Object"
+                                                          }
+                                            }
+                       },
+    "noGoalsYetAddOneIn":  "No goals yet. Add one in the Goals tab.",
+    "twoPartsDot":  "{value} · {value2}",
+    "@twoPartsDot":  {
+                         "placeholders":  {
+                                              "value":  {
+                                                            "type":  "Object"
+                                                        },
+                                              "value2":  {
+                                                             "type":  "Object"
+                                                         }
+                                          }
+                     },
+    "goal":  "Goal",
+    "project":  "Project",
+    "newGoalOrProject":  "New goal or project",
+    "loadingGoals":  "Loading goals",
+    "progressValue":  "Progress: {value}",
+    "@progressValue":  {
+                           "placeholders":  {
+                                                "value":  {
+                                                              "type":  "Object"
+                                                          }
+                                            }
+                       },
+    "actionsForTitle":  "Actions for {title}",
+    "@actionsForTitle":  {
+                             "placeholders":  {
+                                                  "title":  {
+                                                                "type":  "Object"
+                                                            }
+                                              }
+                         },
+    "actionsForTheMilestoneTitle":  "Actions for the milestone {title}",
+    "@actionsForTheMilestoneTitle":  {
+                                         "placeholders":  {
+                                                              "title":  {
+                                                                            "type":  "Object"
+                                                                        }
+                                                          }
+                                     },
+    "clearLabel":  "Clear {label}",
+    "@clearLabel":  {
+                        "placeholders":  {
+                                             "label":  {
+                                                           "type":  "Object"
+                                                       }
+                                         }
+                    },
+    "title":  "Title",
+    "descriptionOptional":  "Description (optional)",
+    "targetDate":  "Target date",
+    "due":  "Due",
+    "goalTrashedKeepsItems":  "\"{title}\" moved to the trash. Its tasks and events are kept.",
+    "@goalTrashedKeepsItems":  {
+                                     "placeholders":  {
+                                                          "title":  {
+                                                                        "type":  "Object"
+                                                                    }
+                                                      }
+                                 },
+    "eventSavedRemindersFailed":  "Event saved; its reminders were not: {value}",
+    "@eventSavedRemindersFailed":  {
+                                           "placeholders":  {
+                                                                "value":  {
+                                                                              "type":  "Object"
+                                                                          }
+                                                            }
+                                       },
+    "eventMovedToTheTrash":  "Event moved to the trash.",
+    "allDayAllDayEventsNever":  "All day. All-day events never count as overlapping.",
+    "noCalendar":  "No calendar",
+    "undo":  "Undo",
+    "locationOptional":  "Location (optional)",
+    "schedulePageTitle":  "Schedule: {taskTitle}",
+    "@schedulePageTitle":  {
+                               "placeholders":  {
+                                                    "taskTitle":  {
+                                                                      "type":  "Object"
+                                                                  }
+                                                }
+                           },
+    "removeSchedule":  "Remove schedule",
+    "calendars":  "Calendars",
+    "couldNotLoadTheCalendars":  "Could not load the calendars.",
+    "noCalendarsYetEventsCanAlso":  "No calendars yet. Events can also be without a calendar.",
+    "moveNameToTheTrash":  "Move \"{name}\" to the trash?",
+    "@moveNameToTheTrash":  {
+                                "placeholders":  {
+                                                     "name":  {
+                                                                  "type":  "Object"
+                                                              }
+                                                 }
+                            },
+    "itsEventsStayWithoutACalendar":  "Its events stay, without a calendar.",
+    "newCalendar":  "New calendar",
+    "editName":  "Edit {name}",
+    "@editName":  {
+                      "placeholders":  {
+                                           "name":  {
+                                                        "type":  "Object"
+                                                    }
+                                       }
+                  },
+    "editCalendar":  "Edit calendar",
+    "moveNameToTheTrash2":  "Move {name} to the trash",
+    "@moveNameToTheTrash2":  {
+                                 "placeholders":  {
+                                                      "name":  {
+                                                                   "type":  "Object"
+                                                               }
+                                                  }
+                             },
+    "name":  "Name",
+    "timeZone":  "Time zone",
+    "repeat":  "Repeat",
+    "every":  "Every",
+    "withNoDayChosenItRepeats":  "With no day chosen it repeats on the start\u0027s weekday.",
+    "lastDate":  "Last date",
+    "thisDevice":  "This device",
+    "custom":  "Custom…",
+    "atADateAndTime":  "At a date and time…",
+    "addReminder":  "Add reminder",
+    "setADateToBeReminded":  "Set a date to be reminded before it.",
+    "remindBefore":  "Remind before",
+    "labelTime":  "{label} time",
+    "@labelTime":  {
+                       "placeholders":  {
+                                            "label":  {
+                                                          "type":  "Object"
+                                                      }
+                                        }
+                   },
+    "removeLabelTime":  "Remove {label} time",
+    "@removeLabelTime":  {
+                             "placeholders":  {
+                                                  "label":  {
+                                                                "type":  "Object"
+                                                            }
+                                              }
+                         },
+    "removeLabel":  "Remove {label}",
+    "@removeLabel":  {
+                         "placeholders":  {
+                                              "label":  {
+                                                            "type":  "Object"
+                                                        }
+                                          }
+                     },
+    "number":  "Number",
+    "times":  "Times",
+    "search":  "Search",
+    "remindAt":  "Remind at",
+    "openNavigationMenu":  "Open navigation menu",
+    "storageWarningMessage":  "Storage warning. {message}",
+    "@storageWarningMessage":  {
+                                   "placeholders":  {
+                                                        "message":  {
+                                                                        "type":  "Object"
+                                                                    }
+                                                    }
+                               },
+    "restoreInBothDifferent":  "In both, but different: {differing} (newer in the file: {newerInFile})",
+    "@restoreInBothDifferent":  {
+                                    "placeholders":  {
+                                                         "differing":  {
+                                                                           "type":  "Object"
+                                                                       },
+                                                         "newerInFile":  {
+                                                                             "type":  "Object"
+                                                                         }
+                                                     }
+                                },
+    "restoreOverwriteHint":  "This profile becomes exactly the file. Items only on this device move to the trash.",
+    "restoreMergeHint":  "Keep this device\u0027s data and take from the file what you choose below.",
+    "restoreNewerHint":  "For items in both, keep the one changed most recently.",
+    "restoreUndoHint":  "The current data is kept, so you can undo this restore afterwards.",
+    "focusEndQuestion":  "Focused for {duration}. Saving it records the time you worked; it does not complete the task.",
+    "@focusEndQuestion":  {
+                              "placeholders":  {
+                                                   "duration":  {
+                                                                    "type":  "Object"
+                                                                }
+                                               }
+                          },
+    "timeIsUpLower":  "time is up",
+    "focusBarLabel":  "Focus: {what}, {time}. Open",
+    "@focusBarLabel":  {
+                           "placeholders":  {
+                                                "what":  {
+                                                             "type":  "Object"
+                                                         },
+                                                "time":  {
+                                                             "type":  "Object"
+                                                         }
+                                            }
+                       },
+    "focusBarLabelPaused":  "Focus: {what}, {time}, paused. Open",
+    "@focusBarLabelPaused":  {
+                                 "placeholders":  {
+                                                      "what":  {
+                                                                   "type":  "Object"
+                                                               },
+                                                      "time":  {
+                                                                   "type":  "Object"
+                                                               }
+                                                  }
+                             },
+    "focusBarText":  "{time} · {what}",
+    "@focusBarText":  {
+                          "placeholders":  {
+                                               "time":  {
+                                                            "type":  "Object"
+                                                        },
+                                               "what":  {
+                                                            "type":  "Object"
+                                                        }
+                                           }
+                      },
+    "focusBarTextPaused":  "{time} · {what} · paused",
+    "@focusBarTextPaused":  {
+                                "placeholders":  {
+                                                     "time":  {
+                                                                  "type":  "Object"
+                                                              },
+                                                     "what":  {
+                                                                  "type":  "Object"
+                                                              }
+                                                 }
+                            },
+    "focusOverdueContent":  "{title}: {minutes} minutes. How should it be saved?",
+    "@focusOverdueContent":  {
+                                 "placeholders":  {
+                                                      "title":  {
+                                                                    "type":  "Object"
+                                                                },
+                                                      "minutes":  {
+                                                                      "type":  "Object"
+                                                                  }
+                                                  }
+                             },
+    "focusUnrecoverableContent":  "It is kept as it was stored, and nothing was recorded for it ({reason}). You can start a new session.",
+    "@focusUnrecoverableContent":  {
+                                       "placeholders":  {
+                                                            "reason":  {
+                                                                           "type":  "Object"
+                                                                       }
+                                                        }
+                                   },
+    "eventRepeatHint":  "Changes here apply to every time this event repeats. To change one time only, use its actions in the calendar.",
+    "closedPeriodContent":  "This period has ended and its result is saved. The change will be judged with the target it had, and the change is recorded.",
+    "goalUnlink":  "Unlink {item}",
+    "@goalUnlink":  {
+                        "placeholders":  {
+                                             "item":  {
+                                                          "type":  "Object"
+                                                      }
+                                         }
+                    },
+    "goalUnlinkItem":  "item",
+    "drawerProfileLabel":  "Profile: {name}. Open profiles",
+    "@drawerProfileLabel":  {
+                                "placeholders":  {
+                                                     "name":  {
+                                                                  "type":  "Object"
+                                                              }
+                                                 }
+                            },
+    "drawerProfileLabelWithStatus":  "Profile: {name}, {status}. Open profiles",
+    "@drawerProfileLabelWithStatus":  {
+                                          "placeholders":  {
+                                                               "name":  {
+                                                                            "type":  "Object"
+                                                                        },
+                                                               "status":  {
+                                                                              "type":  "Object"
+                                                                          }
+                                                           }
+                                      }
+}

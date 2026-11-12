@@ -5,7 +5,8 @@ import 'package:application/application.dart';
 import 'package:flutter/material.dart';
 import 'package:foundation/foundation.dart';
 
-import '../schedule_text.dart';
+import '../schedule_text.dart';
+import '../l10n.dart';
 
 /// A date with an optional time, as edited.
 class PointDraft {
@@ -117,7 +118,7 @@ class PointField extends StatelessWidget {
                     final t = p.time ?? TimeOfDayValue(9, 0);
                     final picked = await showTimePicker(
                         context: context,
-                        helpText: '$label time',
+                        helpText: context.l10n.labelTime(label),
                         initialTime: TimeOfDay(hour: t.hour, minute: t.minute));
                     if (picked != null) {
                       p.time = TimeOfDayValue(picked.hour, picked.minute);
@@ -128,7 +129,7 @@ class PointField extends StatelessWidget {
               if (p.time != null)
                 IconButton(
                   key: Key('$k-clear-time'),
-                  tooltip: 'Remove $label time',
+                  tooltip: context.l10n.removeLabelTime(label),
                   icon: const Icon(Icons.timer_off_outlined),
                   onPressed: () {
                     p.time = null;
@@ -138,7 +139,7 @@ class PointField extends StatelessWidget {
               if (d != null && removable)
                 IconButton(
                   key: Key('$k-clear'),
-                  tooltip: 'Remove $label',
+                  tooltip: context.l10n.removeLabel(label),
                   icon: const Icon(Icons.clear),
                   onPressed: () {
                     p.date = null;
@@ -172,7 +173,7 @@ class ZoneField extends StatelessWidget {
   Widget build(BuildContext context) => ListTile(
         key: const Key('schedule-zone'),
         leading: const Icon(Icons.public),
-        title: const Text('Time zone'),
+        title: Text(context.l10n.timeZone),
         subtitle: Text(zone == deviceZone ? '$zone (this device)' : zone),
         onTap: () async {
           final z = await showDialog<String>(
@@ -294,7 +295,7 @@ class _RepeatFieldsState extends State<RepeatFields> {
       children: [
         SwitchListTile(
           key: const Key('repeat-switch'),
-          title: const Text('Repeat'),
+          title: Text(context.l10n.repeat),
           value: r.on,
           onChanged: (v) => setState(() => r.on = v),
         ),
@@ -310,7 +311,7 @@ class _RepeatFieldsState extends State<RepeatFields> {
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
         child: Row(
           children: [
-            const Text('Every'),
+            Text(context.l10n.every),
             const SizedBox(width: 12),
             SizedBox(
               width: 72,
@@ -318,7 +319,7 @@ class _RepeatFieldsState extends State<RepeatFields> {
                 key: const Key('repeat-interval'),
                 controller: r.interval,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Number'),
+                decoration: InputDecoration(labelText: context.l10n.number),
                 onChanged: (_) => setState(() {}),
               ),
             ),
@@ -361,9 +362,9 @@ class _RepeatFieldsState extends State<RepeatFields> {
             ],
           ),
         ),
-        const Padding(
+        Padding(
           padding: EdgeInsets.fromLTRB(16, 4, 16, 0),
-          child: Text('With no day chosen it repeats on the start\'s weekday.'),
+          child: Text(context.l10n.withNoDayChosenItRepeats),
         ),
         if (n > 1)
           _choice<Weekday>('Weeks start on', r.weekStart, (v) => r.weekStart = v,
@@ -395,7 +396,7 @@ class _RepeatFieldsState extends State<RepeatFields> {
         ListTile(
           key: const Key('repeat-until'),
           leading: const Icon(Icons.event),
-          title: const Text('Last date'),
+          title: Text(context.l10n.lastDate),
           subtitle: Text(r.until == null ? 'Choose a date' : formatDateLong(r.until!, today: widget.today)),
           onTap: () async {
             final picked = await pickLocalDate(context,
@@ -412,7 +413,7 @@ class _RepeatFieldsState extends State<RepeatFields> {
               key: const Key('repeat-count'),
               controller: r.count,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Times'),
+              decoration: InputDecoration(labelText: context.l10n.times),
             ),
           ),
         ),
@@ -472,7 +473,7 @@ class _ZoneDialogState extends State<ZoneDialog> {
         if (z != widget.device) z,
     ].where((z) => q.isEmpty || z.toLowerCase().contains(q)).toList();
     return AlertDialog(
-      title: const Text('Time zone'),
+      title: Text(context.l10n.timeZone),
       content: SizedBox(
         width: 400,
         height: 420,
@@ -481,7 +482,7 @@ class _ZoneDialogState extends State<ZoneDialog> {
             TextField(
               key: const Key('zone-search'),
               autofocus: true,
-              decoration: const InputDecoration(labelText: 'Search', prefixIcon: Icon(Icons.search)),
+              decoration: InputDecoration(labelText: context.l10n.search, prefixIcon: Icon(Icons.search)),
               onChanged: (v) => setState(() => _query = v.trim()),
             ),
             const SizedBox(height: 8),
@@ -493,7 +494,7 @@ class _ZoneDialogState extends State<ZoneDialog> {
                   return ListTile(
                     key: Key('zone-$z'),
                     title: Text(z),
-                    subtitle: z == widget.device ? const Text('This device') : null,
+                    subtitle: z == widget.device ? Text(context.l10n.thisDevice) : null,
                     selected: z == widget.current,
                     trailing: z == widget.current ? const Icon(Icons.check) : null,
                     onTap: () => Navigator.pop(context, z),
@@ -505,7 +506,7 @@ class _ZoneDialogState extends State<ZoneDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.cancel)),
       ],
     );
   }
@@ -572,7 +573,7 @@ class ReminderFields extends StatelessWidget {
               if (!full)
                 PopupMenuButton<int>(
                   key: const Key('reminder-add'),
-                  tooltip: 'Add reminder',
+                  tooltip: context.l10n.addReminder,
                   onSelected: (v) async {
                     final ReminderInput? r = switch (v) {
                       -1 => await _custom(context),
@@ -591,20 +592,20 @@ class ReminderFields extends StatelessWidget {
                           child: Text(describeReminder(RemindMinutesBefore(m),
                               anchor: a!, allDay: allDay, today: today)),
                         ),
-                    if (a != null) const PopupMenuItem(value: -1, child: Text('Custom…')),
-                    const PopupMenuItem(value: -2, child: Text('At a date and time…')),
+                    if (a != null) PopupMenuItem(value: -1, child: Text(context.l10n.custom)),
+                    PopupMenuItem(value: -2, child: Text(context.l10n.atADateAndTime)),
                   ],
-                  child: const Chip(
+                  child: Chip(
                     avatar: Icon(Icons.add_alert_outlined, size: 18),
-                    label: Text('Add reminder'),
+                    label: Text(context.l10n.addReminder),
                   ),
                 ),
             ],
           ),
           if (a == null)
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(top: 4),
-              child: Text('Set a date to be reminded before it.'),
+              child: Text(context.l10n.setADateToBeReminded),
             ),
           if (note != null)
             Padding(
@@ -629,7 +630,7 @@ class ReminderFields extends StatelessWidget {
     final d = await pickLocalDate(context, today: today, help: 'Remind on');
     if (d == null || !context.mounted) return null;
     final t = await showTimePicker(
-        context: context, helpText: 'Remind at', initialTime: const TimeOfDay(hour: 9, minute: 0));
+        context: context, helpText: context.l10n.remindAt, initialTime: const TimeOfDay(hour: 9, minute: 0));
     if (t == null) return null;
     // The device's local time is the device zone (D10).
     return RemindAtInstant(Instant(DateTime(d.year, d.month, d.day, t.hour, t.minute).toUtc()));
@@ -668,7 +669,7 @@ class _OffsetDialogState extends State<_OffsetDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-        title: const Text('Remind before'),
+        title: Text(context.l10n.remindBefore),
         content: Row(
           children: [
             SizedBox(
@@ -692,8 +693,8 @@ class _OffsetDialogState extends State<_OffsetDialog> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          FilledButton(onPressed: _submit, child: const Text('Add')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.cancel)),
+          FilledButton(onPressed: _submit, child: Text(context.l10n.add)),
         ],
       );
 }

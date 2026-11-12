@@ -61,6 +61,7 @@ pub:gotrue 2.27.3 MIT
 pub:hooks 2.0.2 BSD-3-Clause
 pub:http 1.6.0 BSD-3-Clause
 pub:http_parser 4.1.2 BSD-3-Clause
+pub:intl 0.20.3 BSD-3-Clause
 pub:jni 1.1.2 BSD-3-Clause
 pub:jni_flutter 1.0.4+1 BSD-3-Clause
 pub:jni_util 1.0.0 BSD-3-Clause

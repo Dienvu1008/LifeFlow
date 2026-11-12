@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers.dart';
-import '../task_actions.dart';
+import '../task_actions.dart';
+import '../l10n.dart';
 
 /// Colours offered for a calendar (ARGB), with names for assistive tech.
 const calendarPalette = <(int, String)>[
@@ -26,19 +27,19 @@ class CalendarsDialog extends ConsumerWidget {
     final calendars = ref.watch(calendarsProvider);
     final service = ref.read(calendarServiceProvider);
     return AlertDialog(
-      title: const Text('Calendars'),
+      title: Text(context.l10n.calendars),
       content: SizedBox(
         width: 420,
         child: calendars.when(
           loading: () => const LinearProgressIndicator(),
-          error: (_, __) => const Text('Could not load the calendars.'),
+          error: (_, __) => Text(context.l10n.couldNotLoadTheCalendars),
           data: (list) => Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (list.isEmpty)
-                const Padding(
+                Padding(
                   padding: EdgeInsets.only(bottom: 8),
-                  child: Text('No calendars yet. Events can also be without a calendar.'),
+                  child: Text(context.l10n.noCalendarsYetEventsCanAlso),
                 ),
               Flexible(
                 child: ListView(
@@ -54,31 +55,31 @@ class CalendarsDialog extends ConsumerWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              tooltip: 'Edit ${c.name}',
+                              tooltip: context.l10n.editName(c.name),
                               icon: const Icon(Icons.edit_outlined),
                               onPressed: () async {
                                 final r = await showDialog<(String, int)>(
                                     context: context,
-                                    builder: (_) => _CalendarForm(title: 'Edit calendar', name: c.name, color: c.color));
+                                    builder: (_) => _CalendarForm(title: context.l10n.editCalendar, name: c.name, color: c.color));
                                 if (r == null || !context.mounted) return;
                                 await reportResult(context, service.update(c.id, name: r.$1, color: r.$2));
                               },
                             ),
                             IconButton(
-                              tooltip: 'Move ${c.name} to the trash',
+                              tooltip: context.l10n.moveNameToTheTrash2(c.name),
                               icon: const Icon(Icons.delete_outline),
                               onPressed: () async {
                                 final yes = await showDialog<bool>(
                                   context: context,
                                   builder: (ctx) => AlertDialog(
-                                    title: Text('Move "${c.name}" to the trash?'),
-                                    content: const Text('Its events stay, without a calendar.'),
+                                    title: Text(context.l10n.moveNameToTheTrash(c.name)),
+                                    content: Text(context.l10n.itsEventsStayWithoutACalendar),
                                     actions: [
                                       TextButton(
-                                          onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                                          onPressed: () => Navigator.pop(ctx, false), child: Text(context.l10n.cancel)),
                                       FilledButton(
                                           onPressed: () => Navigator.pop(ctx, true),
-                                          child: const Text('Move to trash')),
+                                          child: Text(context.l10n.moveToTrash)),
                                     ],
                                   ),
                                 );
@@ -100,16 +101,16 @@ class CalendarsDialog extends ConsumerWidget {
         TextButton.icon(
           key: const Key('calendar-add'),
           icon: const Icon(Icons.add),
-          label: const Text('New calendar'),
+          label: Text(context.l10n.newCalendar),
           onPressed: () async {
             final r = await showDialog<(String, int)>(
                 context: context,
-                builder: (_) => _CalendarForm(title: 'New calendar', name: '', color: calendarPalette.first.$1));
+                builder: (_) => _CalendarForm(title: context.l10n.newCalendar, name: '', color: calendarPalette.first.$1));
             if (r == null || !context.mounted) return;
             await reportResult(context, service.create(r.$1, color: r.$2));
           },
         ),
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.close)),
       ],
     );
   }
@@ -156,7 +157,7 @@ class _CalendarFormState extends State<_CalendarForm> {
               key: const Key('calendar-name'),
               controller: _c,
               autofocus: true,
-              decoration: InputDecoration(labelText: 'Name', errorText: _error),
+              decoration: InputDecoration(labelText: context.l10n.name, errorText: _error),
               onSubmitted: (_) => _submit(),
             ),
             const SizedBox(height: 16),
@@ -176,7 +177,13 @@ class _CalendarFormState extends State<_CalendarForm> {
                       child: CircleAvatar(
                         radius: 16,
                         backgroundColor: Color(argb),
-                        child: argb == _color ? const Icon(Icons.check, color: Colors.white, size: 18) : null,
+                        child: argb == _color
+                  ? Icon(Icons.check,
+                      color: ThemeData.estimateBrightnessForColor(Color(argb)) == Brightness.dark
+                          ? Colors.white
+                          : Colors.black,
+                      size: 18)
+                  : null,
                       ),
                     ),
                   ),
@@ -185,8 +192,8 @@ class _CalendarFormState extends State<_CalendarForm> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          FilledButton(onPressed: _submit, child: const Text('Save')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.cancel)),
+          FilledButton(onPressed: _submit, child: Text(context.l10n.save)),
         ],
       );
 }

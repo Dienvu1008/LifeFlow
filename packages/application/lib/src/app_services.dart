@@ -60,6 +60,9 @@ abstract interface class TaskService {
   Future<CommandResult> trash(String id, {bool withSubtasks = false});
 }
 
+/// The app's brightness (device setting, P03 UX U1).
+enum ThemePreference { system, light, dark }
+
 /// What happens to subtasks when their parent is moved to the trash.
 enum SubtaskTrashPolicy {
   /// Ask each time (default).
@@ -133,6 +136,10 @@ class PlanningSettings {
 abstract interface class SettingsService {
   Future<SubtaskTrashPolicy> subtaskTrashPolicy();
   Future<void> setSubtaskTrashPolicy(SubtaskTrashPolicy policy);
+
+  /// P03 UX U1: light, dark, or as the system (default).
+  Future<ThemePreference> themePreference();
+  Future<void> setThemePreference(ThemePreference preference);
   Future<PlanningSettings> planningSettings();
 
   /// Stores [settings] after clamping them to the bounds.

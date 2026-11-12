@@ -153,6 +153,17 @@ class FakeWorld
     trashPolicy = policy;
   }
 
+  ThemePreference theme = ThemePreference.system;
+
+  @override
+  Future<ThemePreference> themePreference() async => theme;
+
+  @override
+  Future<void> setThemePreference(ThemePreference preference) async {
+    calls.add('setTheme:${preference.name}');
+    theme = preference;
+  }
+
   PlanningSettings planning = const PlanningSettings();
 
   @override

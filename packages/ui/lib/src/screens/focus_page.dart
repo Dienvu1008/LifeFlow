@@ -16,7 +16,8 @@ import 'package:foundation/foundation.dart';
 
 import '../messages.dart';
 import '../providers.dart';
-import '../task_actions.dart';
+import '../task_actions.dart';
+import '../l10n.dart';
 
 /// 5:07, 25:00, 1:02:03.
 String formatDuration(Duration d) {
@@ -80,11 +81,11 @@ Future<void> startFocus(BuildContext context, WidgetRef ref,
     final open = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text('A focus session is running'),
-        content: const Text('End it first: only one session can run at a time.'),
+        title: Text(context.l10n.aFocusSessionIsRunning),
+        content: Text(context.l10n.endItFirstOnlyOneSession),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(c, true), child: const Text('Open it')),
+          TextButton(onPressed: () => Navigator.pop(c, false), child: Text(context.l10n.cancel)),
+          FilledButton(onPressed: () => Navigator.pop(c, true), child: Text(context.l10n.openIt)),
         ],
       ),
     );
@@ -114,13 +115,12 @@ Future<void> endFocus(BuildContext context, WidgetRef ref, FocusSessionView s) a
   final count = await showDialog<bool>(
     context: context,
     builder: (c) => AlertDialog(
-      title: const Text('End the session?'),
-      content: Text('Focused for ${spokenDuration(s.focusTimeAt(now))}. '
-          'Saving it records the time you worked; it does not complete the task.'),
+      title: Text(context.l10n.endTheSession),
+      content: Text(context.l10n.focusEndQuestion(spokenDuration(s.focusTimeAt(now)))),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(c), child: const Text('Keep going')),
+        TextButton(onPressed: () => Navigator.pop(c), child: Text(context.l10n.keepGoing)),
         TextButton(key: const Key('focus-end-discard'), onPressed: () => Navigator.pop(c, false), child: const Text("Don't save")),
-        FilledButton(key: const Key('focus-end-save'), onPressed: () => Navigator.pop(c, true), child: const Text('Save')),
+        FilledButton(key: Key('focus-end-save'), onPressed: () => Navigator.pop(c, true), child: Text(context.l10n.save)),
       ],
     ),
   );
@@ -129,7 +129,7 @@ Future<void> endFocus(BuildContext context, WidgetRef ref, FocusSessionView s) a
 }
 
 class _StartDialog extends StatefulWidget {
-  const _StartDialog({this.taskTitle});
+  _StartDialog({this.taskTitle});
   final String? taskTitle;
   @override
   State<_StartDialog> createState() => _StartDialogState();
@@ -164,11 +164,11 @@ class _StartDialogState extends State<_StartDialog> {
         title: Text(widget.taskTitle == null ? 'Focus' : 'Focus on ${widget.taskTitle}'),
         content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           SegmentedButton<FocusSessionMode>(
-            key: const Key('focus-mode'),
+            key: Key('focus-mode'),
             showSelectedIcon: false,
-            segments: const [
-              ButtonSegment(value: FocusSessionMode.pomodoro, label: Text('Pomodoro'), icon: Icon(Icons.timer_outlined)),
-              ButtonSegment(value: FocusSessionMode.stopwatch, label: Text('Stopwatch'), icon: Icon(Icons.av_timer)),
+            segments: [
+              ButtonSegment(value: FocusSessionMode.pomodoro, label: Text(context.l10n.pomodoro), icon: Icon(Icons.timer_outlined)),
+              ButtonSegment(value: FocusSessionMode.stopwatch, label: Text(context.l10n.stopwatch), icon: Icon(Icons.av_timer)),
             ],
             selected: {_mode},
             onSelectionChanged: (s) => setState(() => _mode = s.first),
@@ -180,15 +180,15 @@ class _StartDialogState extends State<_StartDialog> {
               controller: _minutes,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: InputDecoration(labelText: 'Minutes', errorText: _error),
+              decoration: InputDecoration(labelText: context.l10n.minutes, errorText: _error),
               onSubmitted: (_) => _start(),
             )
           else
-            const Text('Counts up until you end it.'),
+            Text(context.l10n.countsUpUntilYouEndIt),
         ]),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          FilledButton(key: const Key('focus-start'), onPressed: _start, child: const Text('Start')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.cancel)),
+          FilledButton(key: const Key('focus-start'), onPressed: _start, child: Text(context.l10n.start)),
         ],
       );
 }
@@ -202,8 +202,8 @@ class FocusPage extends ConsumerWidget {
     final s = active.valueOrNull;
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(tooltip: 'Close', icon: const Icon(Icons.close), onPressed: () => Navigator.of(context).pop()),
-        title: const Text('Focus'),
+        leading: IconButton(tooltip: context.l10n.close, icon: const Icon(Icons.close), onPressed: () => Navigator.of(context).pop()),
+        title: Text(context.l10n.focus),
       ),
       body: s == null
           ? Center(
@@ -255,9 +255,9 @@ class _FocusBody extends ConsumerWidget {
                     color: paused ? theme.colorScheme.outline : null)),
           ),
         ),
-        if (d.overdue) Text('Time is up', key: const Key('focus-overdue'), style: theme.textTheme.titleMedium),
-        if (paused) const Text('Paused'),
-        if (pomodoro) Text('Focused ${formatDuration(s.focusTimeAt(now))}', style: theme.textTheme.bodySmall),
+        if (d.overdue) Text(context.l10n.timeIsUp, key: const Key('focus-overdue'), style: theme.textTheme.titleMedium),
+        if (paused) Text(context.l10n.paused),
+        if (pomodoro) Text(context.l10n.focusedValue(formatDuration(s.focusTimeAt(now))), style: theme.textTheme.bodySmall),
         const SizedBox(height: 32),
         Wrap(spacing: 12, runSpacing: 12, alignment: WrapAlignment.center, children: [
           FilledButton.tonalIcon(
@@ -270,7 +270,7 @@ class _FocusBody extends ConsumerWidget {
             key: const Key('focus-end'),
             onPressed: () => endFocus(context, ref, s),
             icon: const Icon(Icons.stop),
-            label: const Text('End'),
+            label: Text(context.l10n.end),
           ),
           TextButton(
             key: const Key('focus-cancel'),
@@ -278,17 +278,17 @@ class _FocusBody extends ConsumerWidget {
               final yes = await showDialog<bool>(
                 context: context,
                 builder: (c) => AlertDialog(
-                  title: const Text('Cancel the session?'),
-                  content: const Text('Nothing is recorded.'),
+                  title: Text(context.l10n.cancelTheSession),
+                  content: Text(context.l10n.nothingIsRecorded),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Keep it')),
-                    FilledButton(key: const Key('focus-cancel-confirm'), onPressed: () => Navigator.pop(c, true), child: const Text('Cancel it')),
+                    TextButton(onPressed: () => Navigator.pop(c, false), child: Text(context.l10n.keepIt)),
+                    FilledButton(key: const Key('focus-cancel-confirm'), onPressed: () => Navigator.pop(c, true), child: Text(context.l10n.cancelIt)),
                   ],
                 ),
               );
               if (yes == true && context.mounted) await reportResult(context, service.cancel(s.id));
             },
-            child: const Text('Cancel session'),
+            child: Text(context.l10n.cancelSession),
           ),
         ]),
       ]),
@@ -327,11 +327,10 @@ class FocusBar extends ConsumerWidget {
                 Expanded(
                   child: Semantics(
                     button: true,
-                    label: 'Focus: $what, ${d.overdue ? 'time is up' : formatDuration(d.shown)}'
-                        '${paused ? ', paused' : ''}. Open',
+                    label: (paused ? context.l10n.focusBarLabelPaused : context.l10n.focusBarLabel)(what, d.overdue ? context.l10n.timeIsUpLower : formatDuration(d.shown)),
                     excludeSemantics: true,
                     child: Text(
-                      '${d.overdue ? 'Time is up' : formatDuration(d.shown)} · $what${paused ? ' · paused' : ''}',
+                      (paused ? context.l10n.focusBarTextPaused : context.l10n.focusBarText)(d.overdue ? context.l10n.timeIsUp : formatDuration(d.shown), what),
                       key: const Key('focus-bar-text'),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -347,7 +346,7 @@ class FocusBar extends ConsumerWidget {
                 ),
                 IconButton(
                   key: const Key('focus-bar-end'),
-                  tooltip: 'End focus',
+                  tooltip: context.l10n.endFocus,
                   icon: const Icon(Icons.stop),
                   onPressed: () => endFocus(context, ref, s),
                 ),
@@ -391,12 +390,12 @@ class _FocusLaunchPromptState extends ConsumerState<FocusLaunchPrompt> {
           context: context,
           barrierDismissible: false,
           builder: (c) => AlertDialog(
-            title: const Text('Your stopwatch is still running'),
+            title: Text(context.l10n.yourStopwatchIsStillRunning),
             content: Text(
                 '${session.taskTitle ?? 'Focus'}: ${spokenDuration(session.focusTimeAt(ref.read(focusClockProvider)()))} so far.'),
             actions: [
-              TextButton(key: const Key('launch-end'), onPressed: () => Navigator.pop(c, true), child: const Text('End now')),
-              FilledButton(key: const Key('launch-resume'), onPressed: () => Navigator.pop(c, false), child: const Text('Resume')),
+              TextButton(key: const Key('launch-end'), onPressed: () => Navigator.pop(c, true), child: Text(context.l10n.endNow)),
+              FilledButton(key: const Key('launch-resume'), onPressed: () => Navigator.pop(c, false), child: Text(context.l10n.resume)),
             ],
           ),
         );
@@ -406,22 +405,21 @@ class _FocusLaunchPromptState extends ConsumerState<FocusLaunchPrompt> {
           context: context,
           barrierDismissible: false,
           builder: (c) => AlertDialog(
-            title: const Text('Your pomodoro ended while LifeFlow was closed'),
-            content: Text('${session.taskTitle ?? 'Focus'}: ${session.planned!.inMinutes} minutes. '
-                'How should it be saved?'),
+            title: Text(context.l10n.yourPomodoroEndedWhileLifeflowWas),
+            content: Text(context.l10n.focusOverdueContent(session.taskTitle ?? context.l10n.focus, session.planned!.inMinutes)),
             actions: [
               TextButton(
                   key: const Key('launch-discard'),
                   onPressed: () => Navigator.pop(c, OverdueChoice.discard),
-                  child: const Text('Discard')),
+                  child: Text(context.l10n.discard)),
               TextButton(
                   key: const Key('launch-to-now'),
                   onPressed: () => Navigator.pop(c, OverdueChoice.countToNow),
-                  child: const Text('Count until now')),
+                  child: Text(context.l10n.countUntilNow)),
               FilledButton(
                   key: const Key('launch-to-end'),
                   onPressed: () => Navigator.pop(c, OverdueChoice.countToPlannedEnd),
-                  child: const Text('Count until it ended')),
+                  child: Text(context.l10n.countUntilItEnded)),
             ],
           ),
         );
@@ -432,10 +430,9 @@ class _FocusLaunchPromptState extends ConsumerState<FocusLaunchPrompt> {
         await showDialog<void>(
           context: context,
           builder: (c) => AlertDialog(
-            title: const Text('A focus session could not be recovered'),
-            content: Text('It is kept as it was stored, and nothing was recorded for it ($reason). '
-                'You can start a new session.'),
-            actions: [FilledButton(onPressed: () => Navigator.pop(c), child: const Text('OK'))],
+            title: Text(context.l10n.aFocusSessionCouldNotBe),
+            content: Text(context.l10n.focusUnrecoverableContent(reason)),
+            actions: [FilledButton(onPressed: () => Navigator.pop(c), child: Text(context.l10n.ok))],
           ),
         );
     }
