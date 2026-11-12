@@ -36,6 +36,7 @@ GoRouter createRouter({String initialLocation = '/tasks'}) => GoRouter(
               onSelected: (i) =>
                   shell.goBranch(i, initialLocation: i == shell.currentIndex),
               notice: ref.watch(storageNoticeProvider),
+              profile: ref.watch(activeProfileProvider).valueOrNull,
               // P03 T6b (D1, D4): the focus bar on every screen, and the
               // question about a session found at start.
               focusBar: const FocusBar(),

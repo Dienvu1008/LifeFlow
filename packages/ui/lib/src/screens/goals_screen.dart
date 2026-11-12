@@ -12,6 +12,7 @@ import 'package:foundation/foundation.dart';
 
 import '../habit_text.dart' show formatRate;
 import '../messages.dart';
+import '../shell.dart' show shellMenuButton;
 import '../providers.dart';
 import '../schedule_text.dart';
 import '../task_actions.dart';
@@ -80,6 +81,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
     };
     return Scaffold(
       appBar: AppBar(
+        leading: shellMenuButton(context),
         title: const Text('Goals'),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),

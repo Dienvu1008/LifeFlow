@@ -419,7 +419,8 @@ void main() {
 
     testWidgets('works in a phone-sized window too', (tester) async {
       await pumpApp(tester, world(), width: 380, notice: notice);
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(NavigationBar), findsNothing, reason: 'a phone uses the drawer');
+      expect(find.byKey(const Key('nav-menu')), findsOneWidget);
       expect(find.byKey(const Key('storage-banner')), findsOneWidget);
       expect(find.text('Parent'), findsOneWidget);
     });

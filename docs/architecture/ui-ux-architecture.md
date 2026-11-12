@@ -10,14 +10,14 @@
 
 ## 2. Breakpoints and layout
 [Proposal] Three layout classes by width (exact values confirmed in P01 with benchmarks):
-- Compact (phone): single pane, bottom navigation.
+- Compact (phone): single pane, navigation drawer with the profile as its header (ADR-0044; was bottom navigation until 2026-11-11).
 - Medium (small tablet / narrow desktop window): navigation rail + one main pane, context as a sheet/overlay.
 - Expanded (tablet landscape / desktop): navigation pane + main workspace + optional context panel, resizable.
 
 ```mermaid
 flowchart LR
   subgraph Compact
-    BN[bottom nav] --- M1[main]
+    BN[navigation drawer] --- M1[main]
   end
   subgraph Expanded
     NP[navigation pane] --- MW[main workspace] --- CP[context panel]
