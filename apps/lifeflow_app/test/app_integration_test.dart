@@ -558,7 +558,8 @@ void main() {
     expect(find.byKey(const Key('calendar-month')), findsOneWidget);
     await tester.tap(find.descendant(of: find.byKey(const Key('calendar-mode')), matching: find.text('Day')));
     await settle(tester);
-    expect(find.byKey(const Key('calendar-empty')), findsOneWidget);
+    // P03 UX U5: the day is a time grid.
+    expect(find.byKey(const Key('calendar-grid')), findsOneWidget);
 
     // New event: the default is today 09:00–10:00 in the device zone.
     await tester.tap(find.byTooltip('New event'));
@@ -569,8 +570,20 @@ void main() {
     await tester.pump();
     await settle(tester);
     await tester.pumpAndSettle();
-    expect(find.text('Standup'), findsOneWidget);
-    expect(find.text('09:00–10:00'), findsOneWidget);
+    // A block in the grid; it opens the full row.
+    Future<void> openBlock(String title) async {
+      final block = find.widgetWithText(InkWell, title).first;
+      await tester.ensureVisible(block);
+      await tester.pumpAndSettle();
+      await tester.tap(block);
+      await tester.pumpAndSettle();
+    }
+
+    await openBlock('Standup');
+    // In the block and in the full row.
+    expect(find.text('09:00–10:00'), findsNWidgets(2));
+    Navigator.of(tester.element(find.text('09:00–10:00').last)).pop();
+    await tester.pumpAndSettle();
 
     // Plan the task today 09:00–10:30 through its schedule editor.
     await tester.tap(find.byIcon(Icons.checklist_outlined));
@@ -604,7 +617,11 @@ void main() {
     // Back in the calendar day: both rows show the overlap (D7).
     await tester.tap(find.byIcon(Icons.calendar_month_outlined));
     await settle(tester);
+    await openBlock('Standup');
     expect(find.text('Overlaps Gym'), findsOneWidget);
+    Navigator.of(tester.element(find.text('Overlaps Gym'))).pop();
+    await tester.pumpAndSettle();
+    await openBlock('Gym');
     expect(find.text('Overlaps Standup'), findsOneWidget);
 
     final id = (await tester.runAsync(() => w.directory.active()))!.id;

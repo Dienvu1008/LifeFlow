@@ -83,3 +83,12 @@ String? scheduleInputError(TaskScheduleInput s) {
   }
   return null;
 }
+
+/// P03 UX U5 (ADR-0049): a timed point as the wall clock of [deviceZone] at
+/// the same instant (the Time Kernel resolves DST gaps and overlaps), for
+/// placing it on the device's time grid. Null for a date-only point.
+SchedulePointInput? devicePointOf(tk.SchedulePoint? p, String deviceZone) {
+  if (p is! tk.TimedPoint) return null;
+  final w = tk.wallClockAt(tk.instantOf(p), deviceZone);
+  return SchedulePointInput.at(w.date, w.time, deviceZone);
+}

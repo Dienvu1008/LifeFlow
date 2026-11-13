@@ -1923,6 +1923,186 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{relative} · {date}'**
   String tlDayHeader(Object relative, Object date);
+
+  /// No description provided for @calDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
+  String get calDay;
+
+  /// No description provided for @calWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Week'**
+  String get calWeek;
+
+  /// No description provided for @calMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Month'**
+  String get calMonth;
+
+  /// No description provided for @calYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Year'**
+  String get calYear;
+
+  /// No description provided for @calGoToToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to today'**
+  String get calGoToToday;
+
+  /// No description provided for @calPrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous'**
+  String get calPrevious;
+
+  /// No description provided for @calNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get calNext;
+
+  /// No description provided for @calZoomIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom in'**
+  String get calZoomIn;
+
+  /// No description provided for @calZoomOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom out'**
+  String get calZoomOut;
+
+  /// No description provided for @calShowNight.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the night hours'**
+  String get calShowNight;
+
+  /// No description provided for @calHideNight.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide the night hours'**
+  String get calHideNight;
+
+  /// No description provided for @calNightFold.
+  ///
+  /// In en, this message translates to:
+  /// **'{from}–{to} hidden. Show'**
+  String calNightFold(Object from, Object to);
+
+  /// No description provided for @calOpenTimeline.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the Timeline'**
+  String get calOpenTimeline;
+
+  /// No description provided for @calMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get calMore;
+
+  /// No description provided for @calManageCalendars.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage calendars'**
+  String get calManageCalendars;
+
+  /// No description provided for @calNewEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'New event'**
+  String get calNewEvent;
+
+  /// No description provided for @calNewTask.
+  ///
+  /// In en, this message translates to:
+  /// **'New task'**
+  String get calNewTask;
+
+  /// No description provided for @calScheduleTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule a task here…'**
+  String get calScheduleTask;
+
+  /// No description provided for @calSlotTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{date} at {time}'**
+  String calSlotTitle(Object date, Object time);
+
+  /// No description provided for @calPickTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule which task?'**
+  String get calPickTask;
+
+  /// No description provided for @calNoUnscheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Every open task already has a schedule.'**
+  String get calNoUnscheduled;
+
+  /// No description provided for @calNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Now'**
+  String get calNow;
+
+  /// No description provided for @calLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading the calendar'**
+  String get calLoading;
+
+  /// No description provided for @calLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the calendar.'**
+  String get calLoadError;
+
+  /// No description provided for @calDayItems.
+  ///
+  /// In en, this message translates to:
+  /// **'{date}, {count, plural, =0{nothing planned} =1{1 item} other{{count} items}}'**
+  String calDayItems(Object date, int count);
+
+  /// No description provided for @calAllDayMore.
+  ///
+  /// In en, this message translates to:
+  /// **'+{count}'**
+  String calAllDayMore(int count);
+
+  /// No description provided for @calNightHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Night hours'**
+  String get calNightHours;
+
+  /// No description provided for @calNightHoursHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden in the day and week grids until you show them.'**
+  String get calNightHoursHint;
+
+  /// No description provided for @calNightFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'From {time}'**
+  String calNightFrom(Object time);
+
+  /// No description provided for @calNightTo.
+  ///
+  /// In en, this message translates to:
+  /// **'To {time}'**
+  String calNightTo(Object time);
 }
 
 class _AppLocalizationsDelegate

@@ -115,6 +115,8 @@ class EventItem {
     required this.isRepeating,
     this.isCancelled = false,
     this.isMoved = false,
+    this.deviceStart,
+    this.deviceEnd,
   });
   final String eventId;
   final String title;
@@ -126,6 +128,11 @@ class EventItem {
   final bool isRepeating;
   final bool isCancelled;
   final bool isMoved;
+
+  /// P03 UX U5: the timed start and end in the DEVICE's zone (Time Kernel),
+  /// for the time grid; null when date-only.
+  final SchedulePointInput? deviceStart;
+  final SchedulePointInput? deviceEnd;
 
   LocalDate get date => start.date;
   bool get isAllDay => !start.isTimed;

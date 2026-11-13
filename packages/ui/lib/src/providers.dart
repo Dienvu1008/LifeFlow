@@ -74,6 +74,10 @@ final todayProvider = Provider<LocalDate Function()>((ref) => () {
       return LocalDate(n.year, n.month, n.day);
     });
 
+/// The device's local date and time now, for the calendar's now line
+/// (P03 UX U5). A function, like [todayProvider]; tests override it.
+final nowProvider = Provider<DateTime Function()>((ref) => DateTime.now);
+
 /// What the Tasks tab shows: the Overview (U3), the Timeline (U4, replacing
 /// Today and Upcoming) or the habits. The Calendar tab can open the Timeline.
 enum TaskFilter { all, timeline, habits }

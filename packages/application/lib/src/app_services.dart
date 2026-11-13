@@ -97,6 +97,8 @@ class PlanningSettings {
     this.maxWindowDays = defaultMaxWindowDays,
     this.defaultMonthEnd = MonthEndChoice.skip,
     this.firstDayOfWeek = Weekday.monday,
+    this.hiddenFrom = defaultHiddenFrom,
+    this.hiddenTo = defaultHiddenTo,
   });
 
   /// D1: at most this many occurrences per query (clamped to the bounds).
@@ -112,6 +114,14 @@ class PlanningSettings {
   /// start of new repeats (each repeat stores its own).
   final Weekday firstDayOfWeek;
 
+  /// P03 UX U5 (U-D5): the night hours the day and week grids hide by
+  /// default, as minutes of the day (0..1440). [hiddenFrom] > [hiddenTo]
+  /// wraps past midnight (e.g. 23:00-07:00); equal hides nothing.
+  final int hiddenFrom;
+  final int hiddenTo;
+  static const defaultHiddenFrom = 0;
+  static const defaultHiddenTo = 6 * 60;
+
   static const defaultMaxOccurrences = 1000;
   static const defaultMaxWindowDays = 400;
   static const occurrencesRange = (min: 100, max: 5000);
@@ -122,18 +132,24 @@ class PlanningSettings {
     int? maxWindowDays,
     MonthEndChoice? defaultMonthEnd,
     Weekday? firstDayOfWeek,
+    int? hiddenFrom,
+    int? hiddenTo,
   }) =>
       PlanningSettings(
         maxOccurrences: maxOccurrences ?? this.maxOccurrences,
         maxWindowDays: maxWindowDays ?? this.maxWindowDays,
         defaultMonthEnd: defaultMonthEnd ?? this.defaultMonthEnd,
         firstDayOfWeek: firstDayOfWeek ?? this.firstDayOfWeek,
+        hiddenFrom: hiddenFrom ?? this.hiddenFrom,
+        hiddenTo: hiddenTo ?? this.hiddenTo,
       );
 
   /// Within the hard bounds, so a query is always bounded (LF-INV-PLAN-010).
   PlanningSettings clamped() => copyWith(
         maxOccurrences: maxOccurrences.clamp(occurrencesRange.min, occurrencesRange.max),
         maxWindowDays: maxWindowDays.clamp(windowDaysRange.min, windowDaysRange.max),
+        hiddenFrom: hiddenFrom.clamp(0, 1440),
+        hiddenTo: hiddenTo.clamp(0, 1440),
       );
 
   @override
@@ -142,9 +158,11 @@ class PlanningSettings {
       o.maxOccurrences == maxOccurrences &&
       o.maxWindowDays == maxWindowDays &&
       o.defaultMonthEnd == defaultMonthEnd &&
-      o.firstDayOfWeek == firstDayOfWeek;
+      o.firstDayOfWeek == firstDayOfWeek &&
+      o.hiddenFrom == hiddenFrom &&
+      o.hiddenTo == hiddenTo;
   @override
-  int get hashCode => Object.hash(maxOccurrences, maxWindowDays, defaultMonthEnd, firstDayOfWeek);
+  int get hashCode => Object.hash(maxOccurrences, maxWindowDays, defaultMonthEnd, firstDayOfWeek, hiddenFrom, hiddenTo);
 }
 
 /// App settings of this device (not profile data, not synced, not exported).

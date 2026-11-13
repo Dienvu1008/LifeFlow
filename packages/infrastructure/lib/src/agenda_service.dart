@@ -236,6 +236,8 @@ class DriftAgendaQueries implements AgendaQueries {
         isDone: repeating ? done.contains(completionIdOf(task.id, o.originalDate)) : task.status == 'done',
         isMoved: o.isException,
         isOverdue: overdue,
+        deviceStart: devicePointOf(o.schedule.start ?? o.schedule.end ?? o.schedule.deadline, time.zone()),
+        deviceEnd: o.schedule.start == null ? null : devicePointOf(o.schedule.end, time.zone()),
       );
 
   static int _byTime(AgendaItem a, AgendaItem b) {

@@ -288,6 +288,8 @@ class DriftCalendarQueries implements CalendarQueries {
           isRepeating: rule != null,
           isCancelled: cancelled,
           isMoved: o.isException && o.patch == null && !o.isCancelled,
+          deviceStart: devicePointOf(o.schedule.start, agenda.time.zone()),
+          deviceEnd: devicePointOf(o.schedule.end, agenda.time.zone()),
         ));
         if (!cancelled) {
           final it = tk.timedItemOf(eventOccurrenceKey(event.id, o.originalDate), o.schedule);

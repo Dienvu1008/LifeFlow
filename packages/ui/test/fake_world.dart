@@ -1189,6 +1189,7 @@ Widget appWith(FakeWorld world, {StorageNotice? notice}) => ProviderScope(
         zoneCatalogProvider.overrideWithValue(world),
         deviceZoneProvider.overrideWithValue(testZone),
         todayProvider.overrideWithValue(() => testToday),
+        nowProvider.overrideWithValue(() => DateTime(testToday.year, testToday.month, testToday.day, 10)),
         eventServiceProvider.overrideWithValue(world.calendar),
         calendarServiceProvider.overrideWithValue(world.calendar.calendarService),
         calendarQueriesProvider.overrideWithValue(world.calendar),
