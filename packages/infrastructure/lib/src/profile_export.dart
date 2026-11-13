@@ -274,6 +274,12 @@ class ProfileExport {
         }
       }
     }
+    if (fromSchema < 8) {
+      // Schema v8 (P03 UX U6): the profile had no result policy.
+      for (final p in (map['profiles'] as List? ?? const []).whereType<Map>()) {
+        p.putIfAbsent('manualResults', () => 'target');
+      }
+    }
     if (fromSchema < 7) {
       // Schema v7 (P03 UX U2): no colours, no event lists, no order keys.
       // Keys keep the order the app showed: by creation, then file order.
@@ -354,6 +360,7 @@ class ProfileExport {
     // One profile per store (SR-03, WA-001).
     if (profiles.length != 1) bad('expected one profile');
     final profile = profiles.single;
+    if (!const {'target', 'tick'}.contains(profile.manualResults)) bad('an unknown result policy');
     final wsIds = {for (final w in workspaces) w.id};
     if (wsIds.length != workspaces.length) bad('duplicate workspaces');
     final home = workspaces.where((w) => w.id == profile.activeWorkspaceId);

@@ -29,6 +29,10 @@ class Profiles extends Table {
   // ADR-0024: the user signed out. The binding is kept; the profile is locked
   // until the same account signs in again. Schema v2.
   BoolColumn get signedOut => boolean().withDefault(const Constant(false))();
+  // P03 UX U6 (schema v8, ADR-0050, owner decision U-D13): the stored result
+  // of a measured task completed by hand: 'target' (its target's judgement)
+  // or 'tick' (done or missed, as ticked). Profile data: exported, synced.
+  TextColumn get manualResults => text().withDefault(const Constant('target'))();
   DateTimeColumn get createdAt => dateTime()();
   @override
   Set<Column> get primaryKey => {id};

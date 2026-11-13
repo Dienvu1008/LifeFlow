@@ -2103,6 +2103,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'To {time}'**
   String calNightTo(Object time);
+
+  /// No description provided for @navOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get navOverview;
+
+  /// No description provided for @navTimeline.
+  ///
+  /// In en, this message translates to:
+  /// **'Timeline'**
+  String get navTimeline;
+
+  /// No description provided for @navCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar'**
+  String get navCalendar;
+
+  /// No description provided for @navHabits.
+  ///
+  /// In en, this message translates to:
+  /// **'Habits'**
+  String get navHabits;
+
+  /// No description provided for @navGoals.
+  ///
+  /// In en, this message translates to:
+  /// **'Goals'**
+  String get navGoals;
+
+  /// No description provided for @navSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get navSettings;
+
+  /// No description provided for @navProfiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Profiles'**
+  String get navProfiles;
+
+  /// No description provided for @habitsAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add habit'**
+  String get habitsAdd;
+
+  /// No description provided for @habitsNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New habit'**
+  String get habitsNew;
+
+  /// No description provided for @habitsLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the habits.'**
+  String get habitsLoadError;
+
+  /// No description provided for @habitsLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading habits'**
+  String get habitsLoading;
+
+  /// No description provided for @habitsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No habits yet. Add one with +, or open a task\'s menu and choose \"Habit and target…\".'**
+  String get habitsEmpty;
+
+  /// No description provided for @habitsNoRepeat.
+  ///
+  /// In en, this message translates to:
+  /// **'No repeat'**
+  String get habitsNoRepeat;
+
+  /// No description provided for @habitsAddMeasurement.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a measurement for {title}'**
+  String habitsAddMeasurement(Object title);
+
+  /// No description provided for @resultsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Measured tasks you tick yourself'**
+  String get resultsTitle;
+
+  /// No description provided for @resultsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'What is kept for each period. Periods that end after a change follow it; what is kept already stays.'**
+  String get resultsHint;
+
+  /// No description provided for @resultsTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Judge by the target'**
+  String get resultsTarget;
+
+  /// No description provided for @resultsTargetHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Achieved, not achieved, or no data.'**
+  String get resultsTargetHint;
+
+  /// No description provided for @resultsTick.
+  ///
+  /// In en, this message translates to:
+  /// **'Count the tick'**
+  String get resultsTick;
+
+  /// No description provided for @resultsTickHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Done when ticked, otherwise missed.'**
+  String get resultsTickHint;
+
+  /// No description provided for @resultsCouldNotLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'This setting could not be loaded.'**
+  String get resultsCouldNotLoad;
 }
 
 class _AppLocalizationsDelegate

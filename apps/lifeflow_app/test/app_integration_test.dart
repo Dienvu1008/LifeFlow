@@ -193,7 +193,7 @@ void main() {
       expect(find.textContaining('No tasks yet'), findsOneWidget);
 
       // Opening Profiles made no auth call either (SEC-002).
-      await tester.tap(find.byIcon(Icons.people_outline));
+      await tester.tap(find.byKey(const Key('rail-profile')));
       await settle(tester);
       expect(find.byKey(const Key('account-card')), findsOneWidget);
       expect(w.auth.calls, isEmpty);
@@ -353,11 +353,11 @@ void main() {
   testWidgets('P03 T6a: a habit with a target made in the UI is stored; measurements and automatic completion',
       (tester) async {
     final w = await pumpApp(tester, StoragePlatform.android);
-    // Added in the Habits filter: a daily habit (D6a).
+    // Added in Habits (its own destination, U-D2): a daily habit (D6a).
     await tester.tap(find.text('Habits'));
     await settle(tester);
     expect(find.byKey(const Key('habits-empty')), findsOneWidget);
-    await tapAddTask(tester);
+    await tester.tap(find.byTooltip('Add habit'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'Walk');
     await tester.tap(find.widgetWithText(FilledButton, 'Add'));
@@ -688,7 +688,7 @@ void main() {
 
     // Switch to another (empty) profile: its plan replaces the pending set.
     await tester.runAsync(() => w.directory.createProfile(displayName: 'Work'));
-    await tester.tap(find.byIcon(Icons.people_outline));
+    await tester.tap(find.byKey(const Key('rail-profile')));
     await settle(tester);
     await tester.tap(find.widgetWithText(FilledButton, 'Switch'));
     await settle(tester, 10);
@@ -718,7 +718,7 @@ void main() {
     final b = (await tester.runAsync(
         () => w.directory.createProfile(displayName: 'Work')))!;
 
-    await tester.tap(find.byIcon(Icons.people_outline));
+    await tester.tap(find.byKey(const Key('rail-profile')));
     await settle(tester);
     await tester.tap(find.widgetWithText(FilledButton, 'Switch'));
     await settle(tester, 10);
@@ -731,7 +731,7 @@ void main() {
     expect(find.textContaining('No tasks yet'), findsOneWidget);
 
     // And back to A.
-    await tester.tap(find.byIcon(Icons.people_outline));
+    await tester.tap(find.byKey(const Key('rail-profile')));
     await settle(tester);
     await tester.tap(find.widgetWithText(FilledButton, 'Switch'));
     await settle(tester, 10);
@@ -782,7 +782,7 @@ void main() {
     }
 
     // Sign in on the empty guest (binds in place), then add a task.
-    await tapAndSettle(find.byIcon(Icons.people_outline));
+    await tapAndSettle(find.byKey(const Key('rail-profile')));
     await tapAndSettle(find.widgetWithText(FilledButton, 'Sign in'));
     await tapAndSettle(find.text('Continue with GitHub'), 12);
     expect(find.text('Signed in with GitHub.'), findsOneWidget);
@@ -797,7 +797,7 @@ void main() {
     expect(find.text('My account task'), findsOneWidget);
 
     // Sign out: lands on Profiles of a guest; the account profile is locked.
-    await tapAndSettle(find.byIcon(Icons.people_outline));
+    await tapAndSettle(find.byKey(const Key('rail-profile')));
     await tapAndSettle(find.widgetWithText(OutlinedButton, 'Sign out'));
     await tapAndSettle(find.widgetWithText(FilledButton, 'Sign out'), 14);
     final root = tester.state<LifeFlowRootState>(find.byType(LifeFlowRoot));
@@ -853,7 +853,7 @@ void main() {
     final original = (await tester.runAsync(() => w.directory.active()))!.id;
 
     // Export from the Profiles screen.
-    await tapAndSettle(find.byIcon(Icons.people_outline));
+    await tapAndSettle(find.byKey(const Key('rail-profile')));
     await tapAndSettle(find.text('Export this profile'));
     expect(find.textContaining('UNENCRYPTED'), findsOneWidget);
     await tapAndSettle(find.widgetWithText(FilledButton, 'Export'));
@@ -871,7 +871,7 @@ void main() {
     await tapAndSettle(find.byIcon(Icons.checklist_outlined));
     await add('Device only');
     expect(find.text('Device only'), findsOneWidget);
-    await tapAndSettle(find.byIcon(Icons.people_outline));
+    await tapAndSettle(find.byKey(const Key('rail-profile')));
     await tapAndSettle(find.text('Restore from a file'));
     expect(find.byKey(const Key('restore-choice')), findsOneWidget);
     expect(find.text('Only on this device: 1'), findsOneWidget);
@@ -894,7 +894,7 @@ void main() {
         greaterThan(tester.getTopLeft(find.text('Learn English')).dx));
 
     // Undo brings the extra task back.
-    await tapAndSettle(find.byIcon(Icons.people_outline));
+    await tapAndSettle(find.byKey(const Key('rail-profile')));
     await tapAndSettle(find.byKey(const Key('undo-restore')));
     await tapAndSettle(find.widgetWithText(FilledButton, 'Undo restore'), 12);
     await tester.pump(const Duration(seconds: 6));
@@ -950,7 +950,7 @@ void main() {
     }))!;
     w.files.pickOverride = other.text;
 
-    await tapAndSettle(find.byIcon(Icons.people_outline));
+    await tapAndSettle(find.byKey(const Key('rail-profile')));
     await tapAndSettle(find.text('Restore from a file'));
     expect(find.text('Restore as a new profile?'), findsOneWidget);
     await tapAndSettle(find.widgetWithText(FilledButton, 'Restore'), 12);
@@ -971,7 +971,7 @@ void main() {
         () => w.directory.createProfile(displayName: 'Old copy')))!;
     expect(w.directory.profileFile(extra.id).existsSync(), isTrue);
 
-    await tester.tap(find.byIcon(Icons.people_outline));
+    await tester.tap(find.byKey(const Key('rail-profile')));
     await settle(tester);
     await tester.tap(find.byTooltip('Delete Old copy'));
     await settle(tester);
@@ -994,7 +994,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final w = await pumpApp(tester, StoragePlatform.android);
-    await tester.tap(find.byIcon(Icons.people_outline));
+    await tester.tap(find.byKey(const Key('rail-profile')));
     await settle(tester);
     w.files.pickOverride = '{"format":"lifeflow-export","formatVersion":1,'
         '"schemaVersion":2,"checksumSha256":"${'0' * 64}","counts":{},"payload":{}}';

@@ -30,3 +30,5 @@ In the compact layout (window narrower than 600 dp, phones) the five tabs were i
   - rails have no menu button; resizing switches the layout.
 - Phone-width flows reach their tabs through the drawer: the calendar flows, Goals with a large font, and the storage banner on a phone (shared `test/nav.dart`). All 186 UI tests and 25 app tests pass.
 - Device check: in the owner's P03 device pass.
+
+- **Amended by [ADR-0050](0050-navigation-habits-and-manual-results.md) (2026-11-13):** six destinations (Overview, Timeline, Calendar, Habits, Goals, Settings); the profile is also on top of the rail.

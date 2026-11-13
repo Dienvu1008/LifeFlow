@@ -1176,4 +1176,71 @@ class AppLocalizationsEn extends AppLocalizations {
   String calNightTo(Object time) {
     return 'To $time';
   }
+
+  @override
+  String get navOverview => 'Overview';
+
+  @override
+  String get navTimeline => 'Timeline';
+
+  @override
+  String get navCalendar => 'Calendar';
+
+  @override
+  String get navHabits => 'Habits';
+
+  @override
+  String get navGoals => 'Goals';
+
+  @override
+  String get navSettings => 'Settings';
+
+  @override
+  String get navProfiles => 'Profiles';
+
+  @override
+  String get habitsAdd => 'Add habit';
+
+  @override
+  String get habitsNew => 'New habit';
+
+  @override
+  String get habitsLoadError => 'Could not load the habits.';
+
+  @override
+  String get habitsLoading => 'Loading habits';
+
+  @override
+  String get habitsEmpty =>
+      'No habits yet. Add one with +, or open a task\'s menu and choose \"Habit and target…\".';
+
+  @override
+  String get habitsNoRepeat => 'No repeat';
+
+  @override
+  String habitsAddMeasurement(Object title) {
+    return 'Add a measurement for $title';
+  }
+
+  @override
+  String get resultsTitle => 'Measured tasks you tick yourself';
+
+  @override
+  String get resultsHint =>
+      'What is kept for each period. Periods that end after a change follow it; what is kept already stays.';
+
+  @override
+  String get resultsTarget => 'Judge by the target';
+
+  @override
+  String get resultsTargetHint => 'Achieved, not achieved, or no data.';
+
+  @override
+  String get resultsTick => 'Count the tick';
+
+  @override
+  String get resultsTickHint => 'Done when ticked, otherwise missed.';
+
+  @override
+  String get resultsCouldNotLoad => 'This setting could not be loaded.';
 }

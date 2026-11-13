@@ -303,6 +303,50 @@ void main() {
       expect((await stored(once)).single.outcome, 'done');
     });
 
+    test('U-D13: with "tick", a measured task completed by hand stores the tick; stored results stay', () async {
+      expect(await queries.manualResults(), ManualResults.target);
+      final walk = await task('Walk');
+      await repeat(walk, tk.Frequency.daily);
+      ok(await habits.setHabit(walk, isHabit: true));
+      ok(await habits.setTarget(walk, steps));
+      final scheduling = DriftTaskScheduling(host.db, gw);
+      // Day 0: target reached, not ticked. Day 1: ticked, no measurement.
+      ok(await habits.recordMeasurement(walk, 6000));
+      toDay(1);
+      ok(await scheduling.setOccurrenceDone(walk, day0.addDays(1), done: true));
+      toDay(2);
+      // By the target (the default): day 0 achieved, day 1 no data.
+      final target = await view(walk);
+      expect([for (final r in target.results) '${r.key}:${r.outcome.name}'],
+          containsAll(['${day0.addDays(1)}:noData', '$day0:achieved']));
+      // The profile chooses the tick: periods not stored yet follow it.
+      ok(await habits.setManualResults(ManualResults.tick));
+      expect(await queries.manualResults(), ManualResults.tick);
+      refused(await habits.setManualResults(ManualResults.tick), 'already tick');
+      expect(await habits.closePeriods(), 2);
+      expect({for (final r in await stored(walk)) '${r.periodKey}:${r.kind}:${r.outcome}'},
+          {'$day0:occurrence:missed', '${day0.addDays(1)}:occurrence:done'});
+      // Back to the target: what is stored is not rewritten; day 2 is judged.
+      ok(await habits.setManualResults(ManualResults.target));
+      toDay(3);
+      expect(await habits.closePeriods(), 1);
+      expect({for (final r in await stored(walk)) '${r.periodKey}:${r.kind}:${r.outcome}'},
+          {'$day0:occurrence:missed', '${day0.addDays(1)}:occurrence:done', '${day0.addDays(2)}:period:noData'});
+    });
+
+    test('U-D13: an automatic task is always judged by its target', () async {
+      final walk = await task('Walk');
+      await repeat(walk, tk.Frequency.daily);
+      ok(await habits.setHabit(walk, isHabit: true));
+      ok(await habits.setTarget(walk, steps));
+      ok(await habits.setCompletion(walk, CompletionMode.automatic));
+      ok(await habits.setManualResults(ManualResults.tick));
+      ok(await habits.recordMeasurement(walk, 6000));
+      toDay(1);
+      expect(await habits.closePeriods(), 1);
+      expect((await stored(walk)).single.outcome, 'achieved');
+    });
+
     test('a plain repeating task (not a habit) records no results (D6b)', () async {
       final t = await task('Take out the bins');
       await repeat(t, tk.Frequency.daily);

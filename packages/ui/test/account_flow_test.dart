@@ -20,7 +20,7 @@ Future<void> openProfiles(WidgetTester tester, FakeWorld w) async {
   addTearDown(w.dispose);
   await tester.pumpWidget(appWith(w));
   await tester.pumpAndSettle();
-  await tester.tap(find.byIcon(Icons.people_outline));
+  await tester.tap(find.byKey(const Key('rail-profile')));
   await tester.pumpAndSettle();
 }
 

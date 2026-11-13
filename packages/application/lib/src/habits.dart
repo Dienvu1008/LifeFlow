@@ -170,8 +170,19 @@ class TrackingView {
   bool get isMeasurable => target != null;
 }
 
+/// P03 UX U6 (owner decision U-D13): what is stored for a period of a
+/// measured task completed by hand (manual policy): its target's judgement
+/// (achieved / not achieved / no data, the default) or the tick (done /
+/// missed). A profile setting (exported, later synced): every device stores
+/// the same results. Periods closed after a change follow it; stored results
+/// are never rewritten.
+enum ManualResults { target, tick }
+
 /// Habit and target commands; failures are returned, never thrown.
 abstract interface class HabitService {
+  /// U-D13: the profile's choice for measured tasks completed by hand.
+  Future<CommandResult> setManualResults(ManualResults value);
+
   /// D6: the habit flag, independent of the repeat and the target.
   Future<CommandResult> setHabit(String taskId, {required bool isHabit});
 
@@ -199,6 +210,9 @@ abstract interface class HabitService {
 }
 
 abstract interface class HabitQueries {
+  /// U-D13: the active profile's choice (target by default).
+  Future<ManualResults> manualResults();
+
   Future<TrackingView?> tracking(String taskId);
 
   /// One task's tracking, kept up to date (null when the task is gone).

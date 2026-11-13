@@ -229,6 +229,9 @@ void main() {
       await pumpApp(tester, w);
       await tester.tap(find.text('Settings').first);
       await tester.pumpAndSettle();
+      // The list is long: built as it scrolls.
+      await tester.scrollUntilVisible(find.byKey(const Key('open-source-licenses')), 300,
+          scrollable: find.byType(Scrollable).last);
       await tapKey(tester, 'open-source-licenses');
       expect(find.byType(LicensePage), findsOneWidget);
     });

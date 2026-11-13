@@ -112,6 +112,21 @@ void main() {
     expect(key('First').compareTo(key('Second')) < 0 && key('Second').compareTo(key('Third')) < 0, isTrue);
   });
 
+  test('U-D13: the result policy travels with the profile; a v7 file gets "target"; a bad one is refused', () async {
+    final payload = payloadOf((await transfer.exportActiveProfile()).contents);
+    final profile = (payload['profiles'] as List).cast<Map>().single;
+    expect(profile['manualResults'], 'target');
+    profile.remove('manualResults');
+    final old = ProfileExport.parse(ProfileExport.seal(payload, schemaVersion: 7),
+        currentSchemaVersion: AppDatabase.currentSchemaVersion);
+    expect(old.profile.manualResults, 'target');
+    profile['manualResults'] = 'maybe';
+    expect(
+        () => ProfileExport.parse(ProfileExport.seal(payload, schemaVersion: AppDatabase.currentSchemaVersion),
+            currentSchemaVersion: AppDatabase.currentSchemaVersion),
+        throwsA(isA<ExportRejected>().having((e) => e.message, 'message', contains('result policy'))));
+  });
+
   group('untrusted organize fields (SR-14)', () {
     late Map<String, Object?> payload;
     setUp(() async {

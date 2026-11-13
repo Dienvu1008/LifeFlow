@@ -12,6 +12,7 @@ import 'package:uuid/uuid.dart';
 import 'app_database.dart';
 import 'habit_tracking.dart';
 import 'measurement_command_handler.dart';
+import 'profile_command_handler.dart';
 import 'profile_store.dart';
 import 'task_command_handler.dart';
 
@@ -74,6 +75,16 @@ class DriftHabitService implements HabitService {
       return const CommandFailure(CommandFailureKind.notFound, reason: 'task not found');
     }
     return _run(_tasks, type, {...payload, 'id': taskId}, expected: Version(t.version));
+  }
+
+  @override
+  Future<CommandResult> setManualResults(ManualResults value) async {
+    final profile = await _store.getActiveProfile();
+    if (profile == null) return const CommandFailure(CommandFailureKind.notFound, reason: 'no active profile');
+    final id = profile.profileId.value;
+    final row = await (db.select(db.profiles)..where((p) => p.id.equals(id))).getSingle();
+    return _run(const ProfileCommandHandler(), 'SetManualResults', {'op': 'setManualResults', 'id': id, 'value': value.name},
+        expected: Version(row.version));
   }
 
   @override
@@ -152,6 +163,12 @@ class DriftHabitQueries implements HabitQueries {
   final ProfileStore _store;
 
   LocalDate _today() => tk.dateAt(time.now(), time.zone());
+
+  @override
+  Future<ManualResults> manualResults() async {
+    final row = await (db.select(db.profiles)..limit(1)).getSingleOrNull();
+    return row?.manualResults == 'tick' ? ManualResults.tick : ManualResults.target;
+  }
 
   @override
   Future<TrackingView?> tracking(String taskId) async {

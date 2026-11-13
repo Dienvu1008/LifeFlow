@@ -356,7 +356,7 @@ void main() {
   group('profiles (OQ-S7, LF-INV-ID-002)', () {
     testWidgets('lists every profile with its sign-in state', (tester) async {
       await pumpApp(tester, world());
-      await tester.tap(find.byIcon(Icons.people_outline));
+      await tester.tap(find.byKey(const Key('rail-profile')));
       await tester.pumpAndSettle();
       expect(find.text('Guest'), findsOneWidget);
       expect(find.text('Guest profile, data stays on this device'),
@@ -374,7 +374,7 @@ void main() {
       expect(find.text('Parent'), findsOneWidget);
       expect(find.text('B-task'), findsNothing);
 
-      await tester.tap(find.byIcon(Icons.people_outline));
+      await tester.tap(find.byKey(const Key('rail-profile')));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(FilledButton, 'Switch'));
       await tester.pumpAndSettle();
@@ -393,7 +393,7 @@ void main() {
       final w = world()
         ..failNext = const CommandFailure(CommandFailureKind.notFound);
       await pumpApp(tester, w);
-      await tester.tap(find.byIcon(Icons.people_outline));
+      await tester.tap(find.byKey(const Key('rail-profile')));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(FilledButton, 'Switch'));
       await tester.pumpAndSettle();
@@ -412,7 +412,7 @@ void main() {
     testWidgets('the banner is visible on every destination', (tester) async {
       await pumpApp(tester, world(), notice: notice);
       expect(find.byKey(const Key('storage-banner')), findsOneWidget);
-      await tester.tap(find.byIcon(Icons.people_outline));
+      await tester.tap(find.byKey(const Key('rail-profile')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('storage-banner')), findsOneWidget);
     });

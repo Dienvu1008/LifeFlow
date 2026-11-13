@@ -12,6 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:foundation/foundation.dart';
 
 import 'fake_world.dart';
+import 'nav.dart';
 
 FakeWorld world(List<TaskView> tasks) =>
     FakeWorld(tasks: {'A': tasks}, profiles: [profile('A', 'Guest')], activeId: 'A');
@@ -362,27 +363,25 @@ void main() {
     await pickerOk(tester);
     await tapKey(tester, 'repeat-switch');
     await save(tester);
-    await tester.tap(find.text('Timeline'));
-    await tester.pumpAndSettle();
+    await goToTab(tester, 'Timeline');
     expect(tester.takeException(), isNull);
     expect(find.text('09:00'), findsOneWidget);
     expect(find.text('Repeats'), findsOneWidget);
   });
 
-  testWidgets('phone width with a large font: filter labels stay on one line (device check)',
+  testWidgets('phone width with a large font: the drawer labels stay on one line (device check)',
       (tester) async {
     tester.platformDispatcher.textScaleFactorTestValue = 1.3;
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     await pumpApp(tester, world([]), width: 400);
-    final label = find.descendant(of: find.byKey(const Key('task-filter')), matching: find.text('Timeline'));
-    final para = tester.renderObject<RenderParagraph>(label);
-    expect(para.didExceedMaxLines, isFalse);
-    expect(tester.getSize(label).height, lessThan(30)); // one line
-    expect(find.descendant(of: find.byKey(const Key('task-filter')), matching: find.byIcon(Icons.view_timeline_outlined)),
-        findsNothing);
+    await openDrawer(tester);
+    for (final name in ['Overview', 'Timeline', 'Calendar', 'Habits', 'Goals', 'Settings']) {
+      final label = find.descendant(of: find.byKey(const Key('nav-drawer')), matching: find.text(name));
+      expect(tester.renderObject<RenderParagraph>(label).didExceedMaxLines, isFalse, reason: name);
+      expect(tester.getSize(label).height, lessThan(30), reason: name); // one line
+    }
     expect(tester.takeException(), isNull);
   });
-
   group('Settings → Calendar (D1–D3)', () {
     Future<void> openSettings(WidgetTester tester) async {
       await tester.tap(find.text('Settings').first);

@@ -1,7 +1,7 @@
 import 'package:application/application.dart';
 import 'package:flutter/material.dart';
 
-import 'layout.dart';
+import 'layout.dart';
 import 'l10n.dart';
 
 class _Destination {
@@ -11,20 +11,23 @@ class _Destination {
   final IconData selectedIcon;
 }
 
-const _destinations = [
-  _Destination('Tasks', Icons.checklist_outlined, Icons.checklist),
-  // Owner decision D9: Tasks, Calendar, Profiles, Settings.
-  _Destination('Calendar', Icons.calendar_month_outlined, Icons.calendar_month),
-  // P03 D12: Goals is the 5th tab, before Profiles and Settings.
-  _Destination('Goals', Icons.flag_outlined, Icons.flag),
-  _Destination('Profiles', Icons.people_outline, Icons.people),
-  _Destination('Settings', Icons.settings_outlined, Icons.settings),
-];
+/// P03 UX U6 (ADR-0050): Overview, Timeline, Calendar, Habits, Goals,
+/// Settings. Profiles is a branch too, but it is reached from the profile at
+/// the top of the drawer or the rail, not from a destination.
+List<_Destination> _destinationsOf(BuildContext context) {
+  final l = context.l10n;
+  return [
+    _Destination(l.navOverview, Icons.checklist_outlined, Icons.checklist),
+    _Destination(l.navTimeline, Icons.view_timeline_outlined, Icons.view_timeline),
+    _Destination(l.navCalendar, Icons.calendar_month_outlined, Icons.calendar_month),
+    _Destination(l.navHabits, Icons.track_changes_outlined, Icons.track_changes),
+    _Destination(l.navGoals, Icons.flag_outlined, Icons.flag),
+    _Destination(l.navSettings, Icons.settings_outlined, Icons.settings),
+  ];
+}
 
-/// The branch index of Profiles: in the compact layout it is the drawer's
-/// header, not one of its destinations.
-const profilesIndex = 3;
-
+/// The branch index of Profiles (after the six destinations).
+const profilesIndex = 6;
 /// Lets a tab's app bar open the shell's navigation drawer. [open] is null
 /// when the layout has no drawer (rail layouts).
 class ShellMenuScope extends InheritedWidget {
@@ -122,15 +125,14 @@ class _AdaptiveScaffoldState extends State<AdaptiveScaffold> {
       );
 
       if (compact) {
-        final drawerDestinations = [for (var i = 0; i < _destinations.length; i++) if (i != profilesIndex) i];
-        final drawerIndex = drawerDestinations.indexOf(selectedIndex);
+        final destinations = _destinationsOf(context);
         return Scaffold(
           key: _scaffold,
           body: content,
           drawer: NavigationDrawer(
             key: const Key('nav-drawer'),
-            selectedIndex: drawerIndex < 0 ? null : drawerIndex,
-            onDestinationSelected: (i) => _go(drawerDestinations[i]),
+            selectedIndex: selectedIndex < destinations.length ? selectedIndex : null,
+            onDestinationSelected: _go,
             children: [
               DrawerProfileHeader(
                 profile: widget.profile,
@@ -138,11 +140,11 @@ class _AdaptiveScaffoldState extends State<AdaptiveScaffold> {
                 onTap: () => _go(profilesIndex),
               ),
               const SizedBox(height: 12),
-              for (final i in drawerDestinations)
+              for (final d in destinations)
                 NavigationDrawerDestination(
-                  icon: Icon(_destinations[i].icon),
-                  selectedIcon: Icon(_destinations[i].selectedIcon),
-                  label: Text(_destinations[i].label),
+                  icon: Icon(d.icon),
+                  selectedIcon: Icon(d.selectedIcon),
+                  label: Text(d.label),
                 ),
             ],
           ),
@@ -150,18 +152,25 @@ class _AdaptiveScaffoldState extends State<AdaptiveScaffold> {
       }
 
       final extended = layout == LayoutClass.expanded;
+      final destinations = _destinationsOf(context);
       return Scaffold(
         body: Row(
           children: [
             SafeArea(
               child: NavigationRail(
-                selectedIndex: selectedIndex,
+                selectedIndex: selectedIndex < destinations.length ? selectedIndex : null,
                 onDestinationSelected: onSelected,
+                // The profile on top, as in the drawer (opens Profiles).
+                leading: RailProfileButton(
+                  profile: widget.profile,
+                  selected: selectedIndex == profilesIndex,
+                  onTap: () => onSelected(profilesIndex),
+                ),
                 extended: extended,
                 labelType:
                     extended ? NavigationRailLabelType.none : NavigationRailLabelType.all,
                 destinations: [
-                  for (final d in _destinations)
+                  for (final d in destinations)
                     NavigationRailDestination(
                       icon: Icon(d.icon),
                       selectedIcon: Icon(d.selectedIcon),
@@ -253,6 +262,47 @@ class DrawerProfileHeader extends StatelessWidget {
                   Icon(Icons.chevron_right, color: scheme.onPrimaryContainer),
                 ]),
               ]),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The profile at the top of the rail: its initials; a tap opens Profiles.
+class RailProfileButton extends StatelessWidget {
+  const RailProfileButton({super.key, required this.profile, required this.onTap, this.selected = false});
+  final ProfileView? profile;
+  final VoidCallback onTap;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final p = profile;
+    final name = p?.displayName ?? context.l10n.navProfiles;
+    final label = p == null
+        ? context.l10n.drawerProfileLabel(name)
+        : context.l10n.drawerProfileLabelWithStatus(name, DrawerProfileHeader.statusOf(p));
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Tooltip(
+        message: label,
+        child: Semantics(
+          button: true,
+          selected: selected,
+          label: label,
+          excludeSemantics: true,
+          child: InkResponse(
+            key: const Key('rail-profile'),
+            onTap: onTap,
+            radius: 28,
+            child: CircleAvatar(
+              radius: 20,
+              backgroundColor: selected ? scheme.primary : scheme.primaryContainer,
+              foregroundColor: selected ? scheme.onPrimary : scheme.onPrimaryContainer,
+              child: Text(DrawerProfileHeader.initialsOf(name)),
             ),
           ),
         ),

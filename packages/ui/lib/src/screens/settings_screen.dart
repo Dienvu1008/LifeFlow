@@ -6,6 +6,7 @@ import 'package:foundation/foundation.dart';
 import '../shell.dart' show shellMenuButton;
 import '../providers.dart';
 import '../schedule_text.dart';
+import '../task_actions.dart' show reportResult;
 
 import '../l10n.dart';
 
@@ -42,6 +43,48 @@ class _AppearanceSettings extends ConsumerWidget {
   }
 }
 
+/// P03 UX U6 (U-D13, ADR-0050): what is kept for a period of a measured task
+/// completed by hand. A profile setting (exported, later synced), not a
+/// device one.
+class _ResultSettings extends ConsumerWidget {
+  const _ResultSettings();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    final current = ref.watch(manualResultsProvider);
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      ListTile(
+        title: Text(l.resultsTitle, style: Theme.of(context).textTheme.titleSmall),
+        subtitle: Text(l.resultsHint),
+      ),
+      current.when(
+        loading: () => const SizedBox.shrink(),
+        error: (e, _) => ListTile(title: Text(l.resultsCouldNotLoad)),
+        data: (v) => RadioGroup<ManualResults>(
+          groupValue: v,
+          onChanged: (n) async {
+            if (n == null || n == v) return;
+            await reportResult(context, ref.read(habitServiceProvider).setManualResults(n));
+            ref.invalidate(manualResultsProvider);
+          },
+          child: Column(children: [
+            RadioListTile<ManualResults>(
+                key: const Key('results-target'),
+                value: ManualResults.target,
+                title: Text(l.resultsTarget),
+                subtitle: Text(l.resultsTargetHint)),
+            RadioListTile<ManualResults>(
+                key: const Key('results-tick'),
+                value: ManualResults.tick,
+                title: Text(l.resultsTick),
+                subtitle: Text(l.resultsTickHint)),
+          ]),
+        ),
+      ),
+    ]);
+  }
+}
 /// App settings of this device.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -100,6 +143,8 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const Divider(height: 32),
           const _CalendarSettings(),
+          const Divider(height: 32),
+          const _ResultSettings(),
           const Divider(height: 32),
           const _ReminderSettings(),
           const Divider(height: 32),

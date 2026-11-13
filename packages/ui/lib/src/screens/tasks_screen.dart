@@ -18,139 +18,134 @@ import 'habit_page.dart';
 /// Space kept free under the last row so the + button never covers it.
 const _fabClearance = 96.0;
 
-/// The Tasks tab: the Overview (P03 UX U3), and the Today, Upcoming and
-/// Habits filters until the Timeline and the Habits screen (U4, U6). All
-/// writes go through the ports (the command gateway); this widget holds no
-/// domain state (AP-12).
-class TasksScreen extends ConsumerStatefulWidget {
-  const TasksScreen({super.key});
+/// "Focus" for an app bar: open the running session, or start one without
+/// a task (D12).
+Widget _focusAction(BuildContext context, WidgetRef ref) => IconButton(
+      key: const Key('focus-open'),
+      tooltip: context.l10n.focus,
+      icon: const Icon(Icons.timer_outlined),
+      onPressed: () =>
+          ref.read(activeFocusProvider).valueOrNull != null ? openFocusPage(context) : startFocus(context, ref),
+    );
+
+/// P03 UX U3/U6 (ADR-0047, ADR-0050): the Overview destination. All writes
+/// go through the ports (the command gateway); this widget holds no domain
+/// state (AP-12).
+class OverviewScreen extends ConsumerStatefulWidget {
+  const OverviewScreen({super.key});
 
   @override
-  ConsumerState<TasksScreen> createState() => _TasksScreenState();
+  ConsumerState<OverviewScreen> createState() => _OverviewScreenState();
 }
 
-class _TasksScreenState extends ConsumerState<TasksScreen> {
-  /// A task just added in the Overview; scrolled into view once it shows.
+class _OverviewScreenState extends ConsumerState<OverviewScreen> {
+  /// A task just added; scrolled into view once it shows.
   String? _revealId;
 
   Future<void> _addTask(String? parentId) async {
     final id = await addTaskWithDialog(context, ref, parentId);
     if (id == null || !mounted) return;
-    // A task added in Today or Upcoming is planned there, so it does not
-    // vanish from the list it was added to.
-    final filter = ref.read(taskFilterProvider);
-    if (parentId == null && filter == TaskFilter.habits) {
-      // D6a: a habit added here repeats every day from today; both can be
-      // changed later.
-      final today = ref.read(todayProvider)();
-      final made = await reportResult(context, ref.read(habitServiceProvider).setHabit(id, isHabit: true));
-      if (made is CommandFailure || !mounted) return;
-      await reportResult(
-          context,
-          ref.read(taskSchedulingProvider).setSchedule(id,
-              TaskScheduleInput(start: SchedulePointInput.date(today), repeat: const RepeatInput(frequency: RepeatFrequency.daily))));
-      return;
-    }
-    if (parentId == null && filter == TaskFilter.timeline) {
-      // Planned on the day the Timeline shows (today unless one was chosen).
-      final day = ref.read(timelineAnchorProvider) ?? ref.read(todayProvider)();
-      await reportResult(
-          context,
-          ref.read(taskSchedulingProvider).setSchedule(
-              id, TaskScheduleInput(start: SchedulePointInput.date(day))));
-      return;
-    }
     setState(() => _revealId = id);
   }
 
   @override
-  Widget build(BuildContext context) {
-    final filter = ref.watch(taskFilterProvider);
-    return Scaffold(
-      appBar: AppBar(
-        leading: shellMenuButton(context),
-        title: filter == TaskFilter.timeline ? const TimelineTitle() : const Text('Tasks'),
-        actions: [
-          if (filter == TaskFilter.timeline) const TimelineTodayButton(),
-          // D12: focus without a task.
-          IconButton(
-            key: const Key('focus-open'),
-            tooltip: 'Focus',
-            icon: const Icon(Icons.timer_outlined),
-            onPressed: () => ref.read(activeFocusProvider).valueOrNull != null
-                ? openFocusPage(context)
-                : startFocus(context, ref),
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(56),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-            child: LayoutBuilder(builder: (context, box) {
-              // Icons only when there is room: with a phone width and a
-              // large system font the labels must stay on one line.
-              final icons = box.maxWidth / MediaQuery.textScalerOf(context).scale(1) >= 560;
-              Widget label(String s) => Text(s, maxLines: 1, softWrap: false, overflow: TextOverflow.fade);
-              return SegmentedButton<TaskFilter>(
-                key: const Key('task-filter'),
-                showSelectedIcon: false,
-                segments: [
-                  ButtonSegment(
-                      value: TaskFilter.all, label: label('Overview'), icon: icons ? const Icon(Icons.list) : null),
-                  ButtonSegment(
-                      value: TaskFilter.timeline,
-                      label: label(context.l10n.tlTimeline),
-                      icon: icons ? const Icon(Icons.view_timeline_outlined) : null),
-                  ButtonSegment(
-                      value: TaskFilter.habits,
-                      label: label('Habits'),
-                      icon: icons ? const Icon(Icons.track_changes) : null),
-                ],
-                selected: {filter},
-                onSelectionChanged: (s) => ref.read(taskFilterProvider.notifier).state = s.first,
-              );
-            }),
-          ),
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(
+          leading: shellMenuButton(context),
+          title: Text(context.l10n.navOverview),
+          actions: [_focusAction(context, ref)],
         ),
-      ),
-      floatingActionButton: filter == TaskFilter.all
-          ? OverviewAddButton(
-              onTask: () => _addTask(null),
-              onList: () => addList(context, ref),
-              onEvent: () => openEventEditor(context, ref),
-            )
-          : FloatingActionButton(
-              heroTag: 'fab-tasks',
-              tooltip: 'Add task',
-              onPressed: () => _addTask(null),
-              child: const Icon(Icons.add),
-            ),
-      body: switch (filter) {
-        TaskFilter.all => OverviewView(
-            revealId: _revealId,
-            onRevealed: () => _revealId = null,
-            onAddSubtask: _addTask,
-          ),
-        TaskFilter.timeline => const TimelineView(),
-        TaskFilter.habits => const _HabitList(),
-      },
-    );
-  }
+        floatingActionButton: OverviewAddButton(
+          onTask: () => _addTask(null),
+          onList: () => addList(context, ref),
+          onEvent: () => openEventEditor(context, ref),
+        ),
+        body: OverviewView(
+          revealId: _revealId,
+          onRevealed: () => _revealId = null,
+          onAddSubtask: _addTask,
+        ),
+      );
 }
-/// P03 T6a: the habits of the profile (D12: the 4th filter of Tasks), each
-/// with its running period and statistics (D6b). Tapping opens the habit.
+
+/// P03 UX U4/U6 (ADR-0048, ADR-0050): the Timeline destination.
+class TimelineScreen extends ConsumerWidget {
+  const TimelineScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => Scaffold(
+        appBar: AppBar(
+          leading: shellMenuButton(context),
+          title: const TimelineTitle(),
+          actions: [const TimelineTodayButton(), _focusAction(context, ref)],
+        ),
+        floatingActionButton: FloatingActionButton(
+          heroTag: 'fab-timeline',
+          tooltip: context.l10n.ovAddTask,
+          onPressed: () async {
+            final id = await addTaskWithDialog(context, ref, null);
+            if (id == null || !context.mounted) return;
+            // Planned on the day the Timeline shows (today unless one was chosen).
+            final day = ref.read(timelineAnchorProvider) ?? ref.read(todayProvider)();
+            await reportResult(
+                context, ref.read(taskSchedulingProvider).setSchedule(id, TaskScheduleInput(start: SchedulePointInput.date(day))));
+          },
+          child: const Icon(Icons.add),
+        ),
+        body: const TimelineView(),
+      );
+}
+
+/// P03 UX U6 (U-D2, ADR-0050): Habits is a destination of its own.
+class HabitsScreen extends ConsumerWidget {
+  const HabitsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => Scaffold(
+        appBar: AppBar(
+          leading: shellMenuButton(context),
+          title: Text(context.l10n.navHabits),
+          actions: [_focusAction(context, ref)],
+        ),
+        floatingActionButton: FloatingActionButton(
+          heroTag: 'fab-habits',
+          tooltip: context.l10n.habitsAdd,
+          onPressed: () async {
+            final id = await addTaskWithDialog(context, ref, null, title: context.l10n.habitsNew);
+            if (id == null || !context.mounted) return;
+            // D6a: a new habit repeats every day from today; both can be
+            // changed later.
+            final today = ref.read(todayProvider)();
+            final made = await reportResult(context, ref.read(habitServiceProvider).setHabit(id, isHabit: true));
+            if (made is CommandFailure || !context.mounted) return;
+            await reportResult(
+                context,
+                ref.read(taskSchedulingProvider).setSchedule(
+                    id,
+                    TaskScheduleInput(
+                        start: SchedulePointInput.date(today), repeat: const RepeatInput(frequency: RepeatFrequency.daily))));
+          },
+          child: const Icon(Icons.add),
+        ),
+        body: const _HabitList(),
+      );
+}
+
+/// P03 T6a: the habits of the profile, each with its running period and
+/// statistics (D6b). Tapping opens the habit.
 class _HabitList extends ConsumerWidget {
   const _HabitList();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
     final habits = ref.watch(habitsProvider);
     return habits.when(
-      loading: () => const Center(child: CircularProgressIndicator(semanticsLabel: 'Loading habits')),
+      loading: () => Center(child: CircularProgressIndicator(semanticsLabel: l.habitsLoading)),
       error: (e, _) => Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Text('Could not load the habits.', style: Theme.of(context).textTheme.bodyLarge),
+          child: Text(l.habitsLoadError, style: Theme.of(context).textTheme.bodyLarge),
         ),
       ),
       data: (list) {
@@ -159,7 +154,7 @@ class _HabitList extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Text(
-                'No habits yet. Add one with +, or open a task\'s menu and choose "Habit and target…".',
+                l.habitsEmpty,
                 key: const Key('habits-empty'),
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyLarge,
@@ -178,7 +173,7 @@ class _HabitList extends ConsumerWidget {
                 title: Text(h.title),
                 subtitle: Text([
                   if (currentPeriodLine(h) case final line?) line,
-                  if (!h.isRepeating) 'No repeat',
+                  if (!h.isRepeating) l.habitsNoRepeat,
                   statsLine(h),
                 ].join('\n')),
                 isThreeLine: currentPeriodLine(h) != null || !h.isRepeating,
@@ -186,7 +181,7 @@ class _HabitList extends ConsumerWidget {
                 trailing: h.target != null && h.current != null
                     ? IconButton(
                         key: ValueKey('habit-measure-${h.taskId}'),
-                        tooltip: 'Add a measurement for ${h.title}',
+                        tooltip: l.habitsAddMeasurement(h.title),
                         icon: const Icon(Icons.add_circle_outline),
                         onPressed: () => addMeasurement(context, ref, h),
                       )
@@ -200,13 +195,14 @@ class _HabitList extends ConsumerWidget {
 }
 
 /// Returns the new task's id, or null when cancelled or refused.
-Future<String?> addTaskWithDialog(BuildContext context, WidgetRef ref, String? parentId, {String? listId}) async {
-  final title = await showTextDialog(context,
-      title: parentId == null ? 'New task' : 'New subtask',
+Future<String?> addTaskWithDialog(BuildContext context, WidgetRef ref, String? parentId,
+    {String? listId, String? title}) async {
+  final name = await showTextDialog(context,
+      title: title ?? (parentId == null ? 'New task' : 'New subtask'),
       confirmLabel: 'Add');
-  if (title == null || !context.mounted) return null;
+  if (name == null || !context.mounted) return null;
   final result =
-      await ref.read(taskServiceProvider).create(title, parentId: parentId, listId: listId);
+      await ref.read(taskServiceProvider).create(name, parentId: parentId, listId: listId);
   if (!context.mounted) return null;
   if (result is CommandFailure) {
     showMessage(context, describeFailure(result));
