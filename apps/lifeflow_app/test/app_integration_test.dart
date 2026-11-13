@@ -212,7 +212,7 @@ void main() {
   testWidgets('a task added in the UI lands in the profile store with audit',
       (tester) async {
     final w = await pumpApp(tester, StoragePlatform.android);
-    await tester.tap(find.byTooltip('Add task'));
+    await tapAddTask(tester);
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'Write the report');
     await tester.tap(find.widgetWithText(FilledButton, 'Add'));
@@ -234,10 +234,64 @@ void main() {
     await finish(tester, w);
   });
 
+  testWidgets('P03 UX U3: a list, a task in it and a move land in the store with audit (ADR-0047)',
+      (tester) async {
+    final w = await pumpApp(tester, StoragePlatform.android);
+    Future<void> add(String title) async {
+      await tester.enterText(find.byType(TextField), title);
+      await tester.tap(find.widgetWithText(FilledButton, 'Add'));
+      await tester.pump();
+      await settle(tester);
+    }
+
+    // A list from the + menu.
+    await tester.tap(find.byKey(const Key('add-menu')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('New list'));
+    await tester.pumpAndSettle();
+    await add('Work');
+    // A task in it from the list's menu, and a loose task.
+    await tester.tap(find.byTooltip('Actions for Work'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add task').last);
+    await tester.pumpAndSettle();
+    await add('Report');
+    await tapAddTask(tester);
+    await tester.pumpAndSettle();
+    await add('Call mum');
+    // The loose task into the list, from its menu.
+    await tester.tap(find.byTooltip('Actions for Call mum'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Move to list…'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Work').last);
+    await tester.pump();
+    await settle(tester);
+    expect(tester.getTopLeft(find.text('Call mum')).dx, tester.getTopLeft(find.text('Report')).dx);
+
+    final id = (await tester.runAsync(() => w.directory.active()))!.id;
+    final rows = await tester.runAsync(() async {
+      final s = await w.directory.openProfile(id);
+      final lists = await s.db.select(s.db.taskLists).get();
+      final tasks = await s.db.select(s.db.tasks).get();
+      final audit = await s.db.select(s.db.auditLog).get();
+      await s.db.close();
+      return (lists: lists, tasks: tasks, audit: audit);
+    });
+    final list = rows!.lists.single;
+    expect(list.title, 'Work');
+    final byTitle = {for (final t in rows.tasks) t.title: t};
+    expect(byTitle['Report']!.taskListId, list.id);
+    expect(byTitle['Call mum']!.taskListId, list.id);
+    expect(byTitle['Report']!.orderKey.compareTo(byTitle['Call mum']!.orderKey) < 0, isTrue);
+    expect([for (final a in rows.audit) a.action], containsAll(['CreateList', 'CreateTask', 'MoveTask']));
+    await finish(tester, w);
+  });
+
   testWidgets('P02 T6a: a schedule set in the UI is stored and shows in Today',
       (tester) async {
     final w = await pumpApp(tester, StoragePlatform.android);
-    await tester.tap(find.byTooltip('Add task'));
+    await tapAddTask(tester);
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'Water the plants');
     await tester.tap(find.widgetWithText(FilledButton, 'Add'));
@@ -248,7 +302,7 @@ void main() {
     await tester.tap(find.text('Today'));
     await settle(tester);
     expect(find.byKey(const Key('agenda-empty')), findsOneWidget);
-    await tester.tap(find.text('All'));
+    await tester.tap(find.text('Overview'));
     await settle(tester);
 
     await tester.tap(find.byTooltip('Actions for Water the plants'));
@@ -302,7 +356,7 @@ void main() {
     await tester.tap(find.text('Habits'));
     await settle(tester);
     expect(find.byKey(const Key('habits-empty')), findsOneWidget);
-    await tester.tap(find.byTooltip('Add task'));
+    await tapAddTask(tester);
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'Walk');
     await tester.tap(find.widgetWithText(FilledButton, 'Add'));
@@ -369,7 +423,7 @@ void main() {
   testWidgets('P03 T6b: a focus session started in the UI shows in the bar and is saved as one record',
       (tester) async {
     final w = await pumpApp(tester, StoragePlatform.android);
-    await tester.tap(find.byTooltip('Add task'));
+    await tapAddTask(tester);
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'Write the report');
     await tester.tap(find.widgetWithText(FilledButton, 'Add'));
@@ -422,7 +476,7 @@ void main() {
   testWidgets('P03 T6c: a goal made in the Goals tab links a task; progress is derived; the trash keeps the task',
       (tester) async {
     final w = await pumpApp(tester, StoragePlatform.android);
-    await tester.tap(find.byTooltip('Add task'));
+    await tapAddTask(tester);
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'Buy shoes');
     await tester.tap(find.widgetWithText(FilledButton, 'Add'));
@@ -491,7 +545,7 @@ void main() {
   testWidgets('P02 T6b: an event made in the Calendar tab is stored, shown, and overlaps a task',
       (tester) async {
     final w = await pumpApp(tester, StoragePlatform.android, width: 1200);
-    await tester.tap(find.byTooltip('Add task'));
+    await tapAddTask(tester);
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'Gym');
     await tester.tap(find.widgetWithText(FilledButton, 'Add'));
@@ -574,7 +628,7 @@ void main() {
     expect(w.device.plans, isNotEmpty); // synced on open
     expect(w.device.pending, isEmpty);
 
-    await tester.tap(find.byTooltip('Add task'));
+    await tapAddTask(tester);
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'Pay the bill');
     await tester.tap(find.widgetWithText(FilledButton, 'Add'));
@@ -634,7 +688,7 @@ void main() {
     final a = (await tester.runAsync(() => w.directory.active()))!.id;
 
     // A has a task.
-    await tester.tap(find.byTooltip('Add task'));
+    await tapAddTask(tester);
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'A-task');
     await tester.tap(find.widgetWithText(FilledButton, 'Add'));
@@ -718,7 +772,8 @@ void main() {
     await tester.pump(const Duration(seconds: 6));
     await settle(tester, 2);
     await tapAndSettle(find.byIcon(Icons.checklist_outlined));
-    await tapAndSettle(find.byTooltip('Add task'));
+    await tapAddTask(tester);
+        await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'My account task');
     await tapAndSettle(find.widgetWithText(FilledButton, 'Add'));
     expect(find.text('My account task'), findsOneWidget);
@@ -763,7 +818,8 @@ void main() {
     // Two tasks and a subtask in the active profile.
     Future<void> add(String title, {String? under}) async {
       if (under == null) {
-        await tapAndSettle(find.byTooltip('Add task'));
+        await tapAddTask(tester);
+        await tester.pumpAndSettle();
       } else {
         await tapAndSettle(find.byTooltip('Actions for $under'));
         await tapAndSettle(find.text('Add subtask'));
@@ -1012,4 +1068,14 @@ void habitPeriodsCloseOnOpen() {
     expect(results.map((r) => r.outcome).toSet(), {'missed'});
     expect(results, hasLength(greaterThanOrEqualTo(2)), reason: 'the days before today (device zone)');
   });
+}
+
+/// Taps "Add task": in the Overview it is in the + menu (P03 UX U3).
+Future<void> tapAddTask(WidgetTester tester) async {
+  final menu = find.byKey(const Key('add-menu'));
+  if (menu.evaluate().isNotEmpty) {
+    await tester.tap(menu);
+    await tester.pumpAndSettle();
+  }
+  await tester.tap(find.byTooltip('Add task').last);
 }

@@ -200,3 +200,58 @@ final trashedGoalsProvider = FutureProvider.autoDispose<List<GoalView>>((ref) {
 final themePreferenceProvider = FutureProvider<ThemePreference>(
   (ref) => ref.watch(settingsServiceProvider).themePreference(),
 );
+
+// --- P03 UX U3: the Overview (ADR-0046/0047) --------------------------------
+
+final overviewServiceProvider = Provider<OverviewService>((ref) => _notWired('overviewServiceProvider'));
+final overviewQueriesProvider = Provider<OverviewQueries>((ref) => _notWired('overviewQueriesProvider'));
+
+/// The lists of the ACTIVE profile, in order.
+final listsProvider = StreamProvider.autoDispose<List<TaskListView>>((ref) {
+  ref.watch(activeProfileProvider);
+  return ref.watch(overviewQueriesProvider).watchLists();
+});
+
+/// The events of the ACTIVE profile with their list, colour and order.
+final overviewEventsProvider = StreamProvider.autoDispose<List<OverviewEventView>>((ref) {
+  ref.watch(activeProfileProvider);
+  return ref.watch(overviewQueriesProvider).watchEvents();
+});
+
+/// The lists and tasks collapsed in the Overview (device setting). Loaded
+/// once, then changed here and written through, so a toggle is instant.
+class CollapsedItems extends StateNotifier<Set<String>> {
+  CollapsedItems(this._settings) : super(const {}) {
+    _settings?.collapsedItems().then((v) {
+      if (mounted && !_touched) state = v;
+    }, onError: (Object _) {});
+  }
+
+  /// Null where no settings are wired (isolated widget tests).
+  final SettingsService? _settings;
+  var _touched = false;
+
+  void toggle(String id) => _set(state.contains(id) ? ({...state}..remove(id)) : {...state, id});
+
+  /// Shows [id]'s contents (after a drop into it or a new child).
+  void expand(String id) {
+    if (state.contains(id)) _set({...state}..remove(id));
+  }
+
+  void _set(Set<String> next) {
+    _touched = true;
+    state = next;
+    _settings?.setCollapsedItems(next).catchError((Object _) {});
+  }
+}
+
+final collapsedItemsProvider = StateNotifierProvider<CollapsedItems, Set<String>>(
+    (ref) {
+  SettingsService? settings;
+  try {
+    settings = ref.watch(settingsServiceProvider);
+  } on UnimplementedError {
+    settings = null;
+  }
+  return CollapsedItems(settings);
+});

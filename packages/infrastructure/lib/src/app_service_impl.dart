@@ -70,11 +70,11 @@ class DirectorySettingsService implements SettingsService {
   @override
   Future<void> setThemePreference(ThemePreference preference) => directory.writeSetting(_theme, preference.name);
 
-  static const _expanded = 'ui.overview.expanded';
+  static const _collapsed = 'ui.overview.collapsed';
 
   @override
-  Future<Set<String>> expandedItems() async {
-    final v = await directory.readSetting(_expanded);
+  Future<Set<String>> collapsedItems() async {
+    final v = await directory.readSetting(_collapsed);
     if (v == null) return {};
     try {
       return {for (final id in jsonDecode(v) as List) id as String};
@@ -84,8 +84,8 @@ class DirectorySettingsService implements SettingsService {
   }
 
   @override
-  Future<void> setExpandedItems(Set<String> ids) =>
-      directory.writeSetting(_expanded, jsonEncode((ids.toList()..sort())));
+  Future<void> setCollapsedItems(Set<String> ids) =>
+      directory.writeSetting(_collapsed, jsonEncode((ids.toList()..sort())));
 
   static const _maxOcc = 'planning.maxOccurrences';
   static const _maxDays = 'planning.maxWindowDays';

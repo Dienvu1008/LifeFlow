@@ -1527,6 +1527,318 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Profile: {name}, {status}. Open profiles'**
   String drawerProfileLabelWithStatus(Object name, Object status);
+
+  /// No description provided for @ovEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No tasks yet. Use the + button to add your first one.'**
+  String get ovEmpty;
+
+  /// No description provided for @ovLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading tasks'**
+  String get ovLoading;
+
+  /// No description provided for @ovLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load tasks.'**
+  String get ovLoadError;
+
+  /// No description provided for @ovNotInAList.
+  ///
+  /// In en, this message translates to:
+  /// **'Not in a list'**
+  String get ovNotInAList;
+
+  /// No description provided for @ovAddMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get ovAddMenu;
+
+  /// No description provided for @ovCloseAddMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Close the add menu'**
+  String get ovCloseAddMenu;
+
+  /// No description provided for @ovAddTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Add task'**
+  String get ovAddTask;
+
+  /// No description provided for @ovNewList.
+  ///
+  /// In en, this message translates to:
+  /// **'New list'**
+  String get ovNewList;
+
+  /// No description provided for @ovNewEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'New event'**
+  String get ovNewEvent;
+
+  /// No description provided for @ovNewTask.
+  ///
+  /// In en, this message translates to:
+  /// **'New task'**
+  String get ovNewTask;
+
+  /// No description provided for @ovNewSubtask.
+  ///
+  /// In en, this message translates to:
+  /// **'New subtask'**
+  String get ovNewSubtask;
+
+  /// No description provided for @ovRenameTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename task'**
+  String get ovRenameTask;
+
+  /// No description provided for @ovRenameList.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename list'**
+  String get ovRenameList;
+
+  /// No description provided for @ovRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get ovRename;
+
+  /// No description provided for @ovFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus…'**
+  String get ovFocus;
+
+  /// No description provided for @ovSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule…'**
+  String get ovSchedule;
+
+  /// No description provided for @ovHabitAndTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Habit and target…'**
+  String get ovHabitAndTarget;
+
+  /// No description provided for @ovGoals.
+  ///
+  /// In en, this message translates to:
+  /// **'Goals…'**
+  String get ovGoals;
+
+  /// No description provided for @ovAddSubtask.
+  ///
+  /// In en, this message translates to:
+  /// **'Add subtask'**
+  String get ovAddSubtask;
+
+  /// No description provided for @ovAddEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Add event'**
+  String get ovAddEvent;
+
+  /// No description provided for @ovColour.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour…'**
+  String get ovColour;
+
+  /// No description provided for @ovMoveUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Move up'**
+  String get ovMoveUp;
+
+  /// No description provided for @ovMoveDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Move down'**
+  String get ovMoveDown;
+
+  /// No description provided for @ovIndent.
+  ///
+  /// In en, this message translates to:
+  /// **'Make it a subtask of the task above'**
+  String get ovIndent;
+
+  /// No description provided for @ovOutdent.
+  ///
+  /// In en, this message translates to:
+  /// **'Move it up a level'**
+  String get ovOutdent;
+
+  /// No description provided for @ovMoveToList.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to list…'**
+  String get ovMoveToList;
+
+  /// No description provided for @ovMoveToListTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to list'**
+  String get ovMoveToListTitle;
+
+  /// No description provided for @ovNoList.
+  ///
+  /// In en, this message translates to:
+  /// **'No list'**
+  String get ovNoList;
+
+  /// No description provided for @ovColourTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour'**
+  String get ovColourTitle;
+
+  /// No description provided for @ovNoColour.
+  ///
+  /// In en, this message translates to:
+  /// **'No colour'**
+  String get ovNoColour;
+
+  /// No description provided for @ovColorRed.
+  ///
+  /// In en, this message translates to:
+  /// **'Red'**
+  String get ovColorRed;
+
+  /// No description provided for @ovColorOrange.
+  ///
+  /// In en, this message translates to:
+  /// **'Orange'**
+  String get ovColorOrange;
+
+  /// No description provided for @ovColorAmber.
+  ///
+  /// In en, this message translates to:
+  /// **'Amber'**
+  String get ovColorAmber;
+
+  /// No description provided for @ovColorOlive.
+  ///
+  /// In en, this message translates to:
+  /// **'Olive'**
+  String get ovColorOlive;
+
+  /// No description provided for @ovColorGreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Green'**
+  String get ovColorGreen;
+
+  /// No description provided for @ovColorTeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Teal'**
+  String get ovColorTeal;
+
+  /// No description provided for @ovColorCyan.
+  ///
+  /// In en, this message translates to:
+  /// **'Cyan'**
+  String get ovColorCyan;
+
+  /// No description provided for @ovColorBlue.
+  ///
+  /// In en, this message translates to:
+  /// **'Blue'**
+  String get ovColorBlue;
+
+  /// No description provided for @ovColorIndigo.
+  ///
+  /// In en, this message translates to:
+  /// **'Indigo'**
+  String get ovColorIndigo;
+
+  /// No description provided for @ovColorPurple.
+  ///
+  /// In en, this message translates to:
+  /// **'Purple'**
+  String get ovColorPurple;
+
+  /// No description provided for @ovColorPink.
+  ///
+  /// In en, this message translates to:
+  /// **'Pink'**
+  String get ovColorPink;
+
+  /// No description provided for @ovColorBrown.
+  ///
+  /// In en, this message translates to:
+  /// **'Brown'**
+  String get ovColorBrown;
+
+  /// No description provided for @ovComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete {title}'**
+  String ovComplete(Object title);
+
+  /// No description provided for @ovMarkNotDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as not done: {title}'**
+  String ovMarkNotDone(Object title);
+
+  /// No description provided for @ovDoneFromMeasurements.
+  ///
+  /// In en, this message translates to:
+  /// **'Done from measurements: {title}'**
+  String ovDoneFromMeasurements(Object title);
+
+  /// No description provided for @ovExpand.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand {title}'**
+  String ovExpand(Object title);
+
+  /// No description provided for @ovCollapse.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse {title}'**
+  String ovCollapse(Object title);
+
+  /// No description provided for @ovDragHandle.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag {title} to move it'**
+  String ovDragHandle(Object title);
+
+  /// No description provided for @ovListTrashed.
+  ///
+  /// In en, this message translates to:
+  /// **'\"{title}\" moved to the trash with its tasks and events.'**
+  String ovListTrashed(Object title);
+
+  /// No description provided for @ovColourSwatch.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}'**
+  String ovColourSwatch(Object name);
+
+  /// No description provided for @ovEventLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Event: {title}'**
+  String ovEventLabel(Object title);
+
+  /// No description provided for @ovItemCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Empty} =1{1 item} other{{count} items}}'**
+  String ovItemCount(int count);
 }
 
 class _AppLocalizationsDelegate

@@ -62,7 +62,7 @@ void main() {
         (tester) async {
       final w = world();
       await pumpApp(tester, w);
-      await tester.tap(find.byTooltip('Add task'));
+      await tapAddTask(tester);
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'Buy milk');
       await tester.tap(find.widgetWithText(FilledButton, 'Add'));
@@ -74,7 +74,7 @@ void main() {
     testWidgets('an empty title is never submitted', (tester) async {
       final w = world();
       await pumpApp(tester, w);
-      await tester.tap(find.byTooltip('Add task'));
+      await tapAddTask(tester);
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), '   ');
       await tester.tap(find.widgetWithText(FilledButton, 'Add'));
@@ -101,7 +101,7 @@ void main() {
         ..failNext = const CommandFailure(CommandFailureKind.validationFailed,
             reason: 'subtasks may be at most 4 levels deep');
       await pumpApp(tester, w);
-      await tester.tap(find.byTooltip('Add task'));
+      await tapAddTask(tester);
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'Too deep');
       await tester.tap(find.widgetWithText(FilledButton, 'Add'));
@@ -321,7 +321,7 @@ void main() {
       });
       await pumpApp(tester, w, width: 400);
       expect(find.text('Task 39'), findsNothing); // off screen
-      await tester.tap(find.byTooltip('Add task'));
+      await tapAddTask(tester);
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'Brand new');
       await tester.tap(find.widgetWithText(FilledButton, 'Add'));

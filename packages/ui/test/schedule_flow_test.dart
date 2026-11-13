@@ -318,7 +318,7 @@ void main() {
       final w = world([]);
       await pumpApp(tester, w);
       Future<void> add(String title) async {
-        await tester.tap(find.byTooltip('Add task'));
+        await tapAddTask(tester);
         await tester.pumpAndSettle();
         await tester.enterText(find.byType(TextField), title);
         await tester.tap(find.widgetWithText(FilledButton, 'Add'));
@@ -331,7 +331,7 @@ void main() {
       await show(tester, 'Upcoming');
       await add('Later');
       expect(w.calls.last, 'setSchedule:new1:start=2026-11-10;end=-;due=-;repeat=-');
-      await show(tester, 'All');
+      await show(tester, 'Overview');
       await add('Someday');
       expect(w.calls.last, 'create:Someday:null');
     });

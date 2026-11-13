@@ -9,22 +9,18 @@ import '../providers.dart';
 import '../schedule_text.dart';
 import '../task_actions.dart';
 import '../task_tree.dart';
+import 'event_editor.dart';
 import 'focus_page.dart';
-import 'goals_screen.dart';
+import 'overview_view.dart';
 import 'habit_page.dart';
-import 'schedule_editor.dart';
-
-enum _RowAction { focus, rename, schedule, tracking, goals, addSubtask, trash }
-
-/// Typical height of one row (one-line ListTile); only an estimate used to
-/// get close to a row that is not built yet.
-const _rowExtent = 56.0;
 
 /// Space kept free under the last row so the + button never covers it.
 const _fabClearance = 96.0;
 
-/// Task list for the active profile. All writes go through [TaskService]
-/// (the command gateway); this widget holds no domain state (AP-12).
+/// The Tasks tab: the Overview (P03 UX U3), and the Today, Upcoming and
+/// Habits filters until the Timeline and the Habits screen (U4, U6). All
+/// writes go through the ports (the command gateway); this widget holds no
+/// domain state (AP-12).
 class TasksScreen extends ConsumerStatefulWidget {
   const TasksScreen({super.key});
 
@@ -33,19 +29,11 @@ class TasksScreen extends ConsumerStatefulWidget {
 }
 
 class _TasksScreenState extends ConsumerState<TasksScreen> {
-  final _scroll = ScrollController();
-
-  /// A task just added here; scrolled into view once the list shows it.
+  /// A task just added in the Overview; scrolled into view once it shows.
   String? _revealId;
 
-  @override
-  void dispose() {
-    _scroll.dispose();
-    super.dispose();
-  }
-
   Future<void> _addTask(String? parentId) async {
-    final id = await _add(context, ref, parentId);
+    final id = await addTaskWithDialog(context, ref, parentId);
     if (id == null || !mounted) return;
     // A task added in Today or Upcoming is planned there, so it does not
     // vanish from the list it was added to.
@@ -72,33 +60,6 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
       return;
     }
     setState(() => _revealId = id);
-  }
-
-  /// Attached to the row being revealed, so it can be scrolled into view
-  /// precisely once it is built.
-  final _revealKey = GlobalKey();
-  String? _revealing;
-
-  /// Scrolls so the row at [index] is visible (owner report: a new task was
-  /// added below the visible part of the list and looked lost). Rows have no
-  /// fixed height (large text), so: jump near it by estimate, then align on
-  /// the real row.
-  void _reveal(int index) {
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted || !_scroll.hasClients) return;
-      if (_revealKey.currentContext == null) {
-        final pos = _scroll.position;
-        final estimate = index * _rowExtent - pos.viewportDimension / 2;
-        _scroll.jumpTo(estimate.clamp(0.0, pos.maxScrollExtent));
-        await WidgetsBinding.instance.endOfFrame;
-      }
-      final ctx = _revealKey.currentContext;
-      if (ctx != null && ctx.mounted) {
-        await Scrollable.ensureVisible(ctx,
-            alignment: 0.5, duration: const Duration(milliseconds: 250));
-      }
-      if (mounted) setState(() => _revealing = null);
-    });
   }
 
   @override
@@ -133,7 +94,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                 showSelectedIcon: false,
                 segments: [
                   ButtonSegment(
-                      value: TaskFilter.all, label: label('All'), icon: icons ? const Icon(Icons.list) : null),
+                      value: TaskFilter.all, label: label('Overview'), icon: icons ? const Icon(Icons.list) : null),
                   ButtonSegment(
                       value: TaskFilter.today,
                       label: label('Today'),
@@ -154,79 +115,31 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'fab-tasks',
-        tooltip: 'Add task',
-        onPressed: () => _addTask(null),
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: filter == TaskFilter.all
+          ? OverviewAddButton(
+              onTask: () => _addTask(null),
+              onList: () => addList(context, ref),
+              onEvent: () => openEventEditor(context, ref),
+            )
+          : FloatingActionButton(
+              heroTag: 'fab-tasks',
+              tooltip: 'Add task',
+              onPressed: () => _addTask(null),
+              child: const Icon(Icons.add),
+            ),
       body: switch (filter) {
-        TaskFilter.all => _allTasks(context),
+        TaskFilter.all => OverviewView(
+            revealId: _revealId,
+            onRevealed: () => _revealId = null,
+            onAddSubtask: _addTask,
+          ),
         TaskFilter.today => const _AgendaList(upcoming: false),
         TaskFilter.upcoming => const _AgendaList(upcoming: true),
         TaskFilter.habits => const _HabitList(),
       },
     );
   }
-
-  Widget _allTasks(BuildContext context) {
-    final tasks = ref.watch(tasksProvider);
-    return tasks.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(semanticsLabel: 'Loading tasks'),
-        ),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text('Could not load tasks.',
-                style: Theme.of(context).textTheme.bodyLarge),
-          ),
-        ),
-        data: (list) {
-          if (list.isEmpty) return const _EmptyState();
-          final rows = orderTree(list);
-          final reveal = _revealId;
-          if (reveal != null) {
-            final i = rows.indexWhere((r) => r.task.id == reveal);
-            if (i >= 0) {
-              _revealId = null;
-              _revealing = reveal;
-              _reveal(i);
-            }
-          }
-          return ListView.builder(
-            key: const Key('task-list'),
-            controller: _scroll,
-            padding: const EdgeInsets.only(bottom: _fabClearance),
-            itemCount: rows.length,
-            itemBuilder: (context, i) {
-              final tile = _TaskTile(row: rows[i], onAddSubtask: _addTask);
-              return rows[i].task.id == _revealing
-                  ? KeyedSubtree(key: _revealKey, child: tile)
-                  : tile;
-            },
-          );
-        },
-      );
-  }
 }
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState();
-
-  @override
-  Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            'No tasks yet. Use the + button to add your first one.',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
-        ),
-      );
-}
-
 /// Today or Upcoming: occurrences of scheduled tasks, grouped by date
 /// (owner decision D9). Today puts overdue one-off tasks first.
 class _AgendaList extends ConsumerWidget {
@@ -365,105 +278,14 @@ class _HabitList extends ConsumerWidget {
   }
 }
 
-class _TaskTile extends ConsumerWidget {
-  const _TaskTile({required this.row, required this.onAddSubtask});
-  final TaskRow row;
-  final Future<void> Function(String parentId) onAddSubtask;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final t = row.task;
-    // P03 D8: with automatic completion the box shows the derived state of
-    // a one-off task and is never ticked by hand.
-    final tracked = ref.watch(trackedProvider).valueOrNull?[t.id];
-    final auto = tracked != null && tracked.completion == CompletionMode.automatic;
-    final period = tracked == null ? null : currentPeriodLine(tracked);
-    final schedule = t.schedule == null
-        ? null
-        : describeSchedule(t.schedule!, today: ref.watch(todayProvider)(), deviceZone: ref.watch(deviceZoneProvider));
-    return ListTile(
-      key: ValueKey('task-${t.id}'),
-      contentPadding:
-          EdgeInsetsDirectional.only(start: 16 + row.depth * 24.0, end: 8),
-      leading: auto
-          ? Checkbox(
-              value: tracked.isRepeating ? false : tracked.isCompleteNow,
-              semanticLabel: 'Done from measurements: ${t.title}',
-              onChanged: null,
-            )
-          : Checkbox(
-              value: t.isDone,
-              semanticLabel: t.isDone ? 'Mark as not done: ${t.title}' : 'Complete ${t.title}',
-              // Unchecking a done task reopens it (a completion can be undone).
-              onChanged: (_) => t.isDone
-                  ? reportResult(context, ref.read(taskServiceProvider).reopen(t.id))
-                  : completeTask(context, ref, row),
-            ),
-      title: Text(
-        t.title,
-        style: t.isDone
-            ? const TextStyle(decoration: TextDecoration.lineThrough)
-            : null,
-      ),
-      subtitle: schedule == null && period == null
-          ? null
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (schedule != null) Text(schedule, key: ValueKey('schedule-${t.id}')),
-                if (period != null) Text(period, key: ValueKey('period-${t.id}')),
-              ],
-            ),
-      trailing: PopupMenuButton<_RowAction>(
-        tooltip: 'Actions for ${t.title}',
-        onSelected: (a) => _onAction(context, ref, a),
-        itemBuilder: (_) => [
-          if (!t.isDone) const PopupMenuItem(value: _RowAction.focus, child: Text('Focus…')),
-          const PopupMenuItem(value: _RowAction.rename, child: Text('Rename')),
-          const PopupMenuItem(value: _RowAction.schedule, child: Text('Schedule…')),
-          const PopupMenuItem(value: _RowAction.tracking, child: Text('Habit and target…')),
-          const PopupMenuItem(value: _RowAction.goals, child: Text('Goals…')),
-          const PopupMenuItem(value: _RowAction.addSubtask, child: Text('Add subtask')),
-          const PopupMenuItem(value: _RowAction.trash, child: Text('Move to trash')),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _onAction(
-      BuildContext context, WidgetRef ref, _RowAction a) async {
-    final t = row.task;
-    switch (a) {
-      case _RowAction.focus:
-        await startFocus(context, ref, taskId: t.id, taskTitle: t.title);
-      case _RowAction.rename:
-        final title = await showTextDialog(context,
-            title: 'Rename task', initial: t.title, confirmLabel: 'Save');
-        if (title == null || !context.mounted) return;
-        await reportResult(context, ref.read(taskServiceProvider).rename(t.id, title));
-      case _RowAction.schedule:
-        await openScheduleEditor(context, ref,
-            taskId: t.id, title: t.title, initial: t.schedule);
-      case _RowAction.tracking:
-        await openHabitPage(context, taskId: t.id, title: t.title);
-      case _RowAction.goals:
-        await showGoalsOfTask(context, ref, taskId: t.id, title: t.title);
-      case _RowAction.addSubtask:
-        await onAddSubtask(t.id);
-      case _RowAction.trash:
-        await _trash(context, ref, row);
-    }
-  }
-}
-
 /// Returns the new task's id, or null when cancelled or refused.
-Future<String?> _add(BuildContext context, WidgetRef ref, String? parentId) async {
+Future<String?> addTaskWithDialog(BuildContext context, WidgetRef ref, String? parentId, {String? listId}) async {
   final title = await showTextDialog(context,
       title: parentId == null ? 'New task' : 'New subtask',
       confirmLabel: 'Add');
   if (title == null || !context.mounted) return null;
   final result =
-      await ref.read(taskServiceProvider).create(title, parentId: parentId);
+      await ref.read(taskServiceProvider).create(title, parentId: parentId, listId: listId);
   if (!context.mounted) return null;
   if (result is CommandFailure) {
     showMessage(context, describeFailure(result));
@@ -474,7 +296,7 @@ Future<String?> _add(BuildContext context, WidgetRef ref, String? parentId) asyn
 
 /// Moving a task with subtasks to the trash follows the device setting
 /// (Settings): ask, always with subtasks, or keep them (they move up a level).
-Future<void> _trash(BuildContext context, WidgetRef ref, TaskRow row) async {
+Future<void> trashTask(BuildContext context, WidgetRef ref, TaskRow row) async {
   final service = ref.read(taskServiceProvider);
   if (row.subtaskCount == 0) {
     await reportResult(context, service.trash(row.task.id));

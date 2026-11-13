@@ -11,11 +11,12 @@ import 'package:foundation/foundation.dart';
 import '../messages.dart';
 import '../providers.dart';
 import '../widgets/schedule_fields.dart';
-import 'schedule_editor.dart';
+import 'schedule_editor.dart';
 import '../l10n.dart';
 
-/// Opens the editor: a new event on [date], or the event [eventId].
-Future<void> openEventEditor(BuildContext context, WidgetRef ref, {String? eventId, LocalDate? date}) async {
+/// Opens the editor: a new event on [date] (in the list [listId], P03 UX U3),
+/// or the event [eventId].
+Future<void> openEventEditor(BuildContext context, WidgetRef ref, {String? eventId, LocalDate? date, String? listId}) async {
   final defaults = await readPlanningDefaults(ref);
   EventDetails? existing;
   if (eventId != null) {
@@ -30,7 +31,7 @@ Future<void> openEventEditor(BuildContext context, WidgetRef ref, {String? event
   await Navigator.of(context, rootNavigator: true).push(MaterialPageRoute<void>(
     fullscreenDialog: true,
     builder: (_) =>
-        EventEditorPage(existing: existing, date: date, defaults: defaults, initialReminders: reminders),
+        EventEditorPage(existing: existing, date: date, listId: listId, defaults: defaults, initialReminders: reminders),
   ));
 }
 
@@ -40,12 +41,15 @@ void _snack(BuildContext context, String m) => ScaffoldMessenger.of(context)
 
 class EventEditorPage extends ConsumerStatefulWidget {
   const EventEditorPage(
-      {super.key, this.existing, this.date, required this.defaults, this.initialReminders = const []});
+      {super.key, this.existing, this.date, this.listId, required this.defaults, this.initialReminders = const []});
   final EventDetails? existing;
   final List<ReminderInput> initialReminders;
 
   /// The day a new event goes on (default: today).
   final LocalDate? date;
+
+  /// The list a new event goes to (null: none).
+  final String? listId;
   final PlanningSettings defaults;
 
   @override
@@ -110,6 +114,7 @@ class _EventEditorPageState extends ConsumerState<EventEditorPage> {
       location: location.isEmpty ? null : location,
       calendarId: _calendarId,
       repeat: r.value,
+      listId: widget.listId,
     );
     final events = ref.read(eventServiceProvider);
     final existing = widget.existing;
