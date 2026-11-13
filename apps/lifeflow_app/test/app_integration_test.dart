@@ -288,7 +288,7 @@ void main() {
     await finish(tester, w);
   });
 
-  testWidgets('P02 T6a: a schedule set in the UI is stored and shows in Today',
+  testWidgets('P02 T6a: a schedule set in the UI is stored and shows in the Timeline',
       (tester) async {
     final w = await pumpApp(tester, StoragePlatform.android);
     await tapAddTask(tester);
@@ -299,7 +299,7 @@ void main() {
     await settle(tester);
 
     // Not planned yet: Today is empty.
-    await tester.tap(find.text('Today'));
+    await tester.tap(find.text('Timeline'));
     await settle(tester);
     expect(find.byKey(const Key('agenda-empty')), findsOneWidget);
     await tester.tap(find.text('Overview'));
@@ -321,13 +321,14 @@ void main() {
     await tester.pumpAndSettle(); // the editor's closing transition
     expect(find.text('Start Today · Every day'), findsOneWidget);
 
-    await tester.tap(find.text('Today'));
+    await tester.tap(find.text('Timeline'));
     await settle(tester);
-    expect(find.text('Water the plants'), findsOneWidget);
-    expect(find.text('Repeats'), findsOneWidget);
+    // P03 UX U4: the Timeline shows the daily repeat on every day; today first.
+    expect(find.text('Water the plants'), findsWidgets);
+    expect(find.text('Repeats'), findsWidgets);
 
     // D5: ticking marks only today's occurrence; the task stays open.
-    await tester.tap(find.bySemanticsLabel('Complete Water the plants'));
+    await tester.tap(find.bySemanticsLabel('Complete Water the plants').first);
     await tester.pump();
     await settle(tester);
     expect(find.bySemanticsLabel('Mark as not done: Water the plants'), findsOneWidget);
@@ -397,7 +398,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Today: the box shows the derived state and cannot be ticked (D8).
-    await tester.tap(find.text('Today'));
+    await tester.tap(find.text('Timeline'));
     await settle(tester);
     expect(find.bySemanticsLabel('Done from measurements: Walk'), findsOneWidget);
 

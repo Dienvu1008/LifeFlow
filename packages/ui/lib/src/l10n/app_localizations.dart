@@ -1839,6 +1839,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =0{Empty} =1{1 item} other{{count} items}}'**
   String ovItemCount(int count);
+
+  /// No description provided for @tlTimeline.
+  ///
+  /// In en, this message translates to:
+  /// **'Timeline'**
+  String get tlTimeline;
+
+  /// No description provided for @tlGoToToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to today'**
+  String get tlGoToToday;
+
+  /// No description provided for @tlAllDay.
+  ///
+  /// In en, this message translates to:
+  /// **'All day'**
+  String get tlAllDay;
+
+  /// No description provided for @tlNothingPlanned.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing planned yet. Tasks and events you plan show up here.'**
+  String get tlNothingPlanned;
+
+  /// No description provided for @tlNothingThisDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing planned.'**
+  String get tlNothingThisDay;
+
+  /// No description provided for @tlShowMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the month calendar'**
+  String get tlShowMonth;
+
+  /// No description provided for @tlHideMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide the month calendar'**
+  String get tlHideMonth;
+
+  /// No description provided for @tlTruncated.
+  ///
+  /// In en, this message translates to:
+  /// **'Not everything is shown'**
+  String get tlTruncated;
+
+  /// No description provided for @tlTruncatedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'There are more items than the limit in Settings → Calendar.'**
+  String get tlTruncatedHint;
+
+  /// No description provided for @tlLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading the timeline'**
+  String get tlLoading;
+
+  /// No description provided for @tlOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue ({count})'**
+  String tlOverdue(int count);
+
+  /// No description provided for @tlShowOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the overdue tasks'**
+  String get tlShowOverdue;
+
+  /// No description provided for @tlHideOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide the overdue tasks'**
+  String get tlHideOverdue;
+
+  /// No description provided for @tlDayHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'{relative} · {date}'**
+  String tlDayHeader(Object relative, Object date);
 }
 
 class _AppLocalizationsDelegate

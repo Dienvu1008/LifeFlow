@@ -606,5 +606,21 @@
   "ovEventLabel": "Event: {title}",
   "@ovEventLabel": {"placeholders": {"title": {"type": "Object"}}},
   "ovItemCount": "{count, plural, =0{Empty} =1{1 item} other{{count} items}}",
-  "@ovItemCount": {"placeholders": {"count": {"type": "int"}}}
+  "@ovItemCount": {"placeholders": {"count": {"type": "int"}}},
+  "tlTimeline": "Timeline",
+  "tlGoToToday": "Go to today",
+  "tlAllDay": "All day",
+  "tlNothingPlanned": "Nothing planned yet. Tasks and events you plan show up here.",
+  "tlNothingThisDay": "Nothing planned.",
+  "tlShowMonth": "Show the month calendar",
+  "tlHideMonth": "Hide the month calendar",
+  "tlTruncated": "Not everything is shown",
+  "tlTruncatedHint": "There are more items than the limit in Settings → Calendar.",
+  "tlLoading": "Loading the timeline",
+  "tlOverdue": "Overdue ({count})",
+  "@tlOverdue": {"placeholders": {"count": {"type": "int"}}},
+  "tlShowOverdue": "Show the overdue tasks",
+  "tlHideOverdue": "Hide the overdue tasks",
+  "tlDayHeader": "{relative} · {date}",
+  "@tlDayHeader": {"placeholders": {"relative": {"type": "Object"}, "date": {"type": "Object"}}}
 }

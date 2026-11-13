@@ -20,6 +20,8 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   intl: 0.20.3 # BSD-3-Clause; P03 UX U1 (dates, plurals)
+  flutter_sticky_header: 0.11.0 # MIT; P03 UX U4 (sticky day headers, VS-37)
+  table_calendar: 3.3.0 # Apache-2.0; P03 UX U4 (month picker, VS-38)
 dev_dependencies:
   flutter_test:
     sdk: flutter

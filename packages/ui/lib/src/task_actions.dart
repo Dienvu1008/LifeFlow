@@ -69,6 +69,7 @@ class TaskOccurrenceTile extends ConsumerWidget {
     required this.row,
     required this.today,
     this.showDate = false,
+    this.showTimes = true,
     this.conflictWith = const [],
   });
   final AgendaItem item;
@@ -81,6 +82,10 @@ class TaskOccurrenceTile extends ConsumerWidget {
   /// Show the date in the subtitle (rows not grouped by date).
   final bool showDate;
 
+  /// Show the start time in the subtitle (false in the Timeline, which has
+  /// a time column, P03 UX U4).
+  final bool showTimes;
+
   /// Titles of items this one overlaps (D7: shown, never resolved).
   final List<String> conflictWith;
 
@@ -89,7 +94,7 @@ class TaskOccurrenceTile extends ConsumerWidget {
     final parts = <String>[
       if (item.isOverdue) 'Planned ${formatDate(item.date, today: today)}',
       if (showDate && !item.isOverdue) formatDate(item.date, today: today),
-      if (s != null && s.isTimed)
+      if (showTimes && s != null && s.isTimed)
         e != null && e.isTimed && e.date == s.date && e.zone == s.zone
             ? '${formatTimeOnly(s, deviceZone: zone)}–${e.time}'
             : formatTimeOnly(s, deviceZone: zone),

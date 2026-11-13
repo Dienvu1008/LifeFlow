@@ -178,7 +178,7 @@ void main() {
           taskId: 't1', title: 'Write', originalDate: testToday, start: SchedulePointInput.date(testToday), isRepeating: true, isDone: false),
     ]);
     await pumpApp(tester, w);
-    await tester.tap(find.text('Today'));
+    await tester.tap(find.text('Timeline'));
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Actions for Write'));
     await tester.pumpAndSettle();
@@ -195,7 +195,7 @@ void main() {
           taskId: 't1', title: 'Write', originalDate: testToday, start: SchedulePointInput.date(testToday), isRepeating: true, isDone: true),
     ]);
     await pumpApp(tester, w);
-    await tester.tap(find.text('Today'));
+    await tester.tap(find.text('Timeline'));
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Actions for Write'));
     await tester.pumpAndSettle();

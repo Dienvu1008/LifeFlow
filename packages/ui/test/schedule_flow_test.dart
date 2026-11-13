@@ -238,14 +238,22 @@ void main() {
         item('r', 'Gym', mon, time: at(18), repeating: true),
       ]);
       await pumpApp(tester, w);
-      await show(tester, 'Today');
+      await show(tester, 'Timeline');
       final y = [
-        for (final t in ['Overdue', 'Late', 'Today · Mon 9 Nov', 'Call', 'Gym'])
+        // P03 UX U4: the overdue group is at the top of today (U-D3).
+        for (final t in ['Today · Mon 9 Nov', 'Overdue (1)', 'Late', 'Call', 'Gym'])
           tester.getTopLeft(find.text(t)).dy
       ];
       expect(y, orderedEquals([...y]..sort()));
       expect(find.text('Planned Fri 6 Nov'), findsOneWidget);
-      expect(find.text('18:00 · Repeats'), findsOneWidget);
+      // The time is in the time column; the subtitle keeps the rest.
+      expect(find.text('18:00'), findsOneWidget);
+      expect(find.text('Repeats'), findsOneWidget);
+      expect(find.text('All day'), findsOneWidget); // the overdue task has no time
+      // The group folds.
+      await tester.tap(find.byKey(const Key('overdue-toggle')));
+      await tester.pumpAndSettle();
+      expect(find.text('Late'), findsNothing);
     });
 
     testWidgets('ticking a repeating task marks only that occurrence (D5)', (tester) async {
@@ -255,7 +263,7 @@ void main() {
         item('t', 'Call', mon),
       ]);
       await pumpApp(tester, w);
-      await show(tester, 'Today');
+      await show(tester, 'Timeline');
       await tester.tap(find.bySemanticsLabel('Complete Gym'));
       await tester.pumpAndSettle();
       expect(w.calls, ['occurrenceDone:r@2026-11-09:true']);
@@ -268,15 +276,15 @@ void main() {
       expect(w.calls.last, 'complete:t:false');
     });
 
-    testWidgets('Upcoming groups by date; skip and move only this time (D4)', (tester) async {
+    testWidgets('later days have their own headers; skip and move only this time (D4)', (tester) async {
       final w = world([task('r', 'Gym')]);
-      w.upcoming = Agenda([
+      w.calendar.range = CalendarRange(events: const [], tasks: [
         item('r', 'Gym', day(10), repeating: true),
         item('r', 'Gym', day(11), repeating: true, moved: true),
-      ]);
+      ], conflicts: const []);
       await pumpApp(tester, w);
-      await show(tester, 'Upcoming');
-      expect(find.text('Tomorrow'), findsOneWidget);
+      await show(tester, 'Timeline');
+      expect(find.text('Tomorrow · Tue 10 Nov'), findsOneWidget);
       expect(find.text('Wed 11 Nov'), findsOneWidget);
       expect(find.text('Repeats · Moved'), findsOneWidget);
 
@@ -304,7 +312,7 @@ void main() {
     testWidgets('an empty day says so; a cut-off list says so', (tester) async {
       final w = world([]);
       await pumpApp(tester, w);
-      await show(tester, 'Today');
+      await show(tester, 'Timeline');
       expect(find.byKey(const Key('agenda-empty')), findsOneWidget);
       expect(find.byKey(const Key('agenda-truncated')), findsNothing);
       w.today = const Agenda([], truncated: true);
@@ -314,7 +322,7 @@ void main() {
       expect(find.byKey(const Key('agenda-truncated')), findsOneWidget);
     });
 
-    testWidgets('a task added in Today is planned for today; in Upcoming for tomorrow', (tester) async {
+    testWidgets('a task added in the Timeline is planned on the day it shows', (tester) async {
       final w = world([]);
       await pumpApp(tester, w);
       Future<void> add(String title) async {
@@ -325,10 +333,16 @@ void main() {
         await tester.pumpAndSettle();
       }
 
-      await show(tester, 'Today');
+      await show(tester, 'Timeline');
       await add('Now');
       expect(w.calls, ['create:Now:null', 'setSchedule:new0:start=2026-11-09;end=-;due=-;repeat=-']);
-      await show(tester, 'Upcoming');
+      // Another day from the month calendar under the app bar.
+      await tester.tap(find.byKey(const Key('timeline-month')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.descendant(of: find.byKey(const Key('timeline-calendar')), matching: find.text('10')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('timeline-calendar')), findsNothing);
+      expect(find.text('Tomorrow · Tue 10 Nov'), findsOneWidget);
       await add('Later');
       expect(w.calls.last, 'setSchedule:new1:start=2026-11-10;end=-;due=-;repeat=-');
       await show(tester, 'Overview');
@@ -348,10 +362,11 @@ void main() {
     await pickerOk(tester);
     await tapKey(tester, 'repeat-switch');
     await save(tester);
-    await tester.tap(find.text('Today'));
+    await tester.tap(find.text('Timeline'));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    expect(find.text('09:00 · Repeats'), findsOneWidget);
+    expect(find.text('09:00'), findsOneWidget);
+    expect(find.text('Repeats'), findsOneWidget);
   });
 
   testWidgets('phone width with a large font: filter labels stay on one line (device check)',
@@ -359,11 +374,11 @@ void main() {
     tester.platformDispatcher.textScaleFactorTestValue = 1.3;
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     await pumpApp(tester, world([]), width: 400);
-    final label = find.descendant(of: find.byKey(const Key('task-filter')), matching: find.text('Upcoming'));
+    final label = find.descendant(of: find.byKey(const Key('task-filter')), matching: find.text('Timeline'));
     final para = tester.renderObject<RenderParagraph>(label);
     expect(para.didExceedMaxLines, isFalse);
     expect(tester.getSize(label).height, lessThan(30)); // one line
-    expect(find.descendant(of: find.byKey(const Key('task-filter')), matching: find.byIcon(Icons.today)),
+    expect(find.descendant(of: find.byKey(const Key('task-filter')), matching: find.byIcon(Icons.view_timeline_outlined)),
         findsNothing);
     expect(tester.takeException(), isNull);
   });
