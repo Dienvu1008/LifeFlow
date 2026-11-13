@@ -91,6 +91,8 @@ class DirectorySettingsService implements SettingsService {
   static const _maxDays = 'planning.maxWindowDays';
   static const _monthEnd = 'planning.defaultMonthEnd';
   static const _weekStart = 'planning.firstDayOfWeek';
+  static const _hiddenFrom = 'planning.hiddenFrom';
+  static const _hiddenTo = 'planning.hiddenTo';
 
   /// Kept in step with the stored settings (read by the agenda queries).
   final limitsCache = PlanningLimitsCache();
@@ -101,12 +103,16 @@ class DirectorySettingsService implements SettingsService {
     final days = int.tryParse(await directory.readSetting(_maxDays) ?? '');
     final monthEnd = await directory.readSetting(_monthEnd);
     final week = int.tryParse(await directory.readSetting(_weekStart) ?? '');
+    final hiddenFrom = int.tryParse(await directory.readSetting(_hiddenFrom) ?? '');
+    final hiddenTo = int.tryParse(await directory.readSetting(_hiddenTo) ?? '');
     final s = PlanningSettings(
       maxOccurrences: occ ?? PlanningSettings.defaultMaxOccurrences,
       maxWindowDays: days ?? PlanningSettings.defaultMaxWindowDays,
       defaultMonthEnd:
           MonthEndChoice.values.where((m) => m.name == monthEnd).firstOrNull ?? MonthEndChoice.skip,
       firstDayOfWeek: week == 7 ? Weekday.sunday : Weekday.monday,
+      hiddenFrom: hiddenFrom ?? PlanningSettings.defaultHiddenFrom,
+      hiddenTo: hiddenTo ?? PlanningSettings.defaultHiddenTo,
     ).clamped();
     limitsCache.value = s;
     return s;
@@ -119,6 +125,8 @@ class DirectorySettingsService implements SettingsService {
     await directory.writeSetting(_maxDays, '${s.maxWindowDays}');
     await directory.writeSetting(_monthEnd, s.defaultMonthEnd.name);
     await directory.writeSetting(_weekStart, '${s.firstDayOfWeek.isoNumber}');
+    await directory.writeSetting(_hiddenFrom, '${s.hiddenFrom}');
+    await directory.writeSetting(_hiddenTo, '${s.hiddenTo}');
     limitsCache.value = s;
   }
 }

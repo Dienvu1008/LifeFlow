@@ -127,6 +127,8 @@ class AgendaItem {
     required this.isDone,
     this.isMoved = false,
     this.isOverdue = false,
+    this.deviceStart,
+    this.deviceEnd,
   });
 
   final String taskId;
@@ -145,6 +147,12 @@ class AgendaItem {
 
   /// A one-off task planned before today and still open (shown in Today).
   final bool isOverdue;
+
+  /// P03 UX U5: the timed start and end in the DEVICE's zone, resolved by the
+  /// Time Kernel (DST gaps and overlaps), for placing it on a time grid.
+  /// Null when date-only (or no such point).
+  final SchedulePointInput? deviceStart;
+  final SchedulePointInput? deviceEnd;
 
   /// The first date the item is on.
   LocalDate get date => (start ?? end ?? deadline)!.date;

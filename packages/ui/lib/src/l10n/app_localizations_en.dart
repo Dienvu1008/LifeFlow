@@ -1066,4 +1066,114 @@ class AppLocalizationsEn extends AppLocalizations {
   String tlDayHeader(Object relative, Object date) {
     return '$relative · $date';
   }
+
+  @override
+  String get calDay => 'Day';
+
+  @override
+  String get calWeek => 'Week';
+
+  @override
+  String get calMonth => 'Month';
+
+  @override
+  String get calYear => 'Year';
+
+  @override
+  String get calGoToToday => 'Go to today';
+
+  @override
+  String get calPrevious => 'Previous';
+
+  @override
+  String get calNext => 'Next';
+
+  @override
+  String get calZoomIn => 'Zoom in';
+
+  @override
+  String get calZoomOut => 'Zoom out';
+
+  @override
+  String get calShowNight => 'Show the night hours';
+
+  @override
+  String get calHideNight => 'Hide the night hours';
+
+  @override
+  String calNightFold(Object from, Object to) {
+    return '$from–$to hidden. Show';
+  }
+
+  @override
+  String get calOpenTimeline => 'Open the Timeline';
+
+  @override
+  String get calMore => 'More';
+
+  @override
+  String get calManageCalendars => 'Manage calendars';
+
+  @override
+  String get calNewEvent => 'New event';
+
+  @override
+  String get calNewTask => 'New task';
+
+  @override
+  String get calScheduleTask => 'Schedule a task here…';
+
+  @override
+  String calSlotTitle(Object date, Object time) {
+    return '$date at $time';
+  }
+
+  @override
+  String get calPickTask => 'Schedule which task?';
+
+  @override
+  String get calNoUnscheduled => 'Every open task already has a schedule.';
+
+  @override
+  String get calNow => 'Now';
+
+  @override
+  String get calLoading => 'Loading the calendar';
+
+  @override
+  String get calLoadError => 'Could not load the calendar.';
+
+  @override
+  String calDayItems(Object date, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items',
+      one: '1 item',
+      zero: 'nothing planned',
+    );
+    return '$date, $_temp0';
+  }
+
+  @override
+  String calAllDayMore(int count) {
+    return '+$count';
+  }
+
+  @override
+  String get calNightHours => 'Night hours';
+
+  @override
+  String get calNightHoursHint =>
+      'Hidden in the day and week grids until you show them.';
+
+  @override
+  String calNightFrom(Object time) {
+    return 'From $time';
+  }
+
+  @override
+  String calNightTo(Object time) {
+    return 'To $time';
+  }
 }

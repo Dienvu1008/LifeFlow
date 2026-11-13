@@ -70,6 +70,14 @@ Future<void> mode(WidgetTester tester, String label) async {
   await tester.pumpAndSettle();
 }
 
+/// P03 UX U5: a timed item is a block in the grid; it opens the full row.
+Future<void> openBlock(WidgetTester tester, String key) async {
+  await tester.ensureVisible(find.byKey(ValueKey('chip-$key')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(ValueKey('chip-$key')));
+  await tester.pumpAndSettle();
+}
+
 Future<void> eventAction(WidgetTester tester, String title, String action) async {
   await tester.tap(find.byTooltip('Actions for $title').first);
   await tester.pumpAndSettle();
@@ -106,14 +114,14 @@ void main() {
       expect(w.calendar.ranges.last, '2026-11-08..2026-11-14');
     });
 
-    testWidgets('phone: the week is a list of days; tapping a day opens it', (tester) async {
+    testWidgets('phone: the week is a time grid of seven days; tapping a day opens it', (tester) async {
       final w = world();
       w.calendar.range = CalendarRange(
           events: [ev('e1', 'Dentist', day(11), from: at(14), to: at(15))], tasks: const [], conflicts: const []);
       await pumpCalendar(tester, w, width: 400, height: 900);
-      expect(find.byKey(const Key('calendar-week-list')), findsOneWidget);
+      expect(find.byKey(const Key('calendar-grid')), findsOneWidget);
       expect(find.text('9 – 15 Nov 2026'), findsOneWidget);
-      expect(find.text('Dentist'), findsOneWidget);
+      expect(find.byKey(ValueKey('chip-event:e1@${day(11)}')), findsOneWidget);
       await tester.tap(find.byKey(ValueKey('day-header-${day(11)}')));
       await tester.pumpAndSettle();
       expect(find.text('Wed 11 Nov 2026'), findsOneWidget);
@@ -129,9 +137,8 @@ void main() {
           conflicts: const []);
       await pumpCalendar(tester, w, width: 1200);
       await mode(tester, 'Week');
-      expect(find.byKey(const Key('calendar-week-columns')), findsOneWidget);
-      await tester.tap(find.byKey(ValueKey('chip-event:e1@${day(11)}')));
-      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('calendar-grid')), findsOneWidget);
+      await openBlock(tester, 'event:e1@${day(11)}');
       expect(find.text('14:00–15:00 · Clinic'), findsOneWidget);
     });
 
@@ -141,7 +148,8 @@ void main() {
       await tester.tap(find.byKey(ValueKey('month-cell-${day(20)}')));
       await tester.pumpAndSettle();
       expect(find.text('Fri 20 Nov 2026'), findsOneWidget);
-      expect(find.byKey(const Key('calendar-empty')), findsOneWidget);
+      expect(find.byKey(const Key('calendar-grid')), findsOneWidget);
+      expect(find.byKey(const Key('now-line')), findsNothing); // not today
     });
 
     testWidgets("buttons open the Timeline on today and on tomorrow (U4)", (tester) async {
@@ -153,7 +161,11 @@ void main() {
       expect(find.byKey(ValueKey('day-$testToday')), findsOneWidget);
       await tester.tap(find.byIcon(Icons.calendar_month_outlined));
       await tester.pumpAndSettle();
-      await tapKey(tester, 'calendar-upcoming-tasks');
+      // From the day view, it opens on the day shown.
+      await mode(tester, 'Day');
+      await tester.tap(find.byTooltip('Next'));
+      await tester.pumpAndSettle();
+      await tapKey(tester, 'calendar-today-tasks');
       expect(find.byKey(ValueKey('day-${testToday.addDays(1)}')), findsOneWidget);
       // At the top of the list, under the app bar.
       expect(tester.getTopLeft(find.byKey(ValueKey('day-${testToday.addDays(1)}'))).dy, lessThan(300));
@@ -178,12 +190,19 @@ void main() {
       await pumpCalendar(tester, w);
       await mode(tester, 'Day');
       expect(find.text('Mon 9 Nov 2026'), findsOneWidget);
-      final y = [for (final t in ['Holiday', 'Standup', 'Gym']) tester.getTopLeft(find.text(t)).dy];
-      expect(y, orderedEquals([...y]..sort()));
+      // P03 UX U5: the all-day item above the grid; the two that overlap side by side.
+      expect(find.descendant(of: find.byKey(const Key('all-day-row')), matching: find.text('Holiday')), findsOneWidget);
+      final standup = tester.getRect(find.byKey(ValueKey('chip-event:e1@$mon')));
+      final gym = tester.getRect(find.byKey(ValueKey('chip-task:t@$mon')));
+      expect(standup.right, lessThanOrEqualTo(gym.left + 1));
+      expect(standup.top, lessThan(gym.top));
+      // The full rows show the overlaps; the task ticks one occurrence (D5).
+      await openBlock(tester, 'event:e1@$mon');
       expect(find.text('Overlaps Gym'), findsOneWidget);
+      Navigator.of(tester.element(find.text('Overlaps Gym'))).pop();
+      await tester.pumpAndSettle();
+      await openBlock(tester, 'task:t@$mon');
       expect(find.text('Overlaps Standup'), findsOneWidget);
-      expect(find.text('All day'), findsOneWidget);
-      // The task ticks one occurrence (D5), as in Today.
       await tester.tap(find.bySemanticsLabel('Complete Gym'));
       await tester.pumpAndSettle();
       expect(w.calls.last, 'occurrenceDone:t@$mon:true');
@@ -195,6 +214,7 @@ void main() {
           CalendarRange(events: [ev('e1', 'Party', mon, from: at(20), cancelled: true)], tasks: const [], conflicts: const []);
       await pumpCalendar(tester, w);
       await mode(tester, 'Day');
+      await openBlock(tester, 'event:e1@$mon');
       expect(find.text('20:00 · Cancelled'), findsOneWidget);
       await eventAction(tester, 'Party', 'Un-cancel the event');
       expect(w.calls.last, 'event.cancelled:e1:false');
@@ -211,6 +231,7 @@ void main() {
           conflicts: const []);
       await pumpCalendar(tester, w);
       await mode(tester, 'Day');
+      await openBlock(tester, 'event:e1@$mon');
     }
 
     testWidgets('skip, cancel, move and rename one time', (tester) async {
@@ -332,7 +353,8 @@ void main() {
           conflicts: const []);
       await pumpCalendar(tester, w);
       await mode(tester, 'Day');
-      await tester.tap(find.text('Class'));
+      await openBlock(tester, 'event:e1@$mon');
+      await tester.tap(find.text('Class').last); // the full row opens the editor
       await tester.pumpAndSettle();
       expect(find.textContaining('apply to every time this event repeats'), findsOneWidget);
       await tester.enterText(find.byKey(const Key('event-title')), 'Class B');

@@ -5,7 +5,8 @@ import 'package:foundation/foundation.dart';
 
 import 'schedule_text.dart';
 
-enum CalendarMode { day, week, month }
+/// P03 UX U5: a year view too (U-D6).
+enum CalendarMode { day, week, month, year }
 
 /// The first day of the week containing [d], with weeks starting on [first]
 /// (owner decision D3).
@@ -23,6 +24,8 @@ LocalDate weekStartOf(LocalDate d, Weekday first) => d.addDays(-((d.weekday.inde
     case CalendarMode.month:
       final s = weekStartOf(LocalDate(anchor.year, anchor.month, 1), first);
       return (from: s, to: s.addDays(41));
+    case CalendarMode.year:
+      return (from: LocalDate(anchor.year, 1, 1), to: LocalDate(anchor.year, 12, 31));
   }
 }
 
@@ -31,6 +34,7 @@ LocalDate stepAnchor(CalendarMode mode, LocalDate anchor, int by) => switch (mod
       CalendarMode.day => anchor.addDays(by),
       CalendarMode.week => anchor.addDays(7 * by),
       CalendarMode.month => LocalDate(anchor.year, anchor.month, 1).addMonthsClamped(by),
+      CalendarMode.year => LocalDate(anchor.year + by, 1, 1),
     };
 
 const _monthLong = [
@@ -56,6 +60,8 @@ String periodTitle(CalendarMode mode, LocalDate anchor, Weekday first) {
       return '${a.day} – ${b.day} ${_monthShort[b.month - 1]} ${b.year}';
     case CalendarMode.month:
       return '${_monthLong[anchor.month - 1]} ${anchor.year}';
+    case CalendarMode.year:
+      return '${anchor.year}';
   }
 }
 

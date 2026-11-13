@@ -170,6 +170,33 @@ class _CalendarSettings extends ConsumerWidget {
                       title: Text(context.l10n.sunday)),
                 ]),
               ),
+              // P03 UX U5 (U-D5): one hidden range of night hours.
+              ListTile(
+                title: Text(context.l10n.calNightHours),
+                subtitle: Text(context.l10n.calNightHoursHint),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Wrap(spacing: 8, runSpacing: 8, children: [
+                  for (final (key, from) in const [('night-from', true), ('night-to', false)])
+                    OutlinedButton(
+                      key: Key(key),
+                      onPressed: () async {
+                        final m = from ? s.hiddenFrom : s.hiddenTo;
+                        final picked = await showTimePicker(
+                            context: context, initialTime: TimeOfDay(hour: (m ~/ 60) % 24, minute: m % 60));
+                        if (picked == null) return;
+                        final v = picked.hour * 60 + picked.minute;
+                        await save(from ? s.copyWith(hiddenFrom: v) : s.copyWith(hiddenTo: v));
+                      },
+                      child: Text(() {
+                        final m = from ? s.hiddenFrom : s.hiddenTo;
+                        final hhmm = '${(m ~/ 60 % 24).toString().padLeft(2, '0')}:${(m % 60).toString().padLeft(2, '0')}';
+                        return from ? context.l10n.calNightFrom(hhmm) : context.l10n.calNightTo(hhmm);
+                      }()),
+                    ),
+                ]),
+              ),
               ListTile(
                 title: Text(context.l10n.newMonthlyRepeatsInAMonth),
                 subtitle: Text(context.l10n.forExampleThe31stInApril),

@@ -1,7 +1,7 @@
 # FF-ARCH-10 baseline: raw UI literals left per file (lower it as strings move to app_en.arb).
 packages/ui/lib/src/router.dart 1
 packages/ui/lib/src/screens/account_card.dart 2
-packages/ui/lib/src/screens/calendar_screen.dart 31
+packages/ui/lib/src/screens/calendar_screen.dart 16
 packages/ui/lib/src/screens/data_card.dart 3
 packages/ui/lib/src/screens/focus_page.dart 1
 packages/ui/lib/src/screens/profiles_screen.dart 1
