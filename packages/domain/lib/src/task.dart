@@ -147,19 +147,24 @@ class TaskHierarchyRules {
   /// Returns a reason if re-parenting [taskId] under [newParentId] is invalid.
   /// [newParentAncestorsIncludingSelf] = the new parent plus all its ancestors
   /// (their ids). [newParentDepth] = depth of the new parent (root = 1).
+  /// [movedSubtreeHeight] = levels of the moved task and its live subtasks
+  /// (1 = no subtasks; P03 UX U2): the deepest of them must stay within the
+  /// limit too.
   static String? reparentError({
     required EntityId taskId,
     required EntityId? newParentId,
     required Set<String> newParentAncestorsIncludingSelf,
     required int newParentDepth,
+    int movedSubtreeHeight = 1,
   }) {
     if (newParentId == null) return null; // moving to root is always fine
     // No cycle: the task cannot be its new parent or any ancestor of it.
     if (newParentAncestorsIncludingSelf.contains(taskId.value)) {
       return 'reparent would create a cycle';
     }
-    // Depth: child sits at newParentDepth + 1; must not exceed the limit.
-    if (newParentDepth + 1 > maxTaskDepth) {
+    // Depth: the task sits at newParentDepth + 1, its deepest subtask
+    // movedSubtreeHeight - 1 levels below; neither may exceed the limit.
+    if (newParentDepth + movedSubtreeHeight > maxTaskDepth) {
       return 'reparent would exceed max depth ($maxTaskDepth)';
     }
     return null;

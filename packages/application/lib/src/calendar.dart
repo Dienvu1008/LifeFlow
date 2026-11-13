@@ -25,6 +25,7 @@ class EventInput {
     this.location,
     this.calendarId,
     this.repeat,
+    this.listId,
   });
   final String title;
   final SchedulePointInput start;
@@ -32,6 +33,10 @@ class EventInput {
   final String? location;
   final String? calendarId;
   final RepeatInput? repeat;
+
+  /// P03 UX U2: the list a NEW event goes to (null: none). Read on create
+  /// only; an event changes list through OverviewService.moveEvent.
+  final String? listId;
 }
 
 class EventDetails {

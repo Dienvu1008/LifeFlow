@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import 'order_backfill.dart';
 import 'schema.dart';
 
 part 'app_database.g.dart';
@@ -15,6 +16,9 @@ part 'app_database.g.dart';
 ///   v5 (P03 T2)  focus_sessions, execution_records, measurements,
 ///                period_results, goals, milestones, goal_links;
 ///                tasks.target_aggregation, tasks.is_habit (ADR-0037)
+///   v6 (P03 T4)  tasks.tracked_since (ADR-0039)
+///   v7 (P03 UX U2) color_index and order_key on task_lists, tasks and events;
+///                events.list_id; order keys backfilled (ADR-0046)
 @DriftDatabase(
   tables: [
     Profiles, Workspaces, TaskLists, Tasks, AuditLog, Outbox, EventLog,
@@ -29,7 +33,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   /// The schema this build writes (and the newest export it accepts).
-  static const currentSchemaVersion = 6;
+  static const currentSchemaVersion = 7;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -62,11 +66,53 @@ class AppDatabase extends _$AppDatabase {
             await _createExecutionIndexes();
           }
           if (from < 6) await m.addColumn(tasks, tasks.trackedSince);
+          if (from < 7) {
+            // P03 UX U2 (ADR-0046): lists, colours and order keys.
+            await m.addColumn(taskLists, taskLists.colorIndex);
+            await m.addColumn(taskLists, taskLists.orderKey);
+            await m.addColumn(tasks, tasks.colorIndex);
+            await m.addColumn(tasks, tasks.orderKey);
+            if (from >= 4) {
+              // Before v4 the events table was just created, already whole.
+              await m.addColumn(events, events.listId);
+              await m.addColumn(events, events.colorIndex);
+              await m.addColumn(events, events.orderKey);
+            }
+            await _backfillOrderKeys();
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
         },
       );
+
+  /// Schema v7: every existing list, task and event gets an order key that
+  /// keeps the order shown so far (creation, then rowid). Trashed rows too,
+  /// so a restore puts them back in place.
+  Future<void> _backfillOrderKeys() async {
+    final rows = <UnkeyedRow>[];
+    for (final (kind, sql) in const [
+      ('taskList', 'SELECT id, workspace_id, created_at, NULL AS parent, NULL AS list FROM task_lists ORDER BY rowid'),
+      ('task', 'SELECT id, workspace_id, created_at, parent_task_id AS parent, task_list_id AS list FROM tasks ORDER BY rowid'),
+      ('event', 'SELECT id, workspace_id, created_at, NULL AS parent, list_id AS list FROM events ORDER BY rowid'),
+    ]) {
+      for (final r in await customSelect(sql).get()) {
+        rows.add(UnkeyedRow(
+          kind: kind,
+          id: r.read<String>('id'),
+          workspaceId: r.read<String>('workspace_id'),
+          createdAt: r.read<int>('created_at'),
+          parentTaskId: r.readNullable<String>('parent'),
+          listId: r.readNullable<String>('list'),
+        ));
+      }
+    }
+    final keys = backfillOrderKeys(rows);
+    for (final r in rows) {
+      final table = switch (r.kind) { 'taskList' => 'task_lists', 'task' => 'tasks', _ => 'events' };
+      await customStatement('UPDATE $table SET order_key = ? WHERE id = ?', [keys[r.id], r.id]);
+    }
+  }
 
   /// Range pre-filter for window queries (only rows whose series can touch
   /// the window are expanded), and lookups by subject.

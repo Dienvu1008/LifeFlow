@@ -35,6 +35,7 @@ Reference: the owner's app *my_time_manager* (read-only review, 2026-11-11).
 | U-D10 | Base colour | A neutral seed; colour only for meaning (priority, status, habit outcome, focus, conflict) and the user's item colours; never colour alone (an icon or text too). *(Agent proposal, taken as the default.)* |
 | U-D11 | Localization | Infrastructure now (`gen_l10n`, English ARB, `intl` formatting, a fitness check against raw strings); no translation and no language choice yet. Strings of the screens that stay move to ARB in U1; the new screens (U3–U5) use ARB from the start. *(Agent proposal, refined: the screens being replaced are not migrated twice.)* |
 | U-D12 | Two-pane layout on wide windows | After the dogfooding pass. *(Agent proposal, taken as the default.)* |
+| U-D13 | Stored result of a measured task under the manual policy (open question of ADR-0039, answered 2026-11-13) | **A setting chooses it:** the target's judgement (today's behaviour, the default) or the tick. Proposed details, to be confirmed by the owner: one setting for all such tasks, kept with the profile (exported, later synced) so two devices store the same result; it applies to periods that close after the change, results already stored are not rewritten (D9). Implemented as a small task with U6. |
 
 ## 4. Tasks
 One branch per task; headless tests, mutation checks of the key rules, an ADR, CI green; merged after the owner approves. The device checks of P03 (T7) and of U1–U6 happen together in the owner's dogfooding pass.

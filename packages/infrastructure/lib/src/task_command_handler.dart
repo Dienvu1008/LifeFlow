@@ -9,6 +9,7 @@ import 'app_database.dart';
 import 'command_gateway.dart';
 import 'execution_rows.dart';
 import 'habit_tracking.dart';
+import 'organize_ops.dart';
 import 'task_schedule_ops.dart';
 import 'task_target_ops.dart';
 
@@ -21,7 +22,9 @@ import 'task_target_ops.dart';
 ///   rename   : payload id, title
 ///   complete : payload id, cascade ('all'|'parentOnly')
 ///   reopen   : payload id (done/cancelled -> todo)
-///   reparent : payload id, newParentId?
+///   reparent : payload id, newParentId? (appended at the end there)
+///   move     : payload id, listId? | parentId?, afterId? (P03 UX U2, organize_ops.dart)
+///   setColor : payload id, colorIndex? (P03 UX U2)
 ///   trash    : payload id, cascade ('all'|'parentOnly'; default parentOnly)
 ///   P02 T4 schedule ops (task_schedule_ops.dart): setSchedule,
 ///   clearSchedule, setException, clearException, setOccurrenceDone,
@@ -111,6 +114,88 @@ class TaskCommandHandler implements CommandHandler {
     }
   }
 
+  Future<Task> _liveTask(AppDatabase db, String id) async {
+    final row = await (db.select(db.tasks)..where((t) => t.id.equals(id))).getSingleOrNull();
+    if (row == null || row.deletedAt != null) throw DomainRejection('task not found');
+    return row;
+  }
+
+  /// A live task of [ws] to put a subtask under. An event never has
+  /// subtasks (U-D1).
+  Future<Task> _liveParent(AppDatabase db, String ws, String id) async {
+    final row = await (db.select(db.tasks)..where((t) => t.id.equals(id))).getSingleOrNull();
+    if (row == null || row.deletedAt != null || row.workspaceId != ws) throw DomainRejection('unknown parent task');
+    return row;
+  }
+
+  /// The list of [id]'s top-level task (null: in no list).
+  Future<String?> _rootListOf(AppDatabase db, String id) async {
+    var row = await (db.select(db.tasks)..where((t) => t.id.equals(id))).getSingleOrNull();
+    var guard = 0;
+    while (row?.parentTaskId != null && guard++ < maxTaskDepth + 2) {
+      final up = row!.parentTaskId!;
+      row = await (db.select(db.tasks)..where((t) => t.id.equals(up))).getSingleOrNull();
+    }
+    final list = row?.taskListId;
+    if (list == null) return null;
+    final l = await (db.select(db.taskLists)..where((x) => x.id.equals(list))).getSingleOrNull();
+    return l != null && l.deletedAt == null ? list : null;
+  }
+
+  /// Levels of [id] and its live subtasks (1 = no subtasks).
+  Future<int> _subtreeHeight(AppDatabase db, String id) async {
+    var height = 0;
+    var level = [id];
+    final seen = <String>{};
+    while (level.isNotEmpty && height <= maxTaskDepth + 1) {
+      height++;
+      final next = <String>[];
+      for (final p in level) {
+        if (!seen.add(p)) continue;
+        final kids = await (db.select(db.tasks)..where((t) => t.parentTaskId.equals(p) & t.deletedAt.isNull())).get();
+        next.addAll(kids.map((k) => k.id));
+      }
+      level = next;
+    }
+    return height;
+  }
+
+  /// P03 UX U2: one drop. The task goes to [place], after `afterId` (or at
+  /// the end when [atEnd]); only its own row changes. Refused: a cycle, a
+  /// subtree deeper than the limit (LF-INV-TASK-002/003), an unknown or
+  /// trashed list or parent, a stale position.
+  Future<HandlerOutcome> _move(AppDatabase db, Command cmd, String id, Version newVersion, DateTime now, Place place,
+      {required bool atEnd, required String event}) async {
+    await _liveTask(db, id);
+    final ws = cmd.workspaceId;
+    if (place.parentId != null) {
+      await _liveParent(db, ws, place.parentId!);
+      final err = TaskHierarchyRules.reparentError(
+        taskId: EntityId(id),
+        newParentId: EntityId(place.parentId!),
+        newParentAncestorsIncludingSelf: await _ancestorsIncludingSelf(db, place.parentId!),
+        newParentDepth: await _depthOf(db, place.parentId!),
+        movedSubtreeHeight: await _subtreeHeight(db, id),
+      );
+      if (err != null) throw DomainRejection(err);
+    }
+    if (place.listId != null) await liveList(db, ws, place.listId!);
+    final siblings = await itemSiblings(db, ws, place, exclude: id);
+    final key = atEnd ? keyAtEnd(siblings) : keyAfter(siblings, cmd.payload['afterId']);
+    await (db.update(db.tasks)..where((t) => t.id.equals(id))).write(TasksCompanion(
+        parentTaskId: Value(place.parentId),
+        taskListId: Value(place.listId),
+        orderKey: Value(key),
+        version: Value(newVersion.value),
+        updatedAt: Value(now)));
+    return HandlerOutcome(
+      entityId: id,
+      operationType: 'update',
+      changeSet: {'id': id, 'parentId': place.parentId, 'listId': place.listId, 'orderKey': key},
+      events: [DomainEvent(event, {'id': id})],
+    );
+  }
+
   @override
   Future<HandlerOutcome> apply(TxContext tx, Command cmd, Version newVersion) async {
     final db = (tx as DriftTx).db;
@@ -129,6 +214,12 @@ class TaskCommandHandler implements CommandHandler {
         final depthErr = TaskHierarchyRules.createDepthError(
             parentId == null ? null : await _depthOf(db, parentId));
         if (depthErr != null) throw DomainRejection(depthErr);
+        // P03 UX U2: a subtask follows its parent's list; a new item goes
+        // to the end of its container.
+        final listId = parentId == null ? cmd.payload['listId'] as String? : null;
+        if (parentId != null) await _liveParent(db, cmd.workspaceId, parentId);
+        if (listId != null) await liveList(db, cmd.workspaceId, listId);
+        final place = Place(listId: listId, parentId: parentId);
         await db.into(db.tasks).insert(TasksCompanion.insert(
               id: id,
               workspaceId: cmd.workspaceId,
@@ -137,7 +228,9 @@ class TaskCommandHandler implements CommandHandler {
               updatedAt: now,
               title: cmd.payload['title'] as String,
               parentTaskId: Value(parentId),
-              taskListId: Value(cmd.payload['listId'] as String?),
+              taskListId: Value(listId),
+              colorIndex: Value(colorOf(cmd.payload)),
+              orderKey: Value(keyAtEnd(await itemSiblings(db, cmd.workspaceId, place))),
               version: Value(newVersion.value),
             ));
         return HandlerOutcome(
@@ -153,19 +246,22 @@ class TaskCommandHandler implements CommandHandler {
         return HandlerOutcome(entityId: id, operationType: 'update', changeSet: {'id': id, 'title': cmd.payload['title']}, events: [DomainEvent('TaskUpdated', {'id': id})]);
 
       case 'reparent':
+        // Kept for the task editor: appended at the end of the new place. To
+        // the top level, the task goes to the list of its top-level task.
         final newParentId = cmd.payload['newParentId'] as String?;
-        if (newParentId != null) {
-          final err = TaskHierarchyRules.reparentError(
-            taskId: EntityId(id),
-            newParentId: EntityId(newParentId),
-            newParentAncestorsIncludingSelf: await _ancestorsIncludingSelf(db, newParentId),
-            newParentDepth: await _depthOf(db, newParentId),
-          );
-          if (err != null) throw DomainRejection(err);
-        }
+        return _move(db, cmd, id, newVersion, now,
+            Place(parentId: newParentId, listId: newParentId == null ? await _rootListOf(db, id) : null),
+            atEnd: true, event: 'TaskReparented');
+
+      case 'move':
+        return _move(db, cmd, id, newVersion, now, Place.of(cmd.payload), atEnd: false, event: 'TaskMoved');
+
+      case 'setColor':
+        await _liveTask(db, id);
+        final color = colorOf(cmd.payload);
         await (db.update(db.tasks)..where((t) => t.id.equals(id))).write(
-            TasksCompanion(parentTaskId: Value(newParentId), version: Value(newVersion.value), updatedAt: Value(now)));
-        return HandlerOutcome(entityId: id, operationType: 'update', changeSet: {'id': id, 'parentId': newParentId}, events: [DomainEvent('TaskReparented', {'id': id})]);
+            TasksCompanion(colorIndex: Value(color), version: Value(newVersion.value), updatedAt: Value(now)));
+        return HandlerOutcome(entityId: id, operationType: 'update', changeSet: {'id': id, 'colorIndex': color}, events: [DomainEvent('TaskUpdated', {'id': id})]);
 
       case 'complete':
         final cascade = cmd.payload['cascade'] as String? ?? 'parentOnly';
@@ -256,9 +352,15 @@ class TaskCommandHandler implements CommandHandler {
           final kids = await (db.select(db.tasks)
                 ..where((t) => t.parentTaskId.equals(id) & t.deletedAt.isNull()))
               .get();
-          for (final k in kids) {
-            await _bump(db, k, now, TasksCompanion(parentTaskId: Value(target.parentTaskId)));
-            touched[k.id] = 'update';
+          // They take the trashed task's place, in their order (P03 UX U2):
+          // its parent, or its list at the top level.
+          kids.sort((a, b) => a.orderKey != b.orderKey ? a.orderKey.compareTo(b.orderKey) : a.id.compareTo(b.id));
+          final place = Place(parentId: target.parentTaskId, listId: target.parentTaskId == null ? target.taskListId : null);
+          final keys = keysAfterKey(await itemSiblings(db, cmd.workspaceId, place), target.orderKey, kids.length);
+          for (var i = 0; i < kids.length; i++) {
+            await _bump(db, kids[i], now, TasksCompanion(
+                parentTaskId: Value(target.parentTaskId), taskListId: Value(place.listId), orderKey: Value(keys[i])));
+            touched[kids[i].id] = 'update';
           }
         }
         await _outboxFor(db, cmd, touched, now);

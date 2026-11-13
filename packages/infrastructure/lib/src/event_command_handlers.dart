@@ -3,7 +3,7 @@
 // aggregate with its own ids, never a task (LF-INV-CAL-001, owner D6).
 //
 // EventCommandHandler, payload['op']:
-//   create        id, title, location?, calendarId?, schedule (columns JSON)
+//   create        id, title, location?, calendarId?, listId?, schedule (columns JSON)
 //   update        id, title, location?, calendarId?, schedule
 //   setCancelled  id, cancelled
 //   trash | restore  id
@@ -11,6 +11,8 @@
 //                 moveDate?, moveTime?, title?, location?
 //   clearException id, originalDate
 //   setReminders  id, reminders (P02 T7, reminder_rows.dart)
+//   move          id, listId?, afterId? (P03 UX U2; never under a task)
+//   setColor      id, colorIndex? (P03 UX U2)
 // CalendarCommandHandler, payload['op']:
 //   create  id, name, color      update  id, name?, color?
 //   trash   id (its events stay, without a calendar)
@@ -21,6 +23,7 @@ import 'package:time_kernel/time_kernel.dart' as tk;
 
 import 'app_database.dart';
 import 'command_gateway.dart';
+import 'organize_ops.dart';
 import 'reminder_rows.dart';
 import 'schedule_rows.dart';
 
@@ -87,6 +90,10 @@ class EventCommandHandler implements CommandHandler {
         final asTask = await (db.select(db.tasks)..where((t) => t.id.equals(id))).getSingleOrNull();
         if (asTask != null) throw DomainRejection('an event cannot share the id of a task');
         final title = _title(cmd);
+        // P03 UX U2: in a list or in none, never under a task (U-D1).
+        if (cmd.payload['parentId'] != null) throw DomainRejection('an event cannot be under a task');
+        final listId = cmd.payload['listId'] as String?;
+        if (listId != null) await liveList(db, cmd.workspaceId, listId);
         await db.into(db.events).insert(EventsCompanion.insert(
               id: id,
               workspaceId: cmd.workspaceId,
@@ -96,6 +103,9 @@ class EventCommandHandler implements CommandHandler {
               title: title,
               location: Value(_optText(cmd, 'location')),
               calendarId: Value(await _calendar(db, cmd)),
+              listId: Value(listId),
+              colorIndex: Value(colorOf(cmd.payload)),
+              orderKey: Value(keyAtEnd(await itemSiblings(db, cmd.workspaceId, Place(listId: listId)))),
               version: Value(newVersion.value),
             ));
         final rule = await _schedule(rows, cmd);
@@ -132,12 +142,42 @@ class EventCommandHandler implements CommandHandler {
         if ((existing.deletedAt != null) == trash) {
           throw DomainRejection(trash ? 'the event is already in the trash' : 'the event is not in the trash');
         }
+        // P03 UX U2: restored while its list is in the trash, it comes back
+        // in no list, at the end.
+        var place = const Value<String?>.absent();
+        var key = const Value<String>.absent();
+        if (!trash && existing.listId != null) {
+          final l = await (db.select(db.taskLists)..where((l) => l.id.equals(existing.listId!))).getSingleOrNull();
+          if (l == null || l.deletedAt != null) {
+            place = const Value(null);
+            key = Value(keyAtEnd(await itemSiblings(db, existing.workspaceId, const Place())));
+          }
+        }
         await (db.update(db.events)..where((e) => e.id.equals(id))).write(EventsCompanion(
             deletedAt: Value(trash ? now : null),
             deletedBy: Value(trash ? cmd.actor.toString() : null),
+            listId: place,
+            orderKey: key,
             version: Value(newVersion.value),
             updatedAt: Value(now)));
         return outcome(trash ? 'delete' : 'update', 'EventUpdated', {'tombstone': trash});
+
+      case 'move':
+        if (existing == null || existing.deletedAt != null) throw DomainRejection('event not found');
+        if (cmd.payload['parentId'] != null) throw DomainRejection('an event cannot be under a task');
+        final place = Place.of(cmd.payload);
+        if (place.listId != null) await liveList(db, cmd.workspaceId, place.listId!);
+        final key = keyAfter(await itemSiblings(db, cmd.workspaceId, place, exclude: id), cmd.payload['afterId']);
+        await (db.update(db.events)..where((e) => e.id.equals(id))).write(EventsCompanion(
+            listId: Value(place.listId), orderKey: Value(key), version: Value(newVersion.value), updatedAt: Value(now)));
+        return outcome('update', 'EventMoved', {'listId': place.listId, 'orderKey': key});
+
+      case 'setColor':
+        if (existing == null || existing.deletedAt != null) throw DomainRejection('event not found');
+        final color = colorOf(cmd.payload);
+        await (db.update(db.events)..where((e) => e.id.equals(id)))
+            .write(EventsCompanion(colorIndex: Value(color), version: Value(newVersion.value), updatedAt: Value(now)));
+        return outcome('update', 'EventUpdated', {'colorIndex': color});
 
       case 'setReminders':
         // P02 T7 (ADR-0034): the reminders are part of the event.

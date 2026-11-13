@@ -61,8 +61,8 @@ class FakeWorld
   }
 
   @override
-  Future<CommandResult> create(String title, {String? parentId}) async {
-    calls.add('create:$title:$parentId');
+  Future<CommandResult> create(String title, {String? parentId, String? listId}) async {
+    calls.add('create:$title:$parentId' + (listId == null ? '' : ':$listId'));
     final f = _failure();
     if (f != null) return f;
     final id = 'new${_n++}';
@@ -162,6 +162,17 @@ class FakeWorld
   Future<void> setThemePreference(ThemePreference preference) async {
     calls.add('setTheme:${preference.name}');
     theme = preference;
+  }
+
+  Set<String> expanded = {};
+
+  @override
+  Future<Set<String>> expandedItems() async => {...expanded};
+
+  @override
+  Future<void> setExpandedItems(Set<String> ids) async {
+    calls.add('setExpanded:${(ids.toList()..sort()).join(',')}');
+    expanded = {...ids};
   }
 
   PlanningSettings planning = const PlanningSettings();

@@ -16,6 +16,8 @@ import 'package:foundation/foundation.dart' show LocalDate;
 
 import 'app_database.dart';
 import 'execution_rows.dart';
+import 'order_backfill.dart';
+import 'organize_rows.dart';
 import 'record_kinds.dart';
 import 'schedule_mapping.dart';
 
@@ -272,6 +274,40 @@ class ProfileExport {
         }
       }
     }
+    if (fromSchema < 7) {
+      // Schema v7 (P03 UX U2): no colours, no event lists, no order keys.
+      // Keys keep the order the app showed: by creation, then file order.
+      final rows = <UnkeyedRow>[];
+      for (final (kind, key) in const [('taskList', 'taskLists'), ('task', 'tasks'), ('event', 'events')]) {
+        final list = map[key];
+        if (list is! List) continue;
+        for (final r in list) {
+          if (r is! Map) continue;
+          r.putIfAbsent('colorIndex', () => null);
+          if (kind == 'event') r.putIfAbsent('listId', () => null);
+          final id = r['id'], ws = r['workspaceId'], at = r['createdAt'];
+          if (id is String && ws is String && at is int) {
+            rows.add(UnkeyedRow(
+              kind: kind,
+              id: id,
+              workspaceId: ws,
+              createdAt: at,
+              parentTaskId: kind == 'task' && r['parentTaskId'] is String ? r['parentTaskId'] as String : null,
+              listId: kind == 'task' && r['taskListId'] is String ? r['taskListId'] as String : null,
+            ));
+          }
+        }
+      }
+      final keys = backfillOrderKeys(rows);
+      for (final key in const ['taskLists', 'tasks', 'events']) {
+        final list = map[key];
+        if (list is! List) continue;
+        for (final r in list) {
+          // A row the reader cannot use is refused by _decode afterwards.
+          if (r is Map && keys[r['id']] != null) r.putIfAbsent('orderKey', () => keys[r['id']]);
+        }
+      }
+    }
   }
 
   static ParsedExport _decode(
@@ -401,6 +437,9 @@ class ProfileExport {
     // P03 rows are well-formed (values, states, keyed ids).
     final p03 = executionRowsError(records);
     if (p03 != null) bad(p03);
+    // P03 UX U2: colours from the palette, well-formed order keys.
+    final organized = organizeRowsError(records);
+    if (organized != null) bad(organized);
     // Schedules and exceptions are well-formed and valid (dates, zones, rule).
     final scheduled = <String>{};
     try {

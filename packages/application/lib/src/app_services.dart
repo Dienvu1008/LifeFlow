@@ -16,6 +16,9 @@ class TaskView {
     required this.parentId,
     required this.createdAt,
     this.schedule,
+    this.listId,
+    this.colorIndex,
+    this.orderKey = 'a0',
   });
 
   final String id;
@@ -28,6 +31,16 @@ class TaskView {
 
   /// The task's schedule, if it has one (P02 T6a).
   final TaskScheduleInput? schedule;
+
+  /// P03 UX U2: the live list of a top-level task (null: in no list, and
+  /// always null for a subtask, which follows its top-level task).
+  final String? listId;
+
+  /// 0..11 in the item palette, or null.
+  final int? colorIndex;
+
+  /// Order among the items of its container (then by id).
+  final String orderKey;
 
   bool get isDone => status == 'done';
 }
@@ -44,7 +57,9 @@ abstract interface class TaskQueries {
 /// (ADR-0011): authorize, version-check, atomic set. Failures are returned,
 /// never thrown, so the UI can show a message.
 abstract interface class TaskService {
-  Future<CommandResult> create(String title, {String? parentId});
+  /// [listId] places a top-level task in a list (ignored for a subtask). A
+  /// new task goes to the end of its place.
+  Future<CommandResult> create(String title, {String? parentId, String? listId});
   Future<CommandResult> rename(String id, String title);
 
   /// [withDescendants] true = CompleteTaskWithDescendants, false =
@@ -141,6 +156,10 @@ abstract interface class SettingsService {
   Future<ThemePreference> themePreference();
   Future<void> setThemePreference(ThemePreference preference);
   Future<PlanningSettings> planningSettings();
+
+  /// P03 UX U2: the lists and tasks shown expanded in the Overview, by id.
+  Future<Set<String>> expandedItems();
+  Future<void> setExpandedItems(Set<String> ids);
 
   /// Stores [settings] after clamping them to the bounds.
   Future<void> setPlanningSettings(PlanningSettings settings);

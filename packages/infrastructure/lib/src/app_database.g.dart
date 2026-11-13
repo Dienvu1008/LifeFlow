@@ -810,6 +810,20 @@ class $TaskListsTable extends TaskLists
   late final GeneratedColumn<String> title = GeneratedColumn<String>(
       'title', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _colorIndexMeta =
+      const VerificationMeta('colorIndex');
+  @override
+  late final GeneratedColumn<int> colorIndex = GeneratedColumn<int>(
+      'color_index', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _orderKeyMeta =
+      const VerificationMeta('orderKey');
+  @override
+  late final GeneratedColumn<String> orderKey = GeneratedColumn<String>(
+      'order_key', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('a0'));
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -820,7 +834,9 @@ class $TaskListsTable extends TaskLists
         updatedAt,
         deletedAt,
         deletedBy,
-        title
+        title,
+        colorIndex,
+        orderKey
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -881,6 +897,16 @@ class $TaskListsTable extends TaskLists
     } else if (isInserting) {
       context.missing(_titleMeta);
     }
+    if (data.containsKey('color_index')) {
+      context.handle(
+          _colorIndexMeta,
+          colorIndex.isAcceptableOrUnknown(
+              data['color_index']!, _colorIndexMeta));
+    }
+    if (data.containsKey('order_key')) {
+      context.handle(_orderKeyMeta,
+          orderKey.isAcceptableOrUnknown(data['order_key']!, _orderKeyMeta));
+    }
     return context;
   }
 
@@ -908,6 +934,10 @@ class $TaskListsTable extends TaskLists
           .read(DriftSqlType.string, data['${effectivePrefix}deleted_by']),
       title: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
+      colorIndex: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}color_index']),
+      orderKey: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}order_key'])!,
     );
   }
 
@@ -927,6 +957,8 @@ class TaskList extends DataClass implements Insertable<TaskList> {
   final DateTime? deletedAt;
   final String? deletedBy;
   final String title;
+  final int? colorIndex;
+  final String orderKey;
   const TaskList(
       {required this.id,
       required this.workspaceId,
@@ -936,7 +968,9 @@ class TaskList extends DataClass implements Insertable<TaskList> {
       required this.updatedAt,
       this.deletedAt,
       this.deletedBy,
-      required this.title});
+      required this.title,
+      this.colorIndex,
+      required this.orderKey});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -953,6 +987,10 @@ class TaskList extends DataClass implements Insertable<TaskList> {
       map['deleted_by'] = Variable<String>(deletedBy);
     }
     map['title'] = Variable<String>(title);
+    if (!nullToAbsent || colorIndex != null) {
+      map['color_index'] = Variable<int>(colorIndex);
+    }
+    map['order_key'] = Variable<String>(orderKey);
     return map;
   }
 
@@ -971,6 +1009,10 @@ class TaskList extends DataClass implements Insertable<TaskList> {
           ? const Value.absent()
           : Value(deletedBy),
       title: Value(title),
+      colorIndex: colorIndex == null && nullToAbsent
+          ? const Value.absent()
+          : Value(colorIndex),
+      orderKey: Value(orderKey),
     );
   }
 
@@ -987,6 +1029,8 @@ class TaskList extends DataClass implements Insertable<TaskList> {
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
       deletedBy: serializer.fromJson<String?>(json['deletedBy']),
       title: serializer.fromJson<String>(json['title']),
+      colorIndex: serializer.fromJson<int?>(json['colorIndex']),
+      orderKey: serializer.fromJson<String>(json['orderKey']),
     );
   }
   @override
@@ -1002,6 +1046,8 @@ class TaskList extends DataClass implements Insertable<TaskList> {
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
       'deletedBy': serializer.toJson<String?>(deletedBy),
       'title': serializer.toJson<String>(title),
+      'colorIndex': serializer.toJson<int?>(colorIndex),
+      'orderKey': serializer.toJson<String>(orderKey),
     };
   }
 
@@ -1014,7 +1060,9 @@ class TaskList extends DataClass implements Insertable<TaskList> {
           DateTime? updatedAt,
           Value<DateTime?> deletedAt = const Value.absent(),
           Value<String?> deletedBy = const Value.absent(),
-          String? title}) =>
+          String? title,
+          Value<int?> colorIndex = const Value.absent(),
+          String? orderKey}) =>
       TaskList(
         id: id ?? this.id,
         workspaceId: workspaceId ?? this.workspaceId,
@@ -1025,6 +1073,8 @@ class TaskList extends DataClass implements Insertable<TaskList> {
         deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
         deletedBy: deletedBy.present ? deletedBy.value : this.deletedBy,
         title: title ?? this.title,
+        colorIndex: colorIndex.present ? colorIndex.value : this.colorIndex,
+        orderKey: orderKey ?? this.orderKey,
       );
   TaskList copyWithCompanion(TaskListsCompanion data) {
     return TaskList(
@@ -1038,6 +1088,9 @@ class TaskList extends DataClass implements Insertable<TaskList> {
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
       deletedBy: data.deletedBy.present ? data.deletedBy.value : this.deletedBy,
       title: data.title.present ? data.title.value : this.title,
+      colorIndex:
+          data.colorIndex.present ? data.colorIndex.value : this.colorIndex,
+      orderKey: data.orderKey.present ? data.orderKey.value : this.orderKey,
     );
   }
 
@@ -1052,14 +1105,16 @@ class TaskList extends DataClass implements Insertable<TaskList> {
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
           ..write('deletedBy: $deletedBy, ')
-          ..write('title: $title')
+          ..write('title: $title, ')
+          ..write('colorIndex: $colorIndex, ')
+          ..write('orderKey: $orderKey')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode => Object.hash(id, workspaceId, ownerId, version, createdAt,
-      updatedAt, deletedAt, deletedBy, title);
+      updatedAt, deletedAt, deletedBy, title, colorIndex, orderKey);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1072,7 +1127,9 @@ class TaskList extends DataClass implements Insertable<TaskList> {
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt &&
           other.deletedBy == this.deletedBy &&
-          other.title == this.title);
+          other.title == this.title &&
+          other.colorIndex == this.colorIndex &&
+          other.orderKey == this.orderKey);
 }
 
 class TaskListsCompanion extends UpdateCompanion<TaskList> {
@@ -1085,6 +1142,8 @@ class TaskListsCompanion extends UpdateCompanion<TaskList> {
   final Value<DateTime?> deletedAt;
   final Value<String?> deletedBy;
   final Value<String> title;
+  final Value<int?> colorIndex;
+  final Value<String> orderKey;
   final Value<int> rowid;
   const TaskListsCompanion({
     this.id = const Value.absent(),
@@ -1096,6 +1155,8 @@ class TaskListsCompanion extends UpdateCompanion<TaskList> {
     this.deletedAt = const Value.absent(),
     this.deletedBy = const Value.absent(),
     this.title = const Value.absent(),
+    this.colorIndex = const Value.absent(),
+    this.orderKey = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   TaskListsCompanion.insert({
@@ -1108,6 +1169,8 @@ class TaskListsCompanion extends UpdateCompanion<TaskList> {
     this.deletedAt = const Value.absent(),
     this.deletedBy = const Value.absent(),
     required String title,
+    this.colorIndex = const Value.absent(),
+    this.orderKey = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         workspaceId = Value(workspaceId),
@@ -1125,6 +1188,8 @@ class TaskListsCompanion extends UpdateCompanion<TaskList> {
     Expression<DateTime>? deletedAt,
     Expression<String>? deletedBy,
     Expression<String>? title,
+    Expression<int>? colorIndex,
+    Expression<String>? orderKey,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1137,6 +1202,8 @@ class TaskListsCompanion extends UpdateCompanion<TaskList> {
       if (deletedAt != null) 'deleted_at': deletedAt,
       if (deletedBy != null) 'deleted_by': deletedBy,
       if (title != null) 'title': title,
+      if (colorIndex != null) 'color_index': colorIndex,
+      if (orderKey != null) 'order_key': orderKey,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1151,6 +1218,8 @@ class TaskListsCompanion extends UpdateCompanion<TaskList> {
       Value<DateTime?>? deletedAt,
       Value<String?>? deletedBy,
       Value<String>? title,
+      Value<int?>? colorIndex,
+      Value<String>? orderKey,
       Value<int>? rowid}) {
     return TaskListsCompanion(
       id: id ?? this.id,
@@ -1162,6 +1231,8 @@ class TaskListsCompanion extends UpdateCompanion<TaskList> {
       deletedAt: deletedAt ?? this.deletedAt,
       deletedBy: deletedBy ?? this.deletedBy,
       title: title ?? this.title,
+      colorIndex: colorIndex ?? this.colorIndex,
+      orderKey: orderKey ?? this.orderKey,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1196,6 +1267,12 @@ class TaskListsCompanion extends UpdateCompanion<TaskList> {
     if (title.present) {
       map['title'] = Variable<String>(title.value);
     }
+    if (colorIndex.present) {
+      map['color_index'] = Variable<int>(colorIndex.value);
+    }
+    if (orderKey.present) {
+      map['order_key'] = Variable<String>(orderKey.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1214,6 +1291,8 @@ class TaskListsCompanion extends UpdateCompanion<TaskList> {
           ..write('deletedAt: $deletedAt, ')
           ..write('deletedBy: $deletedBy, ')
           ..write('title: $title, ')
+          ..write('colorIndex: $colorIndex, ')
+          ..write('orderKey: $orderKey, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1378,6 +1457,20 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultValue: const Constant('[]'));
+  static const VerificationMeta _colorIndexMeta =
+      const VerificationMeta('colorIndex');
+  @override
+  late final GeneratedColumn<int> colorIndex = GeneratedColumn<int>(
+      'color_index', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _orderKeyMeta =
+      const VerificationMeta('orderKey');
+  @override
+  late final GeneratedColumn<String> orderKey = GeneratedColumn<String>(
+      'order_key', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('a0'));
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -1402,7 +1495,9 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
         targetAggregation,
         isHabit,
         trackedSince,
-        tags
+        tags,
+        colorIndex,
+        orderKey
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1533,6 +1628,16 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
       context.handle(
           _tagsMeta, tags.isAcceptableOrUnknown(data['tags']!, _tagsMeta));
     }
+    if (data.containsKey('color_index')) {
+      context.handle(
+          _colorIndexMeta,
+          colorIndex.isAcceptableOrUnknown(
+              data['color_index']!, _colorIndexMeta));
+    }
+    if (data.containsKey('order_key')) {
+      context.handle(_orderKeyMeta,
+          orderKey.isAcceptableOrUnknown(data['order_key']!, _orderKeyMeta));
+    }
     return context;
   }
 
@@ -1588,6 +1693,10 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
           .read(DriftSqlType.string, data['${effectivePrefix}tracked_since']),
       tags: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}tags'])!,
+      colorIndex: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}color_index']),
+      orderKey: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}order_key'])!,
     );
   }
 
@@ -1621,6 +1730,8 @@ class Task extends DataClass implements Insertable<Task> {
   final bool isHabit;
   final String? trackedSince;
   final String tags;
+  final int? colorIndex;
+  final String orderKey;
   const Task(
       {required this.id,
       required this.workspaceId,
@@ -1644,7 +1755,9 @@ class Task extends DataClass implements Insertable<Task> {
       required this.targetAggregation,
       required this.isHabit,
       this.trackedSince,
-      required this.tags});
+      required this.tags,
+      this.colorIndex,
+      required this.orderKey});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -1689,6 +1802,10 @@ class Task extends DataClass implements Insertable<Task> {
       map['tracked_since'] = Variable<String>(trackedSince);
     }
     map['tags'] = Variable<String>(tags);
+    if (!nullToAbsent || colorIndex != null) {
+      map['color_index'] = Variable<int>(colorIndex);
+    }
+    map['order_key'] = Variable<String>(orderKey);
     return map;
   }
 
@@ -1733,6 +1850,10 @@ class Task extends DataClass implements Insertable<Task> {
           ? const Value.absent()
           : Value(trackedSince),
       tags: Value(tags),
+      colorIndex: colorIndex == null && nullToAbsent
+          ? const Value.absent()
+          : Value(colorIndex),
+      orderKey: Value(orderKey),
     );
   }
 
@@ -1763,6 +1884,8 @@ class Task extends DataClass implements Insertable<Task> {
       isHabit: serializer.fromJson<bool>(json['isHabit']),
       trackedSince: serializer.fromJson<String?>(json['trackedSince']),
       tags: serializer.fromJson<String>(json['tags']),
+      colorIndex: serializer.fromJson<int?>(json['colorIndex']),
+      orderKey: serializer.fromJson<String>(json['orderKey']),
     );
   }
   @override
@@ -1792,6 +1915,8 @@ class Task extends DataClass implements Insertable<Task> {
       'isHabit': serializer.toJson<bool>(isHabit),
       'trackedSince': serializer.toJson<String?>(trackedSince),
       'tags': serializer.toJson<String>(tags),
+      'colorIndex': serializer.toJson<int?>(colorIndex),
+      'orderKey': serializer.toJson<String>(orderKey),
     };
   }
 
@@ -1818,7 +1943,9 @@ class Task extends DataClass implements Insertable<Task> {
           String? targetAggregation,
           bool? isHabit,
           Value<String?> trackedSince = const Value.absent(),
-          String? tags}) =>
+          String? tags,
+          Value<int?> colorIndex = const Value.absent(),
+          String? orderKey}) =>
       Task(
         id: id ?? this.id,
         workspaceId: workspaceId ?? this.workspaceId,
@@ -1845,6 +1972,8 @@ class Task extends DataClass implements Insertable<Task> {
         trackedSince:
             trackedSince.present ? trackedSince.value : this.trackedSince,
         tags: tags ?? this.tags,
+        colorIndex: colorIndex.present ? colorIndex.value : this.colorIndex,
+        orderKey: orderKey ?? this.orderKey,
       );
   Task copyWithCompanion(TasksCompanion data) {
     return Task(
@@ -1883,6 +2012,9 @@ class Task extends DataClass implements Insertable<Task> {
           ? data.trackedSince.value
           : this.trackedSince,
       tags: data.tags.present ? data.tags.value : this.tags,
+      colorIndex:
+          data.colorIndex.present ? data.colorIndex.value : this.colorIndex,
+      orderKey: data.orderKey.present ? data.orderKey.value : this.orderKey,
     );
   }
 
@@ -1911,7 +2043,9 @@ class Task extends DataClass implements Insertable<Task> {
           ..write('targetAggregation: $targetAggregation, ')
           ..write('isHabit: $isHabit, ')
           ..write('trackedSince: $trackedSince, ')
-          ..write('tags: $tags')
+          ..write('tags: $tags, ')
+          ..write('colorIndex: $colorIndex, ')
+          ..write('orderKey: $orderKey')
           ..write(')'))
         .toString();
   }
@@ -1940,7 +2074,9 @@ class Task extends DataClass implements Insertable<Task> {
         targetAggregation,
         isHabit,
         trackedSince,
-        tags
+        tags,
+        colorIndex,
+        orderKey
       ]);
   @override
   bool operator ==(Object other) =>
@@ -1968,7 +2104,9 @@ class Task extends DataClass implements Insertable<Task> {
           other.targetAggregation == this.targetAggregation &&
           other.isHabit == this.isHabit &&
           other.trackedSince == this.trackedSince &&
-          other.tags == this.tags);
+          other.tags == this.tags &&
+          other.colorIndex == this.colorIndex &&
+          other.orderKey == this.orderKey);
 }
 
 class TasksCompanion extends UpdateCompanion<Task> {
@@ -1995,6 +2133,8 @@ class TasksCompanion extends UpdateCompanion<Task> {
   final Value<bool> isHabit;
   final Value<String?> trackedSince;
   final Value<String> tags;
+  final Value<int?> colorIndex;
+  final Value<String> orderKey;
   final Value<int> rowid;
   const TasksCompanion({
     this.id = const Value.absent(),
@@ -2020,6 +2160,8 @@ class TasksCompanion extends UpdateCompanion<Task> {
     this.isHabit = const Value.absent(),
     this.trackedSince = const Value.absent(),
     this.tags = const Value.absent(),
+    this.colorIndex = const Value.absent(),
+    this.orderKey = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   TasksCompanion.insert({
@@ -2046,6 +2188,8 @@ class TasksCompanion extends UpdateCompanion<Task> {
     this.isHabit = const Value.absent(),
     this.trackedSince = const Value.absent(),
     this.tags = const Value.absent(),
+    this.colorIndex = const Value.absent(),
+    this.orderKey = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         workspaceId = Value(workspaceId),
@@ -2077,6 +2221,8 @@ class TasksCompanion extends UpdateCompanion<Task> {
     Expression<bool>? isHabit,
     Expression<String>? trackedSince,
     Expression<String>? tags,
+    Expression<int>? colorIndex,
+    Expression<String>? orderKey,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2103,6 +2249,8 @@ class TasksCompanion extends UpdateCompanion<Task> {
       if (isHabit != null) 'is_habit': isHabit,
       if (trackedSince != null) 'tracked_since': trackedSince,
       if (tags != null) 'tags': tags,
+      if (colorIndex != null) 'color_index': colorIndex,
+      if (orderKey != null) 'order_key': orderKey,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2131,6 +2279,8 @@ class TasksCompanion extends UpdateCompanion<Task> {
       Value<bool>? isHabit,
       Value<String?>? trackedSince,
       Value<String>? tags,
+      Value<int?>? colorIndex,
+      Value<String>? orderKey,
       Value<int>? rowid}) {
     return TasksCompanion(
       id: id ?? this.id,
@@ -2156,6 +2306,8 @@ class TasksCompanion extends UpdateCompanion<Task> {
       isHabit: isHabit ?? this.isHabit,
       trackedSince: trackedSince ?? this.trackedSince,
       tags: tags ?? this.tags,
+      colorIndex: colorIndex ?? this.colorIndex,
+      orderKey: orderKey ?? this.orderKey,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2232,6 +2384,12 @@ class TasksCompanion extends UpdateCompanion<Task> {
     if (tags.present) {
       map['tags'] = Variable<String>(tags.value);
     }
+    if (colorIndex.present) {
+      map['color_index'] = Variable<int>(colorIndex.value);
+    }
+    if (orderKey.present) {
+      map['order_key'] = Variable<String>(orderKey.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2264,6 +2422,8 @@ class TasksCompanion extends UpdateCompanion<Task> {
           ..write('isHabit: $isHabit, ')
           ..write('trackedSince: $trackedSince, ')
           ..write('tags: $tags, ')
+          ..write('colorIndex: $colorIndex, ')
+          ..write('orderKey: $orderKey, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4918,6 +5078,25 @@ class $EventsTable extends Events with TableInfo<$EventsTable, Event> {
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultValue: const Constant('confirmed'));
+  static const VerificationMeta _listIdMeta = const VerificationMeta('listId');
+  @override
+  late final GeneratedColumn<String> listId = GeneratedColumn<String>(
+      'list_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _colorIndexMeta =
+      const VerificationMeta('colorIndex');
+  @override
+  late final GeneratedColumn<int> colorIndex = GeneratedColumn<int>(
+      'color_index', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _orderKeyMeta =
+      const VerificationMeta('orderKey');
+  @override
+  late final GeneratedColumn<String> orderKey = GeneratedColumn<String>(
+      'order_key', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('a0'));
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -4931,7 +5110,10 @@ class $EventsTable extends Events with TableInfo<$EventsTable, Event> {
         title,
         location,
         calendarId,
-        status
+        status,
+        listId,
+        colorIndex,
+        orderKey
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -5006,6 +5188,20 @@ class $EventsTable extends Events with TableInfo<$EventsTable, Event> {
       context.handle(_statusMeta,
           status.isAcceptableOrUnknown(data['status']!, _statusMeta));
     }
+    if (data.containsKey('list_id')) {
+      context.handle(_listIdMeta,
+          listId.isAcceptableOrUnknown(data['list_id']!, _listIdMeta));
+    }
+    if (data.containsKey('color_index')) {
+      context.handle(
+          _colorIndexMeta,
+          colorIndex.isAcceptableOrUnknown(
+              data['color_index']!, _colorIndexMeta));
+    }
+    if (data.containsKey('order_key')) {
+      context.handle(_orderKeyMeta,
+          orderKey.isAcceptableOrUnknown(data['order_key']!, _orderKeyMeta));
+    }
     return context;
   }
 
@@ -5039,6 +5235,12 @@ class $EventsTable extends Events with TableInfo<$EventsTable, Event> {
           .read(DriftSqlType.string, data['${effectivePrefix}calendar_id']),
       status: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
+      listId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}list_id']),
+      colorIndex: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}color_index']),
+      orderKey: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}order_key'])!,
     );
   }
 
@@ -5061,6 +5263,9 @@ class Event extends DataClass implements Insertable<Event> {
   final String? location;
   final String? calendarId;
   final String status;
+  final String? listId;
+  final int? colorIndex;
+  final String orderKey;
   const Event(
       {required this.id,
       required this.workspaceId,
@@ -5073,7 +5278,10 @@ class Event extends DataClass implements Insertable<Event> {
       required this.title,
       this.location,
       this.calendarId,
-      required this.status});
+      required this.status,
+      this.listId,
+      this.colorIndex,
+      required this.orderKey});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -5097,6 +5305,13 @@ class Event extends DataClass implements Insertable<Event> {
       map['calendar_id'] = Variable<String>(calendarId);
     }
     map['status'] = Variable<String>(status);
+    if (!nullToAbsent || listId != null) {
+      map['list_id'] = Variable<String>(listId);
+    }
+    if (!nullToAbsent || colorIndex != null) {
+      map['color_index'] = Variable<int>(colorIndex);
+    }
+    map['order_key'] = Variable<String>(orderKey);
     return map;
   }
 
@@ -5122,6 +5337,12 @@ class Event extends DataClass implements Insertable<Event> {
           ? const Value.absent()
           : Value(calendarId),
       status: Value(status),
+      listId:
+          listId == null && nullToAbsent ? const Value.absent() : Value(listId),
+      colorIndex: colorIndex == null && nullToAbsent
+          ? const Value.absent()
+          : Value(colorIndex),
+      orderKey: Value(orderKey),
     );
   }
 
@@ -5141,6 +5362,9 @@ class Event extends DataClass implements Insertable<Event> {
       location: serializer.fromJson<String?>(json['location']),
       calendarId: serializer.fromJson<String?>(json['calendarId']),
       status: serializer.fromJson<String>(json['status']),
+      listId: serializer.fromJson<String?>(json['listId']),
+      colorIndex: serializer.fromJson<int?>(json['colorIndex']),
+      orderKey: serializer.fromJson<String>(json['orderKey']),
     );
   }
   @override
@@ -5159,6 +5383,9 @@ class Event extends DataClass implements Insertable<Event> {
       'location': serializer.toJson<String?>(location),
       'calendarId': serializer.toJson<String?>(calendarId),
       'status': serializer.toJson<String>(status),
+      'listId': serializer.toJson<String?>(listId),
+      'colorIndex': serializer.toJson<int?>(colorIndex),
+      'orderKey': serializer.toJson<String>(orderKey),
     };
   }
 
@@ -5174,7 +5401,10 @@ class Event extends DataClass implements Insertable<Event> {
           String? title,
           Value<String?> location = const Value.absent(),
           Value<String?> calendarId = const Value.absent(),
-          String? status}) =>
+          String? status,
+          Value<String?> listId = const Value.absent(),
+          Value<int?> colorIndex = const Value.absent(),
+          String? orderKey}) =>
       Event(
         id: id ?? this.id,
         workspaceId: workspaceId ?? this.workspaceId,
@@ -5188,6 +5418,9 @@ class Event extends DataClass implements Insertable<Event> {
         location: location.present ? location.value : this.location,
         calendarId: calendarId.present ? calendarId.value : this.calendarId,
         status: status ?? this.status,
+        listId: listId.present ? listId.value : this.listId,
+        colorIndex: colorIndex.present ? colorIndex.value : this.colorIndex,
+        orderKey: orderKey ?? this.orderKey,
       );
   Event copyWithCompanion(EventsCompanion data) {
     return Event(
@@ -5205,6 +5438,10 @@ class Event extends DataClass implements Insertable<Event> {
       calendarId:
           data.calendarId.present ? data.calendarId.value : this.calendarId,
       status: data.status.present ? data.status.value : this.status,
+      listId: data.listId.present ? data.listId.value : this.listId,
+      colorIndex:
+          data.colorIndex.present ? data.colorIndex.value : this.colorIndex,
+      orderKey: data.orderKey.present ? data.orderKey.value : this.orderKey,
     );
   }
 
@@ -5222,14 +5459,31 @@ class Event extends DataClass implements Insertable<Event> {
           ..write('title: $title, ')
           ..write('location: $location, ')
           ..write('calendarId: $calendarId, ')
-          ..write('status: $status')
+          ..write('status: $status, ')
+          ..write('listId: $listId, ')
+          ..write('colorIndex: $colorIndex, ')
+          ..write('orderKey: $orderKey')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, workspaceId, ownerId, version, createdAt,
-      updatedAt, deletedAt, deletedBy, title, location, calendarId, status);
+  int get hashCode => Object.hash(
+      id,
+      workspaceId,
+      ownerId,
+      version,
+      createdAt,
+      updatedAt,
+      deletedAt,
+      deletedBy,
+      title,
+      location,
+      calendarId,
+      status,
+      listId,
+      colorIndex,
+      orderKey);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -5245,7 +5499,10 @@ class Event extends DataClass implements Insertable<Event> {
           other.title == this.title &&
           other.location == this.location &&
           other.calendarId == this.calendarId &&
-          other.status == this.status);
+          other.status == this.status &&
+          other.listId == this.listId &&
+          other.colorIndex == this.colorIndex &&
+          other.orderKey == this.orderKey);
 }
 
 class EventsCompanion extends UpdateCompanion<Event> {
@@ -5261,6 +5518,9 @@ class EventsCompanion extends UpdateCompanion<Event> {
   final Value<String?> location;
   final Value<String?> calendarId;
   final Value<String> status;
+  final Value<String?> listId;
+  final Value<int?> colorIndex;
+  final Value<String> orderKey;
   final Value<int> rowid;
   const EventsCompanion({
     this.id = const Value.absent(),
@@ -5275,6 +5535,9 @@ class EventsCompanion extends UpdateCompanion<Event> {
     this.location = const Value.absent(),
     this.calendarId = const Value.absent(),
     this.status = const Value.absent(),
+    this.listId = const Value.absent(),
+    this.colorIndex = const Value.absent(),
+    this.orderKey = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   EventsCompanion.insert({
@@ -5290,6 +5553,9 @@ class EventsCompanion extends UpdateCompanion<Event> {
     this.location = const Value.absent(),
     this.calendarId = const Value.absent(),
     this.status = const Value.absent(),
+    this.listId = const Value.absent(),
+    this.colorIndex = const Value.absent(),
+    this.orderKey = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         workspaceId = Value(workspaceId),
@@ -5310,6 +5576,9 @@ class EventsCompanion extends UpdateCompanion<Event> {
     Expression<String>? location,
     Expression<String>? calendarId,
     Expression<String>? status,
+    Expression<String>? listId,
+    Expression<int>? colorIndex,
+    Expression<String>? orderKey,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -5325,6 +5594,9 @@ class EventsCompanion extends UpdateCompanion<Event> {
       if (location != null) 'location': location,
       if (calendarId != null) 'calendar_id': calendarId,
       if (status != null) 'status': status,
+      if (listId != null) 'list_id': listId,
+      if (colorIndex != null) 'color_index': colorIndex,
+      if (orderKey != null) 'order_key': orderKey,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -5342,6 +5614,9 @@ class EventsCompanion extends UpdateCompanion<Event> {
       Value<String?>? location,
       Value<String?>? calendarId,
       Value<String>? status,
+      Value<String?>? listId,
+      Value<int?>? colorIndex,
+      Value<String>? orderKey,
       Value<int>? rowid}) {
     return EventsCompanion(
       id: id ?? this.id,
@@ -5356,6 +5631,9 @@ class EventsCompanion extends UpdateCompanion<Event> {
       location: location ?? this.location,
       calendarId: calendarId ?? this.calendarId,
       status: status ?? this.status,
+      listId: listId ?? this.listId,
+      colorIndex: colorIndex ?? this.colorIndex,
+      orderKey: orderKey ?? this.orderKey,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -5399,6 +5677,15 @@ class EventsCompanion extends UpdateCompanion<Event> {
     if (status.present) {
       map['status'] = Variable<String>(status.value);
     }
+    if (listId.present) {
+      map['list_id'] = Variable<String>(listId.value);
+    }
+    if (colorIndex.present) {
+      map['color_index'] = Variable<int>(colorIndex.value);
+    }
+    if (orderKey.present) {
+      map['order_key'] = Variable<String>(orderKey.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -5420,6 +5707,9 @@ class EventsCompanion extends UpdateCompanion<Event> {
           ..write('location: $location, ')
           ..write('calendarId: $calendarId, ')
           ..write('status: $status, ')
+          ..write('listId: $listId, ')
+          ..write('colorIndex: $colorIndex, ')
+          ..write('orderKey: $orderKey, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -14031,6 +14321,8 @@ typedef $$TaskListsTableCreateCompanionBuilder = TaskListsCompanion Function({
   Value<DateTime?> deletedAt,
   Value<String?> deletedBy,
   required String title,
+  Value<int?> colorIndex,
+  Value<String> orderKey,
   Value<int> rowid,
 });
 typedef $$TaskListsTableUpdateCompanionBuilder = TaskListsCompanion Function({
@@ -14043,6 +14335,8 @@ typedef $$TaskListsTableUpdateCompanionBuilder = TaskListsCompanion Function({
   Value<DateTime?> deletedAt,
   Value<String?> deletedBy,
   Value<String> title,
+  Value<int?> colorIndex,
+  Value<String> orderKey,
   Value<int> rowid,
 });
 
@@ -14081,6 +14375,12 @@ class $$TaskListsTableFilterComposer
 
   ColumnFilters<String> get title => $composableBuilder(
       column: $table.title, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get colorIndex => $composableBuilder(
+      column: $table.colorIndex, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get orderKey => $composableBuilder(
+      column: $table.orderKey, builder: (column) => ColumnFilters(column));
 }
 
 class $$TaskListsTableOrderingComposer
@@ -14118,6 +14418,12 @@ class $$TaskListsTableOrderingComposer
 
   ColumnOrderings<String> get title => $composableBuilder(
       column: $table.title, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get colorIndex => $composableBuilder(
+      column: $table.colorIndex, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get orderKey => $composableBuilder(
+      column: $table.orderKey, builder: (column) => ColumnOrderings(column));
 }
 
 class $$TaskListsTableAnnotationComposer
@@ -14155,6 +14461,12 @@ class $$TaskListsTableAnnotationComposer
 
   GeneratedColumn<String> get title =>
       $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<int> get colorIndex => $composableBuilder(
+      column: $table.colorIndex, builder: (column) => column);
+
+  GeneratedColumn<String> get orderKey =>
+      $composableBuilder(column: $table.orderKey, builder: (column) => column);
 }
 
 class $$TaskListsTableTableManager extends RootTableManager<
@@ -14189,6 +14501,8 @@ class $$TaskListsTableTableManager extends RootTableManager<
             Value<DateTime?> deletedAt = const Value.absent(),
             Value<String?> deletedBy = const Value.absent(),
             Value<String> title = const Value.absent(),
+            Value<int?> colorIndex = const Value.absent(),
+            Value<String> orderKey = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               TaskListsCompanion(
@@ -14201,6 +14515,8 @@ class $$TaskListsTableTableManager extends RootTableManager<
             deletedAt: deletedAt,
             deletedBy: deletedBy,
             title: title,
+            colorIndex: colorIndex,
+            orderKey: orderKey,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -14213,6 +14529,8 @@ class $$TaskListsTableTableManager extends RootTableManager<
             Value<DateTime?> deletedAt = const Value.absent(),
             Value<String?> deletedBy = const Value.absent(),
             required String title,
+            Value<int?> colorIndex = const Value.absent(),
+            Value<String> orderKey = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               TaskListsCompanion.insert(
@@ -14225,6 +14543,8 @@ class $$TaskListsTableTableManager extends RootTableManager<
             deletedAt: deletedAt,
             deletedBy: deletedBy,
             title: title,
+            colorIndex: colorIndex,
+            orderKey: orderKey,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
@@ -14274,6 +14594,8 @@ typedef $$TasksTableCreateCompanionBuilder = TasksCompanion Function({
   Value<bool> isHabit,
   Value<String?> trackedSince,
   Value<String> tags,
+  Value<int?> colorIndex,
+  Value<String> orderKey,
   Value<int> rowid,
 });
 typedef $$TasksTableUpdateCompanionBuilder = TasksCompanion Function({
@@ -14300,6 +14622,8 @@ typedef $$TasksTableUpdateCompanionBuilder = TasksCompanion Function({
   Value<bool> isHabit,
   Value<String?> trackedSince,
   Value<String> tags,
+  Value<int?> colorIndex,
+  Value<String> orderKey,
   Value<int> rowid,
 });
 
@@ -14381,6 +14705,12 @@ class $$TasksTableFilterComposer extends Composer<_$AppDatabase, $TasksTable> {
 
   ColumnFilters<String> get tags => $composableBuilder(
       column: $table.tags, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get colorIndex => $composableBuilder(
+      column: $table.colorIndex, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get orderKey => $composableBuilder(
+      column: $table.orderKey, builder: (column) => ColumnFilters(column));
 }
 
 class $$TasksTableOrderingComposer
@@ -14464,6 +14794,12 @@ class $$TasksTableOrderingComposer
 
   ColumnOrderings<String> get tags => $composableBuilder(
       column: $table.tags, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get colorIndex => $composableBuilder(
+      column: $table.colorIndex, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get orderKey => $composableBuilder(
+      column: $table.orderKey, builder: (column) => ColumnOrderings(column));
 }
 
 class $$TasksTableAnnotationComposer
@@ -14543,6 +14879,12 @@ class $$TasksTableAnnotationComposer
 
   GeneratedColumn<String> get tags =>
       $composableBuilder(column: $table.tags, builder: (column) => column);
+
+  GeneratedColumn<int> get colorIndex => $composableBuilder(
+      column: $table.colorIndex, builder: (column) => column);
+
+  GeneratedColumn<String> get orderKey =>
+      $composableBuilder(column: $table.orderKey, builder: (column) => column);
 }
 
 class $$TasksTableTableManager extends RootTableManager<
@@ -14591,6 +14933,8 @@ class $$TasksTableTableManager extends RootTableManager<
             Value<bool> isHabit = const Value.absent(),
             Value<String?> trackedSince = const Value.absent(),
             Value<String> tags = const Value.absent(),
+            Value<int?> colorIndex = const Value.absent(),
+            Value<String> orderKey = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               TasksCompanion(
@@ -14617,6 +14961,8 @@ class $$TasksTableTableManager extends RootTableManager<
             isHabit: isHabit,
             trackedSince: trackedSince,
             tags: tags,
+            colorIndex: colorIndex,
+            orderKey: orderKey,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -14643,6 +14989,8 @@ class $$TasksTableTableManager extends RootTableManager<
             Value<bool> isHabit = const Value.absent(),
             Value<String?> trackedSince = const Value.absent(),
             Value<String> tags = const Value.absent(),
+            Value<int?> colorIndex = const Value.absent(),
+            Value<String> orderKey = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               TasksCompanion.insert(
@@ -14669,6 +15017,8 @@ class $$TasksTableTableManager extends RootTableManager<
             isHabit: isHabit,
             trackedSince: trackedSince,
             tags: tags,
+            colorIndex: colorIndex,
+            orderKey: orderKey,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
@@ -15975,6 +16325,9 @@ typedef $$EventsTableCreateCompanionBuilder = EventsCompanion Function({
   Value<String?> location,
   Value<String?> calendarId,
   Value<String> status,
+  Value<String?> listId,
+  Value<int?> colorIndex,
+  Value<String> orderKey,
   Value<int> rowid,
 });
 typedef $$EventsTableUpdateCompanionBuilder = EventsCompanion Function({
@@ -15990,6 +16343,9 @@ typedef $$EventsTableUpdateCompanionBuilder = EventsCompanion Function({
   Value<String?> location,
   Value<String?> calendarId,
   Value<String> status,
+  Value<String?> listId,
+  Value<int?> colorIndex,
+  Value<String> orderKey,
   Value<int> rowid,
 });
 
@@ -16037,6 +16393,15 @@ class $$EventsTableFilterComposer
 
   ColumnFilters<String> get status => $composableBuilder(
       column: $table.status, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get listId => $composableBuilder(
+      column: $table.listId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get colorIndex => $composableBuilder(
+      column: $table.colorIndex, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get orderKey => $composableBuilder(
+      column: $table.orderKey, builder: (column) => ColumnFilters(column));
 }
 
 class $$EventsTableOrderingComposer
@@ -16083,6 +16448,15 @@ class $$EventsTableOrderingComposer
 
   ColumnOrderings<String> get status => $composableBuilder(
       column: $table.status, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get listId => $composableBuilder(
+      column: $table.listId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get colorIndex => $composableBuilder(
+      column: $table.colorIndex, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get orderKey => $composableBuilder(
+      column: $table.orderKey, builder: (column) => ColumnOrderings(column));
 }
 
 class $$EventsTableAnnotationComposer
@@ -16129,6 +16503,15 @@ class $$EventsTableAnnotationComposer
 
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get listId =>
+      $composableBuilder(column: $table.listId, builder: (column) => column);
+
+  GeneratedColumn<int> get colorIndex => $composableBuilder(
+      column: $table.colorIndex, builder: (column) => column);
+
+  GeneratedColumn<String> get orderKey =>
+      $composableBuilder(column: $table.orderKey, builder: (column) => column);
 }
 
 class $$EventsTableTableManager extends RootTableManager<
@@ -16166,6 +16549,9 @@ class $$EventsTableTableManager extends RootTableManager<
             Value<String?> location = const Value.absent(),
             Value<String?> calendarId = const Value.absent(),
             Value<String> status = const Value.absent(),
+            Value<String?> listId = const Value.absent(),
+            Value<int?> colorIndex = const Value.absent(),
+            Value<String> orderKey = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               EventsCompanion(
@@ -16181,6 +16567,9 @@ class $$EventsTableTableManager extends RootTableManager<
             location: location,
             calendarId: calendarId,
             status: status,
+            listId: listId,
+            colorIndex: colorIndex,
+            orderKey: orderKey,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -16196,6 +16585,9 @@ class $$EventsTableTableManager extends RootTableManager<
             Value<String?> location = const Value.absent(),
             Value<String?> calendarId = const Value.absent(),
             Value<String> status = const Value.absent(),
+            Value<String?> listId = const Value.absent(),
+            Value<int?> colorIndex = const Value.absent(),
+            Value<String> orderKey = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               EventsCompanion.insert(
@@ -16211,6 +16603,9 @@ class $$EventsTableTableManager extends RootTableManager<
             location: location,
             calendarId: calendarId,
             status: status,
+            listId: listId,
+            colorIndex: colorIndex,
+            orderKey: orderKey,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0

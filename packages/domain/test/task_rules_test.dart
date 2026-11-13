@@ -34,6 +34,23 @@ void main() {
       expect(TaskHierarchyRules.createDepthError(maxTaskDepth), isNotNull); // too deep
     });
 
+    test('reparent counts the subtasks that move along (P03 UX U2)', () {
+      // A task with two levels below it fits under a depth-1 parent, not
+      // under a depth-2 one (its deepest subtask would be at depth 5).
+      String? at(int parentDepth, int height) => TaskHierarchyRules.reparentError(
+            taskId: EntityId('t'),
+            newParentId: EntityId('p'),
+            newParentAncestorsIncludingSelf: {'p'},
+            newParentDepth: parentDepth,
+            movedSubtreeHeight: height,
+          );
+      expect(at(1, 3), isNull);
+      expect(at(2, 3), isNotNull);
+      expect(at(1, 4), isNotNull);
+      expect(at(3, 1), isNull);
+    });
+
+
     test('reparent rejects exceeding depth', () {
       final t = EntityId('t');
       expect(
@@ -91,6 +108,22 @@ void main() {
         return d;
       }
 
+      int heightOf(String id) {
+
+        var h = 1;
+
+        for (final c in ids.where((c) => parent[c] == id)) {
+
+          h = max(h, 1 + heightOf(c));
+
+        }
+
+        return h;
+
+      }
+
+      
+
       for (var i = 0; i < 500; i++) {
         final child = ids[rnd.nextInt(ids.length)];
         final np = ids[rnd.nextInt(ids.length)];
@@ -100,6 +133,7 @@ void main() {
           newParentId: EntityId(np),
           newParentAncestorsIncludingSelf: ancestorsIncludingSelf(np),
           newParentDepth: depthOf(np),
+          movedSubtreeHeight: heightOf(child),
         );
         if (err == null) parent[child] = np; // accepted -> apply
       }

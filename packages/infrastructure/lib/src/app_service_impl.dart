@@ -1,6 +1,8 @@
 // P01 T6a: infrastructure implementations of the ports the UI consumes
 // (application/app_services.dart) plus the production authorization policy.
 // Every write goes through the DriftCommandGateway (ADR-0011).
+import 'dart:convert';
+
 import 'package:application/application.dart';
 import 'package:drift/drift.dart';
 import 'package:foundation/foundation.dart';
@@ -68,6 +70,23 @@ class DirectorySettingsService implements SettingsService {
   @override
   Future<void> setThemePreference(ThemePreference preference) => directory.writeSetting(_theme, preference.name);
 
+  static const _expanded = 'ui.overview.expanded';
+
+  @override
+  Future<Set<String>> expandedItems() async {
+    final v = await directory.readSetting(_expanded);
+    if (v == null) return {};
+    try {
+      return {for (final id in jsonDecode(v) as List) id as String};
+    } on Object {
+      return {}; // an unreadable setting only loses the expand state
+    }
+  }
+
+  @override
+  Future<void> setExpandedItems(Set<String> ids) =>
+      directory.writeSetting(_expanded, jsonEncode((ids.toList()..sort())));
+
   static const _maxOcc = 'planning.maxOccurrences';
   static const _maxDays = 'planning.maxWindowDays';
   static const _monthEnd = 'planning.defaultMonthEnd';
@@ -131,10 +150,15 @@ class DriftTaskQueries implements TaskQueries {
           db.schedules.subjectType.equals('task') &
               db.schedules.subjectId.equalsExp(db.tasks.id) &
               db.schedules.deletedAt.isNull()),
+      // P03 UX U2: only a live list counts (a merge can leave a task in a
+      // trashed list; it shows in no list then).
+      leftOuterJoin(db.taskLists,
+          db.taskLists.id.equalsExp(db.tasks.taskListId) & db.taskLists.deletedAt.isNull()),
     ])
       ..where(db.tasks.workspaceId.equals(ws) & db.tasks.deletedAt.isNull())
-      // Insertion order: createdAt has second precision, rowid is exact.
-      ..orderBy([OrderingTerm(expression: const CustomExpression<int>('tasks.rowid'))]);
+      // P03 UX U2: order keys within each container (new items are keyed
+      // at the end, so this keeps the creation order); id breaks a tie.
+      ..orderBy([OrderingTerm.asc(db.tasks.orderKey), OrderingTerm.asc(db.tasks.id)]);
     yield* query.watch().map((rows) => [
           for (final row in rows)
             () {
@@ -156,6 +180,9 @@ class DriftTaskQueries implements TaskQueries {
                 parentId: r.parentTaskId,
                 createdAt: r.createdAt,
                 schedule: schedule,
+                listId: r.parentTaskId == null ? row.readTableOrNull(db.taskLists)?.id : null,
+                colorIndex: r.colorIndex,
+                orderKey: r.orderKey,
               );
             }(),
         ]);
@@ -234,7 +261,7 @@ class DriftTaskService implements TaskService {
   }
 
   @override
-  Future<CommandResult> create(String title, {String? parentId}) {
+  Future<CommandResult> create(String title, {String? parentId, String? listId}) {
     final t = title.trim();
     if (t.isEmpty) {
       return Future.value(const CommandFailure(
@@ -246,6 +273,7 @@ class DriftTaskService implements TaskService {
       'id': EntityId.generate().value,
       'title': t,
       'parentId': parentId,
+      if (listId != null) 'listId': listId,
     });
   }
 
