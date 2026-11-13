@@ -1018,4 +1018,52 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get tlTimeline => 'Timeline';
+
+  @override
+  String get tlGoToToday => 'Go to today';
+
+  @override
+  String get tlAllDay => 'All day';
+
+  @override
+  String get tlNothingPlanned =>
+      'Nothing planned yet. Tasks and events you plan show up here.';
+
+  @override
+  String get tlNothingThisDay => 'Nothing planned.';
+
+  @override
+  String get tlShowMonth => 'Show the month calendar';
+
+  @override
+  String get tlHideMonth => 'Hide the month calendar';
+
+  @override
+  String get tlTruncated => 'Not everything is shown';
+
+  @override
+  String get tlTruncatedHint =>
+      'There are more items than the limit in Settings → Calendar.';
+
+  @override
+  String get tlLoading => 'Loading the timeline';
+
+  @override
+  String tlOverdue(int count) {
+    return 'Overdue ($count)';
+  }
+
+  @override
+  String get tlShowOverdue => 'Show the overdue tasks';
+
+  @override
+  String get tlHideOverdue => 'Hide the overdue tasks';
+
+  @override
+  String tlDayHeader(Object relative, Object date) {
+    return '$relative · $date';
+  }
 }

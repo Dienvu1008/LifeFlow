@@ -74,9 +74,9 @@ final todayProvider = Provider<LocalDate Function()>((ref) => () {
       return LocalDate(n.year, n.month, n.day);
     });
 
-/// Which tasks the Tasks tab shows (D9: Today and Upcoming are filters of
-/// Tasks; the Calendar tab can switch to them).
-enum TaskFilter { all, today, upcoming, habits }
+/// What the Tasks tab shows: the Overview (U3), the Timeline (U4, replacing
+/// Today and Upcoming) or the habits. The Calendar tab can open the Timeline.
+enum TaskFilter { all, timeline, habits }
 
 final taskFilterProvider = StateProvider<TaskFilter>((ref) => TaskFilter.all);
 

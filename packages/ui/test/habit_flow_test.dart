@@ -280,7 +280,7 @@ void main() {
       ]);
       w.habits.views['t1'] = walking(completion: CompletionMode.automatic, value: 6500, complete: true);
       await pumpApp(tester, w);
-      await tester.tap(find.text('Today'));
+      await tester.tap(find.text('Timeline'));
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('period-t1')), findsOneWidget);
       expect(find.text('6500 / 6000 steps · Achieved'), findsOneWidget);
@@ -297,7 +297,7 @@ void main() {
       ]);
       w.habits.views['t1'] = walking();
       await pumpApp(tester, w);
-      await tester.tap(find.text('Today'));
+      await tester.tap(find.text('Timeline'));
       await tester.pumpAndSettle();
       await tester.tap(find.bySemanticsLabel('Complete Walk'));
       await tester.pumpAndSettle();

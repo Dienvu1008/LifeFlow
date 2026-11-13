@@ -144,16 +144,19 @@ void main() {
       expect(find.byKey(const Key('calendar-empty')), findsOneWidget);
     });
 
-    testWidgets("buttons lead to Today's and Upcoming tasks (D9)", (tester) async {
+    testWidgets("buttons open the Timeline on today and on tomorrow (U4)", (tester) async {
       final w = world();
       await pumpCalendar(tester, w);
+      // P03 UX U4: both open the Timeline, on today or on tomorrow.
       await tapKey(tester, 'calendar-today-tasks');
-      expect(find.byKey(const Key('agenda-empty')), findsOneWidget);
-      expect(find.textContaining('Nothing planned for today'), findsOneWidget);
+      expect(find.byKey(const Key('timeline-month')), findsOneWidget);
+      expect(find.byKey(ValueKey('day-$testToday')), findsOneWidget);
       await tester.tap(find.byIcon(Icons.calendar_month_outlined));
       await tester.pumpAndSettle();
       await tapKey(tester, 'calendar-upcoming-tasks');
-      expect(find.text('Nothing planned for the next 14 days.'), findsOneWidget);
+      expect(find.byKey(ValueKey('day-${testToday.addDays(1)}')), findsOneWidget);
+      // At the top of the list, under the app bar.
+      expect(tester.getTopLeft(find.byKey(ValueKey('day-${testToday.addDays(1)}'))).dy, lessThan(300));
     });
 
     testWidgets('a cut-off range says so', (tester) async {

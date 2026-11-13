@@ -19,6 +19,7 @@ import '../widgets/schedule_fields.dart';
 import 'calendars_dialog.dart';
 import 'event_editor.dart';
 import 'tasks_screen.dart' show showTextDialog;
+import 'timeline_view.dart' show timelineAnchorProvider;
 
 /// Which view and which date the Calendar tab shows; null until first shown
 /// (then: today, and the view that suits the width).
@@ -41,8 +42,10 @@ class CalendarScreen extends ConsumerWidget {
     final range = rangeOf(pos.mode, pos.anchor, first);
     final data = ref.watch(calendarRangeProvider(range));
 
-    void openTasks(TaskFilter f) {
-      ref.read(taskFilterProvider.notifier).state = f;
+    // P03 UX U4: Today and Upcoming are the Timeline now.
+    void openTimeline(LocalDate day) {
+      ref.read(timelineAnchorProvider.notifier).state = day;
+      ref.read(taskFilterProvider.notifier).state = TaskFilter.timeline;
       context.go('/tasks');
     }
 
@@ -98,13 +101,13 @@ class CalendarScreen extends ConsumerWidget {
                         ),
                         TextButton.icon(
                           key: const Key('calendar-today-tasks'),
-                          onPressed: () => openTasks(TaskFilter.today),
+                          onPressed: () => openTimeline(today),
                           icon: const Icon(Icons.today),
                           label: const Text("Today's tasks"),
                         ),
                         TextButton.icon(
                           key: const Key('calendar-upcoming-tasks'),
-                          onPressed: () => openTasks(TaskFilter.upcoming),
+                          onPressed: () => openTimeline(today.addDays(1)),
                           icon: const Icon(Icons.date_range),
                           label: const Text('Upcoming tasks'),
                         ),

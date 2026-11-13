@@ -6,12 +6,13 @@ import '../habit_text.dart';
 import '../messages.dart';
 import '../shell.dart' show shellMenuButton;
 import '../providers.dart';
-import '../schedule_text.dart';
 import '../task_actions.dart';
 import '../task_tree.dart';
 import 'event_editor.dart';
 import 'focus_page.dart';
 import 'overview_view.dart';
+import 'timeline_view.dart';
+import '../l10n.dart';
 import 'habit_page.dart';
 
 /// Space kept free under the last row so the + button never covers it.
@@ -50,9 +51,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               TaskScheduleInput(start: SchedulePointInput.date(today), repeat: const RepeatInput(frequency: RepeatFrequency.daily))));
       return;
     }
-    if (parentId == null && filter != TaskFilter.all) {
-      final today = ref.read(todayProvider)();
-      final day = filter == TaskFilter.today ? today : today.addDays(1);
+    if (parentId == null && filter == TaskFilter.timeline) {
+      // Planned on the day the Timeline shows (today unless one was chosen).
+      final day = ref.read(timelineAnchorProvider) ?? ref.read(todayProvider)();
       await reportResult(
           context,
           ref.read(taskSchedulingProvider).setSchedule(
@@ -68,8 +69,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: shellMenuButton(context),
-        title: const Text('Tasks'),
+        title: filter == TaskFilter.timeline ? const TimelineTitle() : const Text('Tasks'),
         actions: [
+          if (filter == TaskFilter.timeline) const TimelineTodayButton(),
           // D12: focus without a task.
           IconButton(
             key: const Key('focus-open'),
@@ -96,13 +98,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                   ButtonSegment(
                       value: TaskFilter.all, label: label('Overview'), icon: icons ? const Icon(Icons.list) : null),
                   ButtonSegment(
-                      value: TaskFilter.today,
-                      label: label('Today'),
-                      icon: icons ? const Icon(Icons.today) : null),
-                  ButtonSegment(
-                      value: TaskFilter.upcoming,
-                      label: label('Upcoming'),
-                      icon: icons ? const Icon(Icons.date_range) : null),
+                      value: TaskFilter.timeline,
+                      label: label(context.l10n.tlTimeline),
+                      icon: icons ? const Icon(Icons.view_timeline_outlined) : null),
                   ButtonSegment(
                       value: TaskFilter.habits,
                       label: label('Habits'),
@@ -133,89 +131,12 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
             onRevealed: () => _revealId = null,
             onAddSubtask: _addTask,
           ),
-        TaskFilter.today => const _AgendaList(upcoming: false),
-        TaskFilter.upcoming => const _AgendaList(upcoming: true),
+        TaskFilter.timeline => const TimelineView(),
         TaskFilter.habits => const _HabitList(),
       },
     );
   }
 }
-/// Today or Upcoming: occurrences of scheduled tasks, grouped by date
-/// (owner decision D9). Today puts overdue one-off tasks first.
-class _AgendaList extends ConsumerWidget {
-  const _AgendaList({required this.upcoming});
-  final bool upcoming;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final agenda = ref.watch(upcoming ? upcomingAgendaProvider : todayAgendaProvider);
-    final today = ref.watch(todayProvider)();
-    // For the open-subtasks question and the editor's current schedule.
-    final rows = {for (final r in orderTree(ref.watch(tasksProvider).value ?? const [])) r.task.id: r};
-    return agenda.when(
-      loading: () => const Center(
-        child: CircularProgressIndicator(semanticsLabel: 'Loading the agenda'),
-      ),
-      error: (e, _) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text('Could not load the agenda.', style: Theme.of(context).textTheme.bodyLarge),
-        ),
-      ),
-      data: (a) {
-        final children = <Widget>[
-          if (a.truncated)
-            Card(
-              key: const Key('agenda-truncated'),
-              margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-              child: const ListTile(
-                leading: Icon(Icons.info_outline),
-                title: Text('Not everything is shown'),
-                subtitle: Text('There are more items than the limit in Settings → Calendar.'),
-              ),
-            ),
-        ];
-        if (a.items.isEmpty) {
-          children.add(Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              upcoming
-                  ? 'Nothing planned for the next 14 days.'
-                  : 'Nothing planned for today. Tasks you plan for today show up here.',
-              key: const Key('agenda-empty'),
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-          ));
-        }
-        String? group;
-        for (final item in a.items) {
-          final g = item.isOverdue ? 'Overdue' : formatDate(item.date, today: today);
-          if (g != group) {
-            group = g;
-            children.add(Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-              child: Semantics(
-                header: true,
-                child: Text(
-                  item.isOverdue || upcoming ? g : '$g · ${formatDateLong(item.date, today: today)}',
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-              ),
-            ));
-          }
-          children.add(TaskOccurrenceTile(item: item, row: rows[item.taskId], today: today));
-        }
-        return ListView(
-          key: Key(upcoming ? 'upcoming-list' : 'today-list'),
-          padding: const EdgeInsets.only(bottom: _fabClearance),
-          children: children,
-        );
-      },
-    );
-  }
-}
-
 /// P03 T6a: the habits of the profile (D12: the 4th filter of Tasks), each
 /// with its running period and statistics (D6b). Tapping opens the habit.
 class _HabitList extends ConsumerWidget {
