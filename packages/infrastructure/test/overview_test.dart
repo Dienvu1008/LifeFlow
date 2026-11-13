@@ -294,10 +294,10 @@ void main() {
 
   test('the expand state is a device setting', () async {
     final s = DirectorySettingsService(dir);
-    expect(await s.expandedItems(), isEmpty);
-    await s.setExpandedItems({'b', 'a'});
-    expect(await DirectorySettingsService(dir).expandedItems(), {'a', 'b'});
-    await dir.writeSetting('ui.overview.expanded', 'not json');
-    expect(await s.expandedItems(), isEmpty);
+    expect(await s.collapsedItems(), isEmpty);
+    await s.setCollapsedItems({'b', 'a'});
+    expect(await DirectorySettingsService(dir).collapsedItems(), {'a', 'b'});
+    await dir.writeSetting('ui.overview.collapsed', 'not json');
+    expect(await s.collapsedItems(), isEmpty);
   });
 }

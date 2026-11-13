@@ -6,5 +6,5 @@ packages/ui/lib/src/screens/data_card.dart 3
 packages/ui/lib/src/screens/focus_page.dart 1
 packages/ui/lib/src/screens/profiles_screen.dart 1
 packages/ui/lib/src/screens/settings_screen.dart 1
-packages/ui/lib/src/screens/tasks_screen.dart 34
+packages/ui/lib/src/screens/tasks_screen.dart 20
 packages/ui/lib/src/task_actions.dart 10

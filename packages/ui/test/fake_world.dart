@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:application/application.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:foundation/foundation.dart';
 import 'package:ui/ui.dart';
 
@@ -48,9 +49,10 @@ class FakeWorld
   @override
   Stream<List<TaskView>> watchTasks() async* {
     final id = activeId; // bound at subscribe time
-    yield List.of(_tasks[id]!);
+    // Order keys follow the Overview fake's order (P03 UX U3).
+    yield [for (final t in _tasks[id]!) overview.keyed(t)];
     await for (final _ in _changes.stream) {
-      yield List.of(_tasks[id]!);
+      yield [for (final t in _tasks[id]!) overview.keyed(t)];
     }
   }
 
@@ -71,6 +73,7 @@ class FakeWorld
         title: title,
         status: 'inbox',
         parentId: parentId,
+        listId: parentId == null ? listId : null,
         createdAt: DateTime(2026)));
     _changes.add(null);
     return CommandOk(id, Version.initial, const []);
@@ -164,15 +167,15 @@ class FakeWorld
     theme = preference;
   }
 
-  Set<String> expanded = {};
+  Set<String> collapsed = {};
 
   @override
-  Future<Set<String>> expandedItems() async => {...expanded};
+  Future<Set<String>> collapsedItems() async => {...collapsed};
 
   @override
-  Future<void> setExpandedItems(Set<String> ids) async {
-    calls.add('setExpanded:${(ids.toList()..sort()).join(',')}');
-    expanded = {...ids};
+  Future<void> setCollapsedItems(Set<String> ids) async {
+    calls.add('setCollapsed:${(ids.toList()..sort()).join(',')}');
+    collapsed = {...ids};
   }
 
   PlanningSettings planning = const PlanningSettings();
@@ -482,15 +485,30 @@ class FakeWorld
   }
 
   TaskView _copy(TaskView t,
-          {String? title, String? status, TaskScheduleInput? schedule, bool setSchedule = false}) =>
+          {String? title,
+          String? status,
+          TaskScheduleInput? schedule,
+          bool setSchedule = false,
+          String? orderKey,
+          bool setPlace = false,
+          String? parentId,
+          String? listId,
+          bool setColor = false,
+          int? colorIndex}) =>
       TaskView(
         id: t.id,
         title: title ?? t.title,
         status: status ?? t.status,
-        parentId: t.parentId,
+        parentId: setPlace ? parentId : t.parentId,
         createdAt: t.createdAt,
         schedule: setSchedule ? schedule : t.schedule,
+        listId: setPlace ? listId : t.listId,
+        colorIndex: setColor ? colorIndex : t.colorIndex,
+        orderKey: orderKey ?? t.orderKey,
       );
+
+  /// Lists, moves and colours of the Overview (P03 UX U3).
+  late final FakeOverview overview = FakeOverview(this);
 
   /// Events, calendars and the calendar range (P02 T6b).
   late final FakeCalendar calendar = FakeCalendar(calls);
@@ -524,6 +542,7 @@ class FakeWorld
     habits.dispose();
     focus.dispose();
     goals.dispose();
+    overview.dispose();
     ticks.close();
   }
 }
@@ -1116,14 +1135,16 @@ extension on ProfileView {
 }
 
 TaskView task(String id, String title,
-        {String? parent, String status = 'inbox', TaskScheduleInput? schedule}) =>
+        {String? parent, String status = 'inbox', TaskScheduleInput? schedule, String? list, int? color}) =>
     TaskView(
         id: id,
         title: title,
         status: status,
         parentId: parent,
         createdAt: DateTime(2026),
-        schedule: schedule);
+        schedule: schedule,
+        listId: list,
+        colorIndex: color);
 
 /// A compact, comparable form of a schedule input for [FakeWorld.calls].
 String describeInput(TaskScheduleInput? s) {
@@ -1182,7 +1203,274 @@ Widget appWith(FakeWorld world, {StorageNotice? notice}) => ProviderScope(
         focusLaunchProvider.overrideWithValue(world.launch),
         goalServiceProvider.overrideWithValue(world.goals),
         goalQueriesProvider.overrideWithValue(world.goals),
+        overviewServiceProvider.overrideWithValue(world.overview),
+        overviewQueriesProvider.overrideWithValue(world.overview),
         storageNoticeProvider.overrideWithValue(notice),
       ],
       child: const LifeFlowApp(),
     );
+
+/// The Overview's ports. Order keys are positions in one global [order], so
+/// a move only repositions an id (calls: `list.*`, `task.move`, `event.move`,
+/// `task.color`, `event.color`).
+class FakeOverview implements OverviewService, OverviewQueries {
+  FakeOverview(this.world);
+  final FakeWorld world;
+  List<String> get calls => world.calls;
+  CommandFailure? failNext;
+  final lists = <TaskListView>[];
+  final events = <OverviewEventView>[];
+  final order = <String>[];
+  final _trashed = <String, (TaskListView, List<TaskView>, List<OverviewEventView>)>{};
+  final _changes = StreamController<void>.broadcast();
+  var _n = 0;
+
+  String keyOf(String id) {
+    if (!order.contains(id)) order.add(id);
+    return 'k${order.indexOf(id).toString().padLeft(5, '0')}';
+  }
+
+  TaskView keyed(TaskView t) => world._copy(t, orderKey: keyOf(t.id));
+
+  void _changed() {
+    _changes.add(null);
+    world._changes.add(null);
+  }
+
+  CommandResult? _failure() {
+    final f = failNext ?? world._failure();
+    failNext = null;
+    return f;
+  }
+
+  static String describe(ItemPlace p) {
+    final where = p.parentId != null
+        ? 'under:${p.parentId}'
+        : p.listId != null
+            ? 'in:${p.listId}'
+            : 'loose';
+    return '$where@${p.afterId}';
+  }
+
+  List<TaskListView> _lists() => [
+        for (var i = 0; i < lists.length; i++)
+          TaskListView(
+              id: lists[i].id,
+              title: lists[i].title,
+              colorIndex: lists[i].colorIndex,
+              orderKey: 'k${i.toString().padLeft(5, '0')}')
+      ];
+
+  List<OverviewEventView> _events() => [
+        for (final e in events)
+          OverviewEventView(
+              id: e.id,
+              title: e.title,
+              listId: e.listId,
+              colorIndex: e.colorIndex,
+              orderKey: keyOf(e.id),
+              isCancelled: e.isCancelled,
+              schedule: e.schedule)
+      ];
+
+  @override
+  Stream<List<TaskListView>> watchLists() async* {
+    yield _lists();
+    await for (final _ in _changes.stream) {
+      yield _lists();
+    }
+  }
+
+  @override
+  Stream<List<OverviewEventView>> watchEvents() async* {
+    yield _events();
+    await for (final _ in _changes.stream) {
+      yield _events();
+    }
+  }
+
+  /// Puts [id] right after the place's afterId, or first among its siblings.
+  void _place(String id, ItemPlace p) {
+    final tasks = world._mine();
+    final siblings = [
+      for (final t in tasks)
+        if (t.id != id &&
+            (p.parentId != null ? t.parentId == p.parentId : t.parentId == null && t.listId == p.listId))
+          t.id,
+      if (p.parentId == null)
+        for (final e in events)
+          if (e.id != id && e.listId == p.listId) e.id,
+    ];
+    for (final s in siblings) {
+      keyOf(s);
+    }
+    order.remove(id);
+    final after = p.afterId;
+    if (after != null) {
+      order.insert(order.indexOf(after) + 1, id);
+    } else if (siblings.isEmpty) {
+      order.add(id);
+    } else {
+      final first = siblings.map(order.indexOf).reduce((a, b) => a < b ? a : b);
+      order.insert(first, id);
+    }
+  }
+
+  CommandResult _ok(String id) => CommandOk(id, Version.initial, const []);
+
+  @override
+  Future<CommandResult> createList(String title, {int? colorIndex}) async {
+    calls.add('list.create:$title');
+    final f = _failure();
+    if (f != null) return f;
+    final id = 'list${_n++}';
+    lists.add(TaskListView(id: id, title: title, colorIndex: colorIndex, orderKey: ''));
+    _changed();
+    return _ok(id);
+  }
+
+  void _setList(String id, TaskListView Function(TaskListView) f) {
+    final i = lists.indexWhere((l) => l.id == id);
+    lists[i] = f(lists[i]);
+    _changed();
+  }
+
+  @override
+  Future<CommandResult> renameList(String listId, String title) async {
+    calls.add('list.rename:$listId:$title');
+    final f = _failure();
+    if (f != null) return f;
+    _setList(listId, (l) => TaskListView(id: l.id, title: title, colorIndex: l.colorIndex, orderKey: ''));
+    return _ok(listId);
+  }
+
+  @override
+  Future<CommandResult> setListColor(String listId, int? colorIndex) async {
+    calls.add('list.color:$listId:$colorIndex');
+    final f = _failure();
+    if (f != null) return f;
+    _setList(listId, (l) => TaskListView(id: l.id, title: l.title, colorIndex: colorIndex, orderKey: ''));
+    return _ok(listId);
+  }
+
+  @override
+  Future<CommandResult> moveList(String listId, {String? afterId}) async {
+    calls.add('list.move:$listId@$afterId');
+    final f = _failure();
+    if (f != null) return f;
+    final l = lists.firstWhere((x) => x.id == listId);
+    lists.remove(l);
+    lists.insert(afterId == null ? 0 : lists.indexWhere((x) => x.id == afterId) + 1, l);
+    _changed();
+    return _ok(listId);
+  }
+
+  @override
+  Future<CommandResult> trashList(String listId) async {
+    calls.add('list.trash:$listId');
+    final f = _failure();
+    if (f != null) return f;
+    final l = lists.firstWhere((x) => x.id == listId);
+    final mine = world._mine();
+    final gone = <String>{
+      for (final t in mine)
+        if (t.listId == listId && t.parentId == null) t.id
+    };
+    var grew = true;
+    while (grew) {
+      final before = gone.length;
+      gone.addAll([
+        for (final t in mine)
+          if (gone.contains(t.parentId)) t.id
+      ]);
+      grew = gone.length != before;
+    }
+    final tasks = [
+      for (final t in mine)
+        if (gone.contains(t.id)) t
+    ];
+    final evs = [
+      for (final e in events)
+        if (e.listId == listId) e
+    ];
+    mine.removeWhere((t) => gone.contains(t.id));
+    events.removeWhere(evs.contains);
+    lists.remove(l);
+    _trashed[listId] = (l, tasks, evs);
+    _changed();
+    return _ok(listId);
+  }
+
+  @override
+  Future<CommandResult> restoreList(String listId) async {
+    calls.add('list.restore:$listId');
+    final f = _failure();
+    if (f != null) return f;
+    final t = _trashed.remove(listId);
+    if (t == null) return const CommandFailure(CommandFailureKind.notFound, reason: 'not found');
+    lists.add(t.$1);
+    world._mine().addAll(t.$2);
+    events.addAll(t.$3);
+    _changed();
+    return _ok(listId);
+  }
+
+  @override
+  Future<CommandResult> moveTask(String taskId, ItemPlace place) async {
+    calls.add('task.move:$taskId:${describe(place)}');
+    final f = _failure();
+    if (f != null) return f;
+    _place(taskId, place);
+    world._replace(taskId, (t) => world._copy(t, setPlace: true, parentId: place.parentId, listId: place.listId));
+    _changed();
+    return _ok(taskId);
+  }
+
+  @override
+  Future<CommandResult> moveEvent(String eventId, ItemPlace place) async {
+    calls.add('event.move:$eventId:${describe(place)}');
+    final f = _failure();
+    if (f != null) return f;
+    _place(eventId, place);
+    final i = events.indexWhere((e) => e.id == eventId);
+    final e = events[i];
+    events[i] = OverviewEventView(
+        id: e.id, title: e.title, listId: place.listId, colorIndex: e.colorIndex, orderKey: '', schedule: e.schedule);
+    _changed();
+    return _ok(eventId);
+  }
+
+  @override
+  Future<CommandResult> setTaskColor(String taskId, int? colorIndex) async {
+    calls.add('task.color:$taskId:$colorIndex');
+    final f = _failure();
+    if (f != null) return f;
+    world._replace(taskId, (t) => world._copy(t, setColor: true, colorIndex: colorIndex));
+    return _ok(taskId);
+  }
+
+  @override
+  Future<CommandResult> setEventColor(String eventId, int? colorIndex) async {
+    calls.add('event.color:$eventId:$colorIndex');
+    final f = _failure();
+    if (f != null) return f;
+    final i = events.indexWhere((e) => e.id == eventId);
+    final e = events[i];
+    events[i] = OverviewEventView(
+        id: e.id, title: e.title, listId: e.listId, colorIndex: colorIndex, orderKey: '', schedule: e.schedule);
+    _changed();
+    return _ok(eventId);
+  }
+
+  void dispose() => _changes.close();
+}
+
+/// Taps "Add task": in the Overview it is in the + menu (P03 UX U3).
+Future<void> tapAddTask(WidgetTester tester) async {
+  final menu = find.byKey(const Key('add-menu'));
+  if (menu.evaluate().isNotEmpty) {
+    await tester.tap(menu);
+    await tester.pumpAndSettle();
+  }
+  await tester.tap(find.byTooltip('Add task').last);
+}

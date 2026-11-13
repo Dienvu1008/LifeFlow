@@ -157,9 +157,10 @@ abstract interface class SettingsService {
   Future<void> setThemePreference(ThemePreference preference);
   Future<PlanningSettings> planningSettings();
 
-  /// P03 UX U2: the lists and tasks shown expanded in the Overview, by id.
-  Future<Set<String>> expandedItems();
-  Future<void> setExpandedItems(Set<String> ids);
+  /// P03 UX U2/U3: the lists and tasks the user collapsed in the Overview, by id
+  /// (everything else shows expanded, so a new subtask is never hidden).
+  Future<Set<String>> collapsedItems();
+  Future<void> setCollapsedItems(Set<String> ids);
 
   /// Stores [settings] after clamping them to the bounds.
   Future<void> setPlanningSettings(PlanningSettings settings);

@@ -29,7 +29,7 @@ The Overview (U3) shows lists with their tasks and events, then the items in no 
 
 **Export / restore.** Colours must be palette indexes and keys well-formed (`organize_rows.dart`); an event's list is an optional reference (refused in a file when unknown, cleared on a merge when the list will not exist).
 
-**Expand state.** The expanded lists and tasks are a device setting (`SettingsService.expandedItems`, registry key `ui.overview.expanded`): not profile data, not synced, not exported. An unreadable value only loses the expand state.
+**Expand state.** The lists and tasks the user collapsed are a device setting (U3 amended this from "expanded": everything else shows expanded, so a new subtask is never hidden) (`SettingsService.collapsedItems`, registry key `ui.overview.collapsed`): not profile data, not synced, not exported. An unreadable value only loses the expand state.
 
 **Application surface.** `OverviewQueries` (`watchLists`, `watchEvents`) and `OverviewService` (lists, moves, colours) in `application/overview.dart`; `TaskView` gains `listId`, `colorIndex` and `orderKey`; `TaskQueries.watchTasks` orders by key. The UI wiring comes with the Overview (U3).
 

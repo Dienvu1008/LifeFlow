@@ -94,7 +94,7 @@ void main() {
       await pumpApp(tester, w);
       await tester.tap(find.text('Habits'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Add task'));
+      await tapAddTask(tester);
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'Warm water');
       await tester.tap(find.widgetWithText(FilledButton, 'Add'));

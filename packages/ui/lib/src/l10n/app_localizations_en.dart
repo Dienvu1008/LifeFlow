@@ -835,4 +835,187 @@ class AppLocalizationsEn extends AppLocalizations {
   String drawerProfileLabelWithStatus(Object name, Object status) {
     return 'Profile: $name, $status. Open profiles';
   }
+
+  @override
+  String get ovEmpty => 'No tasks yet. Use the + button to add your first one.';
+
+  @override
+  String get ovLoading => 'Loading tasks';
+
+  @override
+  String get ovLoadError => 'Could not load tasks.';
+
+  @override
+  String get ovNotInAList => 'Not in a list';
+
+  @override
+  String get ovAddMenu => 'Add';
+
+  @override
+  String get ovCloseAddMenu => 'Close the add menu';
+
+  @override
+  String get ovAddTask => 'Add task';
+
+  @override
+  String get ovNewList => 'New list';
+
+  @override
+  String get ovNewEvent => 'New event';
+
+  @override
+  String get ovNewTask => 'New task';
+
+  @override
+  String get ovNewSubtask => 'New subtask';
+
+  @override
+  String get ovRenameTask => 'Rename task';
+
+  @override
+  String get ovRenameList => 'Rename list';
+
+  @override
+  String get ovRename => 'Rename';
+
+  @override
+  String get ovFocus => 'Focus…';
+
+  @override
+  String get ovSchedule => 'Schedule…';
+
+  @override
+  String get ovHabitAndTarget => 'Habit and target…';
+
+  @override
+  String get ovGoals => 'Goals…';
+
+  @override
+  String get ovAddSubtask => 'Add subtask';
+
+  @override
+  String get ovAddEvent => 'Add event';
+
+  @override
+  String get ovColour => 'Colour…';
+
+  @override
+  String get ovMoveUp => 'Move up';
+
+  @override
+  String get ovMoveDown => 'Move down';
+
+  @override
+  String get ovIndent => 'Make it a subtask of the task above';
+
+  @override
+  String get ovOutdent => 'Move it up a level';
+
+  @override
+  String get ovMoveToList => 'Move to list…';
+
+  @override
+  String get ovMoveToListTitle => 'Move to list';
+
+  @override
+  String get ovNoList => 'No list';
+
+  @override
+  String get ovColourTitle => 'Colour';
+
+  @override
+  String get ovNoColour => 'No colour';
+
+  @override
+  String get ovColorRed => 'Red';
+
+  @override
+  String get ovColorOrange => 'Orange';
+
+  @override
+  String get ovColorAmber => 'Amber';
+
+  @override
+  String get ovColorOlive => 'Olive';
+
+  @override
+  String get ovColorGreen => 'Green';
+
+  @override
+  String get ovColorTeal => 'Teal';
+
+  @override
+  String get ovColorCyan => 'Cyan';
+
+  @override
+  String get ovColorBlue => 'Blue';
+
+  @override
+  String get ovColorIndigo => 'Indigo';
+
+  @override
+  String get ovColorPurple => 'Purple';
+
+  @override
+  String get ovColorPink => 'Pink';
+
+  @override
+  String get ovColorBrown => 'Brown';
+
+  @override
+  String ovComplete(Object title) {
+    return 'Complete $title';
+  }
+
+  @override
+  String ovMarkNotDone(Object title) {
+    return 'Mark as not done: $title';
+  }
+
+  @override
+  String ovDoneFromMeasurements(Object title) {
+    return 'Done from measurements: $title';
+  }
+
+  @override
+  String ovExpand(Object title) {
+    return 'Expand $title';
+  }
+
+  @override
+  String ovCollapse(Object title) {
+    return 'Collapse $title';
+  }
+
+  @override
+  String ovDragHandle(Object title) {
+    return 'Drag $title to move it';
+  }
+
+  @override
+  String ovListTrashed(Object title) {
+    return '\"$title\" moved to the trash with its tasks and events.';
+  }
+
+  @override
+  String ovColourSwatch(Object name) {
+    return '$name';
+  }
+
+  @override
+  String ovEventLabel(Object title) {
+    return 'Event: $title';
+  }
+
+  @override
+  String ovItemCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items',
+      one: '1 item',
+      zero: 'Empty',
+    );
+    return '$_temp0';
+  }
 }
