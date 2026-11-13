@@ -45,6 +45,10 @@ class Workspaces extends Table {
 
 class TaskLists extends Table with SyncableColumns {
   TextColumn get title => text()();
+  // P03 UX U2 (schema v7, ADR-0046): a palette colour (0..11, null = none)
+  // and the fractional order key within the item's container.
+  IntColumn get colorIndex => integer().nullable()();
+  TextColumn get orderKey => text().withDefault(const Constant('a0'))();
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -72,6 +76,10 @@ class Tasks extends Table with SyncableColumns {
   // or got a target). Periods that ended before it get no result.
   TextColumn get trackedSince => text().nullable()();
   TextColumn get tags => text().withDefault(const Constant('[]'))(); // JSON array of strings (opaque)
+  // P03 UX U2 (schema v7, ADR-0046): a palette colour (0..11, null = none)
+  // and the fractional order key within the item's container.
+  IntColumn get colorIndex => integer().nullable()();
+  TextColumn get orderKey => text().withDefault(const Constant('a0'))();
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -168,6 +176,11 @@ class Events extends Table with SyncableColumns {
   TextColumn get calendarId => text().nullable()();
   TextColumn get status =>
       text().withDefault(const Constant('confirmed'))(); // confirmed | cancelled
+  // P03 UX U2 (schema v7, ADR-0046): the list it is in (never a task,
+  // U-D1), its colour and its order key.
+  TextColumn get listId => text().nullable()();
+  IntColumn get colorIndex => integer().nullable()();
+  TextColumn get orderKey => text().withDefault(const Constant('a0'))();
   @override
   Set<Column> get primaryKey => {id};
 }

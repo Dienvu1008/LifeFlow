@@ -17,6 +17,10 @@ Maps every invariant to its verification method, golden scenario(s) and/or fitne
 | LF-INV-TASK-004 | SM | — | — | no |
 | LF-INV-TASK-010 | U, I | GS-01, GS-02 | — | no |
 | LF-INV-TASK-011 | U, I | GS-20 | — | no |
+| LF-INV-ORDER-001 | P, I | GS-20 | — | no |
+| LF-INV-ORDER-002 | U, P | — | — | no |
+| LF-INV-ORDER-003 | I, P | — | — | no |
+| LF-INV-ORDER-004 | I | — | — | no |
 | LF-INV-PLAN-004 | U, P, I | GS-04 | — | no |
 | LF-INV-PLAN-010 | P, U, I | GS-03 | — | no |
 | LF-INV-PLAN-011 | U, I | GS-03 | — | no |

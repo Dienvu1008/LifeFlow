@@ -13,7 +13,7 @@ library;
 //                     ProfileRestoreHandler, EventCommandHandler,
 //                     CalendarCommandHandler, FocusCommandHandler,
 //                     MeasurementCommandHandler, PeriodCloseHandler,
-//                     GoalCommandHandler
+//                     GoalCommandHandler, ListCommandHandler
 import 'package:application/application.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -107,6 +107,7 @@ void main() {
         'calendar' => (await (db.select(db.calendars)..where((t) => t.id.equals(id))).getSingle()).version,
         'focusSession' => (await (db.select(db.focusSessions)..where((t) => t.id.equals(id))).getSingle()).version,
         'goal' => (await (db.select(db.goals)..where((t) => t.id.equals(id))).getSingle()).version,
+        'taskList' => (await (db.select(db.taskLists)..where((t) => t.id.equals(id))).getSingle()).version,
         _ => (await (db.select(db.profiles)..where((t) => t.id.equals(id))).getSingle()).version,
       };
 
@@ -117,6 +118,7 @@ void main() {
   const eventHandler = EventCommandHandler();
   const calendarHandler = CalendarCommandHandler();
   const focusHandler = FocusCommandHandler();
+  const listHandler = ListCommandHandler();
   const measurementHandler = MeasurementCommandHandler();
   const closeHandler = PeriodCloseHandler();
   const goalHandler = GoalCommandHandler();
@@ -253,6 +255,29 @@ void main() {
           (v, op) => command('StartFocusSession', {'op': 'start', 'id': 's3', 'mode': 'stopwatch'}, opId: op, expected: v)),
       ('focus.markUnrecoverable', focusHandler, 'focusSession', 's3',
           (v, op) => command('MarkFocusSessionUnrecoverable', {'op': 'markUnrecoverable', 'id': 's3', 'cause': 'untrusted'}, opId: op, expected: v)),
+      // P03 UX U2: lists, moves and colours (t2 is top-level, e1 live).
+      ('list.create', listHandler, 'taskList', 'l1',
+          (v, op) => command('CreateList', {'op': 'create', 'id': 'l1', 'title': 'Work', 'colorIndex': 1}, opId: op, expected: v)),
+      ('list2.create', listHandler, 'taskList', 'l2',
+          (v, op) => command('CreateList', {'op': 'create', 'id': 'l2', 'title': 'Home'}, opId: op, expected: v)),
+      ('list.rename', listHandler, 'taskList', 'l1',
+          (v, op) => command('RenameList', {'op': 'rename', 'id': 'l1', 'title': 'Office'}, opId: op, expected: v)),
+      ('list.setColor', listHandler, 'taskList', 'l1',
+          (v, op) => command('SetListColor', {'op': 'setColor', 'id': 'l1', 'colorIndex': 4}, opId: op, expected: v)),
+      ('list.move', listHandler, 'taskList', 'l2',
+          (v, op) => command('MoveList', {'op': 'move', 'id': 'l2', 'afterId': null}, opId: op, expected: v)),
+      ('task.move', taskHandler, 'task', 't2',
+          (v, op) => command('MoveTask', {'op': 'move', 'id': 't2', 'listId': 'l1'}, opId: op, expected: v)),
+      ('task.setColor', taskHandler, 'task', 't2',
+          (v, op) => command('SetTaskColor', {'op': 'setColor', 'id': 't2', 'colorIndex': 9}, opId: op, expected: v)),
+      ('event.move', eventHandler, 'event', 'e1',
+          (v, op) => command('MoveEvent', {'op': 'move', 'id': 'e1', 'listId': 'l1', 'afterId': 't2'}, opId: op, expected: v)),
+      ('event.setColor', eventHandler, 'event', 'e1',
+          (v, op) => command('SetEventColor', {'op': 'setColor', 'id': 'e1', 'colorIndex': 0}, opId: op, expected: v)),
+      ('list.trash', listHandler, 'taskList', 'l1',
+          (v, op) => command('TrashList', {'op': 'trash', 'id': 'l1'}, opId: op, expected: v)),
+      ('list.restore', listHandler, 'taskList', 'l1',
+          (v, op) => command('RestoreList', {'op': 'restore', 'id': 'l1'}, opId: op, expected: v)),
       ('calendar.trash', calendarHandler, 'calendar', 'c1',
           (v, op) => command('TrashCalendar', {'op': 'trash', 'id': 'c1'}, opId: op, expected: v)),
       ('task.trash', taskHandler, 'task', 't2',

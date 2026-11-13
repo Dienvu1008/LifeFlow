@@ -8,6 +8,7 @@
 import 'dart:io';
 
 import 'package:application/application.dart';
+import 'package:domain/domain.dart' show isValidOrderKey;
 import 'package:drift/drift.dart' show TableInfo, Value;
 import 'package:foundation/foundation.dart';
 import 'package:infrastructure/infrastructure.dart';
@@ -186,7 +187,7 @@ void main() {
       expect(await store.db.select(store.db.schedules).get(), isEmpty);
     });
 
-    for (final from in [2, 3, 4, 5]) {
+    for (final from in [2, 3, 4, 5, 6]) {
       test('an existing v$from profile store upgrades to the latest schema, '
           'data intact (ADR-0025, ADR-0029)', () async {
         var dir = await openDirectory(base, keys);
@@ -230,8 +231,48 @@ void main() {
             subjectId: 'x', firstDate: '2026-11-09',
             createdAt: DateTime.utc(2026), updatedAt: DateTime.utc(2026)));
         expect(await db.select(db.schedules).get(), hasLength(1));
+        // P03 UX U2 (v7): no colour; a valid order key (ADR-0046).
+        expect((task.colorIndex, isValidOrderKey(task.orderKey)), (null, true));
       });
     }
+
+    test('v6 -> v7 keys every list, task and event in the order shown so far (ADR-0046)', () async {
+      var dir = await openDirectory(base, keys);
+      final id = (await dir.active())!.id;
+      final host = TestHost(dir);
+      await host.openActive();
+      final svc = Services(host, FakeAuthGateway());
+      Future<String> task(String t, {String? parent}) async =>
+          (await svc.tasks.create(t, parentId: parent) as CommandOk).entityId;
+      await task('A');
+      final b = await task('B');
+      await task('B1', parent: b);
+      await task('B2', parent: b);
+      await task('C');
+      final now = DateTime.utc(2026, 11, 12);
+      for (final (lid, title) in [('l1', 'Work'), ('l2', 'Home')]) {
+        await host.db.into(host.db.taskLists).insert(TaskListsCompanion.insert(
+            id: lid, workspaceId: (await host.db.select(host.db.workspaces).getSingle()).id, ownerId: 'o',
+            createdAt: now, updatedAt: now, title: title));
+      }
+      await rewindProfileStore(host.db, 6);
+      await host.close();
+      await dir.close();
+
+      dir = await openDirectory(base, keys);
+      addTearDown(dir.close);
+      final store = await dir.openProfile(id);
+      addTearDown(store.db.close);
+      final db = store.db;
+      final tasks = {for (final t in await db.select(db.tasks).get()) t.title: t.orderKey};
+      expect(tasks.values.every(isValidOrderKey), isTrue);
+      // Each container in creation order: A < B < C at the top, B1 < B2 under B.
+      expect(tasks['A']!.compareTo(tasks['B']!) < 0 && tasks['B']!.compareTo(tasks['C']!) < 0, isTrue);
+      expect(tasks['B1']!.compareTo(tasks['B2']!) < 0, isTrue);
+      final lists = (await db.select(db.taskLists).get())..sort((a, b) => a.orderKey.compareTo(b.orderKey));
+      expect(lists.map((l) => l.title), ['Work', 'Home']);
+      expect(lists.every((l) => l.colorIndex == null), isTrue);
+    });
 
     test('a locked profile can never become active', () async {
       final dir = await openDirectory(base, keys);

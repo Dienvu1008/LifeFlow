@@ -121,7 +121,9 @@ final Map<String, RecordKind> recordKindByName = {for (final k in recordKinds) k
 const subjectKinds = {'schedule', 'exception', 'reminder'};
 
 /// Kinds a row can point to, for reference checks.
-const referableKinds = {'task', 'event', 'calendar', 'goal', 'focusSession', 'executionRecord', 'measurement'};
+const referableKinds = {
+  'taskList', 'task', 'event', 'calendar', 'goal', 'focusSession', 'executionRecord', 'measurement',
+};
 
 /// The record a dependent row belongs to, as (kind, id), or null.
 (String, String)? subjectOf(String kind, Row r) => switch (kind) {
@@ -143,6 +145,7 @@ List<(String, String)> requiredRefsOf(String kind, Row r) => [
 /// task; a measurement's record). History is never dropped for them.
 const optionalRefs = <(String, String, String)>[
   ('event', 'calendarId', 'calendar'),
+  ('event', 'listId', 'taskList'), // P03 UX U2
   ('focusSession', 'taskId', 'task'),
   ('executionRecord', 'taskId', 'task'),
   ('executionRecord', 'sessionId', 'focusSession'),

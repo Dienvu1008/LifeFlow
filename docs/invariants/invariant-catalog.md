@@ -29,7 +29,7 @@ Harvest note (Batch 4): 60 invariants were found across the docs and are all cat
 - Statement: a Task's identity is stable across updates, move, binding, restart. Rationale: references and history. Scope: Task. Enforcement: immutable ID. Failure: reject. Verification: unit + property. Severity: critical. Depends: LF-INV-ID-001.
 
 ### LF-INV-TASK-002 — Bounded hierarchy depth (command-time)
-- Statement: a `CreateTask`/`Reparent` may not place a task deeper than the current depth limit (4); the limit is checked at command time, not stored, so changing it is not a data migration. Rationale: predictable hierarchy/UI; owner decision OQ-R1. Scope: Task. Enforcement: `CreateTask`/`Reparent`. Failure: reject command. Verification: unit + property (random depth). Severity: high. Depends: —.
+- Statement: a `CreateTask`/`Reparent` may not place a task deeper than the current depth limit (4); the limit is checked at command time, not stored, so changing it is not a data migration. A move counts the subtasks that move along: the deepest of them must stay within the limit too (P03 UX U2, ADR-0046). Rationale: predictable hierarchy/UI; owner decision OQ-R1. Scope: Task. Enforcement: `CreateTask`/`Reparent`. Failure: reject command. Verification: unit + property (random depth). Severity: high. Depends: —.
 
 ### LF-INV-TASK-003 — No hierarchy cycles
 - Statement: the parent graph is acyclic. Rationale: integrity. Scope: Task. Enforcement: `Reparent` rejects if the new parent is the task or a descendant. Failure: reject. Verification: property test over random reparents (GS: task hierarchy). Severity: high. Depends: LF-INV-TASK-002.
@@ -42,6 +42,18 @@ Harvest note (Batch 4): 60 invariants were found across the docs and are all cat
 
 ### LF-INV-TASK-011 — Trash excludes but preserves
 - Statement: a trashed task is excluded from active views but kept until purge. Rationale: recoverable delete; sync tombstones. Scope: Task. Enforcement: query scoping + tombstone. Failure: — (query filter). Verification: unit + integration. Severity: medium. Depends: LF-INV-SYNC-004.
+
+### LF-INV-ORDER-001 — One container per item
+- Statement: every list, task and event is in exactly one container: the lists of a workspace; the top-level items in no list; the top-level items of a list; the subtasks of a task. A subtask keeps no list of its own (it follows its top-level task). An item in a list that is not live shows, and orders, as in no list. Rationale: drag and drop must never lose or double an item. Scope: lists, tasks, events. Enforcement: the list, task and event handlers (organize_ops.dart). Failure: reject. Verification: property test over random drops (organize_property_test). Severity: high. Depends: LF-INV-TASK-002/003. (P03 UX U2, ADR-0046)
+
+### LF-INV-ORDER-002 — A drop rewrites one row
+- Statement: a reorder or move is one command that gives the moved item one new fractional order key between its neighbours; no other row changes. A position that is no longer in the container is refused. Rationale: R-DATA-LOSS; concurrent moves of different items never touch the same rows. Scope: lists, tasks, events. Enforcement: handler move ops. Failure: reject (stale position). Verification: property test (one changed row per accepted drop, none per refused one) + unit tests of the keys. Severity: high. Depends: LF-INV-ORDER-001.
+
+### LF-INV-ORDER-003 — An event is never under a task
+- Statement: an event is in a list or in none; it never has a parent task and is never a parent (owner decision U-D1). Rationale: an event is not a task (LF-INV-CAL-001). Scope: Event. Enforcement: event create/move refuse a parent; a task move refuses an event id as parent. Failure: reject. Verification: integration + property. Severity: medium. Depends: LF-INV-CAL-001.
+
+### LF-INV-ORDER-004 — A list leaves and returns with its contents
+- Statement: trashing a list trashes its top-level tasks with all their subtasks and its events at one tombstone time; restoring it brings back exactly that set. Items trashed on their own before stay in the trash. Rationale: recoverable delete without loss. Scope: lists. Enforcement: list 	rash/estore. Failure: —. Verification: integration. Severity: medium. Depends: LF-INV-TASK-011.
 
 ### LF-INV-PLAN-004 — Date-only preserved
 - Statement: a date-only ScheduleSpec is never implicitly converted to an instant. Rationale: avoid timezone drift (ADR-0010). Scope: Time Kernel. Enforcement: type separation. Failure: compile/validation error. Verification: property + unit (GS: DST/date). Severity: high. Depends: —.

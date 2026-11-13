@@ -84,6 +84,7 @@ class DriftEventService implements EventService {
       'title': input.title,
       'location': input.location,
       'calendarId': input.calendarId,
+      if (op == 'create') 'listId': input.listId,
       'schedule': fields,
     }, expectedVersion: expectedVersion);
   }
@@ -150,6 +151,7 @@ class DriftEventService implements EventService {
         location: e.location,
         calendarId: e.calendarId,
         repeat: repeatOf(rule),
+        listId: e.listId,
       ),
     );
   }
