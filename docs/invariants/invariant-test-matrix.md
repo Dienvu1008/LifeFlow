@@ -78,6 +78,9 @@ Maps every invariant to its verification method, golden scenario(s) and/or fitne
 ## P02 status (2026-11-10)
 PLAN-004/010/011/012/013 and CAL-001/002 are enforced and tested; the test files for each are listed in [p02-exit-gate.md](../testing/p02-exit-gate.md).
 
+## P03 status (2026-11-14)
+EXEC-001/002/003/004, HEALTH-002/004 (manual path), TASK-010, GOAL-001/002/003 and ORDER-001…004 (U2) are enforced and tested; the test files for each are listed in [p03-exit-gate.md](../testing/p03-exit-gate.md). LF-INV-GOAL-003 is proved on the real store (integration), not only by a unit test as its row says. HEALTH-001/003/005/006 stay with P08.
+
 ## Coverage summary
 - 62 invariants (60 harvested + LF-INV-DOC-005 + LF-INV-SEC-011). Every one has at least one verification method. **0 critical gaps.**
 - Invariants with only unit coverage and no golden scenario (for example several Dictionary/Document detail invariants) are lower severity; a golden scenario can be added in their phase if needed.

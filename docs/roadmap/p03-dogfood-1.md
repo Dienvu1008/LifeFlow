@@ -1,6 +1,6 @@
 # P03 dogfooding pass 1: fixes F1–F5
 
-- Status: **Accepted by the owner 2026-11-13** (answers to the questions included below)
+- Status: **Accepted by the owner 2026-11-13** (answers to the questions included below). **Done 2026-11-14:** F1–F5 merged after the owner's second pass; P03 signed off ([p03-exit-gate.md](../testing/p03-exit-gate.md)).
 - Date: 2026-11-13
 - Inputs: the owner's first dogfooding pass on Android and Windows after U1–U6 ([p03-ux-plan.md](p03-ux-plan.md))
 - Way of working: F1–F5 in one pass, each group on its own branch (stacked), tests, mutation checks and an ADR where a design is decided; then the owner dogfoods again. P03's exit (T7) waits for this.

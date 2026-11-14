@@ -34,7 +34,7 @@ A phase is done only when all its DoD items hold. Phases beyond P03 use the temp
 - Exit gate: recurrence is bounded/deterministic with no duplicates (GS-03); DST correctness across at least two zones (GS-04); conflict detection deterministic.
 
 ## P03 — Execution, Goals & Focus
-- Status: in progress. Task plan and owner decisions: [../roadmap/p03-plan.md](../roadmap/p03-plan.md).
+- **Status: Done (owner sign-off 2026-11-14, `main` at `1c1e399`). The MVP (P01–P03) is complete.** Evidence: [p03-exit-gate.md](p03-exit-gate.md) (per-line proof and sign-off). Task plan and owner decisions: [../roadmap/p03-plan.md](../roadmap/p03-plan.md), [../roadmap/p03-ux-plan.md](../roadmap/p03-ux-plan.md), [../roadmap/p03-dogfood-1.md](../roadmap/p03-dogfood-1.md).
 - Scope: FocusSession state machine + recovery, ExecutionRecord, Measurement + aggregation, Goals/Projects/Milestones, habit evaluation.
 - Invariants: EXEC-001/002/003/004, HEALTH-002/004 (manual path), TASK-010 (measurable), GOAL-001/002/003.
 - Golden scenarios: GS-01, GS-02, GS-05 (manual path), GS-13, GS-21.

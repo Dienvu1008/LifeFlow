@@ -1,6 +1,7 @@
 # P03 plan: Execution, Goals & Focus (MVP exit)
 
 - Status: **Accepted by the owner 2026-11-10** (D1–D5 and D7–D12 as proposed; D6 revised by the owner; D6a–D6c as proposed)
+- **Done (owner sign-off 2026-11-14): [p03-exit-gate.md](../testing/p03-exit-gate.md). The MVP is complete.**
 - Follow-up (2026-11-11): UI foundation, Overview, Timeline and Calendar before the P03 exit: [p03-ux-plan.md](p03-ux-plan.md).
 - Date: 2026-11-10
 - Inputs: [definition-of-done.md §P03](../testing/definition-of-done.md), [phase-breakdown.md](phase-breakdown.md) (P03 = end of the MVP), [execution-measurement.md](../domains/execution-measurement.md), [goals-projects.md](../domains/goals-projects.md), [task-management.md](../domains/task-management.md), ADR-0005 (Goals/Projects in MVP), ADR-0006 (Habit = Task capability), ADR-0009, ADR-0011/0014, ADR-0025, ADR-0029/0030, invariant catalog (EXEC, GOAL, HEALTH-002/004, TASK-010), GS-01/02/05/13/21, FR-EXEC-01..05, FR-FOCUS-01..08, FR-HAB-01..10, FR-GOAL-01..06, UC-02/03/17/21
