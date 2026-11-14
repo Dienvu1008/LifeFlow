@@ -565,46 +565,63 @@ class YearView extends StatelessWidget {
   }
 }
 
-/// The view switcher at the bottom: Day, Week, Month, Year, over the content
-/// on a translucent background.
+/// The view switcher at the bottom (dogfooding C3): four separate buttons,
+/// each on its own translucent background so the content shows around and
+/// through them; the selected one is a little stronger, and also bold and
+/// marked for screen readers (never colour alone).
 class CalendarModeSwitcher extends StatelessWidget {
-  const CalendarModeSwitcher(
-      {super.key, required this.mode, required this.onChanged});
+  const CalendarModeSwitcher({super.key, required this.mode, required this.onChanged});
   final CalendarMode mode;
   final ValueChanged<CalendarMode> onChanged;
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    final theme = Theme.of(context);
-    // Leaves room for the + button; scales down rather than overflow.
-    final room = MediaQuery.sizeOf(context).width - 112;
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: room < 160 ? 160 : room),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: AlignmentDirectional.centerStart,
+    final scheme = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
+    Widget button(CalendarMode m, String label) {
+      final on = m == mode;
+      return Semantics(
+        button: true,
+        selected: on,
         child: Material(
-          color: theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.85),
+          key: ValueKey('calendar-mode-${m.name}'),
+          color: on ? scheme.primaryContainer.withValues(alpha: 0.85) : scheme.surfaceContainerHigh.withValues(alpha: 0.55),
           shape: const StadiumBorder(),
-          elevation: 2,
-          child: Padding(
-            padding: const EdgeInsets.all(4),
-            child: SegmentedButton<CalendarMode>(
-              key: const Key('calendar-mode'),
-              showSelectedIcon: false,
-              style: const ButtonStyle(visualDensity: VisualDensity.compact),
-              segments: [
-                ButtonSegment(value: CalendarMode.day, label: Text(l.calDay)),
-                ButtonSegment(value: CalendarMode.week, label: Text(l.calWeek)),
-                ButtonSegment(
-                    value: CalendarMode.month, label: Text(l.calMonth)),
-                ButtonSegment(value: CalendarMode.year, label: Text(l.calYear)),
-              ],
-              selected: {mode},
-              onSelectionChanged: (s) => onChanged(s.first),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: on ? null : () => onChanged(m),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              child: Text(label,
+                  style: text.labelLarge?.copyWith(
+                      color: on ? scheme.onPrimaryContainer : scheme.onSurface,
+                      fontWeight: on ? FontWeight.w700 : FontWeight.w500)),
             ),
           ),
+        ),
+      );
+    }
+
+    // Scales down rather than overflow on a narrow window with large text.
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width - 24),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          key: const Key('calendar-mode'),
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final (m, label) in [
+              (CalendarMode.day, l.calDay),
+              (CalendarMode.week, l.calWeek),
+              (CalendarMode.month, l.calMonth),
+              (CalendarMode.year, l.calYear),
+            ]) ...[
+              if (m != CalendarMode.day) const SizedBox(width: 8),
+              button(m, label),
+            ],
+          ],
         ),
       ),
     );

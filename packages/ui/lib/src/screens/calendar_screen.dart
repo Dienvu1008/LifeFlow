@@ -119,14 +119,6 @@ class CalendarScreen extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        // Each tab keeps its page alive; two default hero tags would clash
-        // when a full-screen editor opens.
-        heroTag: 'fab-calendar',
-        tooltip: l.calNewEvent,
-        onPressed: () => openEventEditor(context, ref, date: grid ? pos.anchor : today),
-        child: const Icon(Icons.add),
-      ),
       body: Stack(children: [
         data.when(
           loading: () => Center(child: CircularProgressIndicator(semanticsLabel: l.calLoading)),
@@ -176,14 +168,16 @@ class CalendarScreen extends ConsumerWidget {
             );
           },
         ),
-        PositionedDirectional(
-          start: 12,
+        // Centred at the bottom: there is no + button any more (C1).
+        Positioned(
+          left: 0,
+          right: 0,
           bottom: 12,
           child: SafeArea(
-            child: CalendarModeSwitcher(
+            child: Center(child: CalendarModeSwitcher(
               mode: pos.mode,
               onChanged: (m) => go((mode: m, anchor: pos.anchor)),
-            ),
+            )),
           ),
         ),
       ]),
@@ -214,6 +208,12 @@ Future<void> _slotActions(BuildContext context, WidgetRef ref, LocalDate day, in
           onTap: () => Navigator.pop(context, 'event'),
         ),
         ListTile(
+          key: const Key('slot-allday'),
+          leading: const Icon(Icons.wb_sunny_outlined),
+          title: Text(l.calNewAllDayEvent),
+          onTap: () => Navigator.pop(context, 'allday'),
+        ),
+        ListTile(
           key: const Key('slot-task'),
           leading: const Icon(Icons.check_box_outlined),
           title: Text(l.calNewTask),
@@ -233,6 +233,8 @@ Future<void> _slotActions(BuildContext context, WidgetRef ref, LocalDate day, in
   switch (choice) {
     case 'event':
       await openEventEditor(context, ref, date: day, time: time);
+    case 'allday':
+      await openEventEditor(context, ref, date: day, allDay: true);
     case 'task':
       final id = await addTaskWithDialog(context, ref, null);
       if (id == null || !context.mounted) return;

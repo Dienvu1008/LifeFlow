@@ -2229,6 +2229,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This setting could not be loaded.'**
   String get resultsCouldNotLoad;
+
+  /// No description provided for @calNewAllDayEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'New all-day event'**
+  String get calNewAllDayEvent;
 }
 
 class _AppLocalizationsDelegate

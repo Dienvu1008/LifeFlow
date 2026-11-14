@@ -561,8 +561,14 @@ void main() {
     // P03 UX U5: the day is a time grid.
     expect(find.byKey(const Key('calendar-grid')), findsOneWidget);
 
-    // New event: the default is today 09:00–10:00 in the device zone.
-    await tester.tap(find.byTooltip('New event'));
+    // New event from the 09:00 slot (no + button, C1): 09:00–10:00 in the
+    // device zone.
+    await tester.drag(find.byKey(const Key('calendar-grid')), const Offset(0, 3000));
+    await tester.pumpAndSettle();
+    final column = find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key as ValueKey<String>).value.startsWith('grid-'));
+    await tester.tapAt(tester.getTopLeft(column.first) + const Offset(30, 28 + 3 * 48 + 4));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('slot-event')));
     await settle(tester);
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('event-title')), 'Standup');

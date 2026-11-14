@@ -125,6 +125,26 @@ void main() {
     expect(find.text('Call the bank'), findsOneWidget);
   });
 
+  testWidgets('T3: one mark per item on a day, in the item\'s colour or neutral', (tester) async {
+    final w = world(
+      tasks: [occurrence('c', 'Call the bank', today, hour: 9), occurrence('p', 'Past thing', today)],
+      events: [EventItem(eventId: 'e', title: 'Talk', originalDate: today, start: at(today, 11), isRepeating: false)],
+    );
+    w.overview.events.add(const OverviewEventView(id: 'e', title: 'Talk', colorIndex: 7, orderKey: ''));
+    await pumpTimeline(tester, w);
+    await tester.tap(find.byKey(const Key('timeline-month')));
+    await tester.pumpAndSettle();
+    final marks = find.byKey(const Key('day-marks'));
+    expect(marks, findsOneWidget); // only today has items
+    final ctx = tester.element(marks);
+    final colours = [
+      for (final c in tester.widgetList<Container>(find.descendant(of: marks, matching: find.byType(Container))))
+        (c.decoration as BoxDecoration).color
+    ];
+    expect(colours, hasLength(3));
+    expect(colours, containsAll([itemColorOf(ctx, 3), itemColorOf(ctx, 7), Theme.of(ctx).colorScheme.onSurfaceVariant]));
+  });
+
   testWidgets('the title follows the day at the top', (tester) async {
     final dec = LocalDate(2026, 12, 3);
     final w = world(tasks: [
