@@ -78,6 +78,37 @@ abstract interface class TaskService {
 /// The app's brightness (device setting, P03 UX U1).
 enum ThemePreference { system, light, dark }
 
+/// Dogfooding O1: when the Overview shows drag handles. [auto] = with a
+/// pointer (Windows, macOS, Linux), not on phones.
+enum DragHandles { auto, always, never }
+
+/// Dogfooding O3: the app's typeface; the three named fonts are bundled
+/// (never downloaded, LF-INV-PRIV-001).
+enum AppFont { system, inter, notoSans, beVietnamPro }
+
+/// Dogfooding O1/O3: how the app looks on this device (not profile data).
+class AppearanceSettings {
+  const AppearanceSettings({this.dragHandles = DragHandles.auto, this.font = AppFont.system, this.textScale = 1.0});
+  final DragHandles dragHandles;
+  final AppFont font;
+
+  /// Multiplies the system's text scale; [textScaleRange].
+  final double textScale;
+  static const textScaleRange = (min: 0.8, max: 1.5);
+
+  AppearanceSettings copyWith({DragHandles? dragHandles, AppFont? font, double? textScale}) => AppearanceSettings(
+        dragHandles: dragHandles ?? this.dragHandles,
+        font: font ?? this.font,
+        textScale: (textScale ?? this.textScale).clamp(textScaleRange.min, textScaleRange.max),
+      );
+
+  @override
+  bool operator ==(Object o) =>
+      o is AppearanceSettings && o.dragHandles == dragHandles && o.font == font && o.textScale == textScale;
+  @override
+  int get hashCode => Object.hash(dragHandles, font, textScale);
+}
+
 /// What happens to subtasks when their parent is moved to the trash.
 enum SubtaskTrashPolicy {
   /// Ask each time (default).
@@ -173,6 +204,10 @@ abstract interface class SettingsService {
   /// P03 UX U1: light, dark, or as the system (default).
   Future<ThemePreference> themePreference();
   Future<void> setThemePreference(ThemePreference preference);
+
+  /// Dogfooding O1/O3: drag handles, font and text size.
+  Future<AppearanceSettings> appearance();
+  Future<void> setAppearance(AppearanceSettings settings);
   Future<PlanningSettings> planningSettings();
 
   /// P03 UX U2/U3: the lists and tasks the user collapsed in the Overview, by id

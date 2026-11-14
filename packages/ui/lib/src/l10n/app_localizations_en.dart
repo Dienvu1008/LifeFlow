@@ -1246,4 +1246,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calNewAllDayEvent => 'New all-day event';
+
+  @override
+  String get apDragHandles => 'Drag handles';
+
+  @override
+  String get apDragHandlesHint =>
+      'In the Overview. Without them, press and hold a row to move it.';
+
+  @override
+  String get apAuto => 'Auto';
+
+  @override
+  String get apAlways => 'Always';
+
+  @override
+  String get apNever => 'Never';
+
+  @override
+  String get apFont => 'Font';
+
+  @override
+  String get apFontSystem => 'System';
+
+  @override
+  String get apTextSize => 'Text size';
+
+  @override
+  String apTextSizeValue(int percent) {
+    return '$percent%';
+  }
+
+  @override
+  String get apTextSizeHint => 'On top of the text size of your device.';
 }

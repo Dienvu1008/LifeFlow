@@ -279,8 +279,19 @@ class _OverviewViewState extends ConsumerState<OverviewView> {
             _reveal(i);
           }
         }
-        return Listener(
-          onPointerDown: (e) => _downX = e.position.dx,
+        final look = ref.watch(appearanceProvider).valueOrNull ?? const AppearanceSettings();
+        final handles = switch (look.dragHandles) {
+          DragHandles.always => true,
+          DragHandles.never => false,
+          DragHandles.auto => isPointerPlatform(Theme.of(context).platform),
+        };
+        return _Handles(show: handles, child: Listener(
+          onPointerDown: (e) {
+            _downX = e.position.dx;
+            _pointer = e.position;
+          },
+          // The drop zone follows the pointer, not the dragged copy's corner.
+          onPointerMove: (e) => _pointer = e.position,
           child: ListView.builder(
             key: const Key('task-list'),
             controller: _scroll,
@@ -293,6 +304,8 @@ class _OverviewViewState extends ConsumerState<OverviewView> {
                 row: rows[i],
                 hover: _hover?.index == i ? _hover : null,
                 plan: _hover?.index == i ? _planFor(ix, rows, _dragging, _hover!) : null,
+                lineIndent: _hover?.index == i ? _landingIndent(ix, rows, _planFor(ix, rows, _dragging, _hover!)) : 0,
+                fade: _dragging != null && (rows[i].id == _dragging || ix.isWithin(rows[i].id, _dragging!)),
                 onHover: (h) => setState(() => _hover = h),
                 onLeave: () {
                   if (_hover?.index == i) setState(() => _hover = null);
@@ -303,6 +316,7 @@ class _OverviewViewState extends ConsumerState<OverviewView> {
                   if (plan != null) runMove(context, ref, plan);
                 },
                 dragStartX: () => _downX,
+                pointer: () => _pointer,
                 isTask: ix.tasks.containsKey,
                 onDragStart: (id) => setState(() => _dragging = id),
                 onDragEnd: () => setState(() {
@@ -314,12 +328,24 @@ class _OverviewViewState extends ConsumerState<OverviewView> {
               return rows[i].id == _revealing ? KeyedSubtree(key: _revealKey, child: row) : row;
             },
           ),
-        );
+        ));
       },
     );
   }
 
   String? _dragging;
+  Offset? _pointer;
+
+  /// The indentation of the place [plan] puts the item (for the drop line).
+  int _landingIndent(OverviewIndex ix, List<OverviewRow> rows, MovePlan? plan) {
+    if (plan is! MoveItemPlan) return 0;
+    final p = plan.place;
+    if (p.parentId != null) {
+      final parent = rows.where((r) => r.id == p.parentId).firstOrNull;
+      return (parent?.indent ?? 0) + 1;
+    }
+    return p.listId != null ? 1 : 0;
+  }
 
   MovePlan? _planFor(OverviewIndex ix, List<OverviewRow> rows, String? dragged, _Hover h) =>
       dragged == null ? null : resolveDrop(ix, rows, dragged, h.index, h.zone, h.shift);
@@ -332,9 +358,12 @@ class _OverviewViewState extends ConsumerState<OverviewView> {
       };
 }
 
-/// A row that can be dragged (by its handle, or a long press on touch) and
-/// dropped on. The zone under the pointer and the horizontal movement since
-/// the drag began decide the drop (resolveDrop).
+/// A row that can be dragged (by its handle, or a long press when handles
+/// are hidden or on touch) and dropped on. The zone under the pointer and the
+/// horizontal movement since the drag began decide the drop (resolveDrop).
+/// Dogfooding O2 (ADR-0051): the dragged copy is the whole row at its width;
+/// the original fades in place; the drop line is indented at the level the
+/// item will take and slides there.
 class _DropSlot extends StatefulWidget {
   const _DropSlot({
     super.key,
@@ -342,10 +371,13 @@ class _DropSlot extends StatefulWidget {
     required this.row,
     required this.hover,
     required this.plan,
+    required this.lineIndent,
+    required this.fade,
     required this.onHover,
     required this.onLeave,
     required this.onDrop,
     required this.dragStartX,
+    required this.pointer,
     required this.isTask,
     required this.onDragStart,
     required this.onDragEnd,
@@ -355,10 +387,17 @@ class _DropSlot extends StatefulWidget {
   final OverviewRow row;
   final _Hover? hover;
   final MovePlan? plan;
+
+  /// Where the item lands, in indentation steps (for the drop line).
+  final int lineIndent;
+
+  /// This row is the dragged one, or inside it.
+  final bool fade;
   final ValueChanged<_Hover> onHover;
   final VoidCallback onLeave;
   final void Function(String id, _Hover hover) onDrop;
   final double? Function() dragStartX;
+  final Offset? Function() pointer;
   final bool Function(String id) isTask;
   final ValueChanged<String> onDragStart;
   final VoidCallback onDragEnd;
@@ -397,31 +436,42 @@ class _DropSlotState extends State<_DropSlot> {
     final row = widget.row;
     final h = widget.hover;
     final valid = widget.plan != null;
-    Widget content = widget.child;
+    Widget content = AnimatedOpacity(
+      key: ValueKey('fade-${row.id}'),
+      opacity: widget.fade ? 0.35 : 1,
+      duration: const Duration(milliseconds: 120),
+      child: widget.child,
+    );
     if (h != null && valid && h.zone == DropZone.into) {
       content = ColoredBox(color: scheme.primaryContainer.withValues(alpha: 0.6), child: content);
     }
+    final showLine = h != null && valid && h.zone != DropZone.into;
     final target = DragTarget<String>(
       onWillAcceptWithDetails: (_) => true,
       onMove: (d) {
-        final hov = _hoverAt(d.data, d.offset, widget.isTask(d.data));
+        final hov = _hoverAt(d.data, widget.pointer() ?? d.offset, widget.isTask(d.data));
         if (hov != null && hov != widget.hover) widget.onHover(hov);
       },
       onLeave: (_) => widget.onLeave(),
       onAcceptWithDetails: (d) {
-        final hov = _hoverAt(d.data, d.offset, widget.isTask(d.data));
+        final hov = _hoverAt(d.data, widget.pointer() ?? d.offset, widget.isTask(d.data));
         if (hov != null) widget.onDrop(d.data, hov);
       },
       builder: (context, candidates, rejected) => Stack(
         children: [
           content,
-          if (h != null && valid && h.zone != DropZone.into)
-            PositionedDirectional(
-              start: (row.indent + (h.shift > 0 ? 1 : 0)) * _indentStep + 8,
+          if (showLine)
+            AnimatedPositionedDirectional(
+              key: const Key('drop-line'),
+              duration: const Duration(milliseconds: 120),
+              start: widget.lineIndent * _indentStep + 8,
               end: 8,
               top: h.zone == DropZone.before ? 0 : null,
               bottom: h.zone == DropZone.after ? 0 : null,
-              child: Container(key: const Key('drop-line'), height: 2, color: scheme.primary),
+              height: 3,
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: scheme.primary, borderRadius: BorderRadius.circular(2)),
+              ),
             ),
         ],
       ),
@@ -430,6 +480,8 @@ class _DropSlotState extends State<_DropSlot> {
     return _DragScope(
       id: row.id,
       title: _titleOf(row),
+      preview: widget.child,
+      rowBox: () => context.findRenderObject() as RenderBox?,
       onStart: () {
         _startX = widget.dragStartX();
         widget.onDragStart(row.id);
@@ -441,7 +493,6 @@ class _DropSlotState extends State<_DropSlot> {
       child: target,
     );
   }
-
 }
 
 String _titleOf(OverviewRow r) => switch (r) {
@@ -451,43 +502,96 @@ String _titleOf(OverviewRow r) => switch (r) {
       LooseHeaderRow() => '',
     };
 
-/// Lets the row's handle (and, on touch, a long press on the row) start a
-/// drag of [id].
+/// Whether the Overview shows drag handles (dogfooding O1); also given to
+/// the dragged copy so it looks like its row.
+class _Handles extends InheritedWidget {
+  const _Handles({required this.show, required super.child});
+  final bool show;
+
+  static bool of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<_Handles>()?.show ?? true;
+
+  @override
+  bool updateShouldNotify(_Handles old) => old.show != show;
+}
+
+/// Lets the row's handle (and a long press on the row) start a drag of [id].
 class _DragScope extends InheritedWidget {
-  const _DragScope({required this.id, required this.title, required this.onStart, required this.onEnd, required super.child});
+  const _DragScope({
+    required this.id,
+    required this.title,
+    required this.preview,
+    required this.rowBox,
+    required this.onStart,
+    required this.onEnd,
+    required super.child,
+  });
   final String id;
   final String title;
+
+  /// The row as it looks, for the dragged copy.
+  final Widget preview;
+  final RenderBox? Function() rowBox;
   final VoidCallback onStart;
   final VoidCallback onEnd;
 
   static _DragScope? of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<_DragScope>();
 
   @override
-  bool updateShouldNotify(_DragScope old) => old.id != id || old.title != title;
+  bool updateShouldNotify(_DragScope old) => old.id != id || old.title != title || old.preview != preview;
 }
 
-Widget _feedback(BuildContext context, String title) => Material(
-      elevation: 4,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 280),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+/// The dragged copy: the whole row at its width, a little transparent, raised.
+/// Built when the drag starts (in the overlay), so the row is laid out.
+Widget _feedback(BuildContext context, _DragScope scope) =>
+    _FeedbackCopy(scope: scope, handles: _Handles.of(context));
+
+class _FeedbackCopy extends StatelessWidget {
+  const _FeedbackCopy({required this.scope, required this.handles});
+  final _DragScope scope;
+  final bool handles;
+
+  @override
+  Widget build(BuildContext context) {
+    final box = scope.rowBox();
+    final width = box != null && box.hasSize ? box.size.width : 320.0;
+    return _Handles(
+      show: handles,
+      child: SizedBox(
+        key: const Key('drag-feedback'),
+        width: width,
+        child: Opacity(
+          opacity: 0.9,
+          child: Material(
+            elevation: 6,
+            color: Theme.of(context).colorScheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(6),
+            clipBehavior: Clip.antiAlias,
+            child: scope.preview,
+          ),
+        ),
       ),
     );
+  }
+}
+/// Keeps the copy where the row was under the pointer (not at its corner).
+DragAnchorStrategy _rowAnchor(_DragScope scope) => (draggable, context, position) {
+      final box = scope.rowBox();
+      return box == null || !box.hasSize ? Offset.zero : box.globalToLocal(position);
+    };
 
-/// The drag handle at the start of a row.
+/// The drag handle at the start of a row (hidden by the setting, O1).
 class _Handle extends StatelessWidget {
   const _Handle();
 
   @override
   Widget build(BuildContext context) {
+    if (!_Handles.of(context)) return const SizedBox.shrink();
     final scope = _DragScope.of(context);
     if (scope == null) return const SizedBox(width: 24);
     return Draggable<String>(
       data: scope.id,
-      dragAnchorStrategy: pointerDragAnchorStrategy,
-      feedback: _feedback(context, scope.title),
+      dragAnchorStrategy: _rowAnchor(scope),
+      feedback: _feedback(context, scope),
       onDragStarted: scope.onStart,
       onDragEnd: (_) => scope.onEnd(),
       child: Semantics(
@@ -506,14 +610,15 @@ class _Handle extends StatelessWidget {
   }
 }
 
-/// On a touch screen a long press anywhere on the row drags it too.
+/// A long press anywhere on the row drags it too: on touch, and wherever the
+/// handles are hidden.
 Widget _longPressDrag(BuildContext context, Widget child) {
   final scope = _DragScope.of(context);
-  if (scope == null || isPointerPlatform(Theme.of(context).platform)) return child;
+  if (scope == null || (isPointerPlatform(Theme.of(context).platform) && _Handles.of(context))) return child;
   return LongPressDraggable<String>(
     data: scope.id,
-    dragAnchorStrategy: pointerDragAnchorStrategy,
-    feedback: _feedback(context, scope.title),
+    dragAnchorStrategy: _rowAnchor(scope),
+    feedback: _feedback(context, scope),
     onDragStarted: scope.onStart,
     onDragEnd: (_) => scope.onEnd(),
     child: child,
@@ -609,7 +714,10 @@ class _ListHeader extends ConsumerWidget {
         ]),
         title: Semantics(
           header: true,
-          child: Text(list.title, style: Theme.of(context).textTheme.titleSmall),
+          // Dogfooding O3: the size of its rows, bolder (never smaller).
+          child: Text(list.title,
+              style: (ListTileTheme.of(context).titleTextStyle ?? Theme.of(context).textTheme.bodyLarge)
+                  ?.copyWith(fontWeight: FontWeight.w700)),
         ),
         trailing: Row(mainAxisSize: MainAxisSize.min, children: [
           Text(l.ovItemCount(row.itemCount), style: Theme.of(context).textTheme.bodySmall),

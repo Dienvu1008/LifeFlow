@@ -70,6 +70,8 @@ void main() {
     await goToTab(tester, 'Settings');
     final tick = find.byKey(const Key('results-tick'));
     await tester.scrollUntilVisible(tick, 300, scrollable: find.byType(Scrollable).last);
+    await tester.ensureVisible(tick);
+    await tester.pumpAndSettle();
     expect(find.text('Measured tasks you tick yourself'), findsOneWidget);
     ManualResults? chosen() => tester.widget<RadioGroup<ManualResults>>(find.byType(RadioGroup<ManualResults>)).groupValue;
     expect(chosen(), ManualResults.target);

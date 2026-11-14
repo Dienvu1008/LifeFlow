@@ -681,5 +681,16 @@
   "resultsTick": "Count the tick",
   "resultsTickHint": "Done when ticked, otherwise missed.",
   "resultsCouldNotLoad": "This setting could not be loaded.",
-  "calNewAllDayEvent": "New all-day event"
+  "calNewAllDayEvent": "New all-day event",
+  "apDragHandles": "Drag handles",
+  "apDragHandlesHint": "In the Overview. Without them, press and hold a row to move it.",
+  "apAuto": "Auto",
+  "apAlways": "Always",
+  "apNever": "Never",
+  "apFont": "Font",
+  "apFontSystem": "System",
+  "apTextSize": "Text size",
+  "apTextSizeValue": "{percent}%",
+  "@apTextSizeValue": {"placeholders": {"percent": {"type": "int"}}},
+  "apTextSizeHint": "On top of the text size of your device."
 }

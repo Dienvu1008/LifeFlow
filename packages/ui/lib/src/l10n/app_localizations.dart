@@ -2235,6 +2235,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New all-day event'**
   String get calNewAllDayEvent;
+
+  /// No description provided for @apDragHandles.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag handles'**
+  String get apDragHandles;
+
+  /// No description provided for @apDragHandlesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'In the Overview. Without them, press and hold a row to move it.'**
+  String get apDragHandlesHint;
+
+  /// No description provided for @apAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get apAuto;
+
+  /// No description provided for @apAlways.
+  ///
+  /// In en, this message translates to:
+  /// **'Always'**
+  String get apAlways;
+
+  /// No description provided for @apNever.
+  ///
+  /// In en, this message translates to:
+  /// **'Never'**
+  String get apNever;
+
+  /// No description provided for @apFont.
+  ///
+  /// In en, this message translates to:
+  /// **'Font'**
+  String get apFont;
+
+  /// No description provided for @apFontSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get apFontSystem;
+
+  /// No description provided for @apTextSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Text size'**
+  String get apTextSize;
+
+  /// No description provided for @apTextSizeValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}%'**
+  String apTextSizeValue(int percent);
+
+  /// No description provided for @apTextSizeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'On top of the text size of your device.'**
+  String get apTextSizeHint;
 }
 
 class _AppLocalizationsDelegate

@@ -29,6 +29,9 @@ FakeWorld world() {
     OverviewEventView(id: 'WE', title: 'Standup', listId: 'Work', orderKey: ''),
     OverviewEventView(id: 'E', title: 'Dentist', orderKey: ''),
   ]);
+  // Tests run as Android, where Auto hides the handles (O1); these tests
+  // drag by the handle, so they turn them on.
+  w.look = const AppearanceSettings(dragHandles: DragHandles.always);
   // Display order: Work: Plan, Standup; no list: Call mum, Dentist, Buy bread.
   w.overview.order.addAll(['W1', 'W1a', 'W1b', 'WE', 'A', 'E', 'B']);
   return w;

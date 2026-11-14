@@ -1,3 +1,4 @@
+import 'package:application/application.dart' show AppFont;
 // P03 UX U1 (ADR-0045): the LifeFlow theme. Minimal chrome, neutral
 // surfaces, colour only where it means something (U-D10), density by
 // platform (U-D9), and the 12-colour palette for lists, tasks and events
@@ -157,8 +158,17 @@ bool isPointerPlatform(TargetPlatform platform) => switch (platform) {
       TargetPlatform.android || TargetPlatform.iOS || TargetPlatform.fuchsia => false,
     };
 
-/// The theme for [brightness] on [platform] (U1, ADR-0045).
-ThemeData lifeFlowTheme(Brightness brightness, {TargetPlatform? platform}) {
+/// The bundled family of [font] (null = the system's), for ThemeData.
+/// Dogfooding O3 (ADR-0051).
+String? fontFamilyOf(AppFont font) => switch (font) {
+      AppFont.system => null,
+      AppFont.inter => 'packages/ui/Inter',
+      AppFont.notoSans => 'packages/ui/NotoSans',
+      AppFont.beVietnamPro => 'packages/ui/BeVietnamPro',
+    };
+
+/// The theme for [brightness] on [platform] (U1, ADR-0045), in [font].
+ThemeData lifeFlowTheme(Brightness brightness, {TargetPlatform? platform, AppFont font = AppFont.system}) {
   final p = platform ?? defaultTargetPlatform;
   final pointer = isPointerPlatform(p);
   final scheme = ColorScheme.fromSeed(
@@ -170,11 +180,14 @@ ThemeData lifeFlowTheme(Brightness brightness, {TargetPlatform? platform}) {
     colorScheme: scheme,
     useMaterial3: true,
     platform: p,
+    fontFamily: fontFamilyOf(font),
     visualDensity: pointer ? VisualDensity.compact : VisualDensity.standard,
     materialTapTargetSize: pointer ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
     extensions: [brightness == Brightness.dark ? LifeFlowColors.dark : LifeFlowColors.light],
   );
-  final text = base.textTheme;
+  // Component styles below need sizes too: ThemeData.textTheme only gets them
+  // when Theme.of localizes it, so they are merged in here (dogfooding O3).
+  final text = Typography.material2021(platform: p).englishLike.merge(base.textTheme);
   return base.copyWith(
     // Less chrome: flat, untinted bars that do not change when scrolled under.
     appBarTheme: AppBarTheme(
@@ -195,6 +208,9 @@ ThemeData lifeFlowTheme(Brightness brightness, {TargetPlatform? platform}) {
       horizontalTitleGap: 12,
       contentPadding: EdgeInsets.symmetric(horizontal: pointer ? 12 : 16),
       minLeadingWidth: 24,
+      // Dogfooding O3: one explicit size for row titles (tasks, events and
+      // subtasks alike); a list's title is the same size, bolder.
+      titleTextStyle: (pointer ? text.bodyMedium : text.bodyLarge)?.copyWith(color: scheme.onSurface),
     ),
     cardTheme: CardThemeData(
       elevation: 0,

@@ -203,7 +203,7 @@ void main() {
     Future<void> openSettings(WidgetTester tester) async {
       await tester.tap(find.text('Settings').first);
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.byKey(const Key('reminder-info')));
+      await tester.scrollUntilVisible(find.byKey(const Key('reminder-info')), 300, scrollable: find.byType(Scrollable).last);
       await tester.pumpAndSettle();
     }
 

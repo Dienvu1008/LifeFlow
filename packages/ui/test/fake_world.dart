@@ -167,6 +167,17 @@ class FakeWorld
     theme = preference;
   }
 
+  AppearanceSettings look = const AppearanceSettings();
+
+  @override
+  Future<AppearanceSettings> appearance() async => look;
+
+  @override
+  Future<void> setAppearance(AppearanceSettings settings) async {
+    calls.add('setAppearance:${settings.dragHandles.name}:${settings.font.name}:${settings.textScale}');
+    look = settings.copyWith();
+  }
+
   Set<String> collapsed = {};
 
   @override

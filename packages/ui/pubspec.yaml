@@ -29,3 +29,39 @@ dev_dependencies:
 
 flutter:
   generate: true
+  # Dogfooding O3 (ADR-0051): bundled fonts, SIL OFL 1.1 (VS-39); never downloaded.
+  assets:
+    - fonts/Inter/OFL.txt
+    - fonts/NotoSans/OFL.txt
+    - fonts/BeVietnamPro/OFL.txt
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: fonts/Inter/Inter-400.ttf
+          weight: 400
+        - asset: fonts/Inter/Inter-500.ttf
+          weight: 500
+        - asset: fonts/Inter/Inter-600.ttf
+          weight: 600
+        - asset: fonts/Inter/Inter-700.ttf
+          weight: 700
+    - family: NotoSans
+      fonts:
+        - asset: fonts/NotoSans/NotoSans-400.ttf
+          weight: 400
+        - asset: fonts/NotoSans/NotoSans-500.ttf
+          weight: 500
+        - asset: fonts/NotoSans/NotoSans-600.ttf
+          weight: 600
+        - asset: fonts/NotoSans/NotoSans-700.ttf
+          weight: 700
+    - family: BeVietnamPro
+      fonts:
+        - asset: fonts/BeVietnamPro/BeVietnamPro-400.ttf
+          weight: 400
+        - asset: fonts/BeVietnamPro/BeVietnamPro-500.ttf
+          weight: 500
+        - asset: fonts/BeVietnamPro/BeVietnamPro-600.ttf
+          weight: 600
+        - asset: fonts/BeVietnamPro/BeVietnamPro-700.ttf
+          weight: 700
