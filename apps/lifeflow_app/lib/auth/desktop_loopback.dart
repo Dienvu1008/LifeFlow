@@ -88,11 +88,16 @@ class DesktopLoopback {
       if (!completer.isCompleted) completer.complete(code);
     });
 
+    // Listen before the browser opens: the redirect can come back (and fail)
+    // before launch returns, and an error nobody listens to yet would be
+    // reported as unhandled. ignore() marks it handled; the await below still
+    // gets the result or the error.
+    final result = completer.future.timeout(timeout)..ignore();
     try {
       if (!await launch(authorizeUrl)) {
         throw const AuthFailure(AuthFailureKind.other, 'Could not open the browser.');
       }
-      return await completer.future.timeout(timeout);
+      return await result;
     } finally {
       await sub.cancel();
       await close();

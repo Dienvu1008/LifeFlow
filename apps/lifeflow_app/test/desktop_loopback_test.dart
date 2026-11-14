@@ -23,6 +23,9 @@ LaunchBrowser browserReturning(String redirect, String query, {List<String>? pag
         final req = await client.getUrl(Uri.parse('$redirect?$query'));
         final res = await req.close();
         pages?.add(await res.transform(const SystemEncoding().decoder).join());
+        // A real browser returns from launch long before the redirect; this
+        // one returns after it, so the code must already be listening.
+        await Future<void>.delayed(const Duration(milliseconds: 50));
       } finally {
         client.close(force: true);
       }
