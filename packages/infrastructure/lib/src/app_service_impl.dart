@@ -215,6 +215,7 @@ class DriftTaskQueries implements TaskQueries {
                 listId: r.parentTaskId == null ? row.readTableOrNull(db.taskLists)?.id : null,
                 colorIndex: r.colorIndex,
                 orderKey: r.orderKey,
+                notes: r.notes,
               );
             }(),
         ]);
@@ -319,6 +320,10 @@ class DriftTaskService implements TaskService {
     }
     return _update('RenameTask', id, {'op': 'rename', 'title': t});
   }
+
+  @override
+  Future<CommandResult> setNotes(String id, String? notes) =>
+      _update('SetTaskNotes', id, {'op': 'setNotes', 'notes': notes});
 
   @override
   Future<CommandResult> complete(String id, {required bool withDescendants}) =>

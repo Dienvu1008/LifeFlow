@@ -24,6 +24,9 @@ const goalKinds = {'goal', 'project'};
 const goalStatuses = {'active', 'done', 'archived'};
 const aggregations = {'sum', 'max', 'latest', 'average'};
 
+/// Dogfooding F3: the longest notes a task keeps.
+const maxTaskNotesLength = 20000;
+
 bool _isDate(Object? v) {
   if (v is! String) return false;
   try {
@@ -42,6 +45,8 @@ String? executionRowsError(Map<String, List<Row>> records) {
   for (final t in records['task'] ?? const <Row>[]) {
     final a = t['targetAggregation'];
     if (a != null && !aggregations.contains(a)) return 'a task has an unknown aggregation';
+    final notes = t['notes'];
+    if (notes != null && (notes is! String || notes.length > maxTaskNotesLength)) return 'a task has unreadable notes';
     final since = t['trackedSince'];
     if (since != null && !_isDate(since)) return 'a task has a bad tracking start';
   }

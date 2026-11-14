@@ -12,6 +12,7 @@ import 'providers.dart';
 import 'schedule_text.dart';
 import 'screens/focus_page.dart';
 import 'screens/schedule_editor.dart';
+import 'screens/task_page.dart';
 import 'task_tree.dart';
 import 'widgets/schedule_fields.dart';
 
@@ -134,6 +135,8 @@ class TaskOccurrenceTile extends ConsumerWidget {
         i.title,
         style: done ? const TextStyle(decoration: TextDecoration.lineThrough) : null,
       ),
+      // Dogfooding O4: the task's page, from the Timeline and the Calendar too.
+      onTap: () => openTaskPage(context, i.taskId),
       subtitle: subtitle.isEmpty && conflictWith.isEmpty && period == null
           ? null
           : Column(

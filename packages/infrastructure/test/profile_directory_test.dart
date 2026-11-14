@@ -187,7 +187,7 @@ void main() {
       expect(await store.db.select(store.db.schedules).get(), isEmpty);
     });
 
-    for (final from in [2, 3, 4, 5, 6, 7]) {
+    for (final from in [2, 3, 4, 5, 6, 7, 8]) {
       test('an existing v$from profile store upgrades to the latest schema, '
           'data intact (ADR-0025, ADR-0029)', () async {
         var dir = await openDirectory(base, keys);
@@ -231,6 +231,15 @@ void main() {
             subjectId: 'x', firstDate: '2026-11-09',
             createdAt: DateTime.utc(2026), updatedAt: DateTime.utc(2026)));
         expect(await db.select(db.schedules).get(), hasLength(1));
+        // Every column of every table exists after the upgrade (Drift reads a
+        // missing nullable column as null, so reads alone would not show it).
+        for (final table in db.allTables) {
+          final cols = {
+            for (final r in await db.customSelect('PRAGMA table_info(${table.actualTableName})').get())
+              r.read<String>('name')
+          };
+          expect(cols, containsAll([for (final c in table.$columns) c.name]), reason: table.actualTableName);
+        }
         // P03 UX U2 (v7): no colour; a valid order key (ADR-0046).
         expect((task.colorIndex, isValidOrderKey(task.orderKey)), (null, true));
       });

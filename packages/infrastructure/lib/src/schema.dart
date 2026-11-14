@@ -80,6 +80,8 @@ class Tasks extends Table with SyncableColumns {
   // or got a target). Periods that ended before it get no result.
   TextColumn get trackedSince => text().nullable()();
   TextColumn get tags => text().withDefault(const Constant('[]'))(); // JSON array of strings (opaque)
+  // Dogfooding F3 (schema v9, ADR-0051): free notes of the task (null = none).
+  TextColumn get notes => text().nullable()();
   // P03 UX U2 (schema v7, ADR-0046): a palette colour (0..11, null = none)
   // and the fractional order key within the item's container.
   IntColumn get colorIndex => integer().nullable()();

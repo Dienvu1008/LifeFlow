@@ -2295,6 +2295,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'On top of the text size of your device.'**
   String get apTextSizeHint;
+
+  /// No description provided for @tpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Task'**
+  String get tpTitle;
+
+  /// No description provided for @tpGone.
+  ///
+  /// In en, this message translates to:
+  /// **'This task no longer exists.'**
+  String get tpGone;
+
+  /// No description provided for @tpFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus'**
+  String get tpFocus;
+
+  /// No description provided for @tpTrash.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to trash'**
+  String get tpTrash;
+
+  /// No description provided for @tpRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get tpRename;
+
+  /// No description provided for @tpUnder.
+  ///
+  /// In en, this message translates to:
+  /// **'Subtask of {title}'**
+  String tpUnder(Object title);
+
+  /// No description provided for @tpList.
+  ///
+  /// In en, this message translates to:
+  /// **'List'**
+  String get tpList;
+
+  /// No description provided for @tpColour.
+  ///
+  /// In en, this message translates to:
+  /// **'Colour'**
+  String get tpColour;
+
+  /// No description provided for @tpNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get tpNotes;
+
+  /// No description provided for @tpNotesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add notes'**
+  String get tpNotesHint;
+
+  /// No description provided for @tpSaveNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Save notes'**
+  String get tpSaveNotes;
+
+  /// No description provided for @tpPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan'**
+  String get tpPlan;
+
+  /// No description provided for @tpSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule and reminders'**
+  String get tpSchedule;
+
+  /// No description provided for @tpNotScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Not scheduled'**
+  String get tpNotScheduled;
+
+  /// No description provided for @tpNotTracked.
+  ///
+  /// In en, this message translates to:
+  /// **'Not tracked'**
+  String get tpNotTracked;
+
+  /// No description provided for @tpSubtasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Subtasks'**
+  String get tpSubtasks;
 }
 
 class _AppLocalizationsDelegate

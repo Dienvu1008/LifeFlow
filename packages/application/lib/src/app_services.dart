@@ -19,6 +19,7 @@ class TaskView {
     this.listId,
     this.colorIndex,
     this.orderKey = 'a0',
+    this.notes,
   });
 
   final String id;
@@ -42,6 +43,9 @@ class TaskView {
   /// Order among the items of its container (then by id).
   final String orderKey;
 
+  /// Dogfooding F3: free notes (null = none).
+  final String? notes;
+
   bool get isDone => status == 'done';
 }
 
@@ -61,6 +65,9 @@ abstract interface class TaskService {
   /// new task goes to the end of its place.
   Future<CommandResult> create(String title, {String? parentId, String? listId});
   Future<CommandResult> rename(String id, String title);
+
+  /// Dogfooding F3: the task's notes; empty or null removes them.
+  Future<CommandResult> setNotes(String id, String? notes);
 
   /// [withDescendants] true = CompleteTaskWithDescendants, false =
   /// CompleteTaskOnly (open subtasks are recorded in the audit, OQ-R3).

@@ -22,6 +22,7 @@ import 'focus_page.dart';
 import 'goals_screen.dart';
 import 'habit_page.dart';
 import 'schedule_editor.dart';
+import 'task_page.dart';
 import 'tasks_screen.dart' show addTaskWithDialog, showTextDialog, trashTask;
 
 /// Width of one indentation step.
@@ -443,7 +444,8 @@ class _DropSlotState extends State<_DropSlot> {
       child: widget.child,
     );
     if (h != null && valid && h.zone == DropZone.into) {
-      content = ColoredBox(color: scheme.primaryContainer.withValues(alpha: 0.6), child: content);
+      // Its own Material, so the rows' ink still shows (tiles are tappable).
+      content = Material(color: scheme.primaryContainer.withValues(alpha: 0.6), child: content);
     }
     final showLine = h != null && valid && h.zone != DropZone.into;
     final target = DragTarget<String>(
@@ -829,6 +831,8 @@ class _TaskItem extends ConsumerWidget {
           t.title,
           style: t.isDone ? const TextStyle(decoration: TextDecoration.lineThrough) : null,
         ),
+        // Dogfooding O4: a tap opens the task's page.
+        onTap: () => openTaskPage(context, t.id),
         subtitle: meta.isEmpty
             ? null
             : Column(

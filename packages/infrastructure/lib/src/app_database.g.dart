@@ -1498,6 +1498,11 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultValue: const Constant('[]'));
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+      'notes', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _colorIndexMeta =
       const VerificationMeta('colorIndex');
   @override
@@ -1537,6 +1542,7 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
         isHabit,
         trackedSince,
         tags,
+        notes,
         colorIndex,
         orderKey
       ];
@@ -1669,6 +1675,10 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
       context.handle(
           _tagsMeta, tags.isAcceptableOrUnknown(data['tags']!, _tagsMeta));
     }
+    if (data.containsKey('notes')) {
+      context.handle(
+          _notesMeta, notes.isAcceptableOrUnknown(data['notes']!, _notesMeta));
+    }
     if (data.containsKey('color_index')) {
       context.handle(
           _colorIndexMeta,
@@ -1734,6 +1744,8 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
           .read(DriftSqlType.string, data['${effectivePrefix}tracked_since']),
       tags: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}tags'])!,
+      notes: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}notes']),
       colorIndex: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}color_index']),
       orderKey: attachedDatabase.typeMapping
@@ -1771,6 +1783,7 @@ class Task extends DataClass implements Insertable<Task> {
   final bool isHabit;
   final String? trackedSince;
   final String tags;
+  final String? notes;
   final int? colorIndex;
   final String orderKey;
   const Task(
@@ -1797,6 +1810,7 @@ class Task extends DataClass implements Insertable<Task> {
       required this.isHabit,
       this.trackedSince,
       required this.tags,
+      this.notes,
       this.colorIndex,
       required this.orderKey});
   @override
@@ -1843,6 +1857,9 @@ class Task extends DataClass implements Insertable<Task> {
       map['tracked_since'] = Variable<String>(trackedSince);
     }
     map['tags'] = Variable<String>(tags);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
     if (!nullToAbsent || colorIndex != null) {
       map['color_index'] = Variable<int>(colorIndex);
     }
@@ -1891,6 +1908,8 @@ class Task extends DataClass implements Insertable<Task> {
           ? const Value.absent()
           : Value(trackedSince),
       tags: Value(tags),
+      notes:
+          notes == null && nullToAbsent ? const Value.absent() : Value(notes),
       colorIndex: colorIndex == null && nullToAbsent
           ? const Value.absent()
           : Value(colorIndex),
@@ -1925,6 +1944,7 @@ class Task extends DataClass implements Insertable<Task> {
       isHabit: serializer.fromJson<bool>(json['isHabit']),
       trackedSince: serializer.fromJson<String?>(json['trackedSince']),
       tags: serializer.fromJson<String>(json['tags']),
+      notes: serializer.fromJson<String?>(json['notes']),
       colorIndex: serializer.fromJson<int?>(json['colorIndex']),
       orderKey: serializer.fromJson<String>(json['orderKey']),
     );
@@ -1956,6 +1976,7 @@ class Task extends DataClass implements Insertable<Task> {
       'isHabit': serializer.toJson<bool>(isHabit),
       'trackedSince': serializer.toJson<String?>(trackedSince),
       'tags': serializer.toJson<String>(tags),
+      'notes': serializer.toJson<String?>(notes),
       'colorIndex': serializer.toJson<int?>(colorIndex),
       'orderKey': serializer.toJson<String>(orderKey),
     };
@@ -1985,6 +2006,7 @@ class Task extends DataClass implements Insertable<Task> {
           bool? isHabit,
           Value<String?> trackedSince = const Value.absent(),
           String? tags,
+          Value<String?> notes = const Value.absent(),
           Value<int?> colorIndex = const Value.absent(),
           String? orderKey}) =>
       Task(
@@ -2013,6 +2035,7 @@ class Task extends DataClass implements Insertable<Task> {
         trackedSince:
             trackedSince.present ? trackedSince.value : this.trackedSince,
         tags: tags ?? this.tags,
+        notes: notes.present ? notes.value : this.notes,
         colorIndex: colorIndex.present ? colorIndex.value : this.colorIndex,
         orderKey: orderKey ?? this.orderKey,
       );
@@ -2053,6 +2076,7 @@ class Task extends DataClass implements Insertable<Task> {
           ? data.trackedSince.value
           : this.trackedSince,
       tags: data.tags.present ? data.tags.value : this.tags,
+      notes: data.notes.present ? data.notes.value : this.notes,
       colorIndex:
           data.colorIndex.present ? data.colorIndex.value : this.colorIndex,
       orderKey: data.orderKey.present ? data.orderKey.value : this.orderKey,
@@ -2085,6 +2109,7 @@ class Task extends DataClass implements Insertable<Task> {
           ..write('isHabit: $isHabit, ')
           ..write('trackedSince: $trackedSince, ')
           ..write('tags: $tags, ')
+          ..write('notes: $notes, ')
           ..write('colorIndex: $colorIndex, ')
           ..write('orderKey: $orderKey')
           ..write(')'))
@@ -2116,6 +2141,7 @@ class Task extends DataClass implements Insertable<Task> {
         isHabit,
         trackedSince,
         tags,
+        notes,
         colorIndex,
         orderKey
       ]);
@@ -2146,6 +2172,7 @@ class Task extends DataClass implements Insertable<Task> {
           other.isHabit == this.isHabit &&
           other.trackedSince == this.trackedSince &&
           other.tags == this.tags &&
+          other.notes == this.notes &&
           other.colorIndex == this.colorIndex &&
           other.orderKey == this.orderKey);
 }
@@ -2174,6 +2201,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
   final Value<bool> isHabit;
   final Value<String?> trackedSince;
   final Value<String> tags;
+  final Value<String?> notes;
   final Value<int?> colorIndex;
   final Value<String> orderKey;
   final Value<int> rowid;
@@ -2201,6 +2229,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
     this.isHabit = const Value.absent(),
     this.trackedSince = const Value.absent(),
     this.tags = const Value.absent(),
+    this.notes = const Value.absent(),
     this.colorIndex = const Value.absent(),
     this.orderKey = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2229,6 +2258,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
     this.isHabit = const Value.absent(),
     this.trackedSince = const Value.absent(),
     this.tags = const Value.absent(),
+    this.notes = const Value.absent(),
     this.colorIndex = const Value.absent(),
     this.orderKey = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2262,6 +2292,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
     Expression<bool>? isHabit,
     Expression<String>? trackedSince,
     Expression<String>? tags,
+    Expression<String>? notes,
     Expression<int>? colorIndex,
     Expression<String>? orderKey,
     Expression<int>? rowid,
@@ -2290,6 +2321,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
       if (isHabit != null) 'is_habit': isHabit,
       if (trackedSince != null) 'tracked_since': trackedSince,
       if (tags != null) 'tags': tags,
+      if (notes != null) 'notes': notes,
       if (colorIndex != null) 'color_index': colorIndex,
       if (orderKey != null) 'order_key': orderKey,
       if (rowid != null) 'rowid': rowid,
@@ -2320,6 +2352,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
       Value<bool>? isHabit,
       Value<String?>? trackedSince,
       Value<String>? tags,
+      Value<String?>? notes,
       Value<int?>? colorIndex,
       Value<String>? orderKey,
       Value<int>? rowid}) {
@@ -2347,6 +2380,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
       isHabit: isHabit ?? this.isHabit,
       trackedSince: trackedSince ?? this.trackedSince,
       tags: tags ?? this.tags,
+      notes: notes ?? this.notes,
       colorIndex: colorIndex ?? this.colorIndex,
       orderKey: orderKey ?? this.orderKey,
       rowid: rowid ?? this.rowid,
@@ -2425,6 +2459,9 @@ class TasksCompanion extends UpdateCompanion<Task> {
     if (tags.present) {
       map['tags'] = Variable<String>(tags.value);
     }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
     if (colorIndex.present) {
       map['color_index'] = Variable<int>(colorIndex.value);
     }
@@ -2463,6 +2500,7 @@ class TasksCompanion extends UpdateCompanion<Task> {
           ..write('isHabit: $isHabit, ')
           ..write('trackedSince: $trackedSince, ')
           ..write('tags: $tags, ')
+          ..write('notes: $notes, ')
           ..write('colorIndex: $colorIndex, ')
           ..write('orderKey: $orderKey, ')
           ..write('rowid: $rowid')
@@ -14651,6 +14689,7 @@ typedef $$TasksTableCreateCompanionBuilder = TasksCompanion Function({
   Value<bool> isHabit,
   Value<String?> trackedSince,
   Value<String> tags,
+  Value<String?> notes,
   Value<int?> colorIndex,
   Value<String> orderKey,
   Value<int> rowid,
@@ -14679,6 +14718,7 @@ typedef $$TasksTableUpdateCompanionBuilder = TasksCompanion Function({
   Value<bool> isHabit,
   Value<String?> trackedSince,
   Value<String> tags,
+  Value<String?> notes,
   Value<int?> colorIndex,
   Value<String> orderKey,
   Value<int> rowid,
@@ -14762,6 +14802,9 @@ class $$TasksTableFilterComposer extends Composer<_$AppDatabase, $TasksTable> {
 
   ColumnFilters<String> get tags => $composableBuilder(
       column: $table.tags, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get notes => $composableBuilder(
+      column: $table.notes, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get colorIndex => $composableBuilder(
       column: $table.colorIndex, builder: (column) => ColumnFilters(column));
@@ -14852,6 +14895,9 @@ class $$TasksTableOrderingComposer
   ColumnOrderings<String> get tags => $composableBuilder(
       column: $table.tags, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get notes => $composableBuilder(
+      column: $table.notes, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<int> get colorIndex => $composableBuilder(
       column: $table.colorIndex, builder: (column) => ColumnOrderings(column));
 
@@ -14937,6 +14983,9 @@ class $$TasksTableAnnotationComposer
   GeneratedColumn<String> get tags =>
       $composableBuilder(column: $table.tags, builder: (column) => column);
 
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
   GeneratedColumn<int> get colorIndex => $composableBuilder(
       column: $table.colorIndex, builder: (column) => column);
 
@@ -14990,6 +15039,7 @@ class $$TasksTableTableManager extends RootTableManager<
             Value<bool> isHabit = const Value.absent(),
             Value<String?> trackedSince = const Value.absent(),
             Value<String> tags = const Value.absent(),
+            Value<String?> notes = const Value.absent(),
             Value<int?> colorIndex = const Value.absent(),
             Value<String> orderKey = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -15018,6 +15068,7 @@ class $$TasksTableTableManager extends RootTableManager<
             isHabit: isHabit,
             trackedSince: trackedSince,
             tags: tags,
+            notes: notes,
             colorIndex: colorIndex,
             orderKey: orderKey,
             rowid: rowid,
@@ -15046,6 +15097,7 @@ class $$TasksTableTableManager extends RootTableManager<
             Value<bool> isHabit = const Value.absent(),
             Value<String?> trackedSince = const Value.absent(),
             Value<String> tags = const Value.absent(),
+            Value<String?> notes = const Value.absent(),
             Value<int?> colorIndex = const Value.absent(),
             Value<String> orderKey = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -15074,6 +15126,7 @@ class $$TasksTableTableManager extends RootTableManager<
             isHabit: isHabit,
             trackedSince: trackedSince,
             tags: tags,
+            notes: notes,
             colorIndex: colorIndex,
             orderKey: orderKey,
             rowid: rowid,

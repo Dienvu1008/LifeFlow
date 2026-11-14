@@ -39,7 +39,23 @@ The owner used U1–U6 on Android and Windows and asked for the changes listed i
 - **Font and text size (O3):** Settings → Appearance → Font offers System, Inter, Noto Sans and Be Vietnam Pro.
   - The three named fonts are bundled TTFs under SIL OFL 1.1 (VS-39), about 4 MB in all. They are never downloaded (LF-INV-PRIV-001). Their licenses are on the licenses page.
   - Text size runs from 80 % to 150 % in 5 % steps and multiplies the system's text scale.
+### F3 — The task page, with notes
+- **Opening:** a tap on a task opens its page, full screen, as an event opens its editor. This works from the Overview, the Timeline and the Calendar's rows.
+- **Contents:**
+  - the tick and the title (rename);
+  - the list (top-level tasks), or "Subtask of …" (a link to the parent);
+  - the colour;
+  - **notes**;
+  - Plan: schedule and reminders (the schedule editor), habit and target (the habit page), goals;
+  - subtasks: tick, open, and "Add subtask" up to the depth limit;
+  - in the app bar, Focus and Move to trash (with the subtask question; the page closes).
+- **Notes** are new profile data: `tasks.notes` (schema v9, nullable).
+  - A task command `setNotes` sets them, trimmed. Empty notes are removed, and notes over 20 000 characters are refused.
+  - They are exported. An older file gets none, and bad notes in a file are refused.
+  - The page saves the notes with "Save notes" or when the field is left.
+- **Migration test (hardened):** the upgrade test now checks that every column of every table exists after the upgrade. Drift reads a missing nullable column as null, so a forgotten `addColumn` for such a column was not caught before.
 ## Consequences
 - ADR-0049 is amended: no + button, the all-day choice in the slot sheet, the new switcher.
+- F3 tests: `task_page_flow_test` (contents, notes saved both ways, rename, colour, list, subtasks, parent link, plan rows, trash closes, from the Timeline), notes in `overview_test` and `overview_export_test`, the atomic set with `setNotes`, the v1–v8 upgrades with the column check.
 - F2 tests: `overview_look_test` (handles by setting and platform, long-press drag on Windows without handles, the dragged copy, the fade, the drop line's indent, list and task title sizes, font and text size applied and saved, clamping) and the appearance round trip in `overview_test`.
 - F1 tests: the tests that used the + now start from a slot (`newEventFromSlot`). New tests cover the all-day slot, no + in the Calendar and the Timeline, the coloured marks, and the separate view buttons.

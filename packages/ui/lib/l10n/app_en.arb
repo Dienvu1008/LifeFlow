@@ -692,5 +692,22 @@
   "apTextSize": "Text size",
   "apTextSizeValue": "{percent}%",
   "@apTextSizeValue": {"placeholders": {"percent": {"type": "int"}}},
-  "apTextSizeHint": "On top of the text size of your device."
+  "apTextSizeHint": "On top of the text size of your device.",
+  "tpTitle": "Task",
+  "tpGone": "This task no longer exists.",
+  "tpFocus": "Focus",
+  "tpTrash": "Move to trash",
+  "tpRename": "Rename",
+  "tpUnder": "Subtask of {title}",
+  "@tpUnder": {"placeholders": {"title": {"type": "Object"}}},
+  "tpList": "List",
+  "tpColour": "Colour",
+  "tpNotes": "Notes",
+  "tpNotesHint": "Add notes",
+  "tpSaveNotes": "Save notes",
+  "tpPlan": "Plan",
+  "tpSchedule": "Schedule and reminders",
+  "tpNotScheduled": "Not scheduled",
+  "tpNotTracked": "Not tracked",
+  "tpSubtasks": "Subtasks"
 }

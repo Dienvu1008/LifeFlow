@@ -1279,4 +1279,54 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get apTextSizeHint => 'On top of the text size of your device.';
+
+  @override
+  String get tpTitle => 'Task';
+
+  @override
+  String get tpGone => 'This task no longer exists.';
+
+  @override
+  String get tpFocus => 'Focus';
+
+  @override
+  String get tpTrash => 'Move to trash';
+
+  @override
+  String get tpRename => 'Rename';
+
+  @override
+  String tpUnder(Object title) {
+    return 'Subtask of $title';
+  }
+
+  @override
+  String get tpList => 'List';
+
+  @override
+  String get tpColour => 'Colour';
+
+  @override
+  String get tpNotes => 'Notes';
+
+  @override
+  String get tpNotesHint => 'Add notes';
+
+  @override
+  String get tpSaveNotes => 'Save notes';
+
+  @override
+  String get tpPlan => 'Plan';
+
+  @override
+  String get tpSchedule => 'Schedule and reminders';
+
+  @override
+  String get tpNotScheduled => 'Not scheduled';
+
+  @override
+  String get tpNotTracked => 'Not tracked';
+
+  @override
+  String get tpSubtasks => 'Subtasks';
 }

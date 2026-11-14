@@ -274,6 +274,12 @@ class ProfileExport {
         }
       }
     }
+    if (fromSchema < 9) {
+      // Schema v9 (dogfooding F3): tasks had no notes.
+      for (final t in (map['tasks'] as List? ?? const []).whereType<Map>()) {
+        t.putIfAbsent('notes', () => null);
+      }
+    }
     if (fromSchema < 8) {
       // Schema v8 (P03 UX U6): the profile had no result policy.
       for (final p in (map['profiles'] as List? ?? const []).whereType<Map>()) {
