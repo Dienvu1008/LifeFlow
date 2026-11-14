@@ -71,7 +71,8 @@ All of them appear in [invariant-test-matrix.md](../invariants/invariant-test-ma
 The owner asked to check every P03 screen on the devices in one pass instead of after each UI task (ADR-0041, 0042, 0043; p03-ux-plan.md §4).
 - [x] Dogfooding pass 1 on Android and Windows, after U1–U6 (owner, 2026-11-13): feedback recorded as F1–F5 in p03-dogfood-1.md; no data or recovery problem was reported.
 - [x] Dogfooding pass 2 on Android and Windows, on F1–F5 (owner, 2026-11-14): approved, merged.
-- Not written down separately: the focus kill-and-relaunch on both devices and the pomodoro-end notification with the app closed (ADR-0042) were part of the pass scope, but no separate result was recorded for them. The headless proofs are the GS-13 tests above; the notification uses the reminder adapter checked on both devices in P02 (S-05, P02 T7).
+- [x] Focus kill and relaunch on Windows and Android (ADR-0042): after the app was closed and opened again, the focus timer went on running (owner, 2026-11-14). Headless proofs: the GS-13 tests above.
+- [x] Pomodoro-end notification with the app closed, on Windows and Android (ADR-0042): it showed (owner, 2026-11-14). It uses the reminder adapter checked on both devices in P02 (S-05, P02 T7).
 
 ## Builds
 - `flutter build windows --debug` and `flutter build apk --debug` from `main` at `1c1e399` (agent, 2026-11-14): both built (`lifeflow_app.exe`, `app-debug.apk`).
