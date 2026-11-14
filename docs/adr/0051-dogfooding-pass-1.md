@@ -66,8 +66,20 @@ The owner used U1–U6 on Android and Windows and asked for the changes listed i
 - **Paging moves the list (T4):** when the calendar turns to another page (swipe or arrows), the list goes to the first day of that page: the 1st for a month, the first day of the week for one or two weeks. If today is on the page, it goes to today. Changing the height alone does not move the list.
 - The calendar's weeks start on the planning setting's first day of the week, any day (before: only Sunday or Monday).
 
+### F5 — Calendar paging
+- **Every view turns like pages (C2):** Day, Week, Month and Year sit in a pager (`PageView`). The next or previous period slides in (280 ms), and its items are loaded ahead, so a page arrives with its contents.
+- **Ways to turn:**
+  - a swipe on a phone; on Windows also a mouse drag and a touchpad swipe. The mouse drag is enabled for the pager only, not for the hours inside it;
+  - a sideways wheel or touchpad scroll (40 px per page), and Shift + the mouse wheel. A mostly vertical scroll is left to the hours;
+  - ← / → (mirrored in right-to-left languages) and PageUp / PageDown. Presses during a slide add up;
+  - the app bar's Previous and Next, which slide as well.
+- **What stays:** a vertical drag scrolls the hours and a tap still picks a slot; the gesture arena decides by direction. While two fingers are down (pinch zoom), the pages hold still.
+- Today, a day, a month in the year view and the view switcher jump without a slide; the pager starts again from there.
+
 ## Consequences
 - ADR-0049 is amended: no + button, the all-day choice in the slot sheet, the new switcher.
+- ADR-0049 is amended by F5 too: paging.
+- F5 tests: `calendar_paging_flow_test` (the slide in all four views both ways, swipes, a mouse drag, the wheel and Shift + wheel, a vertical scroll left to the hours, keys and presses adding up, a vertical drag and a slot tap, two fingers not turning).
 - ADR-0048 is amended by F4: the app bar and the calendar under it.
 - F4 tests: `timeline_bar_flow_test` (Today in and out of sight, closed and open titles, arrows and swipes moving the list to the page's first day or today, the calendar opening on the list's month, the three heights, the long title sliding once).
 - F3 tests: `task_page_flow_test` (contents, notes saved both ways, rename, colour, list, subtasks, parent link, plan rows, trash closes, from the Timeline), notes in `overview_test` and `overview_export_test`, the atomic set with `setNotes`, the v1–v8 upgrades with the column check.
