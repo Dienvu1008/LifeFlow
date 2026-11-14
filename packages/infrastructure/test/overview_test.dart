@@ -292,6 +292,18 @@ void main() {
     expect(await top(null), ['Stranded', 'Stranded event', 'A']);
   });
 
+  test('dogfooding O1/O3: drag handles, font and text size are device settings; bad values fall back', () async {
+    final s = DirectorySettingsService(dir);
+    expect(await s.appearance(), const AppearanceSettings());
+    await s.setAppearance(const AppearanceSettings(dragHandles: DragHandles.never, font: AppFont.inter, textScale: 1.25));
+    expect(await DirectorySettingsService(dir).appearance(),
+        const AppearanceSettings(dragHandles: DragHandles.never, font: AppFont.inter, textScale: 1.25));
+    await dir.writeSetting('ui.font', 'comic');
+    await dir.writeSetting('ui.textScale', '9');
+    final back = await s.appearance();
+    expect((back.font, back.textScale, back.dragHandles), (AppFont.system, 1.5, DragHandles.never));
+  });
+
   test('the expand state is a device setting', () async {
     final s = DirectorySettingsService(dir);
     expect(await s.collapsedItems(), isEmpty);

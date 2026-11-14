@@ -1,4 +1,6 @@
-import 'package:application/application.dart' show ThemePreference;
+import 'package:application/application.dart' show AppearanceSettings, ThemePreference;
+import 'package:flutter/foundation.dart' show LicenseEntryWithLineBreaks, LicenseRegistry;
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -79,14 +81,25 @@ class LifeFlowApp extends ConsumerWidget {
     // P03 UX U1 (ADR-0045): one theme module; the brightness follows the
     // device setting (System by default, also while it loads).
     final preference = ref.watch(themePreferenceProvider).valueOrNull ?? ThemePreference.system;
+    final look = ref.watch(appearanceProvider).valueOrNull ?? const AppearanceSettings();
+    _registerFontLicenses;
     return MaterialApp.router(
       title: 'LifeFlow',
       routerConfig: ref.watch(routerProvider),
       // U-D11: English only for now; a new ARB file adds a language.
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      theme: lifeFlowTheme(Brightness.light),
-      darkTheme: lifeFlowTheme(Brightness.dark),
+      theme: lifeFlowTheme(Brightness.light, font: look.font),
+      darkTheme: lifeFlowTheme(Brightness.dark, font: look.font),
+      // Dogfooding O3: the app's text size multiplies the system's.
+      builder: (context, child) {
+        final mq = MediaQuery.of(context);
+        if (look.textScale == 1.0) return child!;
+        return MediaQuery(
+          data: mq.copyWith(textScaler: TextScaler.linear(mq.textScaler.scale(14) / 14 * look.textScale)),
+          child: child!,
+        );
+      },
       themeMode: switch (preference) {
         ThemePreference.system => ThemeMode.system,
         ThemePreference.light => ThemeMode.light,
@@ -95,3 +108,14 @@ class LifeFlowApp extends ConsumerWidget {
     );
   }
 }
+
+/// The bundled fonts' licenses (SIL OFL 1.1) on the licenses page, added
+/// once (dogfooding O3, ADR-0051).
+final Object _registerFontLicenses = () {
+  for (final (family, name) in const [('Inter', 'Inter'), ('NotoSans', 'Noto Sans'), ('BeVietnamPro', 'Be Vietnam Pro')]) {
+    LicenseRegistry.addLicense(() async* {
+      yield LicenseEntryWithLineBreaks(['$name (font)'], await rootBundle.loadString('packages/ui/fonts/$family/OFL.txt'));
+    });
+  }
+  return true;
+}();

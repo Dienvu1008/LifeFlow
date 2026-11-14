@@ -87,6 +87,30 @@ class DirectorySettingsService implements SettingsService {
   Future<void> setCollapsedItems(Set<String> ids) =>
       directory.writeSetting(_collapsed, jsonEncode((ids.toList()..sort())));
 
+  static const _handles = 'ui.dragHandles';
+  static const _font = 'ui.font';
+  static const _textScale = 'ui.textScale';
+
+  @override
+  Future<AppearanceSettings> appearance() async {
+    final h = await directory.readSetting(_handles);
+    final f = await directory.readSetting(_font);
+    final s = double.tryParse(await directory.readSetting(_textScale) ?? '');
+    return const AppearanceSettings().copyWith(
+      dragHandles: DragHandles.values.where((v) => v.name == h).firstOrNull,
+      font: AppFont.values.where((v) => v.name == f).firstOrNull,
+      textScale: s,
+    );
+  }
+
+  @override
+  Future<void> setAppearance(AppearanceSettings settings) async {
+    final s = settings.copyWith(); // clamped
+    await directory.writeSetting(_handles, s.dragHandles.name);
+    await directory.writeSetting(_font, s.font.name);
+    await directory.writeSetting(_textScale, '${s.textScale}');
+  }
+
   static const _maxOcc = 'planning.maxOccurrences';
   static const _maxDays = 'planning.maxWindowDays';
   static const _monthEnd = 'planning.defaultMonthEnd';

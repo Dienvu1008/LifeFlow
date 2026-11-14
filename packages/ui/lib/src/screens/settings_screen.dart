@@ -9,6 +9,7 @@ import '../schedule_text.dart';
 import '../task_actions.dart' show reportResult;
 
 import '../l10n.dart';
+import '../theme/lifeflow_theme.dart' show fontFamilyOf;
 
 /// P03 UX U1: the app's brightness (ADR-0045).
 class _AppearanceSettings extends ConsumerWidget {
@@ -39,6 +40,7 @@ class _AppearanceSettings extends ConsumerWidget {
           },
         ),
       ),
+      const _LookSettings(),
     ]);
   }
 }
@@ -80,6 +82,78 @@ class _ResultSettings extends ConsumerWidget {
                 title: Text(l.resultsTick),
                 subtitle: Text(l.resultsTickHint)),
           ]),
+        ),
+      ),
+    ]);
+  }
+}
+/// Dogfooding O1/O3 (ADR-0051): drag handles, font and text size.
+class _LookSettings extends ConsumerWidget {
+  const _LookSettings();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    final look = ref.watch(appearanceProvider).valueOrNull ?? const AppearanceSettings();
+    Future<void> save(AppearanceSettings s) async {
+      await ref.read(settingsServiceProvider).setAppearance(s);
+      ref.invalidate(appearanceProvider);
+    }
+
+    String fontName(AppFont f) => switch (f) {
+          AppFont.system => l.apFontSystem,
+          AppFont.inter => 'Inter',
+          AppFont.notoSans => 'Noto Sans',
+          AppFont.beVietnamPro => 'Be Vietnam Pro',
+        };
+    final percent = (look.textScale * 100).round();
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      ListTile(title: Text(l.apDragHandles), subtitle: Text(l.apDragHandlesHint)),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+        child: SegmentedButton<DragHandles>(
+          key: const Key('drag-handles'),
+          showSelectedIcon: false,
+          segments: [
+            ButtonSegment(value: DragHandles.auto, label: Text(l.apAuto)),
+            ButtonSegment(value: DragHandles.always, label: Text(l.apAlways)),
+            ButtonSegment(value: DragHandles.never, label: Text(l.apNever)),
+          ],
+          selected: {look.dragHandles},
+          onSelectionChanged: (s) => save(look.copyWith(dragHandles: s.first)),
+        ),
+      ),
+      ListTile(
+        title: Text(l.apFont),
+        trailing: DropdownButton<AppFont>(
+          key: const Key('app-font'),
+          value: look.font,
+          onChanged: (f) => f == null ? null : save(look.copyWith(font: f)),
+          items: [
+            for (final f in AppFont.values)
+              DropdownMenuItem(
+                value: f,
+                child: Text(fontName(f), style: TextStyle(fontFamily: fontFamilyOf(f))),
+              ),
+          ],
+        ),
+      ),
+      ListTile(
+        title: Text(l.apTextSize),
+        subtitle: Text(l.apTextSizeHint),
+        trailing: Text(l.apTextSizeValue(percent), key: const Key('text-size-value')),
+      ),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Slider(
+          key: const Key('text-size'),
+          min: AppearanceSettings.textScaleRange.min,
+          max: AppearanceSettings.textScaleRange.max,
+          divisions: 14, // 5 % steps
+          value: look.textScale,
+          label: l.apTextSizeValue(percent),
+          semanticFormatterCallback: (v) => l.apTextSizeValue((v * 100).round()),
+          onChanged: (v) => save(look.copyWith(textScale: (v * 20).round() / 20)),
         ),
       ),
     ]);

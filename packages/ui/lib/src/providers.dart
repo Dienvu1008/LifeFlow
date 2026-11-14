@@ -260,3 +260,9 @@ final manualResultsProvider = FutureProvider.autoDispose<ManualResults>((ref) {
   ref.watch(activeProfileProvider);
   return ref.watch(habitQueriesProvider).manualResults();
 });
+
+/// Dogfooding O1/O3 (ADR-0051): drag handles, font and text size of this
+/// device. Invalidate after a change.
+final appearanceProvider = FutureProvider<AppearanceSettings>(
+  (ref) => ref.watch(settingsServiceProvider).appearance(),
+);
