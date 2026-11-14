@@ -294,6 +294,9 @@ void main() {
           (v, op) => command('SignOut', {'op': 'signOut', 'id': profileId}, opId: op, expected: v)),
       ('profile.resume', profileHandler, 'profile', profileId,
           (v, op) => command('ResumeSession', {'op': 'resume', 'id': profileId, 'accountId': 'acc'}, opId: op, expected: v)),
+      // P03 UX U6 (U-D13).
+      ('profile.setManualResults', profileHandler, 'profile', profileId,
+          (v, op) => command('SetManualResults', {'op': 'setManualResults', 'id': profileId, 'value': 'tick'}, opId: op, expected: v)),
     ];
   });
 

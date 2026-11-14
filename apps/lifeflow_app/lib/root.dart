@@ -54,7 +54,7 @@ class LifeFlowRootState extends State<LifeFlowRoot> {
 
   Future<void> _open(String profileId) async {
     try {
-      final s = await widget.openSession(profileId, _host, '/tasks');
+      final s = await widget.openSession(profileId, _host, '/overview');
       if (!mounted) {
         await s.close();
         return;
@@ -74,7 +74,7 @@ class LifeFlowRootState extends State<LifeFlowRoot> {
     final AppWiring next;
     try {
       next = await widget.openSession(
-          profileId, _host, showProfiles ? '/profiles' : '/tasks');
+          profileId, _host, showProfiles ? '/profiles' : '/overview');
     } catch (_) {
       await previous?.reminders?.start(); // still on the old profile
       rethrow;

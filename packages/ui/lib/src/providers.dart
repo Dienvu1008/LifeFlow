@@ -78,11 +78,6 @@ final todayProvider = Provider<LocalDate Function()>((ref) => () {
 /// (P03 UX U5). A function, like [todayProvider]; tests override it.
 final nowProvider = Provider<DateTime Function()>((ref) => DateTime.now);
 
-/// What the Tasks tab shows: the Overview (U3), the Timeline (U4, replacing
-/// Today and Upcoming) or the habits. The Calendar tab can open the Timeline.
-enum TaskFilter { all, timeline, habits }
-
-final taskFilterProvider = StateProvider<TaskFilter>((ref) => TaskFilter.all);
 
 /// Today's agenda of the ACTIVE profile (re-subscribed on a profile switch).
 final todayAgendaProvider = StreamProvider.autoDispose<Agenda>((ref) {
@@ -104,7 +99,7 @@ final subtaskTrashPolicyProvider = FutureProvider.autoDispose<SubtaskTrashPolicy
 
 /// Where a freshly opened profile session starts. The app shell sets
 /// '/profiles' after a sign-out (OQ-S7: back to the profile chooser).
-final initialRouteProvider = Provider<String>((ref) => '/tasks');
+final initialRouteProvider = Provider<String>((ref) => '/overview');
 
 /// Startup at-rest encryption result (ADR-0021). Null = nothing to show.
 final storageNoticeProvider = Provider<StorageNotice?>((ref) => null);
@@ -258,4 +253,10 @@ final collapsedItemsProvider = StateNotifierProvider<CollapsedItems, Set<String>
     settings = null;
   }
   return CollapsedItems(settings);
+});
+/// U-D13 (ADR-0050): the ACTIVE profile's result policy for measured tasks
+/// completed by hand. Invalidate after a change.
+final manualResultsProvider = FutureProvider.autoDispose<ManualResults>((ref) {
+  ref.watch(activeProfileProvider);
+  return ref.watch(habitQueriesProvider).manualResults();
 });

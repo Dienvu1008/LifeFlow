@@ -16,20 +16,21 @@ import 'screens/tasks_screen.dart';
 import 'shell.dart';
 
 /// One route table for every layout class (ui-ux-architecture.md §3). The
-/// shell (bottom bar vs rail) differs; the routes do not.
-/// Top-level destinations. Anything else (for example "/" or an OS-delivered
-/// link such as an OAuth callback) is redirected to the task list, so the app
-/// never replaces itself with a "Page Not Found" screen.
-const _knownRoots = ['/tasks', '/calendar', '/goals', '/profiles', '/settings'];
+/// shell (drawer vs rail) differs; the routes do not.
+/// P03 UX U6 (ADR-0050): Overview, Timeline, Calendar, Habits, Goals,
+/// Settings, then Profiles (reached from the profile in the drawer or rail).
+/// Anything else (for example "/" or an OS-delivered link such as an OAuth
+/// callback) goes to the Overview, so the app never replaces itself with a
+/// "Page Not Found" screen. The old "/tasks" (P01–P03 links and the shell's
+/// first location until U6) is the Overview.
+const _knownRoots = ['/overview', '/timeline', '/calendar', '/habits', '/goals', '/settings', '/profiles'];
 
 String? _redirectUnknown(GoRouterState state) {
   final path = state.uri.path;
-  final known = _knownRoots
-      .any((root) => path == root || path.startsWith('$root/'));
-  return known ? null : '/tasks';
+  final known = _knownRoots.any((root) => path == root || path.startsWith('$root/'));
+  return known ? null : '/overview';
 }
-
-GoRouter createRouter({String initialLocation = '/tasks'}) => GoRouter(
+GoRouter createRouter({String initialLocation = '/overview'}) => GoRouter(
       initialLocation: initialLocation,
       redirect: (context, state) => _redirectUnknown(state),
       routes: [
@@ -48,42 +49,20 @@ GoRouter createRouter({String initialLocation = '/tasks'}) => GoRouter(
             ),
           ),
           branches: [
-            StatefulShellBranch(routes: [
-              GoRoute(
-                path: '/tasks',
-                builder: (context, state) => const TasksScreen(),
-              ),
-            ]),
-            StatefulShellBranch(routes: [
-              GoRoute(
-                path: '/calendar',
-                builder: (context, state) => const CalendarScreen(),
-              ),
-            ]),
-            // P03 D12: the 5th tab.
-            StatefulShellBranch(routes: [
-              GoRoute(
-                path: '/goals',
-                builder: (context, state) => const GoalsScreen(),
-              ),
-            ]),
-            StatefulShellBranch(routes: [
-              GoRoute(
-                path: '/profiles',
-                builder: (context, state) => const ProfilesScreen(),
-              ),
-            ]),
-            StatefulShellBranch(routes: [
-              GoRoute(
-                path: '/settings',
-                builder: (context, state) => const SettingsScreen(),
-              ),
-            ]),
+            for (final (path, screen) in const [
+              ('/overview', OverviewScreen()),
+              ('/timeline', TimelineScreen()),
+              ('/calendar', CalendarScreen()),
+              ('/habits', HabitsScreen()),
+              ('/goals', GoalsScreen()),
+              ('/settings', SettingsScreen()),
+              ('/profiles', ProfilesScreen()),
+            ])
+              StatefulShellBranch(routes: [GoRoute(path: path, builder: (context, state) => screen)]),
           ],
         ),
       ],
     );
-
 final routerProvider = Provider<GoRouter>((ref) {
   final router = createRouter(initialLocation: ref.watch(initialRouteProvider));
   ref.onDispose(router.dispose);

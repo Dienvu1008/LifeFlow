@@ -52,8 +52,7 @@ class CalendarScreen extends ConsumerWidget {
     // P03 UX U4: the task lists are the Timeline now.
     void openTimeline(LocalDate day) {
       ref.read(timelineAnchorProvider.notifier).state = day;
-      ref.read(taskFilterProvider.notifier).state = TaskFilter.timeline;
-      context.go('/tasks');
+      context.go('/timeline');
     }
 
     final zoomOut = IconButton(

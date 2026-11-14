@@ -187,7 +187,7 @@ void main() {
       expect(await store.db.select(store.db.schedules).get(), isEmpty);
     });
 
-    for (final from in [2, 3, 4, 5, 6]) {
+    for (final from in [2, 3, 4, 5, 6, 7]) {
       test('an existing v$from profile store upgrades to the latest schema, '
           'data intact (ADR-0025, ADR-0029)', () async {
         var dir = await openDirectory(base, keys);

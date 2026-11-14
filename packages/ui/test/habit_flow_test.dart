@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:foundation/foundation.dart';
 
 import 'fake_world.dart';
+import 'nav.dart';
 
 FakeWorld world(List<TaskView> tasks) =>
     FakeWorld(tasks: {'A': tasks}, profiles: [profile('A', 'Guest')], activeId: 'A');
@@ -65,12 +66,11 @@ TrackingView walking({
     );
 
 void main() {
-  group('the Habits filter (D12)', () {
+  group('the Habits destination (U-D2)', () {
     testWidgets('lists the habits with their period and statistics; empty state', (tester) async {
       final w = world([task('t1', 'Walk'), task('t2', 'Read')]);
       await pumpApp(tester, w);
-      await tester.tap(find.text('Habits'));
-      await tester.pumpAndSettle();
+      await goToTab(tester, 'Habits');
       expect(find.byKey(const Key('habits-empty')), findsOneWidget);
 
       w.habits.views['t1'] = walking();
@@ -92,9 +92,8 @@ void main() {
     testWidgets('a task added in Habits is a habit that repeats every day (D6a)', (tester) async {
       final w = world([]);
       await pumpApp(tester, w);
-      await tester.tap(find.text('Habits'));
-      await tester.pumpAndSettle();
-      await tapAddTask(tester);
+      await goToTab(tester, 'Habits');
+      await tester.tap(find.byTooltip('Add habit'));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'Warm water');
       await tester.tap(find.widgetWithText(FilledButton, 'Add'));
@@ -111,7 +110,8 @@ void main() {
       tester.platformDispatcher.textScaleFactorTestValue = 1.3;
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       await pumpApp(tester, w, width: 360);
-      expect(find.text('Habits'), findsOneWidget);
+      await goToTab(tester, 'Habits');
+      expect(find.text('Habits'), findsOneWidget); // the title
       expect(tester.takeException(), isNull);
     });
   });

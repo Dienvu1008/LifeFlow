@@ -67,6 +67,14 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('CHECK ("signed_out" IN (0, 1))'),
       defaultValue: const Constant(false));
+  static const VerificationMeta _manualResultsMeta =
+      const VerificationMeta('manualResults');
+  @override
+  late final GeneratedColumn<String> manualResults = GeneratedColumn<String>(
+      'manual_results', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('target'));
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -83,6 +91,7 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
         version,
         isActive,
         signedOut,
+        manualResults,
         createdAt
       ];
   @override
@@ -136,6 +145,12 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
       context.handle(_signedOutMeta,
           signedOut.isAcceptableOrUnknown(data['signed_out']!, _signedOutMeta));
     }
+    if (data.containsKey('manual_results')) {
+      context.handle(
+          _manualResultsMeta,
+          manualResults.isAcceptableOrUnknown(
+              data['manual_results']!, _manualResultsMeta));
+    }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
@@ -167,6 +182,8 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
           .read(DriftSqlType.bool, data['${effectivePrefix}is_active'])!,
       signedOut: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}signed_out'])!,
+      manualResults: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}manual_results'])!,
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
     );
@@ -187,6 +204,7 @@ class Profile extends DataClass implements Insertable<Profile> {
   final int version;
   final bool isActive;
   final bool signedOut;
+  final String manualResults;
   final DateTime createdAt;
   const Profile(
       {required this.id,
@@ -197,6 +215,7 @@ class Profile extends DataClass implements Insertable<Profile> {
       required this.version,
       required this.isActive,
       required this.signedOut,
+      required this.manualResults,
       required this.createdAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -213,6 +232,7 @@ class Profile extends DataClass implements Insertable<Profile> {
     map['version'] = Variable<int>(version);
     map['is_active'] = Variable<bool>(isActive);
     map['signed_out'] = Variable<bool>(signedOut);
+    map['manual_results'] = Variable<String>(manualResults);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -231,6 +251,7 @@ class Profile extends DataClass implements Insertable<Profile> {
       version: Value(version),
       isActive: Value(isActive),
       signedOut: Value(signedOut),
+      manualResults: Value(manualResults),
       createdAt: Value(createdAt),
     );
   }
@@ -247,6 +268,7 @@ class Profile extends DataClass implements Insertable<Profile> {
       version: serializer.fromJson<int>(json['version']),
       isActive: serializer.fromJson<bool>(json['isActive']),
       signedOut: serializer.fromJson<bool>(json['signedOut']),
+      manualResults: serializer.fromJson<String>(json['manualResults']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -262,6 +284,7 @@ class Profile extends DataClass implements Insertable<Profile> {
       'version': serializer.toJson<int>(version),
       'isActive': serializer.toJson<bool>(isActive),
       'signedOut': serializer.toJson<bool>(signedOut),
+      'manualResults': serializer.toJson<String>(manualResults),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -275,6 +298,7 @@ class Profile extends DataClass implements Insertable<Profile> {
           int? version,
           bool? isActive,
           bool? signedOut,
+          String? manualResults,
           DateTime? createdAt}) =>
       Profile(
         id: id ?? this.id,
@@ -287,6 +311,7 @@ class Profile extends DataClass implements Insertable<Profile> {
         version: version ?? this.version,
         isActive: isActive ?? this.isActive,
         signedOut: signedOut ?? this.signedOut,
+        manualResults: manualResults ?? this.manualResults,
         createdAt: createdAt ?? this.createdAt,
       );
   Profile copyWithCompanion(ProfilesCompanion data) {
@@ -304,6 +329,9 @@ class Profile extends DataClass implements Insertable<Profile> {
       version: data.version.present ? data.version.value : this.version,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
       signedOut: data.signedOut.present ? data.signedOut.value : this.signedOut,
+      manualResults: data.manualResults.present
+          ? data.manualResults.value
+          : this.manualResults,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -319,6 +347,7 @@ class Profile extends DataClass implements Insertable<Profile> {
           ..write('version: $version, ')
           ..write('isActive: $isActive, ')
           ..write('signedOut: $signedOut, ')
+          ..write('manualResults: $manualResults, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -326,7 +355,7 @@ class Profile extends DataClass implements Insertable<Profile> {
 
   @override
   int get hashCode => Object.hash(id, displayName, activeWorkspaceId, accountId,
-      accountProvider, version, isActive, signedOut, createdAt);
+      accountProvider, version, isActive, signedOut, manualResults, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -339,6 +368,7 @@ class Profile extends DataClass implements Insertable<Profile> {
           other.version == this.version &&
           other.isActive == this.isActive &&
           other.signedOut == this.signedOut &&
+          other.manualResults == this.manualResults &&
           other.createdAt == this.createdAt);
 }
 
@@ -351,6 +381,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
   final Value<int> version;
   final Value<bool> isActive;
   final Value<bool> signedOut;
+  final Value<String> manualResults;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
   const ProfilesCompanion({
@@ -362,6 +393,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     this.version = const Value.absent(),
     this.isActive = const Value.absent(),
     this.signedOut = const Value.absent(),
+    this.manualResults = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -374,6 +406,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     this.version = const Value.absent(),
     this.isActive = const Value.absent(),
     this.signedOut = const Value.absent(),
+    this.manualResults = const Value.absent(),
     required DateTime createdAt,
     this.rowid = const Value.absent(),
   })  : id = Value(id),
@@ -388,6 +421,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     Expression<int>? version,
     Expression<bool>? isActive,
     Expression<bool>? signedOut,
+    Expression<String>? manualResults,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
   }) {
@@ -400,6 +434,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
       if (version != null) 'version': version,
       if (isActive != null) 'is_active': isActive,
       if (signedOut != null) 'signed_out': signedOut,
+      if (manualResults != null) 'manual_results': manualResults,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -414,6 +449,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
       Value<int>? version,
       Value<bool>? isActive,
       Value<bool>? signedOut,
+      Value<String>? manualResults,
       Value<DateTime>? createdAt,
       Value<int>? rowid}) {
     return ProfilesCompanion(
@@ -425,6 +461,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
       version: version ?? this.version,
       isActive: isActive ?? this.isActive,
       signedOut: signedOut ?? this.signedOut,
+      manualResults: manualResults ?? this.manualResults,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
     );
@@ -457,6 +494,9 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
     if (signedOut.present) {
       map['signed_out'] = Variable<bool>(signedOut.value);
     }
+    if (manualResults.present) {
+      map['manual_results'] = Variable<String>(manualResults.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -477,6 +517,7 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
           ..write('version: $version, ')
           ..write('isActive: $isActive, ')
           ..write('signedOut: $signedOut, ')
+          ..write('manualResults: $manualResults, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -13933,6 +13974,7 @@ typedef $$ProfilesTableCreateCompanionBuilder = ProfilesCompanion Function({
   Value<int> version,
   Value<bool> isActive,
   Value<bool> signedOut,
+  Value<String> manualResults,
   required DateTime createdAt,
   Value<int> rowid,
 });
@@ -13945,6 +13987,7 @@ typedef $$ProfilesTableUpdateCompanionBuilder = ProfilesCompanion Function({
   Value<int> version,
   Value<bool> isActive,
   Value<bool> signedOut,
+  Value<String> manualResults,
   Value<DateTime> createdAt,
   Value<int> rowid,
 });
@@ -13983,6 +14026,9 @@ class $$ProfilesTableFilterComposer
 
   ColumnFilters<bool> get signedOut => $composableBuilder(
       column: $table.signedOut, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get manualResults => $composableBuilder(
+      column: $table.manualResults, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
@@ -14023,6 +14069,10 @@ class $$ProfilesTableOrderingComposer
   ColumnOrderings<bool> get signedOut => $composableBuilder(
       column: $table.signedOut, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get manualResults => $composableBuilder(
+      column: $table.manualResults,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
 }
@@ -14060,6 +14110,9 @@ class $$ProfilesTableAnnotationComposer
   GeneratedColumn<bool> get signedOut =>
       $composableBuilder(column: $table.signedOut, builder: (column) => column);
 
+  GeneratedColumn<String> get manualResults => $composableBuilder(
+      column: $table.manualResults, builder: (column) => column);
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 }
@@ -14095,6 +14148,7 @@ class $$ProfilesTableTableManager extends RootTableManager<
             Value<int> version = const Value.absent(),
             Value<bool> isActive = const Value.absent(),
             Value<bool> signedOut = const Value.absent(),
+            Value<String> manualResults = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -14107,6 +14161,7 @@ class $$ProfilesTableTableManager extends RootTableManager<
             version: version,
             isActive: isActive,
             signedOut: signedOut,
+            manualResults: manualResults,
             createdAt: createdAt,
             rowid: rowid,
           ),
@@ -14119,6 +14174,7 @@ class $$ProfilesTableTableManager extends RootTableManager<
             Value<int> version = const Value.absent(),
             Value<bool> isActive = const Value.absent(),
             Value<bool> signedOut = const Value.absent(),
+            Value<String> manualResults = const Value.absent(),
             required DateTime createdAt,
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -14131,6 +14187,7 @@ class $$ProfilesTableTableManager extends RootTableManager<
             version: version,
             isActive: isActive,
             signedOut: signedOut,
+            manualResults: manualResults,
             createdAt: createdAt,
             rowid: rowid,
           ),

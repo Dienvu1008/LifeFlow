@@ -97,6 +97,7 @@ class Services {
 /// Turns a current profile store back into what a build with schema [version]
 /// wrote (for migration tests). Data in the tables that remain is kept.
 Future<void> rewindProfileStore(AppDatabase db, int version) async {
+  if (version < 8) await db.customStatement('ALTER TABLE profiles DROP COLUMN manual_results');
   if (version < 7) {
     for (final (table, column) in const [
       ('task_lists', 'color_index'), ('task_lists', 'order_key'), ('tasks', 'color_index'),

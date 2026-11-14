@@ -78,7 +78,7 @@ Future<AppWiring> openSession({
   required ProfileHost host,
   required FileGateway files,
   bool windowsPlainFallback = false,
-  String initialRoute = '/tasks',
+  String initialRoute = '/overview',
   String deviceZone = 'UTC',
   ReminderScheduler reminders = const NoDeviceReminders(),
   void Function(String message)? onWarning,

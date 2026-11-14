@@ -66,3 +66,5 @@ T1 gave the pure rules (aggregate, evaluate, periods, outcomes, rate, streak) an
 - `profile_directory_test.dart`: upgrades from v2–v5.
 - `app_integration_test.dart`: `openSession` closes a habit's ended days.
 - Mutations: 30/31 killed. The survivor is equivalent: without the "already stored" skip in `closePeriods`, the close command is refused and writes nothing.
+
+- **Amended by [ADR-0050](0050-navigation-habits-and-manual-results.md) (2026-11-13, U-D13):** for a measured task under the manual policy, the profile chooses the stored result: the target's judgement (default) or the tick.

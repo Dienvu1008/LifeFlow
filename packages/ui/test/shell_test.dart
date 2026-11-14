@@ -59,12 +59,13 @@ void main() {
       final drawer = find.byKey(const Key('nav-drawer'));
       expect(drawer, findsOneWidget);
       // Profiles is the header; the rest are destinations, in order.
-      for (final label in ['Tasks', 'Calendar', 'Goals', 'Settings']) {
+      // P03 UX U6: six destinations.
+      for (final label in ['Overview', 'Timeline', 'Calendar', 'Habits', 'Goals', 'Settings']) {
         expect(find.descendant(of: drawer, matching: find.text(label)), findsOneWidget, reason: label);
       }
       expect(find.descendant(of: drawer, matching: find.text('Profiles')), findsNothing);
       expect(tester.getTopLeft(find.byKey(const Key('drawer-profile'))).dy,
-          lessThan(tester.getTopLeft(find.descendant(of: drawer, matching: find.text('Tasks'))).dy),
+          lessThan(tester.getTopLeft(find.descendant(of: drawer, matching: find.text('Overview'))).dy),
           reason: 'the profile comes first');
     });
 
@@ -91,7 +92,7 @@ void main() {
         (tester) async {
       int? picked;
       await pumpShell(tester, width: 400, onSelected: (i) => picked = i);
-      for (final (label, index) in [('Calendar', 1), ('Goals', 2), ('Settings', 4), ('Tasks', 0)]) {
+      for (final (label, index) in [('Timeline', 1), ('Calendar', 2), ('Habits', 3), ('Goals', 4), ('Settings', 5), ('Overview', 0)]) {
         await tester.tap(find.byKey(const Key('nav-menu')));
         await tester.pumpAndSettle();
         await tester.tap(find.descendant(of: find.byKey(const Key('nav-drawer')), matching: find.text(label)));
@@ -153,13 +154,24 @@ void main() {
       await pumpShell(tester, width: 700, onSelected: (i) => picked = i);
       await tester.tap(find.byIcon(Icons.calendar_month_outlined));
       await tester.pump();
-      expect(picked, 1);
+      expect(picked, 2);
+      await tester.tap(find.byIcon(Icons.track_changes_outlined));
+      await tester.pump();
+      expect(picked, 3, reason: 'U-D2: Habits is a destination');
       await tester.tap(find.byIcon(Icons.flag_outlined));
       await tester.pump();
-      expect(picked, 2, reason: 'P03 D12: Goals is the 3rd destination');
-      await tester.tap(find.byIcon(Icons.people_outline));
+      expect(picked, 4);
+      // The profile at the top of the rail opens Profiles.
+      await tester.tap(find.byKey(const Key('rail-profile')));
       await tester.pump();
-      expect(picked, 3);
+      expect(picked, profilesIndex);
+    });
+
+    testWidgets('rail: the profile on top shows the initials and is marked on Profiles', (tester) async {
+      await pumpShell(tester, width: 700, selectedIndex: profilesIndex);
+      expect(find.descendant(of: find.byKey(const Key('rail-profile')), matching: find.text('DV')), findsOneWidget);
+      expect(tester.widget<NavigationRail>(find.byType(NavigationRail)).selectedIndex, isNull);
+      expect(find.bySemanticsLabel('Profile: Dien Vu, Guest · on this device. Open profiles'), findsOneWidget);
     });
   });
 

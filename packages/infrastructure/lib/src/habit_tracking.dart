@@ -103,7 +103,13 @@ class TaskResult {
 
 /// One tracked task, as stored.
 class TrackedTask {
-  TrackedTask._(this.row, this.spec, this.rule, this.exceptions, this.done, this.measurements, this.stored);
+  TrackedTask._(this.row, this.spec, this.rule, this.exceptions, this.done, this.measurements, this.stored,
+      {this.tickResults = false});
+
+  /// P03 UX U6 (U-D13): the profile chose 'tick': a measured task under the
+  /// MANUAL policy is stored done or missed as ticked, like a habit without a
+  /// target. Only periods closed from now on follow it; stored results stay.
+  final bool tickResults;
 
   final Task row;
   final tk.ScheduleSpec? spec;
@@ -156,7 +162,9 @@ class TrackedTask {
           .get())
         r.id: r,
     };
-    return TrackedTask._(row, spec, rule, exceptions, done, measurements, stored);
+    final profile = await (db.select(db.profiles)..limit(1)).getSingleOrNull();
+    return TrackedTask._(row, spec, rule, exceptions, done, measurements, stored,
+        tickResults: profile?.manualResults == 'tick');
   }
 
   d.MeasurableTarget? get target => targetOfRow(row);
@@ -224,9 +232,27 @@ class TrackedTask {
 
   /// The results of every period that has ended by [today] since the
   /// tracking start, derived with the CURRENT target. Oldest first.
-  List<TaskResult> endedResults(LocalDate today) {
+  List<TaskResult> endedResults(LocalDate today) =>
+      [for (final r in _derived(today)) if (!_storedAsOtherKind(r)) r];
+
+  /// U-D13: after the result policy changed, a period may already be stored
+  /// as occurrences (or an occurrence inside a stored period): it is not
+  /// stored a second time under the other kind.
+  bool _storedAsOtherKind(TaskResult r) {
+    for (final s in stored.values) {
+      if (s.kind == r.kind) continue;
+      if (s.periodKey == r.key) return true;
+      final period = s.kind == 'period' ? periodOfKey(s.periodKey) : periodOfKey(r.key);
+      final date = s.kind == 'period' ? r.keyDate : (s.periodKey == oncePeriodKey ? null : LocalDate.parse(s.periodKey));
+      if (period != null && date != null && period.contains(date)) return true;
+    }
+    return false;
+  }
+
+  List<TaskResult> _derived(LocalDate today) {
     if (!isTracked) return const [];
-    final t = target;
+    // U-D13: judged by the tick instead of the target when the profile says so.
+    final t = tickResults && row.completionPolicy != 'automatic' ? null : target;
     final since = _laterOf(trackedSince, today.addDays(-maxTrackedDays));
     final out = <TaskResult>[];
     if (!isRepeating) {

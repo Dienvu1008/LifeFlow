@@ -818,6 +818,21 @@ class FakeHabits implements HabitService, HabitQueries {
 
   TrackingView _view(String id) => views[id] ?? TrackingView(taskId: id, title: id, isHabit: false, isRepeating: false);
 
+  /// U-D13: the profile's choice for measured tasks completed by hand.
+  ManualResults manual = ManualResults.target;
+
+  @override
+  Future<ManualResults> manualResults() async => manual;
+
+  @override
+  Future<CommandResult> setManualResults(ManualResults value) async {
+    calls.add('habit.manualResults:${value.name}');
+    final f = _failure();
+    if (f != null) return f;
+    manual = value;
+    return _ok('profile');
+  }
+
   TrackingView copy(TrackingView v,
           {bool? isHabit, TargetInput? target, bool clearTarget = false, CompletionMode? completion}) =>
       TrackingView(
