@@ -16,7 +16,7 @@ import '../l10n.dart';
 
 /// Opens the editor: a new event on [date] (in the list [listId], P03 UX U3),
 /// or the event [eventId].
-Future<void> openEventEditor(BuildContext context, WidgetRef ref, {String? eventId, LocalDate? date, TimeOfDayValue? time, String? listId}) async {
+Future<void> openEventEditor(BuildContext context, WidgetRef ref, {String? eventId, LocalDate? date, TimeOfDayValue? time, bool allDay = false, String? listId}) async {
   final defaults = await readPlanningDefaults(ref);
   EventDetails? existing;
   if (eventId != null) {
@@ -31,7 +31,7 @@ Future<void> openEventEditor(BuildContext context, WidgetRef ref, {String? event
   await Navigator.of(context, rootNavigator: true).push(MaterialPageRoute<void>(
     fullscreenDialog: true,
     builder: (_) =>
-        EventEditorPage(existing: existing, date: date, time: time, listId: listId, defaults: defaults, initialReminders: reminders),
+        EventEditorPage(existing: existing, date: date, time: time, allDay: allDay, listId: listId, defaults: defaults, initialReminders: reminders),
   ));
 }
 
@@ -41,7 +41,7 @@ void _snack(BuildContext context, String m) => ScaffoldMessenger.of(context)
 
 class EventEditorPage extends ConsumerStatefulWidget {
   const EventEditorPage(
-      {super.key, this.existing, this.date, this.time, this.listId, required this.defaults, this.initialReminders = const []});
+      {super.key, this.existing, this.date, this.time, this.allDay = false, this.listId, required this.defaults, this.initialReminders = const []});
   final EventDetails? existing;
   final List<ReminderInput> initialReminders;
 
@@ -50,6 +50,9 @@ class EventEditorPage extends ConsumerStatefulWidget {
 
   /// The start of a new event (P03 UX U5: a tapped slot); default 09:00.
   final TimeOfDayValue? time;
+
+  /// A new all-day event on [date] (dogfooding C1).
+  final bool allDay;
 
   /// The list a new event goes to (null: none).
   final String? listId;
@@ -86,8 +89,8 @@ class _EventEditorPageState extends ConsumerState<EventEditorPage> {
       final d = widget.date ?? ref.read(todayProvider)();
       final s = widget.time ?? TimeOfDayValue(9, 0);
       final e = (s.minuteOfDay + 60).clamp(0, 23 * 60 + 59);
-      _start = PointDraft(SchedulePointInput.at(d, s, device));
-      _end = PointDraft(SchedulePointInput.at(d, TimeOfDayValue(e ~/ 60, e % 60), device));
+      _start = PointDraft(widget.allDay ? SchedulePointInput.date(d) : SchedulePointInput.at(d, s, device));
+      _end = PointDraft(widget.allDay ? null : SchedulePointInput.at(d, TimeOfDayValue(e ~/ 60, e % 60), device));
       _zone = device;
     } else {
       _start = PointDraft(i.start);

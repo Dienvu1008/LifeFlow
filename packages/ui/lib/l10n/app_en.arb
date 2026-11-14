@@ -680,5 +680,6 @@
   "resultsTargetHint": "Achieved, not achieved, or no data.",
   "resultsTick": "Count the tick",
   "resultsTickHint": "Done when ticked, otherwise missed.",
-  "resultsCouldNotLoad": "This setting could not be loaded."
+  "resultsCouldNotLoad": "This setting could not be loaded.",
+  "calNewAllDayEvent": "New all-day event"
 }

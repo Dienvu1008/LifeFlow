@@ -287,8 +287,7 @@ void main() {
       await mode(tester, 'Day');
       await tester.tap(find.byTooltip('Next'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('New event'));
-      await tester.pumpAndSettle();
+      await newEventFromSlot(tester);
       expect(find.text('$testZone (this device)'), findsOneWidget);
       await tester.enterText(find.byKey(const Key('event-title')), 'Review');
       await tester.enterText(find.byKey(const Key('event-location')), 'Room 2');
@@ -306,8 +305,7 @@ void main() {
       final w = world();
       await pumpCalendar(tester, w);
       await mode(tester, 'Day');
-      await tester.tap(find.byTooltip('New event'));
-      await tester.pumpAndSettle();
+      await newEventFromSlot(tester);
       expect(find.byKey(const Key('event-start-clear')), findsNothing);
       await tester.enterText(find.byKey(const Key('event-title')), 'Market');
       await tapKey(tester, 'event-start-clear-time');
@@ -322,11 +320,24 @@ void main() {
       expect(w.calls.last, 'event.create:Market|2026-11-09|-|-|-|weekly/1');
     });
 
+    testWidgets('a slot offers a new all-day event on that day (C1)', (tester) async {
+      final w = world();
+      await pumpCalendar(tester, w);
+      await mode(tester, 'Day');
+      await newEventFromSlot(tester, allDay: true);
+      await tester.enterText(find.byKey(const Key('event-title')), 'Holiday');
+      await tapKey(tester, 'event-save');
+      expect(w.calls.last, 'event.create:Holiday|2026-11-09|-|-|-|-');
+    });
+
+    testWidgets('the Calendar has no + button any more (C1)', (tester) async {
+      await pumpCalendar(tester, world());
+      expect(find.byType(FloatingActionButton), findsNothing);
+    });
     testWidgets('no title: asked for before any command; a refusal is shown', (tester) async {
       final w = world();
       await pumpCalendar(tester, w);
-      await tester.tap(find.byTooltip('New event'));
-      await tester.pumpAndSettle();
+      await newEventFromSlot(tester);
       await tapKey(tester, 'event-save');
       expect(find.text('Enter a title.'), findsOneWidget);
       expect(w.calls, isEmpty);

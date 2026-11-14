@@ -1243,4 +1243,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get resultsCouldNotLoad => 'This setting could not be loaded.';
+
+  @override
+  String get calNewAllDayEvent => 'New all-day event';
 }

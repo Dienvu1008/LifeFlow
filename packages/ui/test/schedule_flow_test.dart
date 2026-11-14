@@ -323,32 +323,18 @@ void main() {
       expect(find.byKey(const Key('agenda-truncated')), findsOneWidget);
     });
 
-    testWidgets('a task added in the Timeline is planned on the day it shows', (tester) async {
+    testWidgets('the Timeline has no + and no Focus (T1); a day from the month calendar', (tester) async {
       final w = world([]);
       await pumpApp(tester, w);
-      Future<void> add(String title) async {
-        await tapAddTask(tester);
-        await tester.pumpAndSettle();
-        await tester.enterText(find.byType(TextField), title);
-        await tester.tap(find.widgetWithText(FilledButton, 'Add'));
-        await tester.pumpAndSettle();
-      }
-
       await show(tester, 'Timeline');
-      await add('Now');
-      expect(w.calls, ['create:Now:null', 'setSchedule:new0:start=2026-11-09;end=-;due=-;repeat=-']);
-      // Another day from the month calendar under the app bar.
+      expect(find.byType(FloatingActionButton), findsNothing);
+      expect(find.byKey(const Key('focus-open')), findsNothing);
       await tester.tap(find.byKey(const Key('timeline-month')));
       await tester.pumpAndSettle();
       await tester.tap(find.descendant(of: find.byKey(const Key('timeline-calendar')), matching: find.text('10')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('timeline-calendar')), findsNothing);
       expect(find.text('Tomorrow · Tue 10 Nov'), findsOneWidget);
-      await add('Later');
-      expect(w.calls.last, 'setSchedule:new1:start=2026-11-10;end=-;due=-;repeat=-');
-      await show(tester, 'Overview');
-      await add('Someday');
-      expect(w.calls.last, 'create:Someday:null');
     });
   });
 

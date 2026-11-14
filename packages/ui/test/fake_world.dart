@@ -1490,3 +1490,20 @@ Future<void> tapAddTask(WidgetTester tester) async {
   }
   await tester.tap(find.byTooltip('Add task').last);
 }
+/// Dogfooding C1: a new event (or all-day event) from a time slot of the
+/// Calendar's day grid (there is no + button). Switches to the day view if
+/// needed; [minute] is after the folded night (00:00–06:00, 48 px an hour).
+Future<void> newEventFromSlot(WidgetTester tester, {int minute = 9 * 60, bool allDay = false}) async {
+  final day = find.byKey(const ValueKey('calendar-mode-day'));
+  if (find.byKey(const Key('calendar-grid')).evaluate().isEmpty || day.evaluate().isNotEmpty) {
+    await tester.tap(day);
+    await tester.pumpAndSettle();
+  }
+  await tester.drag(find.byKey(const Key('calendar-grid')), const Offset(0, 3000)); // to 00:00
+  await tester.pumpAndSettle();
+  final grid = find.byWidgetPredicate((w) => w.key is ValueKey<String> && (w.key as ValueKey<String>).value.startsWith('grid-'));
+  await tester.tapAt(tester.getTopLeft(grid.first) + Offset(30, 28 + (minute - 360) * 48 / 60 + 4));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(Key(allDay ? 'slot-allday' : 'slot-event')));
+  await tester.pumpAndSettle();
+}

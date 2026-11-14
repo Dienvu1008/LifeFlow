@@ -246,6 +246,19 @@ class _TimelineViewState extends ConsumerState<TimelineView> {
               headerStyle: const HeaderStyle(formatButtonVisible: false, titleCentered: true),
               rowHeight: 40,
               eventLoader: (d) => data.days[LocalDate(d.year, d.month, d.day)] ?? const [],
+              // Dogfooding T3: one dot per item in its own colour (neutral
+              // without one); a long row of dots scrolls.
+              calendarBuilders: CalendarBuilders<TimelineEntry>(
+                markerBuilder: (context, day, entries) => entries.isEmpty
+                    ? null
+                    : DayMarks(colours: [
+                        for (final e in entries)
+                          switch (e) {
+                            TaskEntry(:final item) => rows[item.taskId]?.task.colorIndex,
+                            EventEntry(:final item) => eventColours[item.eventId],
+                          },
+                      ]),
+              ),
               onDaySelected: (selected, _) {
                 ref.read(timelineAnchorProvider.notifier).state = LocalDate(selected.year, selected.month, selected.day);
                 ref.read(timelineMonthProvider.notifier).state = null;
@@ -392,6 +405,39 @@ class _EventRow extends ConsumerWidget {
               ],
             ),
       onTap: () => openEventEditor(context, ref, eventId: item.eventId),
+    );
+  }
+}
+
+/// The marks under a day of the month calendar: one dot per item, in the
+/// item's palette colour or a neutral one; scrolls sideways when long.
+class DayMarks extends StatelessWidget {
+  const DayMarks({super.key, required this.colours});
+  final List<int?> colours;
+
+  @override
+  Widget build(BuildContext context) {
+    final neutral = Theme.of(context).colorScheme.onSurfaceVariant;
+    return Positioned(
+      left: 4,
+      right: 4,
+      bottom: 3,
+      height: 7,
+      child: Center(
+        child: SingleChildScrollView(
+          key: const Key('day-marks'),
+          scrollDirection: Axis.horizontal,
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            for (final c in colours)
+              Container(
+                width: 6,
+                height: 6,
+                margin: const EdgeInsets.symmetric(horizontal: 1),
+                decoration: BoxDecoration(color: itemColorOf(context, c) ?? neutral, shape: BoxShape.circle),
+              ),
+          ]),
+        ),
+      ),
     );
   }
 }

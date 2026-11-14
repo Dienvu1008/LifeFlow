@@ -191,8 +191,7 @@ void main() {
     await pumpApp(tester, w);
     await tester.tap(find.byIcon(Icons.calendar_month_outlined));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('New event'));
-    await tester.pumpAndSettle();
+    await newEventFromSlot(tester);
     await tester.enterText(find.byKey(const Key('event-title')), 'Standup');
     await addReminder(tester, '15 minutes before');
     await tapKey(tester, 'event-save');

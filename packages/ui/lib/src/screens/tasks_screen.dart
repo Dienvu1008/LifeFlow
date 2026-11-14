@@ -68,7 +68,9 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
       );
 }
 
-/// P03 UX U4/U6 (ADR-0048, ADR-0050): the Timeline destination.
+/// P03 UX U4/U6 (ADR-0048, ADR-0050): the Timeline destination. No Focus
+/// and no "+" here (dogfooding T1): items are added in the Overview or the
+/// Calendar.
 class TimelineScreen extends ConsumerWidget {
   const TimelineScreen({super.key});
 
@@ -77,25 +79,11 @@ class TimelineScreen extends ConsumerWidget {
         appBar: AppBar(
           leading: shellMenuButton(context),
           title: const TimelineTitle(),
-          actions: [const TimelineTodayButton(), _focusAction(context, ref)],
-        ),
-        floatingActionButton: FloatingActionButton(
-          heroTag: 'fab-timeline',
-          tooltip: context.l10n.ovAddTask,
-          onPressed: () async {
-            final id = await addTaskWithDialog(context, ref, null);
-            if (id == null || !context.mounted) return;
-            // Planned on the day the Timeline shows (today unless one was chosen).
-            final day = ref.read(timelineAnchorProvider) ?? ref.read(todayProvider)();
-            await reportResult(
-                context, ref.read(taskSchedulingProvider).setSchedule(id, TaskScheduleInput(start: SchedulePointInput.date(day))));
-          },
-          child: const Icon(Icons.add),
+          actions: const [TimelineTodayButton()],
         ),
         body: const TimelineView(),
       );
 }
-
 /// P03 UX U6 (U-D2, ADR-0050): Habits is a destination of its own.
 class HabitsScreen extends ConsumerWidget {
   const HabitsScreen({super.key});

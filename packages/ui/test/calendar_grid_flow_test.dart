@@ -232,14 +232,21 @@ void main() {
     expect(w.calls.last, 'setSchedule:t:start=2026-11-12T16:00[$testZone];end=-;due=-;repeat=-');
   });
 
-  testWidgets('phone: the switcher fits beside the + button, with a large font', (tester) async {
+  testWidgets('phone: four separate view buttons fit, with a large font', (tester) async {
     tester.platformDispatcher.textScaleFactorTestValue = 1.3;
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     final w = world(events: [ev('d', 'Lunch', thu, 12, 13)]);
     await pumpCalendar(tester, w, width: 360);
+    // C3: four separate buttons, inside the window, no + button beside them.
     final switcher = tester.getRect(find.byKey(const Key('calendar-mode')));
-    final fab = tester.getRect(find.byTooltip('New event'));
-    expect(switcher.right, lessThan(fab.left));
+    expect(switcher.left, greaterThanOrEqualTo(0));
+    expect(switcher.right, lessThanOrEqualTo(360));
+    for (final m in ['day', 'week', 'month', 'year']) {
+      expect(find.byKey(ValueKey('calendar-mode-$m')), findsOneWidget);
+    }
+    final day = tester.getRect(find.byKey(const ValueKey('calendar-mode-day')));
+    final week = tester.getRect(find.byKey(const ValueKey('calendar-mode-week')));
+    expect(week.left, greaterThan(day.right), reason: 'separate buttons');
     await mode(tester, 'Year');
     await mode(tester, 'Day');
     expect(tester.takeException(), isNull);
