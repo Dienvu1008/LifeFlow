@@ -292,6 +292,15 @@ void main() {
     expect(await top(null), ['Stranded', 'Stranded event', 'A']);
   });
 
+  test('dogfooding F3: a task keeps notes (trimmed; empty removes them; too long is refused)', () async {
+    final t = await task('Visa');
+    ok(await svc.tasks.setNotes(t, '  Bring the forms\nand two photos  '));
+    expect((await tasks()).single.notes, 'Bring the forms\nand two photos');
+    refused(await svc.tasks.setNotes(t, 'x' * 20001), 'too long');
+    ok(await svc.tasks.setNotes(t, '   '));
+    expect((await tasks()).single.notes, isNull);
+  });
+
   test('dogfooding O1/O3: drag handles, font and text size are device settings; bad values fall back', () async {
     final s = DirectorySettingsService(dir);
     expect(await s.appearance(), const AppearanceSettings());

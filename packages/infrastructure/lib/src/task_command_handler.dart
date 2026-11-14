@@ -25,6 +25,7 @@ import 'task_target_ops.dart';
 ///   reparent : payload id, newParentId? (appended at the end there)
 ///   move     : payload id, listId? | parentId?, afterId? (P03 UX U2, organize_ops.dart)
 ///   setColor : payload id, colorIndex? (P03 UX U2)
+///   setNotes : payload id, notes? (dogfooding F3; trimmed, empty = none)
 ///   trash    : payload id, cascade ('all'|'parentOnly'; default parentOnly)
 ///   P02 T4 schedule ops (task_schedule_ops.dart): setSchedule,
 ///   clearSchedule, setException, clearException, setOccurrenceDone,
@@ -255,6 +256,17 @@ class TaskCommandHandler implements CommandHandler {
 
       case 'move':
         return _move(db, cmd, id, newVersion, now, Place.of(cmd.payload), atEnd: false, event: 'TaskMoved');
+
+      case 'setNotes':
+        await _liveTask(db, id);
+        final raw = cmd.payload['notes'];
+        if (raw != null && raw is! String) throw DomainRejection('bad notes');
+        final text = (raw as String?)?.trim();
+        final notes = text == null || text.isEmpty ? null : text;
+        if (notes != null && notes.length > maxTaskNotesLength) throw DomainRejection('the notes are too long');
+        await (db.update(db.tasks)..where((t) => t.id.equals(id))).write(
+            TasksCompanion(notes: Value(notes), version: Value(newVersion.value), updatedAt: Value(now)));
+        return HandlerOutcome(entityId: id, operationType: 'update', changeSet: {'id': id, 'notes': notes != null}, events: [DomainEvent('TaskUpdated', {'id': id})]);
 
       case 'setColor':
         await _liveTask(db, id);

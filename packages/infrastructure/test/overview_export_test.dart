@@ -127,6 +127,23 @@ void main() {
         throwsA(isA<ExportRejected>().having((e) => e.message, 'message', contains('result policy'))));
   });
 
+  test('dogfooding F3: notes travel in the file; a v8 file gets none; unreadable notes are refused', () async {
+    final t = ok(await svc.tasks.create('Visa'));
+    ok(await svc.tasks.setNotes(t, 'Bring the forms'));
+    final payload = payloadOf((await transfer.exportActiveProfile()).contents);
+    final row = (payload['tasks'] as List).cast<Map>().single;
+    expect(row['notes'], 'Bring the forms');
+    row.remove('notes');
+    final old = ProfileExport.parse(ProfileExport.seal(payload, schemaVersion: 8),
+        currentSchemaVersion: AppDatabase.currentSchemaVersion);
+    expect(old.records['task']!.single['notes'], isNull);
+    row['notes'] = 'x' * 20001; // longer than a task keeps
+    expect(
+        () => ProfileExport.parse(ProfileExport.seal(payload, schemaVersion: AppDatabase.currentSchemaVersion),
+            currentSchemaVersion: AppDatabase.currentSchemaVersion),
+        throwsA(isA<ExportRejected>()));
+  });
+
   group('untrusted organize fields (SR-14)', () {
     late Map<String, Object?> payload;
     setUp(() async {

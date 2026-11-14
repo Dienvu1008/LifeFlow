@@ -80,6 +80,15 @@ class FakeWorld
   }
 
   @override
+  Future<CommandResult> setNotes(String id, String? notes) async {
+    calls.add('notes:$id:${notes ?? '-'}');
+    final f = _failure();
+    if (f != null) return f;
+    _replace(id, (t) => _copy(t, setNotes: true, notes: notes));
+    return CommandOk(id, Version.initial, const []);
+  }
+
+  @override
   Future<CommandResult> rename(String id, String title) async {
     calls.add('rename:$id:$title');
     final f = _failure();
@@ -505,7 +514,9 @@ class FakeWorld
           String? parentId,
           String? listId,
           bool setColor = false,
-          int? colorIndex}) =>
+          int? colorIndex,
+          bool setNotes = false,
+          String? notes}) =>
       TaskView(
         id: t.id,
         title: title ?? t.title,
@@ -516,6 +527,7 @@ class FakeWorld
         listId: setPlace ? listId : t.listId,
         colorIndex: setColor ? colorIndex : t.colorIndex,
         orderKey: orderKey ?? t.orderKey,
+        notes: setNotes ? notes : t.notes,
       );
 
   /// Lists, moves and colours of the Overview (P03 UX U3).

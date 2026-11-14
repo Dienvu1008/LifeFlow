@@ -268,6 +268,8 @@ void main() {
           (v, op) => command('MoveList', {'op': 'move', 'id': 'l2', 'afterId': null}, opId: op, expected: v)),
       ('task.move', taskHandler, 'task', 't2',
           (v, op) => command('MoveTask', {'op': 'move', 'id': 't2', 'listId': 'l1'}, opId: op, expected: v)),
+      ('task.setNotes', taskHandler, 'task', 't2',
+          (v, op) => command('SetTaskNotes', {'op': 'setNotes', 'id': 't2', 'notes': 'Bring the forms'}, opId: op, expected: v)),
       ('task.setColor', taskHandler, 'task', 't2',
           (v, op) => command('SetTaskColor', {'op': 'setColor', 'id': 't2', 'colorIndex': 9}, opId: op, expected: v)),
       ('event.move', eventHandler, 'event', 'e1',

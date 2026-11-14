@@ -20,6 +20,7 @@ part 'app_database.g.dart';
 ///   v7 (P03 UX U2) color_index and order_key on task_lists, tasks and events;
 ///                events.list_id; order keys backfilled (ADR-0046)
 ///   v8 (P03 UX U6) profiles.manual_results (ADR-0050)
+///   v9 (dogfooding F3) tasks.notes (ADR-0051)
 @DriftDatabase(
   tables: [
     Profiles, Workspaces, TaskLists, Tasks, AuditLog, Outbox, EventLog,
@@ -34,7 +35,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   /// The schema this build writes (and the newest export it accepts).
-  static const currentSchemaVersion = 8;
+  static const currentSchemaVersion = 9;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -82,6 +83,7 @@ class AppDatabase extends _$AppDatabase {
             await _backfillOrderKeys();
           }
           if (from < 8) await m.addColumn(profiles, profiles.manualResults);
+          if (from < 9) await m.addColumn(tasks, tasks.notes);
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
