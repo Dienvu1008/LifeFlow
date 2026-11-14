@@ -80,6 +80,19 @@ jobs:
           flutter analyze
           flutter test
 
+  # P04 (p04-plan.md D3): the sync server schema and its allow/deny tests
+  # (RLS, R-PERMISSION) on a local Supabase database in Docker.
+  supabase-db:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 3.1.0
+      - name: Start the local database (applies supabase/migrations)
+        run: supabase db start
+      - name: Database tests (pgTAP, supabase/tests/database)
+        run: supabase test db
   # P01 still adds:
   # - behavioral fitness functions FF-ARCH-06/08/09
   # - golden scenarios
