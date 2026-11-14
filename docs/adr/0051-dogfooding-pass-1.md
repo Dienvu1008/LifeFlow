@@ -3,7 +3,7 @@
 - Status: Accepted (owner's dogfooding pass 1, 2026-11-13; decisions in [p03-dogfood-1.md](../roadmap/p03-dogfood-1.md))
 - Date: 2026-11-13
 - Deciders: Project owner (direction), implementation
-- Related: [ADR-0047](0047-overview-screen.md), [ADR-0048](0048-timeline.md), [ADR-0049](0049-calendar-time-grid.md) (amended)
+- Related: [ADR-0047](0047-overview-screen.md), [ADR-0048](0048-timeline.md) (amended), [ADR-0049](0049-calendar-time-grid.md) (amended)
 
 ## Context
 The owner used U1–U6 on Android and Windows and asked for the changes listed in p03-dogfood-1.md. Each group (F1–F5) adds its decisions below.
@@ -39,6 +39,7 @@ The owner used U1–U6 on Android and Windows and asked for the changes listed i
 - **Font and text size (O3):** Settings → Appearance → Font offers System, Inter, Noto Sans and Be Vietnam Pro.
   - The three named fonts are bundled TTFs under SIL OFL 1.1 (VS-39), about 4 MB in all. They are never downloaded (LF-INV-PRIV-001). Their licenses are on the licenses page.
   - Text size runs from 80 % to 150 % in 5 % steps and multiplies the system's text scale.
+
 ### F3 — The task page, with notes
 - **Opening:** a tap on a task opens its page, full screen, as an event opens its editor. This works from the Overview, the Timeline and the Calendar's rows.
 - **Contents:**
@@ -54,8 +55,21 @@ The owner used U1–U6 on Android and Windows and asked for the changes listed i
   - They are exported. An older file gets none, and bad notes in a file are refused.
   - The page saves the notes with "Save notes" or when the field is left.
 - **Migration test (hardened):** the upgrade test now checks that every column of every table exists after the upgrade. Drift reads a missing nullable column as null, so a forgotten `addColumn` for such a column was not caught before.
+### F4 — The Timeline app bar and calendar heights
+- **App bar, calendar closed (T2):** the full month and year of the day at the top of the list ("November 2026"), no arrows. "Today" shows only while no part of today's section is on screen. It brings the list back to today at the top, also when the list was already centred on today.
+- **App bar, calendar open (T2):**
+  - the short month in the app's language ("Nov 2026") between Previous and Next; table_calendar's own header is hidden;
+  - the calendar opens on the month at the top of the list;
+  - "Today" shows only while the calendar's page does not contain today. It brings the calendar and the list back to today.
+- **Long titles (T2):** a title wider than its space slides sideways inside it once: a pause, a slide to the end, a pause, then it rests at the start cut with an ellipsis. It plays again whenever the title changes. It does not loop, so nothing keeps moving for more than a few seconds (WCAG 2.2.2). With animations turned off it only gets the ellipsis.
+- **Calendar heights (T4):** a swipe up on the calendar goes month → two weeks → one week; a swipe down goes back. These are table_calendar's three formats (the owner chose them over a three-week step).
+- **Paging moves the list (T4):** when the calendar turns to another page (swipe or arrows), the list goes to the first day of that page: the 1st for a month, the first day of the week for one or two weeks. If today is on the page, it goes to today. Changing the height alone does not move the list.
+- The calendar's weeks start on the planning setting's first day of the week, any day (before: only Sunday or Monday).
+
 ## Consequences
 - ADR-0049 is amended: no + button, the all-day choice in the slot sheet, the new switcher.
+- ADR-0048 is amended by F4: the app bar and the calendar under it.
+- F4 tests: `timeline_bar_flow_test` (Today in and out of sight, closed and open titles, arrows and swipes moving the list to the page's first day or today, the calendar opening on the list's month, the three heights, the long title sliding once).
 - F3 tests: `task_page_flow_test` (contents, notes saved both ways, rename, colour, list, subtasks, parent link, plan rows, trash closes, from the Timeline), notes in `overview_test` and `overview_export_test`, the atomic set with `setNotes`, the v1–v8 upgrades with the column check.
 - F2 tests: `overview_look_test` (handles by setting and platform, long-press drag on Windows without handles, the dragged copy, the fade, the drop line's indent, list and task title sizes, font and text size applied and saved, clamping) and the appearance round trip in `overview_test`.
 - F1 tests: the tests that used the + now start from a slot (`newEventFromSlot`). New tests cover the all-day slot, no + in the Calendar and the Timeline, the coloured marks, and the separate view buttons.

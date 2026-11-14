@@ -22,7 +22,7 @@ import 'calendars_dialog.dart';
 import 'calendar_grid_view.dart';
 import 'event_editor.dart';
 import 'tasks_screen.dart' show addTaskWithDialog, showTextDialog;
-import 'timeline_view.dart' show timelineAnchorProvider;
+import 'timeline_view.dart' show jumpTimelineTo;
 
 /// Which view and which date the Calendar tab shows; null until first shown
 /// (then: today, and the view that suits the width).
@@ -51,7 +51,7 @@ class CalendarScreen extends ConsumerWidget {
 
     // P03 UX U4: the task lists are the Timeline now.
     void openTimeline(LocalDate day) {
-      ref.read(timelineAnchorProvider.notifier).state = day;
+      jumpTimelineTo(ref, day);
       context.go('/timeline');
     }
 

@@ -4,16 +4,21 @@
 // title, the habit state and a tick. Overdue one-off tasks are a collapsible
 // group at the top of today (U-D3). The month and year in the app bar open a
 // month calendar (table_calendar) under it; choosing a day jumps there.
+// Dogfooding T2/T4 (ADR-0051): with it open, the app bar has the short
+// month and previous / next; a vertical swipe makes it two weeks or one
+// week; turning a page moves the list to the page's first day (or today).
 // Data is loaded in windows of 21 days as the list scrolls, so every query
 // stays bounded (LF-INV-PLAN-010).
 import 'package:application/application.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderSliver;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sticky_header/flutter_sticky_header.dart';
 import 'package:foundation/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 
+import '../calendar_layout.dart' show weekStartOf;
 import '../l10n.dart';
 import '../providers.dart';
 import '../schedule_text.dart';
@@ -21,6 +26,7 @@ import '../task_actions.dart';
 import '../task_tree.dart';
 import '../theme/lifeflow_theme.dart';
 import '../timeline_model.dart';
+import '../widgets/marquee_text.dart';
 import 'event_editor.dart';
 
 /// The day the Timeline is centred on; null = today. Choosing a day in the
@@ -33,13 +39,86 @@ final timelineMonthProvider = StateProvider<({int year, int month})?>((ref) => n
 /// Whether the month calendar under the app bar is open.
 final timelineCalendarOpenProvider = StateProvider<bool>((ref) => false);
 
+/// Bumped to bring the list back to its anchor, at the top, even when the
+/// anchor itself is unchanged (e.g. "Today" after scrolling away from it).
+final timelineJumpProvider = StateProvider<int>((ref) => 0);
+
+/// Whether any of today is on screen in the list (dogfooding T2: "Today"
+/// shows only while it is not).
+final timelineTodayInViewProvider = StateProvider<bool>((ref) => true);
+
+/// The day the open calendar is focused on (its page); null = the anchor.
+final timelineCalendarFocusProvider = StateProvider<LocalDate?>((ref) => null);
+
+/// Month, two weeks or one week (dogfooding T4: a vertical swipe changes it).
+final timelineCalendarFormatProvider = StateProvider<CalendarFormat>((ref) => CalendarFormat.month);
+
 /// Space kept free under the last row so the + button never covers it.
 const _fabClearance = 96.0;
 
 /// Loads more days when the list is this close to an end.
 const _loadAhead = 800.0;
 
-/// "November 2026" for the app bar: a button that opens the month calendar.
+/// Centres the list on [day], at the top.
+void jumpTimelineTo(WidgetRef ref, LocalDate day) {
+  ref.read(timelineAnchorProvider.notifier).state = day;
+  ref.read(timelineMonthProvider.notifier).state = null;
+  ref.read(timelineJumpProvider.notifier).state++;
+}
+
+/// The days the calendar page around [focus] stands for: the whole month,
+/// or the two weeks / the week that start on the week containing [focus]
+/// (as table_calendar lays them out).
+({LocalDate first, LocalDate last}) timelineCalendarRange(LocalDate focus, CalendarFormat format, Weekday firstWeekday) {
+  if (format == CalendarFormat.month) {
+    return (
+      first: LocalDate(focus.year, focus.month, 1),
+      last: LocalDate(focus.year, focus.month, LocalDate.daysInMonth(focus.year, focus.month)),
+    );
+  }
+  final start = weekStartOf(focus, firstWeekday);
+  return (first: start, last: start.addDays(format == CalendarFormat.week ? 6 : 13));
+}
+
+bool _inRange(LocalDate d, ({LocalDate first, LocalDate last}) r) => !d.isBefore(r.first) && !d.isAfter(r.last);
+
+Weekday _firstWeekday(WidgetRef ref) => ref.read(planningSettingsProvider).valueOrNull?.firstDayOfWeek ?? Weekday.monday;
+
+/// Dogfooding T4: the calendar now shows the page around [focus]; the list
+/// goes to the first day of it, or to today when today is in it.
+void showTimelineCalendarAt(WidgetRef ref, LocalDate focus) {
+  ref.read(timelineCalendarFocusProvider.notifier).state = focus;
+  final today = ref.read(todayProvider)();
+  final range = timelineCalendarRange(focus, ref.read(timelineCalendarFormatProvider), _firstWeekday(ref));
+  jumpTimelineTo(ref, _inRange(today, range) ? today : range.first);
+}
+
+/// The app bar's previous / next with the calendar open: a page back or on.
+void stepTimelineCalendar(WidgetRef ref, int by) {
+  final focus = ref.read(timelineCalendarFocusProvider) ?? ref.read(timelineAnchorProvider) ?? ref.read(todayProvider)();
+  showTimelineCalendarAt(ref, switch (ref.read(timelineCalendarFormatProvider)) {
+    CalendarFormat.month => LocalDate(focus.year, focus.month, 1).addMonthsClamped(by),
+    CalendarFormat.twoWeeks => focus.addDays(14 * by),
+    CalendarFormat.week => focus.addDays(7 * by),
+  });
+}
+
+/// Opens the calendar on the month at the top of the list, or closes it.
+void toggleTimelineCalendar(WidgetRef ref) {
+  final open = ref.read(timelineCalendarOpenProvider);
+  if (!open) {
+    final anchor = ref.read(timelineAnchorProvider) ?? ref.read(todayProvider)();
+    final m = ref.read(timelineMonthProvider);
+    ref.read(timelineCalendarFocusProvider.notifier).state =
+        m == null || (m.year == anchor.year && m.month == anchor.month) ? anchor : LocalDate(m.year, m.month, 1);
+  }
+  ref.read(timelineCalendarOpenProvider.notifier).state = !open;
+}
+
+/// The app bar title (dogfooding T2). Closed: "November 2026" for the
+/// month at the top of the list. Open: "Nov 2026" for the calendar's page,
+/// between previous and next. Either way a tap opens or closes the calendar,
+/// and a title too long for its space slides sideways inside it.
 class TimelineTitle extends ConsumerWidget {
   const TimelineTitle({super.key});
 
@@ -50,36 +129,69 @@ class TimelineTitle extends ConsumerWidget {
     final anchor = ref.watch(timelineAnchorProvider) ?? today;
     final m = ref.watch(timelineMonthProvider) ?? (year: anchor.year, month: anchor.month);
     final open = ref.watch(timelineCalendarOpenProvider);
-    return TextButton.icon(
+    final focus = ref.watch(timelineCalendarFocusProvider) ?? anchor;
+    final title = open
+        ? DateFormat.yMMM().format(DateTime(focus.year, focus.month))
+        : DateFormat.yMMMM().format(DateTime(m.year, m.month));
+    final button = TextButton.icon(
       key: const Key('timeline-month'),
       style: TextButton.styleFrom(
         foregroundColor: Theme.of(context).colorScheme.onSurface,
         textStyle: Theme.of(context).textTheme.titleLarge,
       ),
-      onPressed: () => ref.read(timelineCalendarOpenProvider.notifier).state = !open,
+      onPressed: () => toggleTimelineCalendar(ref),
       icon: Icon(open ? Icons.arrow_drop_up : Icons.arrow_drop_down),
-      label: Tooltip(
-        message: open ? l.tlHideMonth : l.tlShowMonth,
-        child: Text(DateFormat.yMMMM().format(DateTime(m.year, m.month))),
-      ),
+      label: Tooltip(message: open ? l.tlHideMonth : l.tlShowMonth, child: MarqueeText(title)),
     );
+    if (!open) return button;
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      IconButton(
+        key: const Key('timeline-prev'),
+        tooltip: l.calPrevious,
+        icon: const Icon(Icons.chevron_left),
+        onPressed: () => stepTimelineCalendar(ref, -1),
+      ),
+      Flexible(child: button),
+      IconButton(
+        key: const Key('timeline-next'),
+        tooltip: l.calNext,
+        icon: const Icon(Icons.chevron_right),
+        onPressed: () => stepTimelineCalendar(ref, 1),
+      ),
+    ]);
   }
 }
 
-/// "Today" for the app bar: back to today, at the top.
+/// "Today" for the app bar (dogfooding T2). Closed: only while today is
+/// out of sight in the list; it brings the list back to today. Open: only
+/// while the calendar shows a page without today; it brings the calendar
+/// and the list back to today.
 class TimelineTodayButton extends ConsumerWidget {
   const TimelineTodayButton({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => IconButton(
-        key: const Key('timeline-today'),
-        tooltip: context.l10n.tlGoToToday,
-        icon: const Icon(Icons.today),
-        onPressed: () {
-          ref.read(timelineAnchorProvider.notifier).state = ref.read(todayProvider)();
-          ref.read(timelineMonthProvider.notifier).state = null;
-        },
-      );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final today = ref.watch(todayProvider)();
+    final open = ref.watch(timelineCalendarOpenProvider);
+    final bool show;
+    if (open) {
+      final focus = ref.watch(timelineCalendarFocusProvider) ?? ref.watch(timelineAnchorProvider) ?? today;
+      final first = ref.watch(planningSettingsProvider).valueOrNull?.firstDayOfWeek ?? Weekday.monday;
+      show = !_inRange(today, timelineCalendarRange(focus, ref.watch(timelineCalendarFormatProvider), first));
+    } else {
+      show = !ref.watch(timelineTodayInViewProvider);
+    }
+    if (!show) return const SizedBox.shrink();
+    return IconButton(
+      key: const Key('timeline-today'),
+      tooltip: context.l10n.tlGoToToday,
+      icon: const Icon(Icons.today),
+      onPressed: () {
+        if (open) ref.read(timelineCalendarFocusProvider.notifier).state = today;
+        jumpTimelineTo(ref, today);
+      },
+    );
+  }
 }
 
 class TimelineView extends ConsumerStatefulWidget {
@@ -91,7 +203,9 @@ class TimelineView extends ConsumerStatefulWidget {
 
 class _TimelineViewState extends ConsumerState<TimelineView> {
   final _center = GlobalKey();
+  final _todayKey = GlobalKey();
   LocalDate? _anchor;
+  int? _jump;
   ScrollController _scroll = ScrollController();
   int _back = 1;
   int _ahead = 2;
@@ -103,9 +217,23 @@ class _TimelineViewState extends ConsumerState<TimelineView> {
     super.dispose();
   }
 
-  /// A new anchor starts afresh: a few windows around it, at the top.
-  void _reset(LocalDate anchor) {
+  /// After the frame: is any of today's section painted? (Its sliver is
+  /// the centre one when today is the anchor.)
+  void _checkToday() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final key = ref.read(todayProvider)() == _anchor ? _center : _todayKey;
+      final sliver = key.currentContext?.findRenderObject();
+      final seen = sliver is RenderSliver && (sliver.geometry?.visible ?? false);
+      if (ref.read(timelineTodayInViewProvider) != seen) ref.read(timelineTodayInViewProvider.notifier).state = seen;
+    });
+  }
+
+  /// A new anchor (or a jump) starts afresh: a few windows around it, at
+  /// the top.
+  void _reset(LocalDate anchor, int jump) {
     _anchor = anchor;
+    _jump = jump;
     _back = 1;
     _ahead = 2;
     final old = _scroll;
@@ -125,6 +253,7 @@ class _TimelineViewState extends ConsumerState<TimelineView> {
       changed = true;
     }
     if (changed) WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? setState(() {}) : null);
+    _checkToday();
     return false;
   }
 
@@ -141,7 +270,9 @@ class _TimelineViewState extends ConsumerState<TimelineView> {
     final l = context.l10n;
     final today = ref.watch(todayProvider)();
     final anchor = ref.watch(timelineAnchorProvider) ?? today;
-    if (anchor != _anchor) _reset(anchor);
+    final jump = ref.watch(timelineJumpProvider);
+    if (anchor != _anchor || jump != _jump) _reset(anchor, jump);
+    _checkToday();
     final windows = [
       for (var i = -_back; i < _ahead; i++)
         () {
@@ -153,6 +284,8 @@ class _TimelineViewState extends ConsumerState<TimelineView> {
     final data = buildTimeline(windows: windows, todayAgenda: todayAgenda, today: today);
     final firstWeekday = ref.watch(planningSettingsProvider).valueOrNull?.firstDayOfWeek ?? Weekday.monday;
     final open = ref.watch(timelineCalendarOpenProvider);
+    final focus = ref.watch(timelineCalendarFocusProvider) ?? anchor;
+    final format = ref.watch(timelineCalendarFormatProvider);
     final rows = {for (final r in orderTree(ref.watch(tasksProvider).valueOrNull ?? const [])) r.task.id: r};
     final eventColours = {
       for (final e in ref.watch(overviewEventsProvider).valueOrNull ?? const <OverviewEventView>[]) e.id: e.colorIndex
@@ -164,7 +297,11 @@ class _TimelineViewState extends ConsumerState<TimelineView> {
       final entries = data.days[d] ?? const <TimelineEntry>[];
       final isToday = d == today;
       return SliverStickyHeader.builder(
-        key: d == anchor ? _center : ValueKey('day-sliver-$d'),
+        key: d == anchor
+            ? _center
+            : isToday
+                ? _todayKey
+                : ValueKey('day-sliver-$d'),
         builder: (context, state) {
           if (state.isPinned) _reportMonth(d);
           return _DayHeader(date: d, today: today, pinned: state.isPinned);
@@ -219,7 +356,7 @@ class _TimelineViewState extends ConsumerState<TimelineView> {
     final list = NotificationListener<ScrollNotification>(
       onNotification: _onScroll,
       child: CustomScrollView(
-        key: ValueKey('timeline-$anchor'),
+        key: ValueKey('timeline-$anchor-$jump'),
         controller: _scroll,
         center: _center,
         slivers: [
@@ -238,12 +375,22 @@ class _TimelineViewState extends ConsumerState<TimelineView> {
             child: TableCalendar<TimelineEntry>(
               firstDay: DateTime(today.year - 10),
               lastDay: DateTime(today.year + 10, 12, 31),
-              focusedDay: DateTime(anchor.year, anchor.month, anchor.day),
+              focusedDay: DateTime.utc(focus.year, focus.month, focus.day),
               currentDay: DateTime(today.year, today.month, today.day),
               selectedDayPredicate: (d) => d.year == anchor.year && d.month == anchor.month && d.day == anchor.day,
-              startingDayOfWeek: firstWeekday == Weekday.sunday ? StartingDayOfWeek.sunday : StartingDayOfWeek.monday,
-              availableCalendarFormats: const {CalendarFormat.month: ''},
-              headerStyle: const HeaderStyle(formatButtonVisible: false, titleCentered: true),
+              startingDayOfWeek: StartingDayOfWeek.values[firstWeekday.index],
+              // Dogfooding T2/T4: the app bar has the title and the arrows;
+              // a vertical swipe goes month -> two weeks -> week and back
+              // (biggest to smallest, as table_calendar expects).
+              headerVisible: false,
+              calendarFormat: format,
+              availableCalendarFormats: const {
+                CalendarFormat.month: '',
+                CalendarFormat.twoWeeks: '',
+                CalendarFormat.week: '',
+              },
+              onFormatChanged: (f) => ref.read(timelineCalendarFormatProvider.notifier).state = f,
+              onPageChanged: (d) => showTimelineCalendarAt(ref, LocalDate(d.year, d.month, d.day)),
               rowHeight: 40,
               eventLoader: (d) => data.days[LocalDate(d.year, d.month, d.day)] ?? const [],
               // Dogfooding T3: one dot per item in its own colour (neutral
@@ -260,8 +407,7 @@ class _TimelineViewState extends ConsumerState<TimelineView> {
                       ]),
               ),
               onDaySelected: (selected, _) {
-                ref.read(timelineAnchorProvider.notifier).state = LocalDate(selected.year, selected.month, selected.day);
-                ref.read(timelineMonthProvider.notifier).state = null;
+                jumpTimelineTo(ref, LocalDate(selected.year, selected.month, selected.day));
                 ref.read(timelineCalendarOpenProvider.notifier).state = false;
               },
             ),
