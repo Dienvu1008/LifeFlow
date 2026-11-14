@@ -26,7 +26,7 @@ Fixed entry format: **Question / Hypothesis / What was done / Measured result / 
 - **Decision:** feeds ADR-0052 (data half of ADR-0003) with S-04 and S-15.
 - **Findings:**
   - On Windows, Hyper-V/WSL reserve port ranges (`netsh int ipv4 show excludedportrange protocol=tcp`). The default local Supabase ports 54320–54329 fell inside one, so the local stack uses 55320–55329 (`supabase/config.toml`).
-  - The same reservations cover **127.0.0.1:53682, the fixed loopback port of Windows sign-in (S-03a)**: binding it fails on the development PC now. Escalated to the owner (a fix: let the system pick a free loopback port, RFC 8252 §7.3, with a matching redirect pattern in Supabase).
+  - The same reservations cover **127.0.0.1:53682, the fixed loopback port of Windows sign-in (S-03a)**: binding it fails on the development PC now. Fixed on the owner's go-ahead (branch `p04/fix-loopback-port`): the system picks a free loopback port for each sign-in (RFC 8252 §7.3) and the Supabase project allows `http://127.0.0.1:*/callback` (ADR-0003 update 2026-11-14).
 - **Human gate:** owner review with the other P04 spikes.
 ## S-01 — Flutter + Drift
 **PASS on Windows (2026-11-04):** CRUD + transaction + persistence across restart + rollback, proven on-device; headless 2/2. Finding → **OQ-STACK-2**: resolved stack is sqlite3 2.9.4 + sqlite3_flutter_libs 0.5.42 (CMake bundling), not sqlite3 3.x build hooks (3.x path not smooth on Flutter yet). Android a follow-up.

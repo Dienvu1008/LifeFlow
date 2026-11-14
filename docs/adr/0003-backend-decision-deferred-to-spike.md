@@ -4,6 +4,9 @@
 - Date: 2026-11-04
 - Deciders: Project owner (auth decided after S-03a; data/sync after S-03/S-04)
 
+## Update 2026-11-14 (Windows loopback port)
+The fixed loopback port 53682 of S-03a fell inside a TCP range that Hyper-V/WSL reserve on Windows (`netsh int ipv4 show excludedportrange protocol=tcp`), so binding it failed and Windows sign-in could not complete (found in spike S-03). The desktop flow now binds a port the system picks for each sign-in, as RFC 8252 §7.3 allows for native apps (https://www.rfc-editor.org/rfc/rfc8252#section-7.3). The Supabase project allows it with the redirect pattern `http://127.0.0.1:*/callback` (Supabase redirect wildcards: `*` matches any characters except `.` and `/`; https://supabase.com/docs/guides/auth/redirect-urls). PKCE, the 127.0.0.1-only bind and the one-sign-in-at-a-time rule are unchanged. Tests: `apps/lifeflow_app/test/desktop_loopback_test.dart`.
+
 ## Update 2026-11-04 (auth half)
 Spike S-03a passed on Windows (see [../spikes/spike-results.md](../spikes/spike-results.md)): Supabase Auth with GitHub, SDK-managed PKCE (S256) via a fixed loopback (`127.0.0.1:53682`), session cached in secure storage surviving an offline restart, no token in logs. **Decision: Supabase Auth is the auth provider for the MVP.** Follow-up before P01 sign-in UI ships: verify on Android (deep link `lifeflow://callback`) and the email baseline. The data/sync backend remains undecided (still Supabase-lean) pending S-03 (RLS) and S-04 (sync).
 - Evidence: [../research/verified-sources.md](../research/verified-sources.md) VS-06 to VS-10; legacy Firebase usage in [../assessment/legacy-repo-assessment.md](../assessment/legacy-repo-assessment.md) section 4.7
