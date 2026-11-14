@@ -2,8 +2,11 @@
 // grid, month and year grids, a view switcher at the bottom; conflicts are
 // shown, never resolved (D7); weeks start on the device setting (D3). The
 // views only read CalendarQueries; every change is a command.
+// Dogfooding C2 (ADR-0051): every view turns like pages, with a slide.
 import 'package:application/application.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:foundation/foundation.dart';
 import 'package:go_router/go_router.dart';
@@ -31,23 +34,117 @@ final calendarPositionProvider = StateProvider<({CalendarMode mode, LocalDate an
 /// Below this content width the week is a list of days, not seven columns.
 const _weekColumnsMinWidth = 720.0;
 
-class CalendarScreen extends ConsumerWidget {
+/// Pages either side of where the pager starts; far more than anyone turns.
+const _home = 100000;
+
+/// How long a page takes to slide in (buttons, keys, the wheel).
+const _turnDuration = Duration(milliseconds: 280);
+
+/// Sideways wheel or touchpad travel that turns one page.
+const _wheelStep = 40.0;
+
+/// Dogfooding C2 (ADR-0051): every view turns like pages. A swipe (touch, a
+/// mouse drag or a touchpad), a sideways wheel, ←/→ and PageUp/PageDown, and
+/// the app bar's arrows slide the next period in. A vertical drag still
+/// scrolls the hours and a tap still picks a slot (the gesture arena picks
+/// by direction); while two fingers are down (pinch zoom) pages hold still.
+class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CalendarScreen> createState() => _CalendarScreenState();
+}
+
+class _CalendarScreenState extends ConsumerState<CalendarScreen> {
+  CalendarMode? _mode;
+  late LocalDate _base;
+  int _page = _home;
+  int? _target;
+  int _rebases = 0;
+  PageController _pager = PageController(initialPage: _home);
+  final _touches = <int>{};
+  double _wheel = 0;
+
+  @override
+  void dispose() {
+    _pager.dispose();
+    super.dispose();
+  }
+
+  /// The period on page [i]; the start page is exactly the anchor it began on.
+  LocalDate _anchorAt(int i) => i == _home ? _base : stepAnchor(_mode!, _base, i - _home);
+
+  /// A new view or a jump (Today, a day, a month): the pager starts again there.
+  void _rebase(CalendarMode mode, LocalDate anchor) {
+    _mode = mode;
+    _base = anchor;
+    _page = _home;
+    _target = null;
+    _rebases++;
+    final old = _pager;
+    _pager = PageController(initialPage: _home);
+    WidgetsBinding.instance.addPostFrameCallback((_) => old.dispose());
+  }
+
+  void _go(({CalendarMode mode, LocalDate anchor}) p) => ref.read(calendarPositionProvider.notifier).state = p;
+
+  /// Slides [by] pages on (back when negative); presses during a slide add up.
+  void _turn(int by) {
+    if (!_pager.hasClients) return;
+    final t = (_target ?? _page) + by;
+    _target = t;
+    _pager.animateToPage(t, duration: _turnDuration, curve: Curves.easeOutCubic).whenComplete(() {
+      if (_target == t) _target = null;
+    });
+  }
+
+  /// A sideways wheel or touchpad scroll turns a page (Shift + a mouse wheel
+  /// too); a mostly vertical one is left to the grid.
+  void _onSignal(PointerSignalEvent e) {
+    if (e is! PointerScrollEvent || HardwareKeyboard.instance.isControlPressed) return;
+    final shift = HardwareKeyboard.instance.isShiftPressed && e.kind == PointerDeviceKind.mouse;
+    final dx = shift ? e.scrollDelta.dy : e.scrollDelta.dx;
+    final dy = shift ? 0.0 : e.scrollDelta.dy;
+    if (dx == 0 || dx.abs() <= dy.abs()) return;
+    GestureBinding.instance.pointerSignalResolver.register(e, (_) {
+      if (_target != null) {
+        _wheel = 0;
+        return;
+      }
+      _wheel += dx;
+      if (_wheel.abs() >= _wheelStep) {
+        _turn(_wheel > 0 ? 1 : -1);
+        _wheel = 0;
+      }
+    });
+  }
+
+  void _onDown(PointerDownEvent e) {
+    _touches.add(e.pointer);
+    if (_touches.length == 2) setState(() {});
+  }
+
+  void _onUp(PointerEvent e) {
+    if (_touches.remove(e.pointer) && _touches.length == 1) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l = context.l10n;
     final today = ref.watch(todayProvider)();
     final first = ref.watch(planningSettingsProvider).value?.firstDayOfWeek ?? Weekday.monday;
     final width = MediaQuery.sizeOf(context).width;
     final pos = ref.watch(calendarPositionProvider) ??
         (mode: layoutClassFor(width) == LayoutClass.compact ? CalendarMode.week : CalendarMode.month, anchor: today);
-    void go(({CalendarMode mode, LocalDate anchor}) p) => ref.read(calendarPositionProvider.notifier).state = p;
-    final range = rangeOf(pos.mode, pos.anchor, first);
-    final data = ref.watch(calendarRangeProvider(range));
+    if (pos.mode != _mode || pos.anchor != _anchorAt(_page)) _rebase(pos.mode, pos.anchor);
+    // The periods either side load ahead, so a page slides in with its items.
+    for (final i in [_page - 1, _page + 1]) {
+      ref.watch(calendarRangeProvider(rangeOf(pos.mode, _anchorAt(i), first)));
+    }
     final grid = pos.mode == CalendarMode.day || pos.mode == CalendarMode.week;
     final showNight = ref.watch(calendarShowNightProvider);
     final roomy = width >= 600;
+    final rtl = Directionality.of(context) == TextDirection.rtl;
 
     // P03 UX U4: the task lists are the Timeline now.
     void openTimeline(LocalDate day) {
@@ -73,54 +170,131 @@ class CalendarScreen extends ConsumerWidget {
         selectedIcon: const Icon(Icons.bedtime),
         onPressed: () => ref.read(calendarShowNightProvider.notifier).state = !showNight);
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: shellMenuButton(context),
-        title: Text(periodTitle(pos.mode, pos.anchor, first), key: const Key('calendar-title')),
-        actions: [
-          IconButton(
-            key: const Key('calendar-go-today'),
-            tooltip: l.calGoToToday,
-            icon: const Icon(Icons.today),
-            onPressed: () => go((mode: pos.mode, anchor: today)),
-          ),
-          IconButton(
-            tooltip: l.calPrevious,
-            icon: const Icon(Icons.chevron_left),
-            onPressed: () => go((mode: pos.mode, anchor: stepAnchor(pos.mode, pos.anchor, -1))),
-          ),
-          IconButton(
-            tooltip: l.calNext,
-            icon: const Icon(Icons.chevron_right),
-            onPressed: () => go((mode: pos.mode, anchor: stepAnchor(pos.mode, pos.anchor, 1))),
-          ),
-          if (grid && roomy) ...[zoomOut, zoomIn, night],
-          if (grid && !roomy) night,
-          IconButton(
-            key: const Key('calendar-today-tasks'),
-            tooltip: l.calOpenTimeline,
-            icon: const Icon(Icons.view_timeline_outlined),
-            onPressed: () => openTimeline(pos.mode == CalendarMode.day ? pos.anchor : today),
-          ),
-          PopupMenuButton<String>(
-            tooltip: l.calMore,
-            onSelected: (v) => switch (v) {
-              'in' => zoomCalendar(ref, 1.25),
-              'out' => zoomCalendar(ref, 1 / 1.25),
-              _ => showDialog<void>(context: context, builder: (_) => const CalendarsDialog()),
-            },
-            itemBuilder: (_) => [
-              if (grid && !roomy) ...[
-                PopupMenuItem(value: 'in', child: Text(l.calZoomIn)),
-                PopupMenuItem(value: 'out', child: Text(l.calZoomOut)),
-              ],
-              PopupMenuItem(value: 'calendars', child: Text(l.calManageCalendars)),
+    final pages = Listener(
+      key: const Key('calendar-pages'),
+      onPointerDown: _onDown,
+      onPointerUp: _onUp,
+      onPointerCancel: _onUp,
+      child: PageView.builder(
+        // A new pager each time it starts again: a reused one would keep
+        // its old position.
+        key: ValueKey(_rebases),
+        controller: _pager,
+        physics: _touches.length >= 2 ? const NeverScrollableScrollPhysics() : null,
+        // A mouse drags pages too (desktop scrolling leaves it out by
+        // default); only for the pager, not for the hours inside.
+        scrollBehavior: ScrollConfiguration.of(context).copyWith(dragDevices: PointerDeviceKind.values.toSet()),
+        onPageChanged: (i) {
+          _page = i;
+          _go((mode: pos.mode, anchor: _anchorAt(i)));
+        },
+        itemCount: 2 * _home + 1,
+        itemBuilder: (context, i) => Listener(
+          onPointerSignal: _onSignal,
+          child: _CalendarPage(mode: pos.mode, anchor: _anchorAt(i), first: first, today: today, onGo: _go),
+        ),
+      ),
+    );
+
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.arrowLeft): () => _turn(rtl ? 1 : -1),
+        const SingleActivator(LogicalKeyboardKey.arrowRight): () => _turn(rtl ? -1 : 1),
+        const SingleActivator(LogicalKeyboardKey.pageUp): () => _turn(-1),
+        const SingleActivator(LogicalKeyboardKey.pageDown): () => _turn(1),
+      },
+      child: Focus(
+        autofocus: true,
+        child: Scaffold(
+          appBar: AppBar(
+            leading: shellMenuButton(context),
+            title: Text(periodTitle(pos.mode, pos.anchor, first), key: const Key('calendar-title')),
+            actions: [
+              IconButton(
+                key: const Key('calendar-go-today'),
+                tooltip: l.calGoToToday,
+                icon: const Icon(Icons.today),
+                onPressed: () => _go((mode: pos.mode, anchor: today)),
+              ),
+              IconButton(
+                key: const Key('calendar-prev'),
+                tooltip: l.calPrevious,
+                icon: const Icon(Icons.chevron_left),
+                onPressed: () => _turn(-1),
+              ),
+              IconButton(
+                key: const Key('calendar-next'),
+                tooltip: l.calNext,
+                icon: const Icon(Icons.chevron_right),
+                onPressed: () => _turn(1),
+              ),
+              if (grid && roomy) ...[zoomOut, zoomIn, night],
+              if (grid && !roomy) night,
+              IconButton(
+                key: const Key('calendar-today-tasks'),
+                tooltip: l.calOpenTimeline,
+                icon: const Icon(Icons.view_timeline_outlined),
+                onPressed: () => openTimeline(pos.mode == CalendarMode.day ? pos.anchor : today),
+              ),
+              PopupMenuButton<String>(
+                tooltip: l.calMore,
+                onSelected: (v) => switch (v) {
+                  'in' => zoomCalendar(ref, 1.25),
+                  'out' => zoomCalendar(ref, 1 / 1.25),
+                  _ => showDialog<void>(context: context, builder: (_) => const CalendarsDialog()),
+                },
+                itemBuilder: (_) => [
+                  if (grid && !roomy) ...[
+                    PopupMenuItem(value: 'in', child: Text(l.calZoomIn)),
+                    PopupMenuItem(value: 'out', child: Text(l.calZoomOut)),
+                  ],
+                  PopupMenuItem(value: 'calendars', child: Text(l.calManageCalendars)),
+                ],
+              ),
             ],
           ),
-        ],
+          body: Stack(children: [
+            pages,
+            // Centred at the bottom: there is no + button any more (C1).
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 12,
+              child: SafeArea(
+                child: Center(
+                    child: CalendarModeSwitcher(
+                  mode: pos.mode,
+                  onChanged: (m) => _go((mode: m, anchor: pos.anchor)),
+                )),
+              ),
+            ),
+          ]),
+        ),
       ),
-      body: Stack(children: [
-        data.when(
+    );
+  }
+}
+
+/// One period of one view: its own range, loaded on its own.
+class _CalendarPage extends ConsumerWidget {
+  const _CalendarPage({
+    required this.mode,
+    required this.anchor,
+    required this.first,
+    required this.today,
+    required this.onGo,
+  });
+  final CalendarMode mode;
+  final LocalDate anchor;
+  final Weekday first;
+  final LocalDate today;
+  final ValueChanged<({CalendarMode mode, LocalDate anchor})> onGo;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    final range = rangeOf(mode, anchor, first);
+    return ref.watch(calendarRangeProvider(range)).when(
           loading: () => Center(child: CircularProgressIndicator(semanticsLabel: l.calLoading)),
           error: (e, _) => Center(
             child: Padding(
@@ -130,8 +304,8 @@ class CalendarScreen extends ConsumerWidget {
           ),
           data: (r) {
             final view = _ViewData(r, range.from, range.to, today, first);
-            void toDay(LocalDate d) => go((mode: CalendarMode.day, anchor: d));
-            final body = switch (pos.mode) {
+            void toDay(LocalDate d) => onGo((mode: CalendarMode.day, anchor: d));
+            final body = switch (mode) {
               CalendarMode.day || CalendarMode.week => TimeGridView(
                   days: [for (var d = range.from; !d.isAfter(range.to); d = d.addDays(1)) d],
                   byDay: view.byDay,
@@ -141,14 +315,14 @@ class CalendarScreen extends ConsumerWidget {
                   onSlot: (d, m) => _slotActions(context, ref, d, m),
                   onDay: toDay,
                 ),
-              CalendarMode.month => _MonthView(view, pos.anchor, onDay: toDay),
+              CalendarMode.month => _MonthView(view, anchor, onDay: toDay),
               CalendarMode.year => YearView(
-                  year: pos.anchor.year,
+                  year: anchor.year,
                   counts: {for (final MapEntry(:key, :value) in view.byDay.entries) key: value.length},
                   first: first,
                   today: today,
                   onDay: toDay,
-                  onMonth: (m) => go((mode: CalendarMode.month, anchor: LocalDate(pos.anchor.year, m, 1))),
+                  onMonth: (m) => onGo((mode: CalendarMode.month, anchor: LocalDate(anchor.year, m, 1))),
                 ),
             };
             return Column(
@@ -167,21 +341,7 @@ class CalendarScreen extends ConsumerWidget {
               ],
             );
           },
-        ),
-        // Centred at the bottom: there is no + button any more (C1).
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 12,
-          child: SafeArea(
-            child: Center(child: CalendarModeSwitcher(
-              mode: pos.mode,
-              onChanged: (m) => go((mode: m, anchor: pos.anchor)),
-            )),
-          ),
-        ),
-      ]),
-    );
+        );
   }
 }
 
