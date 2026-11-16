@@ -1,6 +1,6 @@
 // P01 T6b: the real AuthGateway over Supabase Auth (ADR-0003), following
-// spike S-03a: the SDK owns PKCE (S256) and state; Windows uses a fixed
-// loopback redirect, Android a deep link. Tokens, the session and the PKCE
+// spike S-03a: the SDK owns PKCE (S256) and state; Windows uses a loopback
+// redirect on a free port, Android a deep link. Tokens, the session and the PKCE
 // verifier live only in secure storage (LF-INV-SEC-001); nothing here is
 // called on the data read path (LF-INV-SEC-002).
 import 'dart:async';
@@ -134,14 +134,21 @@ class SupabaseAuthGateway implements AuthGateway {
     return session;
   }
 
-  /// Windows: SDK-generated authorize URL (it stores the verifier), capture
-  /// the code on the loopback, then let the SDK exchange it (S-03a).
+  /// Windows: open a loopback on a free port, get the SDK's authorize URL for
+  /// it (the SDK stores the verifier), capture the code, then let the SDK
+  /// exchange it (S-03a).
   Future<void> _desktopGitHub() async {
-    final res = await _auth.getOAuthSignInUrl(
-      provider: OAuthProvider.github,
-      redirectTo: AuthConfig.desktopRedirect,
-    );
-    final code = await DesktopLoopback.capture(authorizeUrl: Uri.parse(res.url));
+    final loopback = await DesktopLoopback.open();
+    final String code;
+    try {
+      final res = await _auth.getOAuthSignInUrl(
+        provider: OAuthProvider.github,
+        redirectTo: loopback.redirect,
+      );
+      code = await loopback.capture(authorizeUrl: Uri.parse(res.url));
+    } finally {
+      await loopback.close();
+    }
     await _auth.exchangeCodeForSession(code);
   }
 

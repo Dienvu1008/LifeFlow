@@ -11,10 +11,12 @@ class AuthConfig {
   static const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
   static const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
-  /// Fixed desktop loopback redirect (spike S-03a). Must be listed in the
-  /// Supabase project's redirect URLs.
-  static const desktopPort = 53682;
-  static const desktopRedirect = 'http://127.0.0.1:$desktopPort/callback';
+  /// Desktop loopback redirect (spike S-03a) on a port the system picks for
+  /// each sign-in (RFC 8252 §7.3; a fixed port can fall in a range Windows
+  /// reserves). The Supabase project's redirect URLs must allow any port:
+  /// [desktopRedirectPattern].
+  static String desktopRedirectFor(int port) => 'http://127.0.0.1:$port/callback';
+  static const desktopRedirectPattern = 'http://127.0.0.1:*/callback';
 
   /// Android deep link (AndroidManifest intent-filter). Must also be listed in
   /// the Supabase project's redirect URLs.
