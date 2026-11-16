@@ -28,6 +28,25 @@ Fixed entry format: **Question / Hypothesis / What was done / Measured result / 
   - On Windows, Hyper-V/WSL reserve port ranges (`netsh int ipv4 show excludedportrange protocol=tcp`). The default local Supabase ports 54320–54329 fell inside one, so the local stack uses 55320–55329 (`supabase/config.toml`).
   - The same reservations cover **127.0.0.1:53682, the fixed loopback port of Windows sign-in (S-03a)**: binding it fails on the development PC now. Fixed on the owner's go-ahead (branch `p04/fix-loopback-port`): the system picks a free loopback port for each sign-in (RFC 8252 §7.3) and the Supabase project allows `http://127.0.0.1:*/callback` (ADR-0003 update 2026-11-14).
 - **Human gate:** owner review with the other P04 spikes.
+## S-04 — Two-replica sync harness with deliberate conflicts
+**PASS (2026-11-14; branch `p04/s04-sync-harness`).**
+- **Question:** Can outbox/inbox sync reconcile deliberate offline conflicts per type (ADR-0015, p04-plan.md D6/D7) without data loss, with an idempotent replay? (p04-plan.md S-04; R-OFFLINE-SYNC.)
+- **Hypothesis:** the P01–P03 outbox, versions and tombstones are enough: push what pending outbox rows touched with the last synced version as base; pull in change-number order; merge per type only when this device also changed the record.
+- **What was done:** a prototype in `packages/infrastructure/test/sync_spike/`:
+  - `fake_server.dart`: the semantics of the S-03 SQL functions (version check, replay accepted once, change numbers, purge keeps the tombstone), plus a dropped connection and a lost answer;
+  - `replica.dart`: push and pull over a real profile store, the last synced copy per record, deterministic operation ids per (device, record, version), local purge;
+  - `resolve.dart`: the per-type rules as one pure function of (last synced, this device, server).
+
+  `sync_spike_test.dart` runs two or three real stores of one workspace (copies of one file, as after joining), 11 tests: GS-17 with a lost answer and a dropped connection; different fields of one task both kept; the same field converges; a completion never lost to an edit; notes on both devices (one kept, the other for review); delete against edit (deleted, the edit kept in the trash, a review); a schedule as one value with a review; measurements append-only; pure rules for occurrence ticks and status; GS-14 (tombstone, then a purge reaching both devices, the tombstone kept on the server); a property test of 12 seeds × 40 random edits and syncs on three devices (always converged, no task and no completion lost).
+- **Measured result:** 11/11 pass; the property run takes about 10 s. Mutations 10/10 killed (status precedence, completion rule, notes review, delete rule, whole-value review, field choice, the take-remote rule, deterministic operation ids, local purge, the server's version check). An eleventh (a set of merged records) survived and showed the set was redundant: a merged record keeps its outbox row pending. It was removed.
+- **Success.** Conflicts are found by version only (SYNC-002) and resolved per type (SYNC-003); a replay is accepted once (SYNC-001).
+- **Findings for T1/T3:**
+  - **An ended focus session writes its execution record without an outbox row of its own**, so that record would never be pushed. A guard test pins it (`missing == ['executionRecord']`); T1 makes every written record carry an outbox row and the guard expects none.
+  - Profile settings that sync (D4, for example the manual-results setting) are not a record kind yet: T1 adds them.
+  - The prototype reads and writes rows through the record registry; T3 applies pulled rows as commands of actor `sync` through the gateway (GOV-001) and keeps the last synced copies in a `sync_base` table.
+  - Ties (same version on both devices) fall back to the later update, then the device name, so every device picks the same value.
+- **Decision:** feeds ADR-0052 with S-03 and S-15.
+- **Human gate:** owner review with the other P04 spikes.
 ## S-01 — Flutter + Drift
 **PASS on Windows (2026-11-04):** CRUD + transaction + persistence across restart + rollback, proven on-device; headless 2/2. Finding → **OQ-STACK-2**: resolved stack is sqlite3 2.9.4 + sqlite3_flutter_libs 0.5.42 (CMake bundling), not sqlite3 3.x build hooks (3.x path not smooth on Flutter yet). Android a follow-up.
 
