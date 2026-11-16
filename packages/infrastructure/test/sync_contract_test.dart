@@ -96,6 +96,16 @@ void main() {
     expect((await host.db.select(host.db.profiles).get()).single.manualResults, 'target');
   });
 
+  test('every record kind names its SQL table and reads one row by id (P04 T3)', () async {
+    final tables = {for (final t in host.db.allTables) t.actualTableName};
+    for (final k in recordKinds) {
+      expect(tables, contains(k.tableName), reason: k.name);
+      expect(await k.readOne(host.db, 'no-such-id'), isNull, reason: k.name);
+    }
+    final t = ok(await DriftTaskService(host.db, gw).create('One'));
+    expect((await recordKindByName['task']!.readOne(host.db, t))!['title'], 'One');
+  });
+
   test('settings are only written for the command\'s own workspace', () async {
     final p = (await ProfileStore(host.db).getActiveProfile())!;
     // Another workspace in the store (as shared workspaces will be, P04b).

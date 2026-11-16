@@ -14,7 +14,7 @@ library;
 //                     CalendarCommandHandler, FocusCommandHandler,
 //                     MeasurementCommandHandler, PeriodCloseHandler,
 //                     GoalCommandHandler, ListCommandHandler,
-//                     WorkspaceSettingsCommandHandler
+//                     WorkspaceSettingsCommandHandler, SyncApplyHandler
 import 'package:application/application.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -131,6 +131,16 @@ void main() {
   const closeHandler = PeriodCloseHandler();
   const goalHandler = GoalCommandHandler();
   const settingsHandler = WorkspaceSettingsCommandHandler();
+  const syncHandler = SyncApplyHandler();
+  // P04 T3: a pulled task, as the sync engine applies it.
+  Map<String, Object?> pulledTask() => {
+        'id': 'ts1', 'workspaceId': wsId, 'ownerId': profileId, 'version': 3,
+        'createdAt': 1794000000000, 'updatedAt': 1794000000000, 'deletedAt': null, 'deletedBy': null,
+        'title': 'From another device', 'status': 'todo', 'isImportant': false, 'taskListId': null,
+        'parentTaskId': null, 'sortOrder': 0, 'targetType': null, 'targetMin': null, 'targetMax': null,
+        'unit': null, 'completionPolicy': 'manual', 'targetAggregation': 'sum', 'isHabit': false,
+        'trackedSince': null, 'tags': '[]', 'notes': null, 'colorIndex': null, 'orderKey': 'a5',
+      };
 
   Command command(String type, Map<String, Object?> payload,
           {String? opId, Version? expected}) =>
@@ -264,6 +274,13 @@ void main() {
           (v, op) => command('StartFocusSession', {'op': 'start', 'id': 's3', 'mode': 'stopwatch'}, opId: op, expected: v)),
       ('focus.markUnrecoverable', focusHandler, 'focusSession', 's3',
           (v, op) => command('MarkFocusSessionUnrecoverable', {'op': 'markUnrecoverable', 'id': 's3', 'cause': 'untrusted'}, opId: op, expected: v)),
+      // P04 T3: a page of pulled changes, applied as one command.
+      ('sync.apply', syncHandler, 'syncBatch', wsId,
+          (v, op) => command(syncApplyAction, {
+                'op': 'apply', 'id': wsId, 'cursor': 7,
+                'changes': [{'kind': 'task', 'mode': 'remote', 'row': pulledTask(), 'serverId': 'f' * 64}],
+                'reviews': [{'kind': 'task', 'recordId': 'ts1', 'field': 'notes', 'kept': 'a', 'other': 'b', 'reason': 'changedOnBoth'}],
+              }, opId: op, expected: v)),
       // P03 UX U2: lists, moves and colours (t2 is top-level, e1 live).
       ('list.create', listHandler, 'taskList', 'l1',
           (v, op) => command('CreateList', {'op': 'create', 'id': 'l1', 'title': 'Work', 'colorIndex': 1}, opId: op, expected: v)),
@@ -316,6 +333,9 @@ void main() {
   test('every handler operation writes the whole atomic set, and a failure '
       'after the handler leaves nothing (FF-ARCH-06, GS-06/07)', () async {
     for (final (label, handler, table, id, build) in steps) {
+      if (label == 'sync.apply') {
+        await db.into(db.syncState).insertOnConflictUpdate(SyncStateCompanion.insert(workspaceId: wsId, deviceId: 'dev'));
+      }
       if (label == 'focus.markUnrecoverable') {
         // A stored row that cannot be trusted: paused without a pause time.
         await (db.update(db.focusSessions)..where((s) => s.id.equals('s3')))
@@ -325,7 +345,8 @@ void main() {
               label.startsWith('task.create') ||
               label.startsWith('focus.start') ||
               label.startsWith('measurement.') ||
-              label == 'period.close'
+              label == 'period.close' ||
+              label == 'sync.apply'
           ? null
           : Version(await versionOf(table, id));
 

@@ -395,6 +395,8 @@ class SyncBase extends Table {
   TextColumn get recordId => text()();
   IntColumn get version => integer()();
   TextColumn get data => text()(); // the record's JSON as last synced
+  // P04 T3 (v11): the record's server id, to find it when the server purges.
+  TextColumn get serverId => text().nullable()();
   @override
   Set<Column> get primaryKey => {kind, recordId};
 }
@@ -410,4 +412,23 @@ class SyncState extends Table {
   TextColumn get lastResult => text().nullable()();
   @override
   Set<Column> get primaryKey => {workspaceId};
+}
+
+/// P04 T3 (schema v11, ADR-0056): "Changes to review" (p04-plan.md D9): a
+/// value that gave way in a merge, kept for the user. Device bookkeeping of
+/// this device's merges: not exported, not synced.
+@DataClassName('SyncReviewRow')
+class SyncReviews extends Table {
+  TextColumn get id => text()();
+  TextColumn get workspaceId => text()();
+  TextColumn get kind => text()();
+  TextColumn get recordId => text()();
+  TextColumn get field => text()(); // '*', a field, or 'deletedAt'
+  TextColumn get kept => text()(); // JSON
+  TextColumn get other => text()(); // JSON
+  TextColumn get reason => text()(); // changedOnBoth | deletedAndEdited | unreadable
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get resolvedAt => dateTime().nullable()();
+  @override
+  Set<Column> get primaryKey => {id};
 }

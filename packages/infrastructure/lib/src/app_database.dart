@@ -23,6 +23,7 @@ part 'app_database.g.dart';
 ///   v9 (dogfooding F3) tasks.notes (ADR-0051)
 ///   v10 (P04 T1) workspace_settings (takes over profiles.manual_results),
 ///                sync_base, sync_state; outbox index by status (ADR-0053)
+///   v11 (P04 T3) sync_reviews: Changes to review; sync_base.server_id (ADR-0056)
 @DriftDatabase(
   tables: [
     Profiles, Workspaces, TaskLists, Tasks, AuditLog, Outbox, EventLog,
@@ -31,14 +32,14 @@ part 'app_database.g.dart';
     Reminders,
     FocusSessions, ExecutionRecords, Measurements, PeriodResults, Goals,
     Milestones, GoalLinks,
-    WorkspaceSettings, SyncBase, SyncState,
+    WorkspaceSettings, SyncBase, SyncState, SyncReviews,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   /// The schema this build writes (and the newest export it accepts).
-  static const currentSchemaVersion = 10;
+  static const currentSchemaVersion = 11;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -94,6 +95,10 @@ class AppDatabase extends _$AppDatabase {
             }
             await _createSyncIndexes();
             await _moveManualResults();
+          }
+          if (from < 11) {
+            await m.createTable(syncReviews);
+            if (from == 10) await m.addColumn(syncBase, syncBase.serverId);
           }
         },
         beforeOpen: (details) async {

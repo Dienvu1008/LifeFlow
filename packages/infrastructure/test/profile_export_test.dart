@@ -140,6 +140,7 @@ void main() {
         'restore_snapshots',
         // P04 T1 (schema v10): synced settings; sync bookkeeping (not exported)
         ...['workspace_settings', 'sync_base', 'sync_state'],
+        'sync_reviews', // P04 T3 (schema v11), not exported
       });
       expect(host.db.allTables.length,
           exportedTables.length + notExportedTables.length);

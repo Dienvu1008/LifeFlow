@@ -8,5 +8,6 @@ export 'src/goals.dart';
 export 'src/item_color.dart';
 export 'src/measurement.dart';
 export 'src/order_key.dart';
+export 'src/sync_merge.dart';
 export 'src/task.dart';
 export 'src/workspace.dart';

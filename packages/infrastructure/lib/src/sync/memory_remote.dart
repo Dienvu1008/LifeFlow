@@ -40,6 +40,9 @@ class MemoryRemoteServer {
   /// Makes the next calls fail as if the server could not be reached.
   bool unavailable = false;
 
+  /// The next push is stored, then its answer is lost (the device retries).
+  bool loseNextAnswer = false;
+
   /// For tests: ages a record's last change (e.g. past the retention).
   void age(String workspaceId, String id, Duration by) {
     final r = _workspaces[workspaceId]!.records[id]!;
@@ -157,6 +160,10 @@ class MemoryRemoteGateway implements RemoteGateway {
       write();
     }
     w.lastSeq = seq;
+    if (server.loseNextAnswer) {
+      server.loseNextAnswer = false;
+      throw const RemoteFailure(RemoteFailureKind.unavailable, 'answer lost');
+    }
     return PushResult(accepted: accepted, conflicts: conflicts);
   }
 
