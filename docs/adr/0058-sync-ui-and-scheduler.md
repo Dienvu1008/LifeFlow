@@ -56,3 +56,18 @@
   - `sync_flow_test.dart` (11 widget tests with a fake service): no sync in the build, a guest, the drawer line, recovery key shown, saved and confirmed, passphrase, offline then Try again, join with a wrong then the right key, use only the synced data with the export saved and undo, Changes to review, When to sync, Sync now and the update notice, turning off and deleting asked first.
   - An app integration test on real stores and the in-memory server: device A turns sync on with a recovery key through the UI; device B signs in, joins with the 24 words and shows both tasks.
 - Mutations: 24 of 24 killed. This needed a test that an unreadable or delete item cannot be taken back on a live record, and one that the scheduler makes no call when sync is off. A duplicate stopped check was removed.
+
+## T6 finding (2026-11-16): schema v12, the outbox key with the kind
+On the owner's two devices, neither showed the other's tasks after "Sync now". The server held one workspace with the records of both devices, so the join and the upload had worked.
+- **Cause.** An occurrence's exception and its completion have the same id (`task:<id>@<date>`). That happens for a habit occurrence that is moved or edited and then done. The outbox key was (operation, record id), so a pulled page holding both broke the key, and the whole page was refused (`UNIQUE constraint failed: outbox.operation_id, outbox.entity_id`). The same pair under one join or one restore would have hit the same error; the join's upload skipped the second row silently.
+- **Second bug.** The store error was not a `RemoteFailure`, so it escaped `syncNow()` as an exception. "Sync now" showed nothing and the status kept its old result.
+- **Fix:**
+  - Schema v12: the outbox key is (operation, kind, record id). The upgrade rebuilds the table with its rows and index (`TableMigration`). The export's duplicate check uses the same key.
+  - The engine reports any other error as `failed`, keeping only the error type: a store error can quote the values it was writing. The cursor does not move, because the page's transaction rolled back.
+  - `DriftSyncService` writes every sync that is not up to date to the device's local log as `[sync] SyncReport(...)`, with counts only.
+- **Sealed records still say schema 11.** `AppDatabase.recordSchemaVersion` is the last schema that changed a synced record. v12 changed only the local outbox, so a device on v11 still reads what a v12 device sends, without "Update LifeFlow".
+- **Tests:**
+  - The case reproduced: an occurrence moved and done reaches the other device.
+  - An unexpected error is a failed sync with a log line, and the next sync goes on.
+  - A v11 store upgrades with its outbox rows kept and accepts both kinds under one id; the v2–v11 upgrade loop covers the rest.
+  - Mutations 2 of 2 killed.

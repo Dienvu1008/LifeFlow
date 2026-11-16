@@ -97,6 +97,20 @@ class Services {
 /// Turns a current profile store back into what a build with schema [version]
 /// wrote (for migration tests). Data in the tables that remain is kept.
 Future<void> rewindProfileStore(AppDatabase db, int version) async {
+  if (version < 12) {
+    // The outbox key without the kind (v1-v11).
+    final ddl = (await db.customSelect("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'outbox'").getSingle())
+        .read<String>('sql');
+    final old = ddl.replaceFirst(
+        RegExp(r'PRIMARY KEY\s*\(\s*"?operation_id"?\s*,\s*"?entity_type"?\s*,\s*"?entity_id"?\s*\)'),
+        'PRIMARY KEY (operation_id, entity_id)');
+    if (old == ddl) throw StateError('the v12 outbox key was not found: $ddl');
+    await db.customStatement('ALTER TABLE outbox RENAME TO outbox_v12');
+    await db.customStatement(old);
+    await db.customStatement('INSERT INTO outbox SELECT * FROM outbox_v12');
+    await db.customStatement('DROP TABLE outbox_v12');
+    await db.customStatement('CREATE INDEX outbox_status ON outbox (status, entity_type, entity_id)');
+  }
   if (version < 11) {
     await db.customStatement('DROP TABLE sync_reviews');
     await db.customStatement('ALTER TABLE sync_base DROP COLUMN server_id');

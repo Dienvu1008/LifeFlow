@@ -3283,7 +3283,7 @@ class $OutboxTable extends Outbox with TableInfo<$OutboxTable, OutboxData> {
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {operationId, entityId};
+  Set<GeneratedColumn> get $primaryKey => {operationId, entityType, entityId};
   @override
   OutboxData map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';

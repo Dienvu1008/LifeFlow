@@ -39,7 +39,12 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   /// The schema this build writes (and the newest export it accepts).
-  static const currentSchemaVersion = 11;
+  static const currentSchemaVersion = 12;
+
+  /// The last schema that changed a synced record's shape: what a sealed
+  /// record says it is (ADR-0056). v12 changed only the local outbox, so a
+  /// device on v11 still reads what a v12 device sends.
+  static const recordSchemaVersion = 11;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -99,6 +104,13 @@ class AppDatabase extends _$AppDatabase {
           if (from < 11) {
             await m.createTable(syncReviews);
             if (from == 10) await m.addColumn(syncBase, syncBase.serverId);
+          }
+          if (from < 12) {
+            // P04 T6 (ADR-0058): the outbox key gains the kind; the rows are
+            // copied as they are.
+            await m.alterTable(TableMigration(outbox));
+            await customStatement('DROP INDEX IF EXISTS outbox_status');
+            await _createSyncIndexes();
           }
         },
         beforeOpen: (details) async {

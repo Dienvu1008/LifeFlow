@@ -96,6 +96,12 @@ class SyncEngine {
         RemoteFailureKind.notYours => SyncOutcome.notYours,
         RemoteFailureKind.refused => SyncOutcome.failed,
       }, e.detail);
+    } catch (e) {
+      // P04 T6: anything else (a store error while applying a page) is a
+      // failed sync, never an exception out of "Sync now". The page's
+      // transaction rolled back; the cursor did not move. Only the type is
+      // kept: a store error can quote the values it was writing.
+      report = _report(SyncOutcome.failed, 'error: ${e.runtimeType}');
     }
     return _finish(report);
   }
@@ -155,7 +161,7 @@ class SyncEngine {
       final sealed = await sealer.seal(sid, version, {
         'kind': kind,
         'id': id,
-        'schemaVersion': AppDatabase.currentSchemaVersion,
+        'schemaVersion': AppDatabase.recordSchemaVersion,
         'row': row,
       });
       items.add((
@@ -261,7 +267,7 @@ class SyncEngine {
     final kindName = env['kind'];
     final kind = kindName is String ? recordKindByName[kindName] : null;
     final schema = env['schemaVersion'];
-    if (kind == null || schema is! int || schema > AppDatabase.currentSchemaVersion) {
+    if (kind == null || schema is! int || schema > AppDatabase.recordSchemaVersion) {
       _updateNeeded = true;
       return false;
     }

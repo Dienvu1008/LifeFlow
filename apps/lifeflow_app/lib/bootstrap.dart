@@ -177,6 +177,7 @@ Future<AppWiring> openSession({
         }),
         keyring: WorkspaceKeyring(sync.keysFor),
         transfer: transfer,
+        log: (line) => onWarning?.call(line),
       );
       scheduler = SyncScheduler(
           service: syncService, when: settings.syncWhen, onError: (e) => onWarning?.call('[sync] $e'));

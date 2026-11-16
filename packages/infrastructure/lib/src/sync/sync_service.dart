@@ -30,7 +30,12 @@ class DriftSyncService implements SyncService {
     required this.remote,
     required this.keyring,
     this.transfer,
+    this.log,
   }) : _store = ProfileStore(db);
+
+  /// P04 T6: every sync that did not end up to date, for the device's local
+  /// log (counts and the kind of failure; never content or a key).
+  final void Function(String line)? log;
 
   final AppDatabase db;
   final DriftCommandGateway gateway;
@@ -329,6 +334,18 @@ class DriftSyncService implements SyncService {
   }
 
   Future<SyncReport> _syncOnce() async {
+    SyncReport r;
+    try {
+      r = await _syncOnceUnguarded();
+    } catch (e) {
+      // A key store or store error: a failed sync, never an exception.
+      r = SyncReport(SyncOutcome.failed, detail: 'error: ${e.runtimeType}');
+    }
+    if (r.outcome != SyncOutcome.upToDate) log?.call('[sync] $r');
+    return r;
+  }
+
+  Future<SyncReport> _syncOnceUnguarded() async {
     final s = await _state();
     if (s == null) return SyncReport(SyncOutcome.notOn);
     final key = await keyring.keyOf(s.workspaceId);

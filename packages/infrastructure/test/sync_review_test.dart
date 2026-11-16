@@ -172,6 +172,37 @@ void main() {
     expect((await b.task(id))['title'], 'Restored later');
   });
 
+  test('T6 finding: an occurrence moved and done (same id, two kinds) reaches the other device', () async {
+    final (a, b) = await pair();
+    final plan = DriftTaskScheduling(a.db, a.gw);
+    final id = ok(await a.tasks.create('Run'));
+    ok(await plan.setSchedule(id, TaskScheduleInput(
+        start: SchedulePointInput.date(LocalDate(2026, 11, 9)), repeat: const RepeatInput(frequency: RepeatFrequency.daily))));
+    // 'task:<id>@2026-11-10' is the id of both the exception and the completion.
+    ok(await plan.changeOccurrence(id, LocalDate(2026, 11, 10), MoveThisOccurrence(LocalDate(2026, 11, 11))));
+    ok(await plan.setOccurrenceDone(id, LocalDate(2026, 11, 10), done: true));
+    expect((await a.sync.syncNow()).outcome, SyncOutcome.upToDate);
+    final r = await b.sync.syncNow();
+    expect(r.outcome, SyncOutcome.upToDate, reason: '$r');
+    expect(await b.task(id), isNotNull);
+    expect(await recordKindByName['exception']!.readOne(b.db, 'task:$id@2026-11-10'), isNotNull);
+    expect(await recordKindByName['completion']!.readOne(b.db, 'task:$id@2026-11-10'), isNotNull);
+  });
+
+  test('an unexpected error is a failed sync with a log line, never an exception from Sync now', () async {
+    final (a, _) = await pair();
+    final lines = <String>[];
+    final broken = DriftSyncService(
+        db: a.db, gateway: a.gw, remote: _BrokenPull(a.remote), keyring: a.sync.keyring, log: lines.add);
+    ok(await a.tasks.create('Still here'));
+    final r = await broken.syncNow();
+    expect((r.outcome, r.detail), (SyncOutcome.failed, 'error: StateError'));
+    expect(lines.single, startsWith('[sync] SyncReport(failed'));
+    expect(lines.single, isNot(contains('Still here')), reason: 'no content in the log');
+    expect((await a.sync.status()).lastResult, SyncOutcome.failed);
+    expect((await a.sync.syncNow()).outcome, SyncOutcome.upToDate, reason: 'the next sync goes on');
+  });
+
   test('the status is watched: a waiting edit and a running sync show', () async {
     final (a, _) = await pair();
     final seen = <SyncStatus>[];
@@ -276,4 +307,23 @@ void main() {
       expect(await s.run(), isNull);
     });
   });
+}
+
+/// The server, except that pulling fails with something unexpected.
+class _BrokenPull implements RemoteGateway {
+  _BrokenPull(this.inner);
+  final RemoteGateway inner;
+  @override
+  Future<List<SealedRecord>> pull(String ws, int after, {int limit = 1000}) async =>
+      throw StateError('unexpected');
+  @override
+  dynamic noSuchMethod(Invocation i) => Function.apply(
+      switch (i.memberName) {
+        #workspaces => inner.workspaces,
+        #push => inner.push,
+        #purge => inner.purge,
+        _ => throw UnimplementedError('${i.memberName}'),
+      },
+      i.positionalArguments,
+      i.namedArguments);
 }
