@@ -21,6 +21,8 @@ part 'app_database.g.dart';
 ///                events.list_id; order keys backfilled (ADR-0046)
 ///   v8 (P03 UX U6) profiles.manual_results (ADR-0050)
 ///   v9 (dogfooding F3) tasks.notes (ADR-0051)
+///   v10 (P04 T1) workspace_settings (takes over profiles.manual_results),
+///                sync_base, sync_state; outbox index by status (ADR-0053)
 @DriftDatabase(
   tables: [
     Profiles, Workspaces, TaskLists, Tasks, AuditLog, Outbox, EventLog,
@@ -29,13 +31,14 @@ part 'app_database.g.dart';
     Reminders,
     FocusSessions, ExecutionRecords, Measurements, PeriodResults, Goals,
     Milestones, GoalLinks,
+    WorkspaceSettings, SyncBase, SyncState,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   /// The schema this build writes (and the newest export it accepts).
-  static const currentSchemaVersion = 9;
+  static const currentSchemaVersion = 10;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -47,6 +50,7 @@ class AppDatabase extends _$AppDatabase {
           await _createTaskTitleFts();
           await _createPlanningIndexes();
           await _createExecutionIndexes();
+          await _createSyncIndexes();
         },
         onUpgrade: (m, from, to) async {
           if (from < 2) await m.addColumn(profiles, profiles.signedOut);
@@ -84,6 +88,13 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 8) await m.addColumn(profiles, profiles.manualResults);
           if (from < 9) await m.addColumn(tasks, tasks.notes);
+          if (from < 10) {
+            for (final TableInfo t in [workspaceSettings, syncBase, syncState]) {
+              await m.createTable(t);
+            }
+            await _createSyncIndexes();
+            await _moveManualResults();
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
@@ -117,6 +128,28 @@ class AppDatabase extends _$AppDatabase {
       await customStatement('UPDATE $table SET order_key = ? WHERE id = ?', [keys[r.id], r.id]);
     }
   }
+
+  /// Schema v10: the result policy moves from the profile to its workspace's
+  /// settings, which sync (only 'tick' needs a row; no row is the default).
+  Future<void> _moveManualResults() async {
+    final now = DateTime.now().toUtc();
+    for (final r in await customSelect(
+        "SELECT id, active_workspace_id FROM profiles WHERE manual_results = 'tick'").get()) {
+      final ws = r.read<String>('active_workspace_id');
+      await into(workspaceSettings).insertOnConflictUpdate(WorkspaceSettingsCompanion.insert(
+            id: ws,
+            workspaceId: ws,
+            ownerId: r.read<String>('id'),
+            createdAt: now,
+            updatedAt: now,
+            manualResults: const Value('tick'),
+          ));
+    }
+  }
+
+  /// P04 T1: the push reads the pending outbox rows.
+  Future<void> _createSyncIndexes() =>
+      customStatement('CREATE INDEX outbox_status ON outbox (status, entity_type, entity_id)');
 
   /// Range pre-filter for window queries (only rows whose series can touch
   /// the window are expanded), and lookups by subject.

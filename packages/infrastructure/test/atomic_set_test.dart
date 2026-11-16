@@ -13,7 +13,8 @@ library;
 //                     ProfileRestoreHandler, EventCommandHandler,
 //                     CalendarCommandHandler, FocusCommandHandler,
 //                     MeasurementCommandHandler, PeriodCloseHandler,
-//                     GoalCommandHandler, ListCommandHandler
+//                     GoalCommandHandler, ListCommandHandler,
+//                     WorkspaceSettingsCommandHandler
 import 'package:application/application.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -84,6 +85,12 @@ void main() {
     ];
   }
 
+  /// The version of every record, by "kind|id".
+  Future<Map<String, int>> versions() async => {
+        for (final k in recordKinds)
+          for (final r in await k.readAll(db)) '${k.name}|${r['id']}': r['version'] as int,
+      };
+
   Future<String> aggregates() async => [
         for (final r in await db.select(db.tasks).get()) r.toJson(),
         for (final r in await db.select(db.profiles).get()) r.toJson(),
@@ -108,6 +115,7 @@ void main() {
         'focusSession' => (await (db.select(db.focusSessions)..where((t) => t.id.equals(id))).getSingle()).version,
         'goal' => (await (db.select(db.goals)..where((t) => t.id.equals(id))).getSingle()).version,
         'taskList' => (await (db.select(db.taskLists)..where((t) => t.id.equals(id))).getSingle()).version,
+        'workspaceSettings' => (await (db.select(db.workspaceSettings)..where((t) => t.id.equals(id))).getSingle()).version,
         _ => (await (db.select(db.profiles)..where((t) => t.id.equals(id))).getSingle()).version,
       };
 
@@ -122,6 +130,7 @@ void main() {
   const measurementHandler = MeasurementCommandHandler();
   const closeHandler = PeriodCloseHandler();
   const goalHandler = GoalCommandHandler();
+  const settingsHandler = WorkspaceSettingsCommandHandler();
 
   Command command(String type, Map<String, Object?> payload,
           {String? opId, Version? expected}) =>
@@ -296,9 +305,11 @@ void main() {
           (v, op) => command('SignOut', {'op': 'signOut', 'id': profileId}, opId: op, expected: v)),
       ('profile.resume', profileHandler, 'profile', profileId,
           (v, op) => command('ResumeSession', {'op': 'resume', 'id': profileId, 'accountId': 'acc'}, opId: op, expected: v)),
-      // P03 UX U6 (U-D13).
-      ('profile.setManualResults', profileHandler, 'profile', profileId,
-          (v, op) => command('SetManualResults', {'op': 'setManualResults', 'id': profileId, 'value': 'tick'}, opId: op, expected: v)),
+      // P03 UX U6 (U-D13); a setting of the workspace since P04 T1.
+      ('workspaceSettings.create', settingsHandler, 'workspaceSettings', wsId,
+          (v, op) => command('SetManualResults', {'op': 'setManualResults', 'id': wsId, 'value': 'tick'}, opId: op, expected: v)),
+      ('workspaceSettings.setManualResults', settingsHandler, 'workspaceSettings', wsId,
+          (v, op) => command('SetManualResults', {'op': 'setManualResults', 'id': wsId, 'value': 'target'}, opId: op, expected: v)),
     ];
   });
 
@@ -333,6 +344,7 @@ void main() {
 
       // 2) The real run -> the FULL set, in the same commit.
       final okOp = 'ok-${n++}';
+      final versionsBefore = await versions();
       final r = await gw.execute(build(current, okOp), handler);
       expect(r, isA<CommandOk>(), reason: '$label: $r');
       final set = await governance(okOp);
@@ -340,6 +352,19 @@ void main() {
       expect(set[1], greaterThanOrEqualTo(1), reason: '$label: outbox row missing');
       expect(set[2], greaterThanOrEqualTo(1), reason: '$label: event-log row missing');
       expect(set[3], 1, reason: '$label: dedupe row missing');
+
+      // P04 T1 (ADR-0053): every record the operation wrote has an outbox
+      // row of its own under the operation, named by its record kind, so
+      // sync pushes it (LF-INV-OUTBOX-001; spike S-04).
+      final versionsAfter = await versions();
+      final outboxed = {
+        for (final o in await (db.select(db.outbox)..where((o) => o.operationId.equals(okOp))).get())
+          '${o.entityType}|${o.entityId}'
+      };
+      for (final key in versionsAfter.keys) {
+        if (versionsBefore[key] == versionsAfter[key]) continue;
+        expect(outboxed, contains(key), reason: '$label wrote $key without an outbox row');
+      }
     }
   });
 

@@ -19,7 +19,7 @@ import 'command_gateway.dart';
 ///   bind     : id (profileId), accountId, provider, moveData(bool), hasData(bool)
 ///   signOut  : id (profileId)            — keeps the binding, locks (ADR-0024)
 ///   resume   : id (profileId), accountId — unlock; only the owning account
-///   setManualResults : id, value ('target' | 'tick') — P03 UX U6 (U-D13)
+///   (setManualResults moved to WorkspaceSettingsCommandHandler in P04 T1)
 ///
 /// Switching profiles is a device-level registry change (ProfileDirectory),
 /// not a mutation of profile data.
@@ -59,18 +59,6 @@ class ProfileCommandHandler implements CommandHandler {
         return _signOut(db, row, newVersion);
       case 'resume':
         return _resume(db, cmd, row, newVersion);
-      case 'setManualResults':
-        final v = cmd.payload['value'];
-        if (v != 'target' && v != 'tick') throw DomainRejection('unknown result policy');
-        if (row.manualResults == v) throw DomainRejection('the result policy is already $v');
-        await (db.update(db.profiles)..where((p) => p.id.equals(row.id)))
-            .write(ProfilesCompanion(manualResults: Value(v as String), version: Value(newVersion.value)));
-        return HandlerOutcome(
-          entityId: row.id,
-          operationType: 'update',
-          changeSet: {'id': row.id, 'manualResults': v},
-          events: [DomainEvent('ManualResultsChanged', {'profileId': row.id, 'value': v})],
-        );
       default:
         throw DomainRejection('unknown op: $op');
     }

@@ -7,6 +7,8 @@
 // Times come from the injected clock. The session's instants are stored as
 // exact UTC milliseconds, so what is derived after a relaunch is what was
 // derived before it (LF-INV-EXEC-002).
+import 'dart:convert';
+
 import 'package:application/application.dart';
 import 'package:domain/domain.dart' as d;
 import 'package:drift/drift.dart';
@@ -247,6 +249,19 @@ class FocusCommandHandler implements CommandHandler {
                 actualStart: draft.actualStart.utc,
                 actualEnd: draft.actualEnd.utc,
                 focusMs: draft.focusTime.inMilliseconds,
+              ));
+          // P04 T1 (ADR-0053): the record is a record of its own and syncs
+          // with its own outbox row (LF-INV-OUTBOX-001; found in spike S-04).
+          final record = await (db.select(db.executionRecords)..where((r) => r.id.equals(recordId))).getSingle();
+          await db.into(db.outbox).insert(OutboxCompanion.insert(
+                operationId: cmd.operationId,
+                entityId: recordId,
+                entityType: 'executionRecord',
+                workspaceId: cmd.workspaceId,
+                actorId: cmd.actor.toString(),
+                operationType: 'create',
+                payload: jsonEncode(record.toJson()),
+                createdAt: now.utc,
               ));
           events.add(DomainEvent('ExecutionRecorded',
               {'id': recordId, 'sessionId': id, 'taskId': draft.taskId, 'focusMs': draft.focusTime.inMilliseconds}));

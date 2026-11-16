@@ -42,3 +42,4 @@ export 'src/order_backfill.dart';
 export 'src/organize_ops.dart';
 export 'src/organize_rows.dart';
 export 'src/overview_service.dart';
+export 'src/workspace_settings_handler.dart';

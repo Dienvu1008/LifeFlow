@@ -23,6 +23,7 @@ import 'package:time_kernel/time_kernel.dart' as tk;
 import 'app_database.dart';
 import 'execution_rows.dart';
 import 'schedule_mapping.dart';
+import 'workspace_settings_handler.dart';
 
 /// Results are derived at most this far back.
 const maxTrackedDays = 1100;
@@ -162,9 +163,8 @@ class TrackedTask {
           .get())
         r.id: r,
     };
-    final profile = await (db.select(db.profiles)..limit(1)).getSingleOrNull();
     return TrackedTask._(row, spec, rule, exceptions, done, measurements, stored,
-        tickResults: profile?.manualResults == 'tick');
+        tickResults: await ticksAreResults(db, row.workspaceId));
   }
 
   d.MeasurableTarget? get target => targetOfRow(row);

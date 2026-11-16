@@ -187,7 +187,7 @@ void main() {
       expect(await store.db.select(store.db.schedules).get(), isEmpty);
     });
 
-    for (final from in [2, 3, 4, 5, 6, 7, 8]) {
+    for (final from in [2, 3, 4, 5, 6, 7, 8, 9]) {
       test('an existing v$from profile store upgrades to the latest schema, '
           'data intact (ADR-0025, ADR-0029)', () async {
         var dir = await openDirectory(base, keys);
@@ -218,8 +218,8 @@ void main() {
             "SELECT name FROM sqlite_master WHERE type = 'index' AND name IN "
             "('schedules_range','exceptions_subject','completions_task','reminders_subject',"
             "'measurements_task_date','focus_sessions_state','execution_records_task','period_results_task',"
-            "'milestones_goal','goal_links_goal','goal_links_item')").get();
-        expect(idx, hasLength(11));
+            "'milestones_goal','goal_links_goal','goal_links_item','outbox_status')").get();
+        expect(idx, hasLength(12));
         // P03 task columns get their defaults on existing rows (ADR-0037).
         final task = (await db.select(db.tasks).get()).single;
         expect((task.targetAggregation, task.isHabit, task.trackedSince), ('sum', false, null));
@@ -244,6 +244,27 @@ void main() {
         expect((task.colorIndex, isValidOrderKey(task.orderKey)), (null, true));
       });
     }
+
+    test('v9 -> v10: the result policy moves from the profile to its workspace''s settings (ADR-0053)', () async {
+      var dir = await openDirectory(base, keys);
+      final id = (await dir.active())!.id;
+      final host = TestHost(dir);
+      await host.openActive();
+      final ws = (await ProfileStore(host.db).getActiveProfile())!.activeWorkspaceId.value;
+      await rewindProfileStore(host.db, 9);
+      await host.db.customStatement("UPDATE profiles SET manual_results = 'tick'");
+      await host.close();
+      await dir.close();
+
+      dir = await openDirectory(base, keys);
+      addTearDown(dir.close);
+      final store = await dir.openProfile(id);
+      addTearDown(store.db.close);
+      final s = (await store.db.select(store.db.workspaceSettings).get()).single;
+      expect((s.id, s.workspaceId, s.ownerId, s.manualResults, s.version), (ws, ws, id, 'tick', 1));
+      expect(await DriftHabitQueries(store.db, _UtcTime())
+          .manualResults(), ManualResults.tick);
+    });
 
     test('v6 -> v7 keys every list, task and event in the order shown so far (ADR-0046)', () async {
       var dir = await openDirectory(base, keys);
@@ -475,4 +496,11 @@ void main() {
       expect(await a.select(a.tasks).get(), hasLength(2));
     });
   });
+}
+
+class _UtcTime implements DeviceTime {
+  @override
+  Instant now() => Instant.now();
+  @override
+  String zone() => 'UTC';
 }

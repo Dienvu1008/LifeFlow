@@ -372,3 +372,42 @@ class GoalLinks extends Table with SyncableColumns {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+// --- P04 T1 (schema v10, ADR-0053): the sync storage contract ----------------
+
+/// The settings of a workspace that sync with it (p04-plan.md D4): one row
+/// per workspace, its id the workspace id; no row means the defaults. It
+/// takes over `profiles.manual_results`, which stays as a legacy column
+/// (migrations are additive) and is no longer read or written.
+class WorkspaceSettings extends Table with SyncableColumns {
+  // P03 UX U6 (U-D13): 'target' (the target's judgement) or 'tick'.
+  TextColumn get manualResults => text().withDefault(const Constant('target'))();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// The last synced copy of each record, for three-way merges (ADR-0015,
+/// p04-plan.md D6; spike S-04). Device bookkeeping: never exported, never
+/// synced.
+@DataClassName('SyncBaseRow')
+class SyncBase extends Table {
+  TextColumn get kind => text()();
+  TextColumn get recordId => text()();
+  IntColumn get version => integer()();
+  TextColumn get data => text()(); // the record's JSON as last synced
+  @override
+  Set<Column> get primaryKey => {kind, recordId};
+}
+
+/// Where this device is in the sync of a workspace: the last change number
+/// pulled, this device's id and the last result. Device bookkeeping.
+@DataClassName('SyncStateRow')
+class SyncState extends Table {
+  TextColumn get workspaceId => text()();
+  TextColumn get deviceId => text()();
+  IntColumn get cursor => integer().withDefault(const Constant(0))();
+  DateTimeColumn get lastSyncAt => dateTime().nullable()();
+  TextColumn get lastResult => text().nullable()();
+  @override
+  Set<Column> get primaryKey => {workspaceId};
+}

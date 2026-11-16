@@ -13944,6 +13944,1070 @@ class GoalLinksCompanion extends UpdateCompanion<GoalLinkRow> {
   }
 }
 
+class $WorkspaceSettingsTable extends WorkspaceSettings
+    with TableInfo<$WorkspaceSettingsTable, WorkspaceSetting> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WorkspaceSettingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _workspaceIdMeta =
+      const VerificationMeta('workspaceId');
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+      'workspace_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _ownerIdMeta =
+      const VerificationMeta('ownerId');
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+      'owner_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _versionMeta =
+      const VerificationMeta('version');
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+      'version', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _deletedByMeta =
+      const VerificationMeta('deletedBy');
+  @override
+  late final GeneratedColumn<String> deletedBy = GeneratedColumn<String>(
+      'deleted_by', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _manualResultsMeta =
+      const VerificationMeta('manualResults');
+  @override
+  late final GeneratedColumn<String> manualResults = GeneratedColumn<String>(
+      'manual_results', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('target'));
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        workspaceId,
+        ownerId,
+        version,
+        createdAt,
+        updatedAt,
+        deletedAt,
+        deletedBy,
+        manualResults
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workspace_settings';
+  @override
+  VerificationContext validateIntegrity(Insertable<WorkspaceSetting> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+          _workspaceIdMeta,
+          workspaceId.isAcceptableOrUnknown(
+              data['workspace_id']!, _workspaceIdMeta));
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(_ownerIdMeta,
+          ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta));
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('version')) {
+      context.handle(_versionMeta,
+          version.isAcceptableOrUnknown(data['version']!, _versionMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
+    if (data.containsKey('deleted_by')) {
+      context.handle(_deletedByMeta,
+          deletedBy.isAcceptableOrUnknown(data['deleted_by']!, _deletedByMeta));
+    }
+    if (data.containsKey('manual_results')) {
+      context.handle(
+          _manualResultsMeta,
+          manualResults.isAcceptableOrUnknown(
+              data['manual_results']!, _manualResultsMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  WorkspaceSetting map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkspaceSetting(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      workspaceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}workspace_id'])!,
+      ownerId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}owner_id'])!,
+      version: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}version'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
+      deletedBy: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}deleted_by']),
+      manualResults: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}manual_results'])!,
+    );
+  }
+
+  @override
+  $WorkspaceSettingsTable createAlias(String alias) {
+    return $WorkspaceSettingsTable(attachedDatabase, alias);
+  }
+}
+
+class WorkspaceSetting extends DataClass
+    implements Insertable<WorkspaceSetting> {
+  final String id;
+  final String workspaceId;
+  final String ownerId;
+  final int version;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final String? deletedBy;
+  final String manualResults;
+  const WorkspaceSetting(
+      {required this.id,
+      required this.workspaceId,
+      required this.ownerId,
+      required this.version,
+      required this.createdAt,
+      required this.updatedAt,
+      this.deletedAt,
+      this.deletedBy,
+      required this.manualResults});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['version'] = Variable<int>(version);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || deletedBy != null) {
+      map['deleted_by'] = Variable<String>(deletedBy);
+    }
+    map['manual_results'] = Variable<String>(manualResults);
+    return map;
+  }
+
+  WorkspaceSettingsCompanion toCompanion(bool nullToAbsent) {
+    return WorkspaceSettingsCompanion(
+      id: Value(id),
+      workspaceId: Value(workspaceId),
+      ownerId: Value(ownerId),
+      version: Value(version),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      deletedBy: deletedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedBy),
+      manualResults: Value(manualResults),
+    );
+  }
+
+  factory WorkspaceSetting.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkspaceSetting(
+      id: serializer.fromJson<String>(json['id']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      version: serializer.fromJson<int>(json['version']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      deletedBy: serializer.fromJson<String?>(json['deletedBy']),
+      manualResults: serializer.fromJson<String>(json['manualResults']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'version': serializer.toJson<int>(version),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'deletedBy': serializer.toJson<String?>(deletedBy),
+      'manualResults': serializer.toJson<String>(manualResults),
+    };
+  }
+
+  WorkspaceSetting copyWith(
+          {String? id,
+          String? workspaceId,
+          String? ownerId,
+          int? version,
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          Value<DateTime?> deletedAt = const Value.absent(),
+          Value<String?> deletedBy = const Value.absent(),
+          String? manualResults}) =>
+      WorkspaceSetting(
+        id: id ?? this.id,
+        workspaceId: workspaceId ?? this.workspaceId,
+        ownerId: ownerId ?? this.ownerId,
+        version: version ?? this.version,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+        deletedBy: deletedBy.present ? deletedBy.value : this.deletedBy,
+        manualResults: manualResults ?? this.manualResults,
+      );
+  WorkspaceSetting copyWithCompanion(WorkspaceSettingsCompanion data) {
+    return WorkspaceSetting(
+      id: data.id.present ? data.id.value : this.id,
+      workspaceId:
+          data.workspaceId.present ? data.workspaceId.value : this.workspaceId,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      version: data.version.present ? data.version.value : this.version,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      deletedBy: data.deletedBy.present ? data.deletedBy.value : this.deletedBy,
+      manualResults: data.manualResults.present
+          ? data.manualResults.value
+          : this.manualResults,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceSetting(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('version: $version, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedBy: $deletedBy, ')
+          ..write('manualResults: $manualResults')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, workspaceId, ownerId, version, createdAt,
+      updatedAt, deletedAt, deletedBy, manualResults);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkspaceSetting &&
+          other.id == this.id &&
+          other.workspaceId == this.workspaceId &&
+          other.ownerId == this.ownerId &&
+          other.version == this.version &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.deletedBy == this.deletedBy &&
+          other.manualResults == this.manualResults);
+}
+
+class WorkspaceSettingsCompanion extends UpdateCompanion<WorkspaceSetting> {
+  final Value<String> id;
+  final Value<String> workspaceId;
+  final Value<String> ownerId;
+  final Value<int> version;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> deletedBy;
+  final Value<String> manualResults;
+  final Value<int> rowid;
+  const WorkspaceSettingsCompanion({
+    this.id = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.version = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.deletedBy = const Value.absent(),
+    this.manualResults = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WorkspaceSettingsCompanion.insert({
+    required String id,
+    required String workspaceId,
+    required String ownerId,
+    this.version = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.deletedBy = const Value.absent(),
+    this.manualResults = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        workspaceId = Value(workspaceId),
+        ownerId = Value(ownerId),
+        createdAt = Value(createdAt),
+        updatedAt = Value(updatedAt);
+  static Insertable<WorkspaceSetting> custom({
+    Expression<String>? id,
+    Expression<String>? workspaceId,
+    Expression<String>? ownerId,
+    Expression<int>? version,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? deletedBy,
+    Expression<String>? manualResults,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (version != null) 'version': version,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (deletedBy != null) 'deleted_by': deletedBy,
+      if (manualResults != null) 'manual_results': manualResults,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WorkspaceSettingsCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? workspaceId,
+      Value<String>? ownerId,
+      Value<int>? version,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<DateTime?>? deletedAt,
+      Value<String?>? deletedBy,
+      Value<String>? manualResults,
+      Value<int>? rowid}) {
+    return WorkspaceSettingsCompanion(
+      id: id ?? this.id,
+      workspaceId: workspaceId ?? this.workspaceId,
+      ownerId: ownerId ?? this.ownerId,
+      version: version ?? this.version,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      deletedBy: deletedBy ?? this.deletedBy,
+      manualResults: manualResults ?? this.manualResults,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (deletedBy.present) {
+      map['deleted_by'] = Variable<String>(deletedBy.value);
+    }
+    if (manualResults.present) {
+      map['manual_results'] = Variable<String>(manualResults.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkspaceSettingsCompanion(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('version: $version, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedBy: $deletedBy, ')
+          ..write('manualResults: $manualResults, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SyncBaseTable extends SyncBase
+    with TableInfo<$SyncBaseTable, SyncBaseRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SyncBaseTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+      'kind', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _recordIdMeta =
+      const VerificationMeta('recordId');
+  @override
+  late final GeneratedColumn<String> recordId = GeneratedColumn<String>(
+      'record_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _versionMeta =
+      const VerificationMeta('version');
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+      'version', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _dataMeta = const VerificationMeta('data');
+  @override
+  late final GeneratedColumn<String> data = GeneratedColumn<String>(
+      'data', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [kind, recordId, version, data];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sync_base';
+  @override
+  VerificationContext validateIntegrity(Insertable<SyncBaseRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('kind')) {
+      context.handle(
+          _kindMeta, kind.isAcceptableOrUnknown(data['kind']!, _kindMeta));
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('record_id')) {
+      context.handle(_recordIdMeta,
+          recordId.isAcceptableOrUnknown(data['record_id']!, _recordIdMeta));
+    } else if (isInserting) {
+      context.missing(_recordIdMeta);
+    }
+    if (data.containsKey('version')) {
+      context.handle(_versionMeta,
+          version.isAcceptableOrUnknown(data['version']!, _versionMeta));
+    } else if (isInserting) {
+      context.missing(_versionMeta);
+    }
+    if (data.containsKey('data')) {
+      context.handle(
+          _dataMeta, this.data.isAcceptableOrUnknown(data['data']!, _dataMeta));
+    } else if (isInserting) {
+      context.missing(_dataMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {kind, recordId};
+  @override
+  SyncBaseRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SyncBaseRow(
+      kind: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}kind'])!,
+      recordId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}record_id'])!,
+      version: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}version'])!,
+      data: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}data'])!,
+    );
+  }
+
+  @override
+  $SyncBaseTable createAlias(String alias) {
+    return $SyncBaseTable(attachedDatabase, alias);
+  }
+}
+
+class SyncBaseRow extends DataClass implements Insertable<SyncBaseRow> {
+  final String kind;
+  final String recordId;
+  final int version;
+  final String data;
+  const SyncBaseRow(
+      {required this.kind,
+      required this.recordId,
+      required this.version,
+      required this.data});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['kind'] = Variable<String>(kind);
+    map['record_id'] = Variable<String>(recordId);
+    map['version'] = Variable<int>(version);
+    map['data'] = Variable<String>(data);
+    return map;
+  }
+
+  SyncBaseCompanion toCompanion(bool nullToAbsent) {
+    return SyncBaseCompanion(
+      kind: Value(kind),
+      recordId: Value(recordId),
+      version: Value(version),
+      data: Value(data),
+    );
+  }
+
+  factory SyncBaseRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SyncBaseRow(
+      kind: serializer.fromJson<String>(json['kind']),
+      recordId: serializer.fromJson<String>(json['recordId']),
+      version: serializer.fromJson<int>(json['version']),
+      data: serializer.fromJson<String>(json['data']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'kind': serializer.toJson<String>(kind),
+      'recordId': serializer.toJson<String>(recordId),
+      'version': serializer.toJson<int>(version),
+      'data': serializer.toJson<String>(data),
+    };
+  }
+
+  SyncBaseRow copyWith(
+          {String? kind, String? recordId, int? version, String? data}) =>
+      SyncBaseRow(
+        kind: kind ?? this.kind,
+        recordId: recordId ?? this.recordId,
+        version: version ?? this.version,
+        data: data ?? this.data,
+      );
+  SyncBaseRow copyWithCompanion(SyncBaseCompanion data) {
+    return SyncBaseRow(
+      kind: data.kind.present ? data.kind.value : this.kind,
+      recordId: data.recordId.present ? data.recordId.value : this.recordId,
+      version: data.version.present ? data.version.value : this.version,
+      data: data.data.present ? data.data.value : this.data,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncBaseRow(')
+          ..write('kind: $kind, ')
+          ..write('recordId: $recordId, ')
+          ..write('version: $version, ')
+          ..write('data: $data')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(kind, recordId, version, data);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SyncBaseRow &&
+          other.kind == this.kind &&
+          other.recordId == this.recordId &&
+          other.version == this.version &&
+          other.data == this.data);
+}
+
+class SyncBaseCompanion extends UpdateCompanion<SyncBaseRow> {
+  final Value<String> kind;
+  final Value<String> recordId;
+  final Value<int> version;
+  final Value<String> data;
+  final Value<int> rowid;
+  const SyncBaseCompanion({
+    this.kind = const Value.absent(),
+    this.recordId = const Value.absent(),
+    this.version = const Value.absent(),
+    this.data = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SyncBaseCompanion.insert({
+    required String kind,
+    required String recordId,
+    required int version,
+    required String data,
+    this.rowid = const Value.absent(),
+  })  : kind = Value(kind),
+        recordId = Value(recordId),
+        version = Value(version),
+        data = Value(data);
+  static Insertable<SyncBaseRow> custom({
+    Expression<String>? kind,
+    Expression<String>? recordId,
+    Expression<int>? version,
+    Expression<String>? data,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (kind != null) 'kind': kind,
+      if (recordId != null) 'record_id': recordId,
+      if (version != null) 'version': version,
+      if (data != null) 'data': data,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SyncBaseCompanion copyWith(
+      {Value<String>? kind,
+      Value<String>? recordId,
+      Value<int>? version,
+      Value<String>? data,
+      Value<int>? rowid}) {
+    return SyncBaseCompanion(
+      kind: kind ?? this.kind,
+      recordId: recordId ?? this.recordId,
+      version: version ?? this.version,
+      data: data ?? this.data,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (recordId.present) {
+      map['record_id'] = Variable<String>(recordId.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (data.present) {
+      map['data'] = Variable<String>(data.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncBaseCompanion(')
+          ..write('kind: $kind, ')
+          ..write('recordId: $recordId, ')
+          ..write('version: $version, ')
+          ..write('data: $data, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SyncStateTable extends SyncState
+    with TableInfo<$SyncStateTable, SyncStateRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SyncStateTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _workspaceIdMeta =
+      const VerificationMeta('workspaceId');
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+      'workspace_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _deviceIdMeta =
+      const VerificationMeta('deviceId');
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+      'device_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _cursorMeta = const VerificationMeta('cursor');
+  @override
+  late final GeneratedColumn<int> cursor = GeneratedColumn<int>(
+      'cursor', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _lastSyncAtMeta =
+      const VerificationMeta('lastSyncAt');
+  @override
+  late final GeneratedColumn<DateTime> lastSyncAt = GeneratedColumn<DateTime>(
+      'last_sync_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _lastResultMeta =
+      const VerificationMeta('lastResult');
+  @override
+  late final GeneratedColumn<String> lastResult = GeneratedColumn<String>(
+      'last_result', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [workspaceId, deviceId, cursor, lastSyncAt, lastResult];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sync_state';
+  @override
+  VerificationContext validateIntegrity(Insertable<SyncStateRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+          _workspaceIdMeta,
+          workspaceId.isAcceptableOrUnknown(
+              data['workspace_id']!, _workspaceIdMeta));
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(_deviceIdMeta,
+          deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta));
+    } else if (isInserting) {
+      context.missing(_deviceIdMeta);
+    }
+    if (data.containsKey('cursor')) {
+      context.handle(_cursorMeta,
+          cursor.isAcceptableOrUnknown(data['cursor']!, _cursorMeta));
+    }
+    if (data.containsKey('last_sync_at')) {
+      context.handle(
+          _lastSyncAtMeta,
+          lastSyncAt.isAcceptableOrUnknown(
+              data['last_sync_at']!, _lastSyncAtMeta));
+    }
+    if (data.containsKey('last_result')) {
+      context.handle(
+          _lastResultMeta,
+          lastResult.isAcceptableOrUnknown(
+              data['last_result']!, _lastResultMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {workspaceId};
+  @override
+  SyncStateRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SyncStateRow(
+      workspaceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}workspace_id'])!,
+      deviceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}device_id'])!,
+      cursor: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}cursor'])!,
+      lastSyncAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}last_sync_at']),
+      lastResult: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}last_result']),
+    );
+  }
+
+  @override
+  $SyncStateTable createAlias(String alias) {
+    return $SyncStateTable(attachedDatabase, alias);
+  }
+}
+
+class SyncStateRow extends DataClass implements Insertable<SyncStateRow> {
+  final String workspaceId;
+  final String deviceId;
+  final int cursor;
+  final DateTime? lastSyncAt;
+  final String? lastResult;
+  const SyncStateRow(
+      {required this.workspaceId,
+      required this.deviceId,
+      required this.cursor,
+      this.lastSyncAt,
+      this.lastResult});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['device_id'] = Variable<String>(deviceId);
+    map['cursor'] = Variable<int>(cursor);
+    if (!nullToAbsent || lastSyncAt != null) {
+      map['last_sync_at'] = Variable<DateTime>(lastSyncAt);
+    }
+    if (!nullToAbsent || lastResult != null) {
+      map['last_result'] = Variable<String>(lastResult);
+    }
+    return map;
+  }
+
+  SyncStateCompanion toCompanion(bool nullToAbsent) {
+    return SyncStateCompanion(
+      workspaceId: Value(workspaceId),
+      deviceId: Value(deviceId),
+      cursor: Value(cursor),
+      lastSyncAt: lastSyncAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastSyncAt),
+      lastResult: lastResult == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastResult),
+    );
+  }
+
+  factory SyncStateRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SyncStateRow(
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      deviceId: serializer.fromJson<String>(json['deviceId']),
+      cursor: serializer.fromJson<int>(json['cursor']),
+      lastSyncAt: serializer.fromJson<DateTime?>(json['lastSyncAt']),
+      lastResult: serializer.fromJson<String?>(json['lastResult']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'deviceId': serializer.toJson<String>(deviceId),
+      'cursor': serializer.toJson<int>(cursor),
+      'lastSyncAt': serializer.toJson<DateTime?>(lastSyncAt),
+      'lastResult': serializer.toJson<String?>(lastResult),
+    };
+  }
+
+  SyncStateRow copyWith(
+          {String? workspaceId,
+          String? deviceId,
+          int? cursor,
+          Value<DateTime?> lastSyncAt = const Value.absent(),
+          Value<String?> lastResult = const Value.absent()}) =>
+      SyncStateRow(
+        workspaceId: workspaceId ?? this.workspaceId,
+        deviceId: deviceId ?? this.deviceId,
+        cursor: cursor ?? this.cursor,
+        lastSyncAt: lastSyncAt.present ? lastSyncAt.value : this.lastSyncAt,
+        lastResult: lastResult.present ? lastResult.value : this.lastResult,
+      );
+  SyncStateRow copyWithCompanion(SyncStateCompanion data) {
+    return SyncStateRow(
+      workspaceId:
+          data.workspaceId.present ? data.workspaceId.value : this.workspaceId,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      cursor: data.cursor.present ? data.cursor.value : this.cursor,
+      lastSyncAt:
+          data.lastSyncAt.present ? data.lastSyncAt.value : this.lastSyncAt,
+      lastResult:
+          data.lastResult.present ? data.lastResult.value : this.lastResult,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncStateRow(')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('cursor: $cursor, ')
+          ..write('lastSyncAt: $lastSyncAt, ')
+          ..write('lastResult: $lastResult')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(workspaceId, deviceId, cursor, lastSyncAt, lastResult);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SyncStateRow &&
+          other.workspaceId == this.workspaceId &&
+          other.deviceId == this.deviceId &&
+          other.cursor == this.cursor &&
+          other.lastSyncAt == this.lastSyncAt &&
+          other.lastResult == this.lastResult);
+}
+
+class SyncStateCompanion extends UpdateCompanion<SyncStateRow> {
+  final Value<String> workspaceId;
+  final Value<String> deviceId;
+  final Value<int> cursor;
+  final Value<DateTime?> lastSyncAt;
+  final Value<String?> lastResult;
+  final Value<int> rowid;
+  const SyncStateCompanion({
+    this.workspaceId = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.cursor = const Value.absent(),
+    this.lastSyncAt = const Value.absent(),
+    this.lastResult = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SyncStateCompanion.insert({
+    required String workspaceId,
+    required String deviceId,
+    this.cursor = const Value.absent(),
+    this.lastSyncAt = const Value.absent(),
+    this.lastResult = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : workspaceId = Value(workspaceId),
+        deviceId = Value(deviceId);
+  static Insertable<SyncStateRow> custom({
+    Expression<String>? workspaceId,
+    Expression<String>? deviceId,
+    Expression<int>? cursor,
+    Expression<DateTime>? lastSyncAt,
+    Expression<String>? lastResult,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (deviceId != null) 'device_id': deviceId,
+      if (cursor != null) 'cursor': cursor,
+      if (lastSyncAt != null) 'last_sync_at': lastSyncAt,
+      if (lastResult != null) 'last_result': lastResult,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SyncStateCompanion copyWith(
+      {Value<String>? workspaceId,
+      Value<String>? deviceId,
+      Value<int>? cursor,
+      Value<DateTime?>? lastSyncAt,
+      Value<String?>? lastResult,
+      Value<int>? rowid}) {
+    return SyncStateCompanion(
+      workspaceId: workspaceId ?? this.workspaceId,
+      deviceId: deviceId ?? this.deviceId,
+      cursor: cursor ?? this.cursor,
+      lastSyncAt: lastSyncAt ?? this.lastSyncAt,
+      lastResult: lastResult ?? this.lastResult,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (cursor.present) {
+      map['cursor'] = Variable<int>(cursor.value);
+    }
+    if (lastSyncAt.present) {
+      map['last_sync_at'] = Variable<DateTime>(lastSyncAt.value);
+    }
+    if (lastResult.present) {
+      map['last_result'] = Variable<String>(lastResult.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncStateCompanion(')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('cursor: $cursor, ')
+          ..write('lastSyncAt: $lastSyncAt, ')
+          ..write('lastResult: $lastResult, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -13973,6 +15037,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $GoalsTable goals = $GoalsTable(this);
   late final $MilestonesTable milestones = $MilestonesTable(this);
   late final $GoalLinksTable goalLinks = $GoalLinksTable(this);
+  late final $WorkspaceSettingsTable workspaceSettings =
+      $WorkspaceSettingsTable(this);
+  late final $SyncBaseTable syncBase = $SyncBaseTable(this);
+  late final $SyncStateTable syncState = $SyncStateTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -13999,7 +15067,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         periodResults,
         goals,
         milestones,
-        goalLinks
+        goalLinks,
+        workspaceSettings,
+        syncBase,
+        syncState
       ];
 }
 
@@ -20422,6 +21493,576 @@ typedef $$GoalLinksTableProcessedTableManager = ProcessedTableManager<
     (GoalLinkRow, BaseReferences<_$AppDatabase, $GoalLinksTable, GoalLinkRow>),
     GoalLinkRow,
     PrefetchHooks Function()>;
+typedef $$WorkspaceSettingsTableCreateCompanionBuilder
+    = WorkspaceSettingsCompanion Function({
+  required String id,
+  required String workspaceId,
+  required String ownerId,
+  Value<int> version,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String?> deletedBy,
+  Value<String> manualResults,
+  Value<int> rowid,
+});
+typedef $$WorkspaceSettingsTableUpdateCompanionBuilder
+    = WorkspaceSettingsCompanion Function({
+  Value<String> id,
+  Value<String> workspaceId,
+  Value<String> ownerId,
+  Value<int> version,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String?> deletedBy,
+  Value<String> manualResults,
+  Value<int> rowid,
+});
+
+class $$WorkspaceSettingsTableFilterComposer
+    extends Composer<_$AppDatabase, $WorkspaceSettingsTable> {
+  $$WorkspaceSettingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerId => $composableBuilder(
+      column: $table.ownerId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deletedBy => $composableBuilder(
+      column: $table.deletedBy, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get manualResults => $composableBuilder(
+      column: $table.manualResults, builder: (column) => ColumnFilters(column));
+}
+
+class $$WorkspaceSettingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $WorkspaceSettingsTable> {
+  $$WorkspaceSettingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get ownerId => $composableBuilder(
+      column: $table.ownerId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deletedBy => $composableBuilder(
+      column: $table.deletedBy, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get manualResults => $composableBuilder(
+      column: $table.manualResults,
+      builder: (column) => ColumnOrderings(column));
+}
+
+class $$WorkspaceSettingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WorkspaceSettingsTable> {
+  $$WorkspaceSettingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerId =>
+      $composableBuilder(column: $table.ownerId, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get deletedBy =>
+      $composableBuilder(column: $table.deletedBy, builder: (column) => column);
+
+  GeneratedColumn<String> get manualResults => $composableBuilder(
+      column: $table.manualResults, builder: (column) => column);
+}
+
+class $$WorkspaceSettingsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $WorkspaceSettingsTable,
+    WorkspaceSetting,
+    $$WorkspaceSettingsTableFilterComposer,
+    $$WorkspaceSettingsTableOrderingComposer,
+    $$WorkspaceSettingsTableAnnotationComposer,
+    $$WorkspaceSettingsTableCreateCompanionBuilder,
+    $$WorkspaceSettingsTableUpdateCompanionBuilder,
+    (
+      WorkspaceSetting,
+      BaseReferences<_$AppDatabase, $WorkspaceSettingsTable, WorkspaceSetting>
+    ),
+    WorkspaceSetting,
+    PrefetchHooks Function()> {
+  $$WorkspaceSettingsTableTableManager(
+      _$AppDatabase db, $WorkspaceSettingsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WorkspaceSettingsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$WorkspaceSettingsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$WorkspaceSettingsTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> workspaceId = const Value.absent(),
+            Value<String> ownerId = const Value.absent(),
+            Value<int> version = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String?> deletedBy = const Value.absent(),
+            Value<String> manualResults = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              WorkspaceSettingsCompanion(
+            id: id,
+            workspaceId: workspaceId,
+            ownerId: ownerId,
+            version: version,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            deletedBy: deletedBy,
+            manualResults: manualResults,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String workspaceId,
+            required String ownerId,
+            Value<int> version = const Value.absent(),
+            required DateTime createdAt,
+            required DateTime updatedAt,
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String?> deletedBy = const Value.absent(),
+            Value<String> manualResults = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              WorkspaceSettingsCompanion.insert(
+            id: id,
+            workspaceId: workspaceId,
+            ownerId: ownerId,
+            version: version,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            deletedBy: deletedBy,
+            manualResults: manualResults,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable<$WorkspaceSettingsTable, WorkspaceSetting>(
+                        table),
+                    BaseReferences<_$AppDatabase, $WorkspaceSettingsTable,
+                        WorkspaceSetting>(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$WorkspaceSettingsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $WorkspaceSettingsTable,
+    WorkspaceSetting,
+    $$WorkspaceSettingsTableFilterComposer,
+    $$WorkspaceSettingsTableOrderingComposer,
+    $$WorkspaceSettingsTableAnnotationComposer,
+    $$WorkspaceSettingsTableCreateCompanionBuilder,
+    $$WorkspaceSettingsTableUpdateCompanionBuilder,
+    (
+      WorkspaceSetting,
+      BaseReferences<_$AppDatabase, $WorkspaceSettingsTable, WorkspaceSetting>
+    ),
+    WorkspaceSetting,
+    PrefetchHooks Function()>;
+typedef $$SyncBaseTableCreateCompanionBuilder = SyncBaseCompanion Function({
+  required String kind,
+  required String recordId,
+  required int version,
+  required String data,
+  Value<int> rowid,
+});
+typedef $$SyncBaseTableUpdateCompanionBuilder = SyncBaseCompanion Function({
+  Value<String> kind,
+  Value<String> recordId,
+  Value<int> version,
+  Value<String> data,
+  Value<int> rowid,
+});
+
+class $$SyncBaseTableFilterComposer
+    extends Composer<_$AppDatabase, $SyncBaseTable> {
+  $$SyncBaseTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get kind => $composableBuilder(
+      column: $table.kind, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get recordId => $composableBuilder(
+      column: $table.recordId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get data => $composableBuilder(
+      column: $table.data, builder: (column) => ColumnFilters(column));
+}
+
+class $$SyncBaseTableOrderingComposer
+    extends Composer<_$AppDatabase, $SyncBaseTable> {
+  $$SyncBaseTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get kind => $composableBuilder(
+      column: $table.kind, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get recordId => $composableBuilder(
+      column: $table.recordId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get data => $composableBuilder(
+      column: $table.data, builder: (column) => ColumnOrderings(column));
+}
+
+class $$SyncBaseTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SyncBaseTable> {
+  $$SyncBaseTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get recordId =>
+      $composableBuilder(column: $table.recordId, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<String> get data =>
+      $composableBuilder(column: $table.data, builder: (column) => column);
+}
+
+class $$SyncBaseTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $SyncBaseTable,
+    SyncBaseRow,
+    $$SyncBaseTableFilterComposer,
+    $$SyncBaseTableOrderingComposer,
+    $$SyncBaseTableAnnotationComposer,
+    $$SyncBaseTableCreateCompanionBuilder,
+    $$SyncBaseTableUpdateCompanionBuilder,
+    (SyncBaseRow, BaseReferences<_$AppDatabase, $SyncBaseTable, SyncBaseRow>),
+    SyncBaseRow,
+    PrefetchHooks Function()> {
+  $$SyncBaseTableTableManager(_$AppDatabase db, $SyncBaseTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SyncBaseTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SyncBaseTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SyncBaseTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> kind = const Value.absent(),
+            Value<String> recordId = const Value.absent(),
+            Value<int> version = const Value.absent(),
+            Value<String> data = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SyncBaseCompanion(
+            kind: kind,
+            recordId: recordId,
+            version: version,
+            data: data,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String kind,
+            required String recordId,
+            required int version,
+            required String data,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SyncBaseCompanion.insert(
+            kind: kind,
+            recordId: recordId,
+            version: version,
+            data: data,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable<$SyncBaseTable, SyncBaseRow>(table),
+                    BaseReferences<_$AppDatabase, $SyncBaseTable, SyncBaseRow>(
+                        db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$SyncBaseTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $SyncBaseTable,
+    SyncBaseRow,
+    $$SyncBaseTableFilterComposer,
+    $$SyncBaseTableOrderingComposer,
+    $$SyncBaseTableAnnotationComposer,
+    $$SyncBaseTableCreateCompanionBuilder,
+    $$SyncBaseTableUpdateCompanionBuilder,
+    (SyncBaseRow, BaseReferences<_$AppDatabase, $SyncBaseTable, SyncBaseRow>),
+    SyncBaseRow,
+    PrefetchHooks Function()>;
+typedef $$SyncStateTableCreateCompanionBuilder = SyncStateCompanion Function({
+  required String workspaceId,
+  required String deviceId,
+  Value<int> cursor,
+  Value<DateTime?> lastSyncAt,
+  Value<String?> lastResult,
+  Value<int> rowid,
+});
+typedef $$SyncStateTableUpdateCompanionBuilder = SyncStateCompanion Function({
+  Value<String> workspaceId,
+  Value<String> deviceId,
+  Value<int> cursor,
+  Value<DateTime?> lastSyncAt,
+  Value<String?> lastResult,
+  Value<int> rowid,
+});
+
+class $$SyncStateTableFilterComposer
+    extends Composer<_$AppDatabase, $SyncStateTable> {
+  $$SyncStateTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get cursor => $composableBuilder(
+      column: $table.cursor, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get lastSyncAt => $composableBuilder(
+      column: $table.lastSyncAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get lastResult => $composableBuilder(
+      column: $table.lastResult, builder: (column) => ColumnFilters(column));
+}
+
+class $$SyncStateTableOrderingComposer
+    extends Composer<_$AppDatabase, $SyncStateTable> {
+  $$SyncStateTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get cursor => $composableBuilder(
+      column: $table.cursor, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get lastSyncAt => $composableBuilder(
+      column: $table.lastSyncAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get lastResult => $composableBuilder(
+      column: $table.lastResult, builder: (column) => ColumnOrderings(column));
+}
+
+class $$SyncStateTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SyncStateTable> {
+  $$SyncStateTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<int> get cursor =>
+      $composableBuilder(column: $table.cursor, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastSyncAt => $composableBuilder(
+      column: $table.lastSyncAt, builder: (column) => column);
+
+  GeneratedColumn<String> get lastResult => $composableBuilder(
+      column: $table.lastResult, builder: (column) => column);
+}
+
+class $$SyncStateTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $SyncStateTable,
+    SyncStateRow,
+    $$SyncStateTableFilterComposer,
+    $$SyncStateTableOrderingComposer,
+    $$SyncStateTableAnnotationComposer,
+    $$SyncStateTableCreateCompanionBuilder,
+    $$SyncStateTableUpdateCompanionBuilder,
+    (
+      SyncStateRow,
+      BaseReferences<_$AppDatabase, $SyncStateTable, SyncStateRow>
+    ),
+    SyncStateRow,
+    PrefetchHooks Function()> {
+  $$SyncStateTableTableManager(_$AppDatabase db, $SyncStateTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SyncStateTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SyncStateTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SyncStateTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> workspaceId = const Value.absent(),
+            Value<String> deviceId = const Value.absent(),
+            Value<int> cursor = const Value.absent(),
+            Value<DateTime?> lastSyncAt = const Value.absent(),
+            Value<String?> lastResult = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SyncStateCompanion(
+            workspaceId: workspaceId,
+            deviceId: deviceId,
+            cursor: cursor,
+            lastSyncAt: lastSyncAt,
+            lastResult: lastResult,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String workspaceId,
+            required String deviceId,
+            Value<int> cursor = const Value.absent(),
+            Value<DateTime?> lastSyncAt = const Value.absent(),
+            Value<String?> lastResult = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SyncStateCompanion.insert(
+            workspaceId: workspaceId,
+            deviceId: deviceId,
+            cursor: cursor,
+            lastSyncAt: lastSyncAt,
+            lastResult: lastResult,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable<$SyncStateTable, SyncStateRow>(table),
+                    BaseReferences<_$AppDatabase, $SyncStateTable,
+                        SyncStateRow>(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$SyncStateTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $SyncStateTable,
+    SyncStateRow,
+    $$SyncStateTableFilterComposer,
+    $$SyncStateTableOrderingComposer,
+    $$SyncStateTableAnnotationComposer,
+    $$SyncStateTableCreateCompanionBuilder,
+    $$SyncStateTableUpdateCompanionBuilder,
+    (
+      SyncStateRow,
+      BaseReferences<_$AppDatabase, $SyncStateTable, SyncStateRow>
+    ),
+    SyncStateRow,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -20470,4 +22111,10 @@ class $AppDatabaseManager {
       $$MilestonesTableTableManager(_db, _db.milestones);
   $$GoalLinksTableTableManager get goalLinks =>
       $$GoalLinksTableTableManager(_db, _db.goalLinks);
+  $$WorkspaceSettingsTableTableManager get workspaceSettings =>
+      $$WorkspaceSettingsTableTableManager(_db, _db.workspaceSettings);
+  $$SyncBaseTableTableManager get syncBase =>
+      $$SyncBaseTableTableManager(_db, _db.syncBase);
+  $$SyncStateTableTableManager get syncState =>
+      $$SyncStateTableTableManager(_db, _db.syncState);
 }

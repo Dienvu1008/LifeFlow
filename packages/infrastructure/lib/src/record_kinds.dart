@@ -62,6 +62,7 @@ class RecordKind {
     'goal': GoalRow.fromJson,
     'milestone': MilestoneRow.fromJson,
     'goalLink': GoalLinkRow.fromJson,
+    'workspaceSettings': WorkspaceSetting.fromJson,
   };
   Object _parse(Row r) => _parsers[name]!(r);
 }
@@ -113,6 +114,9 @@ final List<RecordKind> recordKinds = [
   _kind('milestone', 'milestones', (db) => db.milestones, MilestoneRow.fromJson,
       (d) => d.toCompanion(false)),
   _kind('goalLink', 'goalLinks', (db) => db.goalLinks, GoalLinkRow.fromJson, (d) => d.toCompanion(false)),
+  // P04 T1 (schema v10, ADR-0053): settings that sync with the workspace.
+  _kind('workspaceSettings', 'workspaceSettings', (db) => db.workspaceSettings, WorkspaceSetting.fromJson,
+      (d) => d.toCompanion(false)),
 ];
 
 final Map<String, RecordKind> recordKindByName = {for (final k in recordKinds) k.name: k};
