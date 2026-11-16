@@ -8,6 +8,7 @@
 //   ADR-0011          a task added in the UI is committed with its audit row
 //   LF-INV-SEC-002    opening and reading never call the identity provider
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:application/application.dart';
 import 'package:flutter/material.dart';
@@ -1020,6 +1021,148 @@ void main() {
 
   focusRecoveryOnOpen();
   habitPeriodsCloseOnOpen();
+  syncThroughTheUi();
+}
+
+/// The in-memory sync server as the profile's own account sees it: like the
+/// app's HttpRemoteGateway, it asks for the profile's account at each call.
+class _AccountRemote implements RemoteGateway {
+  _AccountRemote(this.server, this.accountOf) : inner = MemoryRemoteGateway(server);
+  final MemoryRemoteServer server;
+  final Future<String?> Function() accountOf;
+  final MemoryRemoteGateway inner;
+
+  Future<MemoryRemoteGateway> _signedIn() async => inner..accountId = await accountOf();
+
+  @override
+  Future<List<RemoteWorkspace>> workspaces() async => (await _signedIn()).workspaces();
+  @override
+  Future<void> createWorkspace(RemoteWorkspace w) async => (await _signedIn()).createWorkspace(w);
+  @override
+  Future<void> updateWrappedKey(String id, Uint8List key, String kind, Uint8List? salt) async =>
+      (await _signedIn()).updateWrappedKey(id, key, kind, salt);
+  @override
+  Future<void> deleteWorkspace(String id) async => (await _signedIn()).deleteWorkspace(id);
+  @override
+  Future<PushResult> push(String ws, String device, List<RecordPush> records) async =>
+      (await _signedIn()).push(ws, device, records);
+  @override
+  Future<List<SealedRecord>> pull(String ws, int after, {int limit = 1000}) async =>
+      (await _signedIn()).pull(ws, after, limit: limit);
+  @override
+  Future<int> purge(String ws, DateTime before) async => (await _signedIn()).purge(ws, before);
+}
+
+/// P04 T5 (ADR-0058; D5, D9, D15): two devices of one account, each with its
+/// own stores and secure storage, one in-memory server, through the real UI:
+/// the first turns sync on with a recovery key, the second joins with the
+/// words and merges; each sees the other's task, and the status shows.
+void syncThroughTheUi() {
+  testWidgets('P04 T5: sync on with a recovery key on one device; a second joins and merges', (tester) async {
+    tester.view.physicalSize = const Size(1000, 1100);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final server = MemoryRemoteServer();
+
+    Future<void> tapAndSettle(Finder f, [int rounds = 8]) async {
+      await tester.ensureVisible(f);
+      await settle(tester, 2);
+      await tester.tap(f);
+      await settle(tester, rounds);
+    }
+
+    Future<World> device() async {
+      final w = World();
+      await tester.runAsync(() => w.open(StoragePlatform.android));
+      final first = (await tester.runAsync(() => w.directory.active()))!.id;
+      final auth = OkAuth();
+      await tester.pumpWidget(LifeFlowRoot(
+        initialProfileId: first,
+        openSession: (id, host, route) => openSession(
+          directory: w.directory,
+          profileId: id,
+          platform: StoragePlatform.android,
+          auth: auth,
+          host: host,
+          initialRoute: route,
+          files: w.files,
+          sync: SyncWiring(remoteFor: (accountOf) => _AccountRemote(server, accountOf), keysFor: w.keys.call),
+        ),
+      ));
+      await settle(tester);
+      // Sign in on the empty guest (binds in place).
+      await tapAndSettle(find.byKey(const Key('rail-profile')));
+      await tapAndSettle(find.widgetWithText(FilledButton, 'Sign in'));
+      await tapAndSettle(find.text('Continue with GitHub'), 12);
+      expect(find.text('Signed in with GitHub.'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 6)); // the snackbar goes
+      await settle(tester, 2);
+      return w;
+    }
+
+    Future<void> addTask(String title) async {
+      await tapAndSettle(find.byIcon(Icons.checklist_outlined));
+      await tapAddTask(tester);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), title);
+      await tapAndSettle(find.widgetWithText(FilledButton, 'Add'));
+      expect(find.text(title), findsOneWidget);
+    }
+
+    Future<void> openSyncSettings() async {
+      await tapAndSettle(find.byIcon(Icons.settings_outlined));
+      final list = tester.state<ScrollableState>(find.byType(Scrollable).last).position;
+      for (var i = 0; i < 20 && find.byKey(const Key('sync-settings')).evaluate().isEmpty; i++) {
+        list.jumpTo((list.pixels + 400).clamp(0, list.maxScrollExtent));
+        await settle(tester, 1);
+      }
+      await tapAndSettle(find.byKey(const Key('sync-settings')));
+    }
+
+    Future<void> close(World w) async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await settle(tester, 2);
+      await tester.runAsync(w.dispose);
+    }
+
+    // Device A: a task, then sync on with a recovery key.
+    final a = await device();
+    await addTask('From A');
+    await openSyncSettings();
+    await tapAndSettle(find.byKey(const Key('sync-switch')), 10);
+    await tapAndSettle(find.byKey(const Key('setup-recovery-key')));
+    final words = [
+      for (var n = 1; n <= 24; n++) (tester.widget<Text>(find.byKey(Key('key-word-$n'))).data!).split(' ').last
+    ];
+    await tapAndSettle(find.byKey(const Key('setup-next')));
+    final prompt = tester.widget<Text>(find.textContaining('Type words')).data!;
+    final positions = [for (final m in RegExp(r'\d+').allMatches(prompt)) int.parse(m[0]!)];
+    await tester.enterText(find.byKey(const Key('setup-word-1')), words[positions[0] - 1]);
+    await tester.enterText(find.byKey(const Key('setup-word-2')), words[positions[1] - 1]);
+    await tapAndSettle(find.byKey(const Key('setup-turn-on')), 16);
+    expect(find.text('Sync is on.'), findsOneWidget);
+    final onServer = (await tester.runAsync(() => MemoryRemoteGateway(server, accountId: 'acc-gh').workspaces()))!;
+    expect(server.dump(onServer.single.workspaceId), isNotEmpty, reason: 'uploaded, sealed');
+    expect(find.textContaining('Synced'), findsWidgets);
+    expect(a.keys.values.keys.where((k) => k.startsWith('lifeflow.sync.key.')), hasLength(1),
+        reason: 'the workspace key is in secure storage');
+    await close(a);
+
+    // Device B: its own task, then joins with the 24 words; merge (default).
+    final b = await device();
+    await addTask('From B');
+    await openSyncSettings();
+    await tapAndSettle(find.byKey(const Key('sync-switch')), 10);
+    expect(find.text('Join your synced data'), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('join-key')), words.join(' '));
+    await tapAndSettle(find.byKey(const Key('join-submit')), 20);
+    expect(find.text('This device now syncs with your account.'), findsOneWidget);
+    expect(find.byKey(const Key('sync-undo-join')), findsOneWidget);
+    await tapAndSettle(find.byIcon(Icons.checklist_outlined));
+    expect(find.text('From A'), findsOneWidget);
+    expect(find.text('From B'), findsOneWidget);
+    await close(b);
+  });
 }
 
 class _NoHost implements ProfileHost {

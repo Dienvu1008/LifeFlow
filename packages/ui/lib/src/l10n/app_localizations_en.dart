@@ -1329,4 +1329,416 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tpSubtasks => 'Subtasks';
+
+  @override
+  String get sySync => 'Sync';
+
+  @override
+  String get sySyncOff => 'Off · your data stays on this device';
+
+  @override
+  String get syUpToDate => 'Synced';
+
+  @override
+  String syUpToDateAt(Object time) {
+    return 'Synced $time';
+  }
+
+  @override
+  String get syNotSyncedYet => 'Not synced yet';
+
+  @override
+  String get sySyncing => 'Syncing…';
+
+  @override
+  String syWaiting(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count changes to send',
+      one: '1 change to send',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get syOffline => 'Can\'t reach the server · will try again';
+
+  @override
+  String get sySignedOut => 'Signed out · sign in to sync';
+
+  @override
+  String get syUpdateNeeded => 'Update LifeFlow to keep syncing';
+
+  @override
+  String get syKeyChanged =>
+      'Set up again on another device · turn sync off and on';
+
+  @override
+  String get syWorkspaceGone => 'The synced copy was deleted';
+
+  @override
+  String get syNotYours => 'This account can\'t sync this profile';
+
+  @override
+  String get syFailed => 'Sync failed · will try again';
+
+  @override
+  String syReviewsWaiting(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count changes to review',
+      one: '1 change to review',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String syStatusAndReviews(Object status, Object reviews) {
+    return '$status · $reviews';
+  }
+
+  @override
+  String get sySyncThisProfile => 'Sync this profile';
+
+  @override
+  String get sySyncThisProfileHint =>
+      'Keeps this profile the same on your devices signed in to this account. End-to-end encrypted: the server can\'t read your data.';
+
+  @override
+  String get syNotAvailable =>
+      'Sync is not available in this build of LifeFlow.';
+
+  @override
+  String get sySignInFirst => 'Sign in to an account to sync this profile.';
+
+  @override
+  String get syLockedProfile =>
+      'Signed out. Sign in again to sync this profile.';
+
+  @override
+  String get syOpenProfiles => 'Open Profiles';
+
+  @override
+  String get sySyncNow => 'Sync now';
+
+  @override
+  String get syWhenToSync => 'When to sync';
+
+  @override
+  String get syAutomatic => 'Automatic';
+
+  @override
+  String get syAutomaticHint =>
+      'When the app opens, a few seconds after a change and every few minutes while it is open';
+
+  @override
+  String get syOnlySyncNow => 'Only when I tap “Sync now”';
+
+  @override
+  String get syOnlySyncNowHint =>
+      'Nothing is sent or received until you tap it';
+
+  @override
+  String get syUndoJoin => 'Undo joining';
+
+  @override
+  String get syUndoJoinHint =>
+      'Puts this device back as it was before it joined. What it already sent stays on your other devices.';
+
+  @override
+  String get syUndoJoinTitle => 'Undo joining?';
+
+  @override
+  String get syUndoJoinBody =>
+      'This device goes back to its data from before it joined, and sync turns off. What it already sent stays on your other devices.';
+
+  @override
+  String get syUndo => 'Undo';
+
+  @override
+  String get syUndone => 'This device is back as it was before it joined.';
+
+  @override
+  String get syTurnOffTitle => 'Turn sync off?';
+
+  @override
+  String get syTurnOffBody =>
+      'This device stops syncing this profile. Its data stays here, and your other devices keep their copies.';
+
+  @override
+  String get syTurnOff => 'Turn off';
+
+  @override
+  String get syTurnedOff => 'Sync is off. Your data stays on this device.';
+
+  @override
+  String get syDeleteServer => 'Delete my data from the server';
+
+  @override
+  String get syDeleteServerHint =>
+      'Removes the synced copy. The data on this device stays.';
+
+  @override
+  String get syDeleteServerTitle => 'Delete your data from the server?';
+
+  @override
+  String get syDeleteServerBody =>
+      'The encrypted copy on the server is deleted and sync turns off. This device keeps its data. Your other devices keep theirs but can no longer sync.';
+
+  @override
+  String get syDelete => 'Delete';
+
+  @override
+  String get syDeleted => 'Your data was deleted from the server.';
+
+  @override
+  String get syUpdateTitle => 'Update LifeFlow';
+
+  @override
+  String get syUpdateBody =>
+      'Another device uses a newer LifeFlow. This device still sends its changes, but it can\'t take in the newer ones until you update.';
+
+  @override
+  String get syKeyChangedTitle => 'Sync was set up again';
+
+  @override
+  String get syKeyChangedBody =>
+      'Another device set up sync again with a new key. Turn sync off here, then turn it on with the new recovery key or passphrase.';
+
+  @override
+  String get syWorkspaceGoneTitle => 'The synced copy was deleted';
+
+  @override
+  String get syWorkspaceGoneBody =>
+      'The synced copy of this profile was deleted from the server. Turn sync off here. Turning it on again starts a new synced copy.';
+
+  @override
+  String get syReviewsTitle => 'Changes to review';
+
+  @override
+  String get syNoReviews => 'Nothing to review.';
+
+  @override
+  String get syReviewChanged =>
+      'Changed on two devices. The newer change was kept.';
+
+  @override
+  String get syReviewDeleted =>
+      'Deleted on one device and edited on another. It is in the trash with the edits: restore it from the trash to bring it back.';
+
+  @override
+  String get syReviewUnreadable =>
+      'A change this version of LifeFlow can\'t read.';
+
+  @override
+  String get syKeptValue => 'Kept';
+
+  @override
+  String get syOtherValue => 'The other change';
+
+  @override
+  String get syEmptyValue => '(empty)';
+
+  @override
+  String get syKeepThis => 'Keep this';
+
+  @override
+  String get syTakeOther => 'Take the other';
+
+  @override
+  String get syDismiss => 'OK';
+
+  @override
+  String syRecordKind(String kind) {
+    String _temp0 = intl.Intl.selectLogic(
+      kind,
+      {
+        'task': 'Task',
+        'event': 'Event',
+        'taskList': 'List',
+        'calendar': 'Calendar',
+        'schedule': 'Schedule',
+        'reminder': 'Reminder',
+        'exception': 'Change to one occurrence',
+        'goal': 'Goal',
+        'milestone': 'Milestone',
+        'goalLink': 'Goal link',
+        'focusSession': 'Focus session',
+        'periodResult': 'Habit result',
+        'workspaceSettings': 'Settings',
+        'other': 'Item',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String syRecordOf(Object kind, Object title) {
+    return '$kind: $title';
+  }
+
+  @override
+  String get syTurnOnTitle => 'Turn on sync';
+
+  @override
+  String get syChecking => 'Checking your account…';
+
+  @override
+  String get syTryAgain => 'Try again';
+
+  @override
+  String get syProtectTitle => 'How do you want to protect your data?';
+
+  @override
+  String get syProtectBody =>
+      'Your data is encrypted on this device before it is sent. To open it on another device you need one of these. If you lose it, the synced copy can\'t be opened, not even by us.';
+
+  @override
+  String get syUseRecoveryKey => 'Recovery key (recommended)';
+
+  @override
+  String get syUseRecoveryKeyHint =>
+      '24 words, made for you. Write them down or save them.';
+
+  @override
+  String get syUsePassphrase => 'Passphrase';
+
+  @override
+  String get syUsePassphraseHint =>
+      'A long phrase you choose, at least 12 characters.';
+
+  @override
+  String get syYourRecoveryKey => 'Your recovery key';
+
+  @override
+  String get syRecoveryKeyBody =>
+      'Write these 24 words down in order, or save them to a file, and keep them somewhere safe. You need them to sync another device.';
+
+  @override
+  String get syRecoveryKeyQr => 'QR code of your recovery key';
+
+  @override
+  String get sySaveToFile => 'Save to a file';
+
+  @override
+  String get sySaved => 'Saved.';
+
+  @override
+  String get syRecoveryKeyFileHeader =>
+      'LifeFlow recovery key. Keep it safe; anyone with it and your account can read your synced data.';
+
+  @override
+  String get syNext => 'Next';
+
+  @override
+  String get syBack => 'Back';
+
+  @override
+  String get syConfirmKeyTitle => 'Confirm your recovery key';
+
+  @override
+  String syConfirmKeyBody(int first, int second) {
+    return 'Type words $first and $second of your recovery key.';
+  }
+
+  @override
+  String syWordN(int n) {
+    return 'Word $n';
+  }
+
+  @override
+  String get syTurnOn => 'Turn on sync';
+
+  @override
+  String get syChoosePassphrase => 'Choose a passphrase';
+
+  @override
+  String get syPassphrase => 'Passphrase';
+
+  @override
+  String get syRepeatPassphrase => 'Repeat the passphrase';
+
+  @override
+  String get syPassphraseHint =>
+      'At least 12 characters. A few unrelated words are easy to remember and hard to guess.';
+
+  @override
+  String get syPassphrasesDiffer => 'The two passphrases are not the same.';
+
+  @override
+  String get syJoinTitle => 'Join your synced data';
+
+  @override
+  String get syJoinBody =>
+      'This account already syncs from another device. Unlock its data:';
+
+  @override
+  String get syRecoveryKey => 'Recovery key';
+
+  @override
+  String get syRecoveryKeyHint => 'The 24 words, separated by spaces';
+
+  @override
+  String get syJoinWhat => 'And the data already on this device?';
+
+  @override
+  String get syJoinMerge => 'Add it to the synced data (recommended)';
+
+  @override
+  String get syJoinMergeHint =>
+      'Both are kept: this device\'s data and the account\'s.';
+
+  @override
+  String get syJoinReplace => 'Use only the synced data';
+
+  @override
+  String get syJoinReplaceHint =>
+      'This device\'s data is saved to a file first, then replaced. You can undo this.';
+
+  @override
+  String get syJoin => 'Join';
+
+  @override
+  String get syTurnedOn => 'Sync is on.';
+
+  @override
+  String get syJoined => 'This device now syncs with your account.';
+
+  @override
+  String get syExportSaved =>
+      'This device\'s earlier data was saved to a file.';
+
+  @override
+  String get syExportNotSaved =>
+      'This device\'s earlier data was not saved to a file. You can still undo joining.';
+
+  @override
+  String syProblem(String problem) {
+    String _temp0 = intl.Intl.selectLogic(
+      problem,
+      {
+        'offline':
+            'Can\'t reach the server. Check your connection and try again.',
+        'signedOut': 'You are signed out. Sign in again in Profiles.',
+        'notYours': 'This account can\'t sync this profile.',
+        'recoveryKeyNotConfirmed':
+            'Those words don\'t match. Check the words at those positions.',
+        'recoveryKeyInvalid': 'That isn\'t a valid recovery key.',
+        'wrongRecoveryKey':
+            'That recovery key doesn\'t open this account\'s data.',
+        'wrongPassphrase':
+            'That passphrase doesn\'t open this account\'s data.',
+        'passphraseTooShort': 'Use at least 12 characters.',
+        'passphraseTooCommon': 'That passphrase is too common. Choose another.',
+        'alreadyOn': 'Sync is already on.',
+        'notOn': 'Sync is off.',
+        'nothingToUndo': 'There is nothing to undo.',
+        'reviewGone': 'This was already closed, or its item is gone.',
+        'other': 'Something went wrong. Try again.',
+      },
+    );
+    return '$_temp0';
+  }
 }

@@ -68,6 +68,7 @@ class AdaptiveScaffold extends StatefulWidget {
     this.notice,
     this.focusBar,
     this.profile,
+    this.syncLine,
   });
 
   final int selectedIndex;
@@ -82,6 +83,9 @@ class AdaptiveScaffold extends StatefulWidget {
 
   /// The active profile, shown in the drawer's header.
   final ProfileView? profile;
+
+  /// P04 T5 (D9): the sync status under the profile; null when sync is off.
+  final String? syncLine;
 
   @override
   State<AdaptiveScaffold> createState() => _AdaptiveScaffoldState();
@@ -136,6 +140,7 @@ class _AdaptiveScaffoldState extends State<AdaptiveScaffold> {
             children: [
               DrawerProfileHeader(
                 profile: widget.profile,
+                syncLine: widget.syncLine,
                 selected: selectedIndex == profilesIndex,
                 onTap: () => _go(profilesIndex),
               ),
@@ -163,6 +168,7 @@ class _AdaptiveScaffoldState extends State<AdaptiveScaffold> {
                 // The profile on top, as in the drawer (opens Profiles).
                 leading: RailProfileButton(
                   profile: widget.profile,
+                  syncLine: widget.syncLine,
                   selected: selectedIndex == profilesIndex,
                   onTap: () => onSelected(profilesIndex),
                 ),
@@ -192,8 +198,9 @@ class _AdaptiveScaffoldState extends State<AdaptiveScaffold> {
 /// (initials until profiles have a photo), its name and how it is signed in.
 /// A tap opens Profiles (switch, sign in, manage).
 class DrawerProfileHeader extends StatelessWidget {
-  const DrawerProfileHeader({super.key, required this.profile, required this.onTap, this.selected = false});
+  const DrawerProfileHeader({super.key, required this.profile, required this.onTap, this.selected = false, this.syncLine});
   final ProfileView? profile;
+  final String? syncLine;
   final VoidCallback onTap;
   final bool selected;
 
@@ -226,7 +233,9 @@ class DrawerProfileHeader extends StatelessWidget {
       container: true,
       button: true,
       selected: selected,
-      label: p == null ? context.l10n.drawerProfileLabel(name) : context.l10n.drawerProfileLabelWithStatus(name, statusOf(p)),
+      label: p == null
+          ? context.l10n.drawerProfileLabel(name)
+          : context.l10n.drawerProfileLabelWithStatus(name, [statusOf(p), if (syncLine != null) syncLine].join(', ')),
       excludeSemantics: true,
       child: Material(
         key: const Key('drawer-profile'),
@@ -257,6 +266,17 @@ class DrawerProfileHeader extends StatelessWidget {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: text.bodySmall?.copyWith(color: scheme.onPrimaryContainer)),
+                      if (syncLine != null)
+                        Row(key: const Key('drawer-sync-line'), children: [
+                          Icon(Icons.sync, size: 14, color: scheme.onPrimaryContainer),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(syncLine!,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: text.bodySmall?.copyWith(color: scheme.onPrimaryContainer)),
+                          ),
+                        ]),
                     ]),
                   ),
                   Icon(Icons.chevron_right, color: scheme.onPrimaryContainer),
@@ -272,8 +292,9 @@ class DrawerProfileHeader extends StatelessWidget {
 
 /// The profile at the top of the rail: its initials; a tap opens Profiles.
 class RailProfileButton extends StatelessWidget {
-  const RailProfileButton({super.key, required this.profile, required this.onTap, this.selected = false});
+  const RailProfileButton({super.key, required this.profile, required this.onTap, this.selected = false, this.syncLine});
   final ProfileView? profile;
+  final String? syncLine;
   final VoidCallback onTap;
   final bool selected;
 
@@ -284,7 +305,8 @@ class RailProfileButton extends StatelessWidget {
     final name = p?.displayName ?? context.l10n.navProfiles;
     final label = p == null
         ? context.l10n.drawerProfileLabel(name)
-        : context.l10n.drawerProfileLabelWithStatus(name, DrawerProfileHeader.statusOf(p));
+        : context.l10n.drawerProfileLabelWithStatus(
+            name, [DrawerProfileHeader.statusOf(p), if (syncLine != null) syncLine].join(', '));
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Tooltip(

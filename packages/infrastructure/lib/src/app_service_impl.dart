@@ -82,6 +82,17 @@ class DirectorySettingsService implements SettingsService {
   @override
   Future<void> setThemePreference(ThemePreference preference) => directory.writeSetting(_theme, preference.name);
 
+  static const _syncWhen = 'sync.when';
+
+  @override
+  Future<SyncWhen> syncWhen() async {
+    final v = await directory.readSetting(_syncWhen);
+    return SyncWhen.values.where((w) => w.name == v).firstOrNull ?? SyncWhen.automatic;
+  }
+
+  @override
+  Future<void> setSyncWhen(SyncWhen when) => directory.writeSetting(_syncWhen, when.name);
+
   static const _collapsed = 'ui.overview.collapsed';
 
   @override

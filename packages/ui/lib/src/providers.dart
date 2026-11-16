@@ -266,3 +266,31 @@ final manualResultsProvider = FutureProvider.autoDispose<ManualResults>((ref) {
 final appearanceProvider = FutureProvider<AppearanceSettings>(
   (ref) => ref.watch(settingsServiceProvider).appearance(),
 );
+
+// --- P04 T5: sync (ADR-0058; p04-plan.md D8, D9) ---------------------------
+
+/// Sync of the ACTIVE profile with the signed-in account. Null where the
+/// build has no sync server (no Supabase defines) or in widget tests that do
+/// not need it: the UI then shows sync as unavailable.
+final syncServiceProvider = Provider<SyncService?>((ref) => null);
+
+/// The sync status of the ACTIVE profile, live; null without sync.
+final syncStatusProvider = StreamProvider.autoDispose<SyncStatus?>((ref) {
+  ref.watch(activeProfileProvider);
+  final sync = ref.watch(syncServiceProvider);
+  if (sync == null) return Stream.value(null);
+  return sync.watchStatus();
+});
+
+/// "Changes to review", read again whenever the status changes.
+final syncReviewsProvider = FutureProvider.autoDispose<List<SyncReviewView>>((ref) async {
+  final status = ref.watch(syncStatusProvider).valueOrNull;
+  final sync = ref.watch(syncServiceProvider);
+  if (sync == null || status == null || !status.on) return const [];
+  return sync.reviews();
+});
+
+/// "When to sync" of this device (D8). Invalidate after a change.
+final syncWhenProvider = FutureProvider.autoDispose<SyncWhen>(
+  (ref) => ref.watch(settingsServiceProvider).syncWhen(),
+);

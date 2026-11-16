@@ -110,6 +110,9 @@ enum SyncSetupProblem {
   alreadyOn,
   notOn,
   nothingToUndo,
+
+  /// The review item is closed already, or its record is gone.
+  reviewGone,
   failed,
 }
 
@@ -139,6 +142,7 @@ class SyncStatus {
     this.pending = 0,
     this.reviews = 0,
     this.canUndoJoin = false,
+    this.syncing = false,
   });
   final bool on;
   final SyncOutcome? lastResult;
@@ -150,10 +154,83 @@ class SyncStatus {
   /// Open "Changes to review" items.
   final int reviews;
   final bool canUndoJoin;
+
+  /// A sync is running now.
+  final bool syncing;
+}
+
+/// D8: when this device syncs (a setting of the device, not synced).
+enum SyncWhen {
+  /// On start, on return to the app, a few seconds after a change and every
+  /// few minutes while open (the default).
+  automatic,
+
+  /// Only when the user taps "Sync now".
+  onlySyncNow,
+}
+
+enum SyncReviewKind {
+  /// Both devices changed it; the newer change was kept.
+  changedOnBoth,
+
+  /// Deleted on one device, edited on the other: it is in the trash with the
+  /// edits (D7); restoring it from the trash brings it back.
+  deletedAndEdited,
+
+  /// A record from the server that could not be opened.
+  unreadable,
+}
+
+/// One "Changes to review" item (D9): what was kept and what gave way.
+class SyncReviewView {
+  const SyncReviewView({
+    required this.id,
+    required this.recordKind,
+    required this.recordId,
+    required this.reason,
+    required this.field,
+    this.title,
+    this.kept = '',
+    this.other = '',
+    this.canTakeOther = false,
+    required this.createdAt,
+  });
+  final String id;
+
+  /// The record kind ('task', 'schedule', 'workspaceSettings', ...).
+  final String recordKind;
+  final String recordId;
+  final SyncReviewKind reason;
+
+  /// The field that differed; '*' for the whole value.
+  final String field;
+
+  /// The record's title, or the title of the task or event it belongs to.
+  final String? title;
+
+  /// The kept and the other value, as text to show.
+  final String kept;
+  final String other;
+
+  /// Whether "Take the other" is possible (not for a delete, nor when the
+  /// record is gone).
+  final bool canTakeOther;
+  final DateTime createdAt;
 }
 
 abstract interface class SyncService {
   Future<SyncStatus> status();
+
+  /// [status] now and after every change of it (a sync starting or ending,
+  /// an edit waiting to be sent, a review item).
+  Stream<SyncStatus> watchStatus();
+
+  /// The open "Changes to review" items, newest first.
+  Future<List<SyncReviewView>> reviews();
+
+  /// Closes a review item: keeps what was kept, or puts the other value back
+  /// as a new change ([takeOther]), which then syncs.
+  Future<SyncSetupResult> resolveReview(String id, {required bool takeOther});
 
   /// What turning sync on will do; a [RemoteFailure]-like problem comes back
   /// as an exception of type SyncSetupException.
@@ -176,6 +253,7 @@ abstract interface class SyncService {
   /// the join already uploaded stays on the server.
   Future<SyncSetupResult> undoJoin();
 
+  /// Syncs now; while a sync runs, waits for it instead of starting another.
   Future<SyncReport> syncNow();
 
   /// Stops syncing this profile here; its data stays on the device (D11).

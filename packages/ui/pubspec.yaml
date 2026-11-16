@@ -22,6 +22,7 @@ dependencies:
   intl: 0.20.3 # BSD-3-Clause; P03 UX U1 (dates, plurals)
   flutter_sticky_header: 0.11.0 # MIT; P03 UX U4 (sticky day headers, VS-37)
   table_calendar: 3.3.0 # Apache-2.0; P03 UX U4 (month picker, VS-38)
+  qr_flutter: 4.1.0 # BSD-3-Clause (and qr, BSD-3-Clause); P04 T5 (the recovery key as a QR code)
 dev_dependencies:
   flutter_test:
     sdk: flutter

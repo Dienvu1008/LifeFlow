@@ -6,6 +6,7 @@ import 'package:foundation/foundation.dart';
 
 import 'command.dart';
 import 'planning.dart';
+import 'sync.dart' show SyncWhen;
 
 /// Read model of a task for list display. Plain data, no behavior.
 class TaskView {
@@ -224,6 +225,10 @@ abstract interface class SettingsService {
 
   /// Stores [settings] after clamping them to the bounds.
   Future<void> setPlanningSettings(PlanningSettings settings);
+
+  /// P04 D8: when this device syncs (automatic by default).
+  Future<SyncWhen> syncWhen();
+  Future<void> setSyncWhen(SyncWhen when);
 }
 
 /// The IANA time zones this build knows, for a zone picker.

@@ -15,7 +15,7 @@ library;
 //                     MeasurementCommandHandler, PeriodCloseHandler,
 //                     GoalCommandHandler, ListCommandHandler,
 //                     WorkspaceSettingsCommandHandler, SyncApplyHandler,
-//                     SyncSetupHandler
+//                     SyncSetupHandler, SyncReviewHandler
 import 'package:application/application.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -134,6 +134,7 @@ void main() {
   const settingsHandler = WorkspaceSettingsCommandHandler();
   const syncHandler = SyncApplyHandler();
   const setupHandler = SyncSetupHandler();
+  const reviewHandler = SyncReviewHandler();
   // P04 T3: a pulled task, as the sync engine applies it.
   Map<String, Object?> pulledTask() => {
         'id': 'ts1', 'workspaceId': wsId, 'ownerId': profileId, 'version': 3,
@@ -329,6 +330,12 @@ void main() {
           (v, op) => command('SetManualResults', {'op': 'setManualResults', 'id': wsId, 'value': 'tick'}, opId: op, expected: v)),
       ('workspaceSettings.setManualResults', settingsHandler, 'workspaceSettings', wsId,
           (v, op) => command('SetManualResults', {'op': 'setManualResults', 'id': wsId, 'value': 'target'}, opId: op, expected: v)),
+      // P04 T5 (ADR-0058): closing "Changes to review" items on the
+      // settings record: keeping, and taking the other value back.
+      ('syncReview.keep', reviewHandler, 'syncReview', 'rv-keep',
+          (v, op) => command(resolveSyncReviewAction, {'op': 'resolve', 'id': 'rv-keep', 'take': 'kept'}, opId: op, expected: v)),
+      ('syncReview.takeOther', reviewHandler, 'syncReview', 'rv-other',
+          (v, op) => command(resolveSyncReviewAction, {'op': 'resolve', 'id': 'rv-other', 'take': 'other'}, opId: op, expected: v)),
       // P04 T4 (ADR-0057): turning sync off and on, joining the account's
       // workspace and undoing it (sync is on since 'sync.apply'). Last: the
       // join moves the workspace.
@@ -353,6 +360,12 @@ void main() {
       if (label == 'sync.apply') {
         await db.into(db.syncState).insertOnConflictUpdate(SyncStateCompanion.insert(workspaceId: wsId, deviceId: 'dev'));
       }
+      if (label.startsWith('syncReview.')) {
+        await db.into(db.syncReviews).insertOnConflictUpdate(SyncReviewsCompanion.insert(
+            id: id, workspaceId: wsId, kind: 'workspaceSettings', recordId: wsId, field: '*',
+            kept: '{"manualResults":"target"}', other: '{"manualResults":"tick"}',
+            reason: 'changedOnBoth', createdAt: DateTime.utc(2026, 11, 16)));
+      }
       if (label == 'focus.markUnrecoverable') {
         // A stored row that cannot be trusted: paused without a pause time.
         await (db.update(db.focusSessions)..where((s) => s.id.equals('s3')))
@@ -364,7 +377,8 @@ void main() {
               label.startsWith('measurement.') ||
               label == 'period.close' ||
               label == 'sync.apply' ||
-              label.startsWith('syncSetup.')
+              label.startsWith('syncSetup.') ||
+              label.startsWith('syncReview.')
           ? null
           : Version(await versionOf(table, id));
 

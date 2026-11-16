@@ -176,6 +176,28 @@ class SupabaseAuthGateway implements AuthGateway {
     return _toSession(_auth.currentSession);
   }
 
+  /// P04 T5 (ADR-0058): the access token for the sync server, only while
+  /// the signed-in account is [accountId] (the profile's own): a session of
+  /// another account never syncs this profile. Refreshed when it is about to
+  /// expire; offline, the old one is returned and the call fails as offline.
+  /// Never logged (SR-08).
+  Future<String?> accessTokenFor(String? accountId) async {
+    if (!isConfigured || accountId == null) return null;
+    final current = _auth.currentSession;
+    if (current == null || current.user.id != accountId) return null;
+    final expiresAt = current.expiresAt;
+    final soon = DateTime.now().add(const Duration(minutes: 1));
+    if (expiresAt != null && DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000).isBefore(soon)) {
+      try {
+        final refreshed = (await _auth.refreshSession()).session;
+        if (refreshed != null && refreshed.user.id == accountId) return refreshed.accessToken;
+      } catch (_) {
+        // Offline or refused: the server answers for the old token.
+      }
+    }
+    return current.accessToken;
+  }
+
   @override
   Future<void> signOut() async {
     if (!isConfigured) return;

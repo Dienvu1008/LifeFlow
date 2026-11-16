@@ -2391,6 +2391,630 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Subtasks'**
   String get tpSubtasks;
+
+  /// No description provided for @sySync.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync'**
+  String get sySync;
+
+  /// No description provided for @sySyncOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off · your data stays on this device'**
+  String get sySyncOff;
+
+  /// No description provided for @syUpToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Synced'**
+  String get syUpToDate;
+
+  /// No description provided for @syUpToDateAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Synced {time}'**
+  String syUpToDateAt(Object time);
+
+  /// No description provided for @syNotSyncedYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not synced yet'**
+  String get syNotSyncedYet;
+
+  /// No description provided for @sySyncing.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing…'**
+  String get sySyncing;
+
+  /// No description provided for @syWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 change to send} other{{count} changes to send}}'**
+  String syWaiting(int count);
+
+  /// No description provided for @syOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t reach the server · will try again'**
+  String get syOffline;
+
+  /// No description provided for @sySignedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed out · sign in to sync'**
+  String get sySignedOut;
+
+  /// No description provided for @syUpdateNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Update LifeFlow to keep syncing'**
+  String get syUpdateNeeded;
+
+  /// No description provided for @syKeyChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up again on another device · turn sync off and on'**
+  String get syKeyChanged;
+
+  /// No description provided for @syWorkspaceGone.
+  ///
+  /// In en, this message translates to:
+  /// **'The synced copy was deleted'**
+  String get syWorkspaceGone;
+
+  /// No description provided for @syNotYours.
+  ///
+  /// In en, this message translates to:
+  /// **'This account can\'t sync this profile'**
+  String get syNotYours;
+
+  /// No description provided for @syFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync failed · will try again'**
+  String get syFailed;
+
+  /// No description provided for @syReviewsWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 change to review} other{{count} changes to review}}'**
+  String syReviewsWaiting(int count);
+
+  /// No description provided for @syStatusAndReviews.
+  ///
+  /// In en, this message translates to:
+  /// **'{status} · {reviews}'**
+  String syStatusAndReviews(Object status, Object reviews);
+
+  /// No description provided for @sySyncThisProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync this profile'**
+  String get sySyncThisProfile;
+
+  /// No description provided for @sySyncThisProfileHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Keeps this profile the same on your devices signed in to this account. End-to-end encrypted: the server can\'t read your data.'**
+  String get sySyncThisProfileHint;
+
+  /// No description provided for @syNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync is not available in this build of LifeFlow.'**
+  String get syNotAvailable;
+
+  /// No description provided for @sySignInFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to an account to sync this profile.'**
+  String get sySignInFirst;
+
+  /// No description provided for @syLockedProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed out. Sign in again to sync this profile.'**
+  String get syLockedProfile;
+
+  /// No description provided for @syOpenProfiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Profiles'**
+  String get syOpenProfiles;
+
+  /// No description provided for @sySyncNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync now'**
+  String get sySyncNow;
+
+  /// No description provided for @syWhenToSync.
+  ///
+  /// In en, this message translates to:
+  /// **'When to sync'**
+  String get syWhenToSync;
+
+  /// No description provided for @syAutomatic.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get syAutomatic;
+
+  /// No description provided for @syAutomaticHint.
+  ///
+  /// In en, this message translates to:
+  /// **'When the app opens, a few seconds after a change and every few minutes while it is open'**
+  String get syAutomaticHint;
+
+  /// No description provided for @syOnlySyncNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Only when I tap “Sync now”'**
+  String get syOnlySyncNow;
+
+  /// No description provided for @syOnlySyncNowHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing is sent or received until you tap it'**
+  String get syOnlySyncNowHint;
+
+  /// No description provided for @syUndoJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo joining'**
+  String get syUndoJoin;
+
+  /// No description provided for @syUndoJoinHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Puts this device back as it was before it joined. What it already sent stays on your other devices.'**
+  String get syUndoJoinHint;
+
+  /// No description provided for @syUndoJoinTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo joining?'**
+  String get syUndoJoinTitle;
+
+  /// No description provided for @syUndoJoinBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This device goes back to its data from before it joined, and sync turns off. What it already sent stays on your other devices.'**
+  String get syUndoJoinBody;
+
+  /// No description provided for @syUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get syUndo;
+
+  /// No description provided for @syUndone.
+  ///
+  /// In en, this message translates to:
+  /// **'This device is back as it was before it joined.'**
+  String get syUndone;
+
+  /// No description provided for @syTurnOffTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn sync off?'**
+  String get syTurnOffTitle;
+
+  /// No description provided for @syTurnOffBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This device stops syncing this profile. Its data stays here, and your other devices keep their copies.'**
+  String get syTurnOffBody;
+
+  /// No description provided for @syTurnOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off'**
+  String get syTurnOff;
+
+  /// No description provided for @syTurnedOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync is off. Your data stays on this device.'**
+  String get syTurnedOff;
+
+  /// No description provided for @syDeleteServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete my data from the server'**
+  String get syDeleteServer;
+
+  /// No description provided for @syDeleteServerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Removes the synced copy. The data on this device stays.'**
+  String get syDeleteServerHint;
+
+  /// No description provided for @syDeleteServerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete your data from the server?'**
+  String get syDeleteServerTitle;
+
+  /// No description provided for @syDeleteServerBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The encrypted copy on the server is deleted and sync turns off. This device keeps its data. Your other devices keep theirs but can no longer sync.'**
+  String get syDeleteServerBody;
+
+  /// No description provided for @syDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get syDelete;
+
+  /// No description provided for @syDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Your data was deleted from the server.'**
+  String get syDeleted;
+
+  /// No description provided for @syUpdateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update LifeFlow'**
+  String get syUpdateTitle;
+
+  /// No description provided for @syUpdateBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Another device uses a newer LifeFlow. This device still sends its changes, but it can\'t take in the newer ones until you update.'**
+  String get syUpdateBody;
+
+  /// No description provided for @syKeyChangedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync was set up again'**
+  String get syKeyChangedTitle;
+
+  /// No description provided for @syKeyChangedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Another device set up sync again with a new key. Turn sync off here, then turn it on with the new recovery key or passphrase.'**
+  String get syKeyChangedBody;
+
+  /// No description provided for @syWorkspaceGoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The synced copy was deleted'**
+  String get syWorkspaceGoneTitle;
+
+  /// No description provided for @syWorkspaceGoneBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The synced copy of this profile was deleted from the server. Turn sync off here. Turning it on again starts a new synced copy.'**
+  String get syWorkspaceGoneBody;
+
+  /// No description provided for @syReviewsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes to review'**
+  String get syReviewsTitle;
+
+  /// No description provided for @syNoReviews.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to review.'**
+  String get syNoReviews;
+
+  /// No description provided for @syReviewChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Changed on two devices. The newer change was kept.'**
+  String get syReviewChanged;
+
+  /// No description provided for @syReviewDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted on one device and edited on another. It is in the trash with the edits: restore it from the trash to bring it back.'**
+  String get syReviewDeleted;
+
+  /// No description provided for @syReviewUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'A change this version of LifeFlow can\'t read.'**
+  String get syReviewUnreadable;
+
+  /// No description provided for @syKeptValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept'**
+  String get syKeptValue;
+
+  /// No description provided for @syOtherValue.
+  ///
+  /// In en, this message translates to:
+  /// **'The other change'**
+  String get syOtherValue;
+
+  /// No description provided for @syEmptyValue.
+  ///
+  /// In en, this message translates to:
+  /// **'(empty)'**
+  String get syEmptyValue;
+
+  /// No description provided for @syKeepThis.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep this'**
+  String get syKeepThis;
+
+  /// No description provided for @syTakeOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Take the other'**
+  String get syTakeOther;
+
+  /// No description provided for @syDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get syDismiss;
+
+  /// No description provided for @syRecordKind.
+  ///
+  /// In en, this message translates to:
+  /// **'{kind, select, task{Task} event{Event} taskList{List} calendar{Calendar} schedule{Schedule} reminder{Reminder} exception{Change to one occurrence} goal{Goal} milestone{Milestone} goalLink{Goal link} focusSession{Focus session} periodResult{Habit result} workspaceSettings{Settings} other{Item}}'**
+  String syRecordKind(String kind);
+
+  /// No description provided for @syRecordOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{kind}: {title}'**
+  String syRecordOf(Object kind, Object title);
+
+  /// No description provided for @syTurnOnTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on sync'**
+  String get syTurnOnTitle;
+
+  /// No description provided for @syChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your account…'**
+  String get syChecking;
+
+  /// No description provided for @syTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get syTryAgain;
+
+  /// No description provided for @syProtectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How do you want to protect your data?'**
+  String get syProtectTitle;
+
+  /// No description provided for @syProtectBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your data is encrypted on this device before it is sent. To open it on another device you need one of these. If you lose it, the synced copy can\'t be opened, not even by us.'**
+  String get syProtectBody;
+
+  /// No description provided for @syUseRecoveryKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery key (recommended)'**
+  String get syUseRecoveryKey;
+
+  /// No description provided for @syUseRecoveryKeyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'24 words, made for you. Write them down or save them.'**
+  String get syUseRecoveryKeyHint;
+
+  /// No description provided for @syUsePassphrase.
+  ///
+  /// In en, this message translates to:
+  /// **'Passphrase'**
+  String get syUsePassphrase;
+
+  /// No description provided for @syUsePassphraseHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A long phrase you choose, at least 12 characters.'**
+  String get syUsePassphraseHint;
+
+  /// No description provided for @syYourRecoveryKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Your recovery key'**
+  String get syYourRecoveryKey;
+
+  /// No description provided for @syRecoveryKeyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Write these 24 words down in order, or save them to a file, and keep them somewhere safe. You need them to sync another device.'**
+  String get syRecoveryKeyBody;
+
+  /// No description provided for @syRecoveryKeyQr.
+  ///
+  /// In en, this message translates to:
+  /// **'QR code of your recovery key'**
+  String get syRecoveryKeyQr;
+
+  /// No description provided for @sySaveToFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to a file'**
+  String get sySaveToFile;
+
+  /// No description provided for @sySaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved.'**
+  String get sySaved;
+
+  /// No description provided for @syRecoveryKeyFileHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'LifeFlow recovery key. Keep it safe; anyone with it and your account can read your synced data.'**
+  String get syRecoveryKeyFileHeader;
+
+  /// No description provided for @syNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get syNext;
+
+  /// No description provided for @syBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get syBack;
+
+  /// No description provided for @syConfirmKeyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm your recovery key'**
+  String get syConfirmKeyTitle;
+
+  /// No description provided for @syConfirmKeyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Type words {first} and {second} of your recovery key.'**
+  String syConfirmKeyBody(int first, int second);
+
+  /// No description provided for @syWordN.
+  ///
+  /// In en, this message translates to:
+  /// **'Word {n}'**
+  String syWordN(int n);
+
+  /// No description provided for @syTurnOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on sync'**
+  String get syTurnOn;
+
+  /// No description provided for @syChoosePassphrase.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a passphrase'**
+  String get syChoosePassphrase;
+
+  /// No description provided for @syPassphrase.
+  ///
+  /// In en, this message translates to:
+  /// **'Passphrase'**
+  String get syPassphrase;
+
+  /// No description provided for @syRepeatPassphrase.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat the passphrase'**
+  String get syRepeatPassphrase;
+
+  /// No description provided for @syPassphraseHint.
+  ///
+  /// In en, this message translates to:
+  /// **'At least 12 characters. A few unrelated words are easy to remember and hard to guess.'**
+  String get syPassphraseHint;
+
+  /// No description provided for @syPassphrasesDiffer.
+  ///
+  /// In en, this message translates to:
+  /// **'The two passphrases are not the same.'**
+  String get syPassphrasesDiffer;
+
+  /// No description provided for @syJoinTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Join your synced data'**
+  String get syJoinTitle;
+
+  /// No description provided for @syJoinBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This account already syncs from another device. Unlock its data:'**
+  String get syJoinBody;
+
+  /// No description provided for @syRecoveryKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery key'**
+  String get syRecoveryKey;
+
+  /// No description provided for @syRecoveryKeyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The 24 words, separated by spaces'**
+  String get syRecoveryKeyHint;
+
+  /// No description provided for @syJoinWhat.
+  ///
+  /// In en, this message translates to:
+  /// **'And the data already on this device?'**
+  String get syJoinWhat;
+
+  /// No description provided for @syJoinMerge.
+  ///
+  /// In en, this message translates to:
+  /// **'Add it to the synced data (recommended)'**
+  String get syJoinMerge;
+
+  /// No description provided for @syJoinMergeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Both are kept: this device\'s data and the account\'s.'**
+  String get syJoinMergeHint;
+
+  /// No description provided for @syJoinReplace.
+  ///
+  /// In en, this message translates to:
+  /// **'Use only the synced data'**
+  String get syJoinReplace;
+
+  /// No description provided for @syJoinReplaceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This device\'s data is saved to a file first, then replaced. You can undo this.'**
+  String get syJoinReplaceHint;
+
+  /// No description provided for @syJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get syJoin;
+
+  /// No description provided for @syTurnedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync is on.'**
+  String get syTurnedOn;
+
+  /// No description provided for @syJoined.
+  ///
+  /// In en, this message translates to:
+  /// **'This device now syncs with your account.'**
+  String get syJoined;
+
+  /// No description provided for @syExportSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'This device\'s earlier data was saved to a file.'**
+  String get syExportSaved;
+
+  /// No description provided for @syExportNotSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'This device\'s earlier data was not saved to a file. You can still undo joining.'**
+  String get syExportNotSaved;
+
+  /// No description provided for @syProblem.
+  ///
+  /// In en, this message translates to:
+  /// **'{problem, select, offline{Can\'t reach the server. Check your connection and try again.} signedOut{You are signed out. Sign in again in Profiles.} notYours{This account can\'t sync this profile.} recoveryKeyNotConfirmed{Those words don\'t match. Check the words at those positions.} recoveryKeyInvalid{That isn\'t a valid recovery key.} wrongRecoveryKey{That recovery key doesn\'t open this account\'s data.} wrongPassphrase{That passphrase doesn\'t open this account\'s data.} passphraseTooShort{Use at least 12 characters.} passphraseTooCommon{That passphrase is too common. Choose another.} alreadyOn{Sync is already on.} notOn{Sync is off.} nothingToUndo{There is nothing to undo.} reviewGone{This was already closed, or its item is gone.} other{Something went wrong. Try again.}}'**
+  String syProblem(String problem);
 }
 
 class _AppLocalizationsDelegate
