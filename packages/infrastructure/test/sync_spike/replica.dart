@@ -14,7 +14,6 @@ import 'dart:convert';
 import 'package:drift/drift.dart' show Variable;
 import 'package:infrastructure/infrastructure.dart';
 
-import 'e2e.dart';
 import 'fake_server.dart';
 import 'resolve.dart';
 

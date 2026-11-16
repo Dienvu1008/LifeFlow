@@ -64,6 +64,7 @@ Fixed entry format: **Question / Hypothesis / What was done / Measured result / 
 - **Findings for T1b:** the passphrase check (D15 "minimum strength") is still to be chosen (a length rule plus a list of common passwords is the proposal); the recovery key must be confirmed by the user (for example by typing two of the words) before sync starts; the BIP-39 list ships as a Dart constant with its MIT notice.
 - **Human gate:** owner review with the other P04 spikes.
 
+## S-01 — Flutter + Drift
 **PASS on Windows (2026-11-04):** CRUD + transaction + persistence across restart + rollback, proven on-device; headless 2/2. Finding → **OQ-STACK-2**: resolved stack is sqlite3 2.9.4 + sqlite3_flutter_libs 0.5.42 (CMake bundling), not sqlite3 3.x build hooks (3.x path not smooth on Flutter yet). Android a follow-up.
 
 **Update (P01 T6a, 2026-11-06):** the real app (`apps/lifeflow_app`, Flutter 3.47.2) now resolves `drift_flutter 0.3.1` → **sqlite3 3.5.2 via build hooks**; `sqlite3_flutter_libs 0.6.0+eol` and `sqlcipher_flutter_libs 0.7.0+eol` are empty end-of-life stubs. The **plain** Windows debug build succeeds on this path (`flutter build windows --debug`), and the app runs. So the S-01 finding is superseded for the plain build. What still failed in S-02 is specifically the `sqlite3mc` source on the hook; that is what T6b must test for Android encryption.

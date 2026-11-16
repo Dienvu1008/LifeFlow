@@ -5,6 +5,7 @@
 #   dart run tools/fitness/ff_arch_07_licenses.dart --detect
 # Reviewed 2026-11-10 (P02 T8). Notes:
 #   dbus: MPL-2.0 (Linux-only transitive); accepted with the MPL condition (do not modify its files).
+#   cryptography 2.9.0: Apache-2.0, end-to-end encryption of sync (P04 T1b, VS-42, ADR-0052).
 #   Native SQLite3MultipleCiphers (via the sqlite3 build hook) is not a pub package, so this scan does not see it.
 # Android (Gradle)
 # Dart / Flutter packages
@@ -24,6 +25,7 @@ pub:collection 1.19.1 BSD-3-Clause
 pub:convert 3.1.2 BSD-3-Clause
 pub:cross_file 0.3.5+5 BSD-3-Clause
 pub:crypto 3.0.8 BSD-3-Clause
+pub:cryptography 2.9.0 Apache-2.0
 pub:dart_jsonwebtoken 3.4.1 MIT
 pub:dbus 0.8.0 MPL-2.0
 pub:drift 2.35.3 MIT

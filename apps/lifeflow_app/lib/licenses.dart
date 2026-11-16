@@ -4,6 +4,7 @@
 // They appear in Settings > Open-source licenses (showLicensePage).
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:infrastructure/infrastructure.dart' show syncDataLicenses;
 
 /// Shown as the package name on the license page.
 const desugarPackageName = 'desugar_jdk_libs (Android)';
@@ -24,5 +25,11 @@ void registerBundledLicenses() {
       'Android core library desugaring, used unmodified by the Android build.\n'
       '${source.trim()}\n\n${parts.join('\n\n')}',
     );
+  });
+  // P04 T1b: the word lists of sync (recovery keys, the passphrase check).
+  LicenseRegistry.addLicense(() async* {
+    for (final (name, text) in syncDataLicenses) {
+      yield LicenseEntryWithLineBreaks([name], text);
+    }
   });
 }
