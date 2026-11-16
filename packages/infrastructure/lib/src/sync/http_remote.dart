@@ -84,7 +84,7 @@ class HttpRemoteGateway implements RemoteGateway {
   @override
   Future<List<RemoteWorkspace>> workspaces() async {
     final rows = await _send('GET',
-        _uri('account_workspaces', {'select': 'workspace_id,wrapped_key,unlock_kind,unlock_salt,last_seq'})) as List;
+        _uri('account_workspaces', {'select': 'workspace_id,wrapped_key,unlock_kind,unlock_salt,last_seq,key_id'})) as List;
     return [
       for (final r in rows.cast<Map>())
         RemoteWorkspace(
@@ -93,6 +93,7 @@ class HttpRemoteGateway implements RemoteGateway {
           unlockKind: r['unlock_kind'] as String,
           unlockSalt: r['unlock_salt'] == null ? null : _fromHex(r['unlock_salt'] as String),
           lastSeq: (r['last_seq'] as num).toInt(),
+          keyId: r['key_id'] as String? ?? '',
         ),
     ];
   }
@@ -105,6 +106,7 @@ class HttpRemoteGateway implements RemoteGateway {
           'wrapped_key': _toHex(workspace.wrappedKey),
           'unlock_kind': workspace.unlockKind,
           'unlock_salt': workspace.unlockSalt == null ? null : _toHex(workspace.unlockSalt!),
+          'key_id': workspace.keyId,
         },
         prefer: 'return=minimal');
   }

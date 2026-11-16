@@ -52,7 +52,7 @@ void contract(String name, Future<Accounts> Function() open) {
       ws = const Uuid().v4();
       await acc.a.createWorkspace(RemoteWorkspace(
           workspaceId: ws, wrappedKey: Uint8List.fromList([1, 2, 3, 250]), unlockKind: 'passphrase',
-          unlockSalt: Uint8List.fromList(List.filled(16, 7))));
+          unlockSalt: Uint8List.fromList(List.filled(16, 7)), keyId: id(77)));
     });
 
     test('a workspace is listed with its wrapped key; re-wrapping changes only the key', () async {
@@ -61,6 +61,11 @@ void contract(String name, Future<Accounts> Function() open) {
       await acc.a.updateWrappedKey(ws, Uint8List.fromList([1, 9]), 'recoveryKey', null);
       final again = (await acc.a.workspaces()).singleWhere((w) => w.workspaceId == ws);
       expect([again.wrappedKey, again.unlockKind, again.unlockSalt], [[1, 9], 'recoveryKey', null]);
+      expect((w.keyId, again.keyId), (id(77), id(77)), reason: 're-wrapping keeps the key id');
+      await expectFailure(
+          acc.a.createWorkspace(RemoteWorkspace(
+              workspaceId: const Uuid().v4(), wrappedKey: Uint8List(1), unlockKind: 'recoveryKey', keyId: 'not hex')),
+          RemoteFailureKind.refused);
       await expectFailure(acc.a.updateWrappedKey(ws, Uint8List.fromList([1]), 'pin', null), RemoteFailureKind.refused);
     });
 

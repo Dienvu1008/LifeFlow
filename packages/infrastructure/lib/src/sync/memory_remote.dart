@@ -89,6 +89,7 @@ class MemoryRemoteGateway implements RemoteGateway {
             unlockKind: w.info.unlockKind,
             unlockSalt: w.info.unlockSalt,
             lastSeq: w.lastSeq,
+            keyId: w.info.keyId,
           ),
     ];
   }
@@ -98,6 +99,9 @@ class MemoryRemoteGateway implements RemoteGateway {
     final a = _account();
     if (!const {'recoveryKey', 'passphrase'}.contains(workspace.unlockKind)) {
       throw const RemoteFailure(RemoteFailureKind.refused, 'unknown unlock kind');
+    }
+    if (workspace.keyId.isNotEmpty && !_hex64.hasMatch(workspace.keyId)) {
+      throw const RemoteFailure(RemoteFailureKind.refused, 'bad key id');
     }
     if (server._workspaces.containsKey(workspace.workspaceId)) {
       throw const RemoteFailure(RemoteFailureKind.refused, 'the workspace exists');
@@ -112,7 +116,8 @@ class MemoryRemoteGateway implements RemoteGateway {
       throw const RemoteFailure(RemoteFailureKind.refused, 'unknown unlock kind');
     }
     w.info = RemoteWorkspace(
-        workspaceId: workspaceId, wrappedKey: wrappedKey, unlockKind: unlockKind, unlockSalt: unlockSalt);
+        workspaceId: workspaceId, wrappedKey: wrappedKey, unlockKind: unlockKind, unlockSalt: unlockSalt,
+        keyId: w.info.keyId);
   }
 
   @override

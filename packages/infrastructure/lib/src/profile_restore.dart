@@ -32,6 +32,7 @@ import 'app_database.dart';
 import 'command_gateway.dart';
 import 'profile_export.dart';
 import 'record_kinds.dart';
+import 'sync/sync_setup_handler.dart' show syncJoinSnapshotId;
 
 /// Every record kind, in write order (P02 T3: planning and calendar too).
 List<String> get _kinds => [for (final k in recordKinds) k.name];
@@ -367,7 +368,9 @@ class ProfileRestoreHandler implements CommandHandler {
 
     // The file (or the kept pre-restore state, for undo), validated again.
     final RestoreSnapshot? snapshot = undo
-        ? await (db.select(db.restoreSnapshots)..limit(1)).getSingleOrNull()
+        // P04 T4: the snapshot of a sync join is undone by its own command.
+        ? await (db.select(db.restoreSnapshots)..where((s) => s.id.equals(syncJoinSnapshotId).not())..limit(1))
+            .getSingleOrNull()
         : null;
     if (undo && snapshot == null) {
       throw DomainRejection('there is no restore to undo');

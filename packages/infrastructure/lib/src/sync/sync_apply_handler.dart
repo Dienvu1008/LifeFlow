@@ -114,7 +114,9 @@ class SyncApplyHandler implements CommandHandler {
     if (updated != 1) throw DomainRejection('this workspace is not synced on this device');
 
     return HandlerOutcome(
-      entityId: cmd.workspaceId,
+      // Not the workspace id itself: a pulled settings record has that id
+      // and an outbox row under this operation.
+      entityId: 'sync:${cmd.workspaceId}',
       operationType: 'update',
       changeSet: {'cursor': cursor, 'written': written, 'purged': purged, 'reviews': reviews},
       events: [

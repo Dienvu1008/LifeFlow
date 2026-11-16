@@ -24,25 +24,32 @@ class SealBroken implements Exception {
   String toString() => 'SealBroken: $why';
 }
 
+String _hex(List<int> bytes) => [for (final b in bytes) b.toRadixString(16).padLeft(2, '0')].join();
+
 /// A new random workspace key.
 Future<SecretKey> newWorkspaceKey() => _aes.newSecretKey();
 
 /// Seals and opens the records of one workspace.
 class RecordSealer {
-  RecordSealer._(this._seal, this._ids);
+  RecordSealer._(this._seal, this._ids, this.keyId);
   final SecretKey _seal;
   final SecretKey _ids;
+
+  /// A fingerprint of the workspace key (64 hex characters), kept with the
+  /// workspace on the server: it tells a device whether its key is the one
+  /// the records are sealed with (ADR-0057), and reveals nothing of the key.
+  final String keyId;
 
   static Future<RecordSealer> of(SecretKey workspaceKey) async => RecordSealer._(
         await _hkdf.deriveKey(secretKey: workspaceKey, info: utf8.encode('lifeflow sync seal v1')),
         await _hkdf.deriveKey(secretKey: workspaceKey, info: utf8.encode('lifeflow sync ids v1')),
+        _hex(await (await _hkdf.deriveKey(secretKey: workspaceKey, info: utf8.encode('lifeflow sync key id v1')))
+            .extractBytes()),
       );
 
   /// The server's id of a local record (the S-03 format: 64 hex characters).
-  Future<String> serverId(String kind, String localId) async {
-    final mac = await Hmac.sha256().calculateMac(utf8.encode('$kind:$localId'), secretKey: _ids);
-    return [for (final b in mac.bytes) b.toRadixString(16).padLeft(2, '0')].join();
-  }
+  Future<String> serverId(String kind, String localId) async =>
+      _hex((await Hmac.sha256().calculateMac(utf8.encode('$kind:$localId'), secretKey: _ids)).bytes);
 
   List<int> _aad(String serverId, int version) => utf8.encode('$serverId:$version');
 
