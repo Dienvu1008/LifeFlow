@@ -10,6 +10,24 @@ Fixed entry format: **Question / Hypothesis / What was done / Measured result / 
 ## S-03a — Auth
 **PASS on Windows (2026-11-04):** GitHub sign-in via SDK-managed PKCE (S256) + fixed loopback; session in secure storage survives offline restart; no token in logs. Decision: Supabase Auth is the MVP auth provider (ADR-0003 auth half Accepted). Follow-up: Android + email baseline.
 
+## S-03 — Supabase RLS for synced, end-to-end encrypted records
+**PASS (2026-11-14, local Supabase 17.11 in Docker; branch `p04/s03-rls`).**
+- **Question:** Does Supabase row-level security keep one account's synced records away from every other caller, also through the write functions, with acceptable complexity and speed? (p04-plan.md S-03; R-PERMISSION.)
+- **Hypothesis:** one table of opaque, sealed records per workspace (D12) with an owner check is enough for P04a; RLS policies stay small because the server never reads content.
+- **What was done:** migration `supabase/migrations/20261114000001_sync_records.sql`:
+  - `account_workspaces` (the wrapped workspace key, the unlock kind of D15, the last change number);
+  - `sync_records` (opaque 64-hex id, version, per-workspace change number `seq`, deleted flag, sealed bytes);
+  - RLS: select only within the caller's workspaces; no direct writes of records;
+  - `push_records` (version check per record, replay of an accepted operation is a no-op, change numbers from a row lock per workspace so they commit in order) and `purge_records` (only after 90 days; the tombstone stays and gets a new number). Both are security definer and check `auth.uid()` owns the workspace first.
+
+  pgTAP suite `supabase/tests/database/sync_records.test.sql`, 29 assertions: A's own reads and pushes, replay, conflicts by version, a version that must go up, opaque ids only, batch limit, no direct writes, B reads and writes nothing of A (also through both functions), B cannot make a workspace for A, anon has no rights at all, purge after retention, deleting the workspace deletes its records. CI job `supabase-db` runs it on every push.
+- **Measured result:** 29/29 pass. SQL mutations 9/9 killed: the owner check, the select policy, the replay check, the retention, a direct-write grant, the workspace policy, the version check, and anon execute rights (killed after adding a privilege assertion). Speed on the development PC: 10 000 records of 300 bytes pushed in 20 batches in 2.7 s; pulling all 10 000 in 8 ms; pulling the last 50 in under 1 ms.
+- **Success.** Membership roles for sharing (P04b) extend the same policies; they are not part of this spike.
+- **Decision:** feeds ADR-0052 (data half of ADR-0003) with S-04 and S-15.
+- **Findings:**
+  - On Windows, Hyper-V/WSL reserve port ranges (`netsh int ipv4 show excludedportrange protocol=tcp`). The default local Supabase ports 54320–54329 fell inside one, so the local stack uses 55320–55329 (`supabase/config.toml`).
+  - The same reservations cover **127.0.0.1:53682, the fixed loopback port of Windows sign-in (S-03a)**: binding it fails on the development PC now. Escalated to the owner (a fix: let the system pick a free loopback port, RFC 8252 §7.3, with a matching redirect pattern in Supabase).
+- **Human gate:** owner review with the other P04 spikes.
 ## S-01 — Flutter + Drift
 **PASS on Windows (2026-11-04):** CRUD + transaction + persistence across restart + rollback, proven on-device; headless 2/2. Finding → **OQ-STACK-2**: resolved stack is sqlite3 2.9.4 + sqlite3_flutter_libs 0.5.42 (CMake bundling), not sqlite3 3.x build hooks (3.x path not smooth on Flutter yet). Android a follow-up.
 
