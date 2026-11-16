@@ -44,6 +44,8 @@ export 'src/organize_rows.dart';
 export 'src/overview_service.dart';
 export 'src/workspace_settings_handler.dart';
 export 'src/sync/data_licenses.dart';
+export 'src/sync/http_remote.dart';
+export 'src/sync/memory_remote.dart';
 export 'src/sync/passphrase_policy.dart';
 export 'src/sync/recovery_key.dart';
 export 'src/sync/sealing.dart';
