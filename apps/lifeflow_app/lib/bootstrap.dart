@@ -1,5 +1,7 @@
 // Composition root wiring (docs/architecture/repository-structure.md): the only
 // place that connects infrastructure implementations to the UI ports.
+import 'dart:async';
+
 import 'package:application/application.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,6 +22,7 @@ class AppWiring {
     required this.onSessionRevoked,
     this.reminders,
     this.focusLaunch = const NoActiveFocus(),
+    this.sync,
   });
 
   final String profileId;
@@ -38,9 +41,21 @@ class AppWiring {
   /// the old profile can never re-schedule its reminders after the switch.
   Future<void> stopReminders() async => reminders?.stop();
 
-  /// Ends the session: reminder sync, then the store.
+  /// P04 T5 (D8): this profile's automatic sync while the app is open; null
+  /// when the build has no sync server.
+  final SyncScheduler? sync;
+
+  /// The app came back to the front: sync now if automatic (D8).
+  void resumed() => sync?.resumed();
+
+  /// Stops the automatic sync. Call BEFORE the next profile opens, as for
+  /// reminders, so the old store is not synced while it closes.
+  Future<void> stopSync() async => sync?.stop();
+
+  /// Ends the session: reminder sync, automatic sync, then the store.
   Future<void> close() async {
     await stopReminders();
+    await stopSync();
     await db.close();
   }
 
@@ -62,6 +77,20 @@ StoragePlatform storagePlatformFor(TargetPlatform p) => switch (p) {
       _ => StoragePlatform.other,
     };
 
+/// P04 T5 (ADR-0058): how a profile reaches the sync server. Null in a build
+/// without one (no Supabase defines): sync shows as unavailable.
+class SyncWiring {
+  const SyncWiring({required this.remoteFor, required this.keysFor});
+
+  /// The server for the profile's own account: [accountOf] gives that
+  /// account's id (null for a guest or a signed-out profile), read at each
+  /// call.
+  final RemoteGateway Function(Future<String?> Function() accountOf) remoteFor;
+
+  /// Secure-storage slots for the workspace keys (ADR-0054).
+  final DatabaseKeyStore Function(String name) keysFor;
+}
+
 /// Opens [profileId]'s own store and wires the UI ports to it:
 ///  1. the startup at-rest encryption self-check on THIS profile's file;
 ///     a warning is emitted through [onWarning] and surfaced in the UI, never
@@ -81,6 +110,7 @@ Future<AppWiring> openSession({
   String initialRoute = '/overview',
   String deviceZone = 'UTC',
   ReminderScheduler reminders = const NoDeviceReminders(),
+  SyncWiring? sync,
   void Function(String message)? onWarning,
 }) async {
   final store = await directory.openProfile(profileId);
@@ -128,8 +158,34 @@ Future<AppWiring> openSession({
     } catch (e) {
       onWarning?.call('[habits] $e'); // never blocks opening the profile
     }
+    final transfer = DriftDataTransferService(db, directory, gateway: gateway);
+
+    // P04 T5 (D4, D8): sync of this profile, if the build has a server. The
+    // first automatic sync is not awaited: opening never waits for the
+    // network (LF-INV-SEC-002).
+    DriftSyncService? syncService;
+    SyncScheduler? scheduler;
+    if (sync != null) {
+      final profiles = ProfileStore(db);
+      syncService = DriftSyncService(
+        db: db,
+        gateway: gateway,
+        remote: sync.remoteFor(() async {
+          final p = await profiles.getActiveProfile();
+          if (p == null || p.signedOut) return null;
+          return p.binding?.accountId;
+        }),
+        keyring: WorkspaceKeyring(sync.keysFor),
+        transfer: transfer,
+        log: (line) => onWarning?.call(line),
+      );
+      scheduler = SyncScheduler(
+          service: syncService, when: settings.syncWhen, onError: (e) => onWarning?.call('[sync] $e'));
+      unawaited(scheduler.start());
+    }
     return AppWiring(
       profileId: profileId,
+      sync: scheduler,
       db: db,
       notice: notice,
       onSessionRevoked: accounts.handleSessionRevoked,
@@ -152,8 +208,8 @@ Future<AppWiring> openSession({
         profileServiceProvider
             .overrideWithValue(DirectoryProfileService(directory, host)),
         accountServiceProvider.overrideWithValue(accounts),
-        dataTransferServiceProvider
-            .overrideWithValue(DriftDataTransferService(db, directory, gateway: gateway)),
+        dataTransferServiceProvider.overrideWithValue(transfer),
+        syncServiceProvider.overrideWithValue(syncService),
         fileGatewayProvider.overrideWithValue(files),
         settingsServiceProvider.overrideWithValue(settings),
         taskSchedulingProvider.overrideWithValue(DriftTaskScheduling(db, gateway)),

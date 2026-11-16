@@ -7,6 +7,7 @@ import '../shell.dart' show shellMenuButton;
 import '../providers.dart';
 import '../schedule_text.dart';
 import '../task_actions.dart' show reportResult;
+import 'sync_screen.dart' show SyncSettingsTile;
 
 import '../l10n.dart';
 import '../theme/lifeflow_theme.dart' show fontFamilyOf;
@@ -221,6 +222,9 @@ class SettingsScreen extends ConsumerWidget {
           const _ResultSettings(),
           const Divider(height: 32),
           const _ReminderSettings(),
+          const Divider(height: 32),
+          // P04 T5 (D9): Settings → Sync.
+          const SyncSettingsTile(),
           const Divider(height: 32),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),

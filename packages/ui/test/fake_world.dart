@@ -170,6 +170,18 @@ class FakeWorld
   @override
   Future<ThemePreference> themePreference() async => theme;
 
+  /// P04 T5 (D8): this device's "When to sync".
+  SyncWhen syncWhenSetting = SyncWhen.automatic;
+
+  @override
+  Future<SyncWhen> syncWhen() async => syncWhenSetting;
+
+  @override
+  Future<void> setSyncWhen(SyncWhen when) async {
+    calls.add('syncWhen:${when.name}');
+    syncWhenSetting = when;
+  }
+
   @override
   Future<void> setThemePreference(ThemePreference preference) async {
     calls.add('setTheme:${preference.name}');
@@ -1213,8 +1225,9 @@ ProfileView profile(String id, String name,
         provider: provider);
 
 /// The full app with the ports overridden by [world].
-Widget appWith(FakeWorld world, {StorageNotice? notice}) => ProviderScope(
+Widget appWith(FakeWorld world, {StorageNotice? notice, SyncService? sync}) => ProviderScope(
       overrides: [
+        syncServiceProvider.overrideWithValue(sync),
         taskQueriesProvider.overrideWithValue(world),
         taskServiceProvider.overrideWithValue(world),
         profileServiceProvider.overrideWithValue(world),

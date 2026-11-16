@@ -35,7 +35,7 @@ class LifeFlowRoot extends StatefulWidget {
   State<LifeFlowRoot> createState() => LifeFlowRootState();
 }
 
-class LifeFlowRootState extends State<LifeFlowRoot> {
+class LifeFlowRootState extends State<LifeFlowRoot> with WidgetsBindingObserver {
   AppWiring? _session;
   Object? _error;
   late final ProfileHost _host = _RootHost(this);
@@ -46,6 +46,8 @@ class LifeFlowRootState extends State<LifeFlowRoot> {
   @override
   void initState() {
     super.initState();
+    // P04 T5 (D8): sync on return to the app.
+    WidgetsBinding.instance.addObserver(this);
     _revokedSub = widget.sessionRevoked.listen((_) {
       _session?.onSessionRevoked();
     });
@@ -71,12 +73,15 @@ class LifeFlowRootState extends State<LifeFlowRoot> {
     // P02 T7: the old profile must not re-schedule its reminders once the
     // next profile has replaced them (ADR-0034).
     await previous?.stopReminders();
+    await previous?.stopSync();
     final AppWiring next;
     try {
       next = await widget.openSession(
           profileId, _host, showProfiles ? '/profiles' : '/overview');
     } catch (_) {
       await previous?.reminders?.start(); // still on the old profile
+      final sync = previous?.sync;
+      if (sync != null) unawaited(sync.start());
       rethrow;
     }
     if (!mounted) {
@@ -91,7 +96,13 @@ class LifeFlowRootState extends State<LifeFlowRoot> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _session?.resumed();
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _revokedSub?.cancel();
     _session?.close();
     super.dispose();

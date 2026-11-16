@@ -7,6 +7,7 @@
 #   dbus: MPL-2.0 (Linux-only transitive); accepted with the MPL condition (do not modify its files).
 #   cryptography 2.9.0: Apache-2.0, end-to-end encryption of sync (P04 T1b, VS-42, ADR-0052).
 #   unorm_dart 0.3.3: MIT, NFC of sync passphrases (P04, VS-45, ADR-0054).
+#   qr_flutter 4.1.0 and qr 3.0.3: BSD-3-Clause, the recovery key shown as a QR code (P04 T5, VS-46, ADR-0058).
 #   Native SQLite3MultipleCiphers (via the sqlite3 build hook) is not a pub package, so this scan does not see it.
 # Android (Gradle)
 # Dart / Flutter packages
@@ -94,6 +95,8 @@ pub:plugin_platform_interface 2.1.8 BSD-3-Clause
 pub:pointycastle 4.0.0 MIT
 pub:postgrest 2.9.1 MIT
 pub:pub_semver 2.2.1 BSD-3-Clause
+pub:qr 3.0.3 BSD-3-Clause
+pub:qr_flutter 4.1.0 BSD-3-Clause
 pub:realtime_client 2.13.2 MIT
 pub:record_use 0.6.0 BSD-3-Clause
 pub:riverpod 2.6.1 MIT

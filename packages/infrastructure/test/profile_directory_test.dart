@@ -187,7 +187,7 @@ void main() {
       expect(await store.db.select(store.db.schedules).get(), isEmpty);
     });
 
-    for (final from in [2, 3, 4, 5, 6, 7, 8, 9, 10]) {
+    for (final from in [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]) {
       test('an existing v$from profile store upgrades to the latest schema, '
           'data intact (ADR-0025, ADR-0029)', () async {
         var dir = await openDirectory(base, keys);
@@ -244,6 +244,35 @@ void main() {
         expect((task.colorIndex, isValidOrderKey(task.orderKey)), (null, true));
       });
     }
+
+    test('v11 -> v12: the outbox keeps its rows; its key gains the kind (ADR-0058)', () async {
+      var dir = await openDirectory(base, keys);
+      final id = (await dir.active())!.id;
+      final host = TestHost(dir);
+      await host.openActive();
+      await Services(host, FakeAuthGateway()).tasks.create('Waiting to be sent');
+      final before = await host.db.select(host.db.outbox).get();
+      await rewindProfileStore(host.db, 11);
+      await host.close();
+      await dir.close();
+
+      dir = await openDirectory(base, keys);
+      addTearDown(dir.close);
+      final store = await dir.openProfile(id);
+      addTearDown(store.db.close);
+      final db = store.db;
+      final after = await db.select(db.outbox).get();
+      expect([for (final o in after) o.toJson()], [for (final o in before) o.toJson()]);
+      // Two kinds with one id under one operation: what v11 refused.
+      for (final kind in ['exception', 'completion']) {
+        await db.into(db.outbox).insert(OutboxCompanion.insert(
+            operationId: 'op', entityId: 'task:t@2026-11-10', entityType: kind, workspaceId: 'w',
+            actorId: 'a', operationType: 'update', payload: '{}', createdAt: DateTime.utc(2026)));
+      }
+      expect((await db.select(db.outbox).get()).length, before.length + 2);
+      final idx = await db.customSelect("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'outbox_status'").get();
+      expect(idx, hasLength(1));
+    });
 
     test('v9 -> v10: the result policy moves from the profile to its workspace''s settings (ADR-0053)', () async {
       var dir = await openDirectory(base, keys);

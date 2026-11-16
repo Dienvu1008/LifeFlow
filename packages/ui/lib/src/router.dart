@@ -14,6 +14,7 @@ import 'screens/focus_page.dart';
 import 'screens/goals_screen.dart';
 import 'screens/profiles_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/sync_screen.dart';
 import 'screens/tasks_screen.dart';
 import 'shell.dart';
 
@@ -44,6 +45,8 @@ GoRouter createRouter({String initialLocation = '/overview'}) => GoRouter(
                   shell.goBranch(i, initialLocation: i == shell.currentIndex),
               notice: ref.watch(storageNoticeProvider),
               profile: ref.watch(activeProfileProvider).valueOrNull,
+              // P04 T5 (D9): the sync status under the profile.
+              syncLine: syncLineOf(context, ref.watch(syncStatusProvider).valueOrNull),
               // P03 T6b (D1, D4): the focus bar on every screen, and the
               // question about a session found at start.
               focusBar: const FocusBar(),
@@ -60,7 +63,16 @@ GoRouter createRouter({String initialLocation = '/overview'}) => GoRouter(
               ('/settings', SettingsScreen()),
               ('/profiles', ProfilesScreen()),
             ])
-              StatefulShellBranch(routes: [GoRoute(path: path, builder: (context, state) => screen)]),
+              StatefulShellBranch(routes: [
+                GoRoute(
+                  path: path,
+                  builder: (context, state) => screen,
+                  // P04 T5: Settings → Sync.
+                  routes: path == '/settings'
+                      ? [GoRoute(path: 'sync', builder: (context, state) => const SyncScreen())]
+                      : const [],
+                ),
+              ]),
           ],
         ),
       ],

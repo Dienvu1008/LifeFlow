@@ -424,7 +424,7 @@ class ProfileExport {
     unique(audit.map((r) => r.auditId), 'audit rows');
     unique(events.map((r) => r.eventId), 'events');
     unique(dedupe.map((r) => r.operationId), 'operations');
-    unique(outbox.map((r) => '${r.operationId}/${r.entityId}'), 'outbox rows');
+    unique(outbox.map((r) => '${r.operationId}/${r.entityType}/${r.entityId}'), 'outbox rows');
     if (outbox.any((o) => !wsIds.contains(o.workspaceId)) ||
         dedupe.any((d) => !wsIds.contains(d.workspaceId))) {
       bad('a row points to an unknown workspace');

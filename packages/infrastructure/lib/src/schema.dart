@@ -121,8 +121,13 @@ class Outbox extends Table {
   TextColumn get payload => text()(); // JSON change set or tombstone
   DateTimeColumn get createdAt => dateTime()();
   TextColumn get status => text().withDefault(const Constant('pending'))();
+
+  /// P04 T6 (schema v12, ADR-0058): the kind is part of the key. An
+  /// occurrence's exception and its completion share one id
+  /// ('task:<id>@<date>'), and one operation (a pulled page, a join, a
+  /// restore) can write both.
   @override
-  Set<Column> get primaryKey => {operationId, entityId};
+  Set<Column> get primaryKey => {operationId, entityType, entityId};
 }
 
 class EventLog extends Table {

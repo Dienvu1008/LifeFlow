@@ -2,9 +2,12 @@
 // undoing a join, turning it off and deleting the server copy, for the
 // active profile's store. Keys stay in secure storage (WorkspaceKeyring);
 // the server sees wrapped keys and sealed records only (ADR-0052).
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:application/application.dart';
 import 'package:cryptography/cryptography.dart' show SecretKey;
-import 'package:drift/drift.dart' show Variable;
+import 'package:drift/drift.dart' show OrderingTerm, TableUpdateQuery, Variable;
 import 'package:foundation/foundation.dart';
 import 'package:uuid/uuid.dart';
 
@@ -16,6 +19,7 @@ import 'passphrase_policy.dart';
 import 'recovery_key.dart';
 import 'sealing.dart';
 import 'sync_engine.dart';
+import 'sync_review_handler.dart';
 import 'sync_setup_handler.dart';
 import 'workspace_keyring.dart';
 
@@ -26,7 +30,12 @@ class DriftSyncService implements SyncService {
     required this.remote,
     required this.keyring,
     this.transfer,
+    this.log,
   }) : _store = ProfileStore(db);
+
+  /// P04 T6: every sync that did not end up to date, for the device's local
+  /// log (counts and the kind of failure; never content or a key).
+  final void Function(String line)? log;
 
   final AppDatabase db;
   final DriftCommandGateway gateway;
@@ -39,6 +48,10 @@ class DriftSyncService implements SyncService {
 
   /// The recovery key offered and not confirmed yet.
   (KeySetup, (int, int))? _offer;
+
+  /// The sync running now; another syncNow waits for it (T5).
+  Future<SyncReport>? _running;
+  final _changed = StreamController<void>.broadcast();
 
   Future<(String profileId, String ws)> _active() async {
     final p = await _store.getActiveProfile();
@@ -73,7 +86,91 @@ class DriftSyncService implements SyncService {
       pending: pending,
       reviews: reviews,
       canUndoJoin: snap != null,
+      syncing: _running != null,
     );
+  }
+
+  @override
+  Stream<SyncStatus> watchStatus() {
+    final subs = <StreamSubscription<void>>[];
+    late final StreamController<SyncStatus> out;
+    var chain = Future<void>.value();
+    // One read at a time, in order, so the last status shown is the latest.
+    void emit() => chain = chain.then((_) async {
+          final s = await status();
+          if (!out.isClosed) out.add(s);
+        }).catchError((Object _) {}); // a closed store while switching profiles
+    out = StreamController<SyncStatus>(
+      onListen: () {
+        emit();
+        subs
+          ..add(_changed.stream.listen((_) => emit()))
+          ..add(db
+              .tableUpdates(TableUpdateQuery.onAllTables([db.outbox, db.syncState, db.syncReviews, db.restoreSnapshots]))
+              .listen((_) => emit()));
+      },
+      onCancel: () async {
+        for (final s in subs) {
+          await s.cancel();
+        }
+      },
+    );
+    return out.stream;
+  }
+
+  @override
+  Future<List<SyncReviewView>> reviews() async {
+    final rows = await (db.select(db.syncReviews)
+          ..where((r) => r.resolvedAt.isNull())
+          ..orderBy([(r) => OrderingTerm.desc(r.createdAt)]))
+        .get();
+    return [for (final r in rows) await _reviewView(r)];
+  }
+
+  Future<SyncReviewView> _reviewView(SyncReviewRow r) async {
+    final kind = recordKindByName[r.kind];
+    final row = kind == null ? null : await kind.readOne(db, r.recordId);
+    final reason = SyncReviewKind.values.where((k) => k.name == r.reason).firstOrNull ?? SyncReviewKind.unreadable;
+    Object? kept, other;
+    try {
+      kept = jsonDecode(r.kept);
+      other = jsonDecode(r.other);
+    } on FormatException {
+      kept = other = null;
+    }
+    return SyncReviewView(
+      id: r.id,
+      recordKind: r.kind,
+      recordId: r.recordId,
+      reason: reason,
+      field: r.field,
+      title: await _titleOf(row),
+      kept: reason == SyncReviewKind.changedOnBoth ? describeReviewValue(kept, against: other) : '',
+      other: reason == SyncReviewKind.changedOnBoth ? describeReviewValue(other, against: kept) : '',
+      canTakeOther: reason == SyncReviewKind.changedOnBoth && row != null && row['deletedAt'] == null,
+      createdAt: r.createdAt,
+    );
+  }
+
+  /// The record's title, or its task's or event's (a schedule, a reminder).
+  Future<String?> _titleOf(Map<String, dynamic>? row) async {
+    if (row == null) return null;
+    final title = row['title'];
+    if (title is String && title.isNotEmpty) return title;
+    final type = row['subjectType'] ?? (row['taskId'] != null ? 'task' : null);
+    final subject = row['subjectId'] ?? row['taskId'];
+    if (type is! String || subject is! String) return null;
+    final owner = await recordKindByName[type]?.readOne(db, subject);
+    final t = owner?['title'];
+    return t is String && t.isNotEmpty ? t : null;
+  }
+
+  @override
+  Future<SyncSetupResult> resolveReview(String id, {required bool takeOther}) async {
+    final r = await _command(resolveSyncReviewAction, {'op': 'resolve', 'id': id, 'take': takeOther ? 'other' : 'kept'},
+        handler: const SyncReviewHandler());
+    if (r is CommandOk) return const SyncSetupResult();
+    return SyncSetupResult.failed(SyncSetupProblem.reviewGone, '$r');
   }
 
   @override
@@ -224,7 +321,31 @@ class DriftSyncService implements SyncService {
   }
 
   @override
-  Future<SyncReport> syncNow() async {
+  Future<SyncReport> syncNow() {
+    final running = _running;
+    if (running != null) return running;
+    final next = _syncOnce();
+    _running = next;
+    _changed.add(null);
+    return next.whenComplete(() {
+      _running = null;
+      _changed.add(null);
+    });
+  }
+
+  Future<SyncReport> _syncOnce() async {
+    SyncReport r;
+    try {
+      r = await _syncOnceUnguarded();
+    } catch (e) {
+      // A key store or store error: a failed sync, never an exception.
+      r = SyncReport(SyncOutcome.failed, detail: 'error: ${e.runtimeType}');
+    }
+    if (r.outcome != SyncOutcome.upToDate) log?.call('[sync] $r');
+    return r;
+  }
+
+  Future<SyncReport> _syncOnceUnguarded() async {
     final s = await _state();
     if (s == null) return SyncReport(SyncOutcome.notOn);
     final key = await keyring.keyOf(s.workspaceId);
@@ -263,7 +384,8 @@ class DriftSyncService implements SyncService {
     return turnOff();
   }
 
-  Future<CommandResult> _command(String type, Map<String, Object?> payload) async {
+  Future<CommandResult> _command(String type, Map<String, Object?> payload,
+      {CommandHandler handler = const SyncSetupHandler()}) async {
     final p = (await _store.getActiveProfile())!;
     return gateway.execute(
       Command(
@@ -274,7 +396,7 @@ class DriftSyncService implements SyncService {
         payload: payload,
         issuedAt: Instant.now(),
       ),
-      const SyncSetupHandler(),
+      handler,
     );
   }
 }

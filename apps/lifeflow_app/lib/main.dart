@@ -6,6 +6,7 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:infrastructure/infrastructure.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'auth/auth_config.dart';
 import 'auth/supabase_auth_gateway.dart';
 import 'bootstrap.dart';
 import 'file_picker_gateway.dart';
@@ -68,6 +69,19 @@ Future<void> main() async {
     debugPrint('[time] device zone unavailable: $e');
   }
 
+  // P04 T5 (ADR-0058): the sync server is the same Supabase project; the
+  // token is the profile's own account's only. Keys in secure storage.
+  final sync = auth.isConfigured
+      ? SyncWiring(
+          remoteFor: (accountOf) => HttpRemoteGateway(
+            baseUrl: AuthConfig.supabaseUrl,
+            anonKey: AuthConfig.supabaseAnonKey,
+            accessToken: () async => auth.accessTokenFor(await accountOf()),
+          ),
+          keysFor: secureKeyStoreFor,
+        )
+      : null;
+
   // Never a locked (signed-out) profile: ProfileDirectory.open falls back to
   // a guest (ADR-0024).
   final active = (await directory.active())!;
@@ -84,6 +98,7 @@ Future<void> main() async {
       deviceZone: deviceZone ?? 'UTC',
       reminders: reminders,
       files: const FilePickerGateway(),
+      sync: sync,
       windowsPlainFallback: windowsPlainFallback,
       // Local log only; never uploaded (no telemetry, SR-15).
       onWarning: (m) => debugPrint('[storage] $m'),
