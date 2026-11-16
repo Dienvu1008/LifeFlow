@@ -83,6 +83,15 @@ void contract(String name, Future<Accounts> Function() open) {
       expect((await acc.a.workspaces()).singleWhere((w) => w.workspaceId == ws).lastSeq, 5);
     });
 
+    test('T6 finding: a record of real size (several KB of any bytes) comes back exactly', () async {
+      final x = randomId();
+      final big = Uint8List.fromList([for (var i = 0; i < 5000; i++) _rnd.nextInt(256)]);
+      await acc.a.push(ws, 'pc', [
+        RecordPush(id: x, base: null, version: 1, deleted: false, sealed: big, operationId: const Uuid().v4())
+      ]);
+      expect((await acc.a.pull(ws, 0)).single.sealed, big);
+    });
+
     test('a replay is accepted once; a stale base is a conflict naming the server\'s version', () async {
       final x = randomId();
       final first = rec(x, op: const Uuid().v4());

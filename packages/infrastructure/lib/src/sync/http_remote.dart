@@ -168,7 +168,9 @@ class HttpRemoteGateway implements RemoteGateway {
           version: (r['version'] as num).toInt(),
           seq: (r['seq'] as num).toInt(),
           deleted: r['deleted'] as bool,
-          sealed: r['sealed'] == null ? null : base64Decode(r['sealed'] as String),
+          // Postgres' encode(..., 'base64') breaks lines every 76 characters
+          // (T6 finding): the line breaks are not part of the data.
+          sealed: r['sealed'] == null ? null : base64Decode((r['sealed'] as String).replaceAll(_whitespace, '')),
           deviceId: r['device_id'] as String,
         ),
     ];
@@ -180,6 +182,8 @@ class HttpRemoteGateway implements RemoteGateway {
               body: {'p_workspace': workspaceId, 'p_before': before.toUtc().toIso8601String()})) as num)
           .toInt();
 }
+
+final _whitespace = RegExp(r'\s');
 
 /// PostgREST's text form of bytea: `\x` and hex digits.
 String _toHex(Uint8List b) => '\\x${[for (final x in b) x.toRadixString(16).padLeft(2, '0')].join()}';
