@@ -71,3 +71,9 @@ On the owner's two devices, neither showed the other's tasks after "Sync now". T
   - An unexpected error is a failed sync with a log line, and the next sync goes on.
   - A v11 store upgrades with its outbox rows kept and accepts both kinds under one id; the v2–v11 upgrade loop covers the rest.
   - Mutations 2 of 2 killed.
+
+## T6 finding 2 (2026-11-16): base64 line breaks from the server
+After the v12 fix, the owner's "Sync now" on Windows logged `SyncReport(failed, pushed 0, pulled 0, ...) error: FormatException`.
+- **Cause.** `pull_records` returns the sealed bytes with Postgres `encode(..., 'base64')`, which breaks the text into lines of 76 characters. Dart's `base64Decode` refuses the line breaks, so any record over 57 bytes could not be pulled: every real record. The contract test passed only because its test records were a few bytes long. This was most likely what both devices hit from the first sync on; the outbox key bug above was real too.
+- **Fix.** `HttpRemoteGateway.pull` drops whitespace before decoding. No server change is needed.
+- **Test.** A contract case pushes and pulls a 5000-byte record, on the in-memory server and on local Supabase (CI job `supabase-db`). It fails without the fix.
