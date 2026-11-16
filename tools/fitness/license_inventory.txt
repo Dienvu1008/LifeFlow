@@ -6,6 +6,7 @@
 # Reviewed 2026-11-10 (P02 T8). Notes:
 #   dbus: MPL-2.0 (Linux-only transitive); accepted with the MPL condition (do not modify its files).
 #   cryptography 2.9.0: Apache-2.0, end-to-end encryption of sync (P04 T1b, VS-42, ADR-0052).
+#   unorm_dart 0.3.3: MIT, NFC of sync passphrases (P04, VS-45, ADR-0054).
 #   Native SQLite3MultipleCiphers (via the sqlite3 build hook) is not a pub package, so this scan does not see it.
 # Android (Gradle)
 # Dart / Flutter packages
@@ -119,6 +120,7 @@ pub:term_glyph 1.2.2 BSD-3-Clause
 pub:test_api 0.7.12 BSD-3-Clause
 pub:timezone 0.11.2 BSD-2-Clause
 pub:typed_data 1.4.0 BSD-3-Clause
+pub:unorm_dart 0.3.3 MIT
 pub:url_launcher 6.3.3 BSD-3-Clause
 pub:url_launcher_android 6.3.33 BSD-3-Clause
 pub:url_launcher_ios 6.4.2 BSD-3-Clause

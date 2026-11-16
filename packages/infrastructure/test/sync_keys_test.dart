@@ -24,6 +24,7 @@ import 'package:drift/native.dart';
 import 'package:infrastructure/infrastructure.dart';
 import 'package:infrastructure/src/sync/bip39_english.dart';
 import 'package:test/test.dart';
+import 'package:unorm_dart/unorm_dart.dart' as unorm;
 
 import 'profile_harness.dart' show MemoryKeys;
 import 'sync_spike/fake_server.dart';
@@ -134,6 +135,20 @@ void main() {
     expect(checkPassphrase('correct horse battery staple'), isNull);
     expect(checkPassphrase('mèo con đi học sớm'), isNull, reason: 'any script');
     expect(checkPassphrase('học bài 2024!!'), isNull);
+  });
+
+  test('NFC: a Vietnamese passphrase unlocks with precomposed letters or combining marks', () async {
+    const composed = 'mèo con đi học sớm';
+    final decomposed = unorm.nfd(composed);
+    expect(decomposed, isNot(composed), reason: 'the two spellings differ byte for byte');
+    expect(normalizePassphrase(decomposed), composed);
+    expect(checkPassphrase(decomposed), isNull);
+    expect(checkPassphrase(unorm.nfd('học bài tốt')), PassphraseProblem.tooShort,
+        reason: 'length is counted on the normalised text, not on its combining marks');
+    final keys = WorkspaceKeyring(MemoryKeys().call);
+    final setup = await keys.setUpWithPassphrase(ws, decomposed);
+    final key = await WorkspaceKeyring(MemoryKeys().call).unlock(ws, setup.wrapped, passphrase: composed);
+    expect(await key.extractBytes(), await setup.workspaceKey.extractBytes());
   });
 
   group('keyring', () {
