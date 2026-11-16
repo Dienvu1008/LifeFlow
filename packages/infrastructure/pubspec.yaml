@@ -24,18 +24,14 @@ dependencies:
   uuid: ^4.5.0
   # SHA-256 for the export checksum (BSD-3, Dart team).
   crypto: 3.0.8
+  # End-to-end encryption of synced records (Apache-2.0, VS-42; ADR-0052).
+  cryptography: 2.9.0
 
 dev_dependencies:
   test: ^1.25.0
   lints: ^5.0.0
   drift_dev: ^2.28.0
   build_runner: ^2.4.13
-  cryptography: 2.9.0
-
-# SQLite3MultipleCiphers (MIT, VS-25) instead of plain SQLite, so the headless
-# tests exercise real at-rest encryption (ADR-0021, GS-19). Prebuilt binaries
-# with pinned hashes are downloaded by the sqlite3 build hook; nothing is
-# compiled locally. Without a key sqlite3mc behaves like plain SQLite.
 hooks:
   user_defines:
     sqlite3:
