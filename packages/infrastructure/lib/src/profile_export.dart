@@ -49,8 +49,9 @@ final List<String> exportedTables = [
 
 /// Tables that are deliberately NOT exported. `restoreSnapshots` holds the
 /// undo copy of the last restore (an export itself); exporting it would nest
-/// old data in every file.
-const notExportedTables = ['restoreSnapshots'];
+/// old data in every file. `syncBase` and `syncState` are this device's
+/// sync bookkeeping (P04 T1): another device or a restore starts its own.
+const notExportedTables = ['restoreSnapshots', 'syncBase', 'syncState'];
 
 /// A file that must not be restored. [message] is safe to show to the user and
 /// never echoes file contents.
@@ -286,6 +287,28 @@ class ProfileExport {
         p.putIfAbsent('manualResults', () => 'target');
       }
     }
+    if (fromSchema < 10) {
+      // Schema v10 (P04 T1): the result policy was kept on the profile; it is
+      // now a setting of the workspace, which syncs ('target' needs no row).
+      final settings = <Object?>[];
+      for (final p in (map['profiles'] as List? ?? const []).whereType<Map>()) {
+        final ws = p['activeWorkspaceId'];
+        if (p['manualResults'] == 'tick' && ws is String) {
+          settings.add({
+            'id': ws,
+            'workspaceId': ws,
+            'ownerId': p['id'],
+            'version': 1,
+            'createdAt': p['createdAt'],
+            'updatedAt': p['createdAt'],
+            'deletedAt': null,
+            'deletedBy': null,
+            'manualResults': 'tick',
+          });
+        }
+      }
+      map['workspaceSettings'] = settings;
+    }
     if (fromSchema < 7) {
       // Schema v7 (P03 UX U2): no colours, no event lists, no order keys.
       // Keys keep the order the app showed: by creation, then file order.
@@ -375,6 +398,11 @@ class ProfileExport {
     }
     if (workspaces.any((w) => w.ownerId != profile.id)) {
       bad('a workspace belongs to another profile');
+    }
+    // P04 T1: one settings row per workspace, keyed by it, with a known policy.
+    for (final s in records['workspaceSettings']!) {
+      if (s['id'] != s['workspaceId']) bad('settings of another workspace');
+      if (!const {'target', 'tick'}.contains(s['manualResults'])) bad('an unknown result policy');
     }
 
     // Unique primary keys, so the write cannot half-succeed on a duplicate.

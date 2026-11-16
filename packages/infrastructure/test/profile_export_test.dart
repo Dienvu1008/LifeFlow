@@ -138,6 +138,8 @@ void main() {
         ...['focus_sessions', 'execution_records', 'measurements', 'period_results',
             'goals', 'milestones', 'goal_links'],
         'restore_snapshots',
+        // P04 T1 (schema v10): synced settings; sync bookkeeping (not exported)
+        ...['workspace_settings', 'sync_base', 'sync_state'],
       });
       expect(host.db.allTables.length,
           exportedTables.length + notExportedTables.length);

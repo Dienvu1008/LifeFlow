@@ -282,9 +282,9 @@ void main() {
           if (before[kind]![id] == null || before[kind]![id]!['version'] != after[kind]![id]!['version'])
             if (!outboxed.contains('$kind|$id')) kind,
     ];
-    // The execution record of an ended session is written without its own
-    // outbox row, so it would never be pushed. T1 makes this list empty.
-    expect(missing, ['executionRecord']);
+    // Spike S-04 found the execution record of an ended session without an
+    // outbox row of its own; P04 T1 fixed it (ADR-0053).
+    expect(missing, isEmpty);
   });
 
   test('property: random edits and syncs on three devices converge, with no record and no completion lost',

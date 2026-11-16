@@ -12,7 +12,7 @@ import 'package:uuid/uuid.dart';
 import 'app_database.dart';
 import 'habit_tracking.dart';
 import 'measurement_command_handler.dart';
-import 'profile_command_handler.dart';
+import 'workspace_settings_handler.dart';
 import 'profile_store.dart';
 import 'task_command_handler.dart';
 
@@ -81,10 +81,12 @@ class DriftHabitService implements HabitService {
   Future<CommandResult> setManualResults(ManualResults value) async {
     final profile = await _store.getActiveProfile();
     if (profile == null) return const CommandFailure(CommandFailureKind.notFound, reason: 'no active profile');
-    final id = profile.profileId.value;
-    final row = await (db.select(db.profiles)..where((p) => p.id.equals(id))).getSingle();
-    return _run(const ProfileCommandHandler(), 'SetManualResults', {'op': 'setManualResults', 'id': id, 'value': value.name},
-        expected: Version(row.version));
+    // P04 T1: a setting of the workspace, which syncs (ADR-0053).
+    final id = profile.activeWorkspaceId.value;
+    final row = await (db.select(db.workspaceSettings)..where((s) => s.id.equals(id))).getSingleOrNull();
+    return _run(const WorkspaceSettingsCommandHandler(), 'SetManualResults',
+        {'op': 'setManualResults', 'id': id, 'value': value.name},
+        expected: row == null ? null : Version(row.version));
   }
 
   @override
@@ -166,8 +168,9 @@ class DriftHabitQueries implements HabitQueries {
 
   @override
   Future<ManualResults> manualResults() async {
-    final row = await (db.select(db.profiles)..limit(1)).getSingleOrNull();
-    return row?.manualResults == 'tick' ? ManualResults.tick : ManualResults.target;
+    final profile = await _store.getActiveProfile();
+    if (profile == null) return ManualResults.target;
+    return await ticksAreResults(db, profile.activeWorkspaceId.value) ? ManualResults.tick : ManualResults.target;
   }
 
   @override
