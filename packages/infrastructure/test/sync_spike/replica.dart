@@ -14,14 +14,19 @@ import 'dart:convert';
 import 'package:drift/drift.dart' show Variable;
 import 'package:infrastructure/infrastructure.dart';
 
+import 'e2e.dart';
 import 'fake_server.dart';
 import 'resolve.dart';
 
 class Replica {
-  Replica(this.name, this.db, this.server);
+  Replica(this.name, this.db, this.server, {this.sealer});
   final String name;
   final AppDatabase db;
   final FakeServer server;
+
+  /// End-to-end encryption (spike S-15); without it records go as plain
+  /// JSON (spike S-04).
+  final RecordSealer? sealer;
 
   /// The last synced copy of each record, by (kind, local id).
   final base = <String, Row>{};
@@ -80,14 +85,16 @@ class Replica {
       final key = _key(kind, id);
       final b = base[key];
       if (b != null && b['version'] == row['version']) continue; // already on the server
-      rows[opaqueId(kind, id)] = row;
-      _ids[opaqueId(kind, id)] = (kind, id);
+      final sid = sealer == null ? opaqueId(kind, id) : await sealer!.serverId(kind, id);
+      rows[sid] = row;
+      _ids[sid] = (kind, id);
+      final content = {'kind': kind, 'id': id, 'row': row};
       items.add(PushItem(
-        id: opaqueId(kind, id),
+        id: sid,
         base: b?['version'] as int?,
         version: row['version'] as int,
         deleted: row['deletedAt'] != null,
-        sealed: jsonEncode({'kind': kind, 'id': id, 'row': row}),
+        sealed: sealer == null ? jsonEncode(content) : base64Encode(await sealer!.seal(sid, row['version'] as int, content)),
         // One operation per (device, record, version): a retry after a lost
         // answer is the same operation, so the server accepts it once.
         op: opaqueId('$name:$kind:${row['version']}', id),
@@ -96,8 +103,7 @@ class Replica {
     final result = server.push(name, items);
     for (final sid in result.accepted) {
       final row = rows[sid]!;
-      final item = items.firstWhere((i) => i.id == sid);
-      final kind = (jsonDecode(item.sealed) as Map)['kind'] as String;
+      final kind = _ids[sid]!.$1;
       base[_key(kind, row['id'] as String)] = row;
     }
     // Outbox rows whose records are now on the server are done.
@@ -128,7 +134,9 @@ class Replica {
         }
         continue;
       }
-      final env = jsonDecode(s.sealed!) as Map<String, dynamic>;
+      final env = sealer == null
+          ? jsonDecode(s.sealed!) as Map<String, dynamic>
+          : await sealer!.open(s.id, s.version, base64Decode(s.sealed!));
       final kind = env['kind'] as String;
       final id = env['id'] as String;
       final remote = (env['row'] as Map).cast<String, dynamic>();

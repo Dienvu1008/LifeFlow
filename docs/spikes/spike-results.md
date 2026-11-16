@@ -47,7 +47,23 @@ Fixed entry format: **Question / Hypothesis / What was done / Measured result / 
   - Ties (same version on both devices) fall back to the later update, then the device name, so every device picks the same value.
 - **Decision:** feeds ADR-0052 with S-03 and S-15.
 - **Human gate:** owner review with the other P04 spikes.
-## S-01 — Flutter + Drift
+## S-15 — End-to-end encryption of synced records
+**PASS (2026-11-14, Windows; branch `p04/s15-e2e`). Android speed still to measure on the device (T6).**
+- **Question:** Can every synced record be sealed on the device so the server and its operator read nothing (p04-plan.md D12), with a key a second device gets from a recovery key or a passphrase (D15), fast enough for 10 000 records?
+- **Hypothesis:** AES-256-GCM per record with the server id and version as associated data, a workspace key wrapped by an unlock key, and Argon2id for passphrases, from the `cryptography` package (Apache-2.0, VS-42).
+- **What was done:** prototype `packages/infrastructure/test/sync_spike/e2e.dart`:
+  - `RecordSealer`: keys for sealing and for server ids derived from the workspace key with HKDF-SHA-256; server id = HMAC-SHA-256 of kind and local id (64 hex, the S-03 format); seal = AES-256-GCM with a fresh 96-bit nonce and `serverId:version` as associated data;
+  - the workspace key wrapped by an unlock key (AES-256-GCM, the workspace id as associated data);
+  - unlock from a recovery key (256 random bits as 24 BIP-39 words with an 8-bit checksum, VS-43) or from a passphrase (Argon2id, 19 MiB, 2 passes, 1 lane: OWASP's minimum);
+  - the S-04 replica seals on push and opens on pull when given a sealer.
+
+  `sync_e2e_spike_test.dart`, 7 tests: round trip with a fresh nonce; another key, id, version or a changed byte refused; server ids reveal nothing and cannot be computed without the key; 24 words round trip, a wrong word refused, about 255 of 256 swapped words caught by the checksum; recovery key and passphrase both unwrap, switching re-wraps only (old records still open); end to end (A turns sync on, B joins with the words, an edit goes both ways, and no title, note, local id, kind or workspace id is readable in the server's rows); speed.
+- **Measured result (development PC, Dart VM, pure-Dart AES-GCM):** 10 000 records sealed in 0.51 s and opened in 0.37 s; a sealed record of about 300 bytes of content is 350 bytes; one Argon2id derivation 106 ms. Mutations 6/6 killed (associated data on seal and on open, the checksum, a fixed nonce, the workspace binding of the wrapped key, the kind in the id hash).
+- **Success** on Windows. Android: the same code runs there (pure Dart); `cryptography_flutter` can switch to the platform's AES if T6 finds it slow.
+- **Decision:** feeds ADR-0052.
+- **Findings for T1b:** the passphrase check (D15 "minimum strength") is still to be chosen (a length rule plus a list of common passwords is the proposal); the recovery key must be confirmed by the user (for example by typing two of the words) before sync starts; the BIP-39 list ships as a Dart constant with its MIT notice.
+- **Human gate:** owner review with the other P04 spikes.
+
 **PASS on Windows (2026-11-04):** CRUD + transaction + persistence across restart + rollback, proven on-device; headless 2/2. Finding → **OQ-STACK-2**: resolved stack is sqlite3 2.9.4 + sqlite3_flutter_libs 0.5.42 (CMake bundling), not sqlite3 3.x build hooks (3.x path not smooth on Flutter yet). Android a follow-up.
 
 **Update (P01 T6a, 2026-11-06):** the real app (`apps/lifeflow_app`, Flutter 3.47.2) now resolves `drift_flutter 0.3.1` → **sqlite3 3.5.2 via build hooks**; `sqlite3_flutter_libs 0.6.0+eol` and `sqlcipher_flutter_libs 0.7.0+eol` are empty end-of-life stubs. The **plain** Windows debug build succeeds on this path (`flutter build windows --debug`), and the app runs. So the S-01 finding is superseded for the plain build. What still failed in S-02 is specifically the `sqlite3mc` source on the hook; that is what T6b must test for Android encryption.
