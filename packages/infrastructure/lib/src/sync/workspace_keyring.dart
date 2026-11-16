@@ -79,7 +79,7 @@ class WorkspaceKeyring {
     final SecretKey unlock = switch (wrapped.kind) {
       UnlockKind.recoveryKey when recoveryKey != null => await unlockFromRecoveryKey(recoveryKey.bytes),
       UnlockKind.passphrase when passphrase != null && wrapped.salt != null =>
-        await unlockFromPassphrase(passphrase.trim(), wrapped.salt!),
+        await unlockFromPassphrase(normalizePassphrase(passphrase), wrapped.salt!),
       _ => throw ArgumentError('this key is unlocked by its ${wrapped.kind.name}'),
     };
     final key = await unwrapWith(unlock, wrapped.bytes, workspaceId);
@@ -111,6 +111,6 @@ class WorkspaceKeyring {
     if (problem != null) throw PassphraseRejected(problem);
     final salt = Uint8List.fromList([for (var i = 0; i < 16; i++) _random.nextInt(256)]);
     return WrappedKey(
-        await wrapWith(await unlockFromPassphrase(passphrase.trim(), salt), key, workspaceId), UnlockKind.passphrase, salt);
+        await wrapWith(await unlockFromPassphrase(normalizePassphrase(passphrase), salt), key, workspaceId), UnlockKind.passphrase, salt);
   }
 }

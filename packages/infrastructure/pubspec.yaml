@@ -26,6 +26,8 @@ dependencies:
   crypto: 3.0.8
   # End-to-end encryption of synced records (Apache-2.0, VS-42; ADR-0052).
   cryptography: 2.9.0
+  # NFC for sync passphrases, so accents typed either way unlock (MIT, VS-45; ADR-0054).
+  unorm_dart: 0.3.3
 
 dev_dependencies:
   test: ^1.25.0

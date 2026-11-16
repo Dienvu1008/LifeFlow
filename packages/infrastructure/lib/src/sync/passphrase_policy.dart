@@ -3,15 +3,22 @@
 // one with digits or symbols added at either end ("password2024!"). It is
 // stretched with Argon2id (sealing.dart), so length matters more than
 // symbols.
+import 'package:unorm_dart/unorm_dart.dart' as unorm;
+
 import 'common_passwords.dart';
 
 const minPassphraseLength = 12;
+
+/// The passphrase as it is checked and stretched: spaces at either end
+/// removed, then Unicode NFC (owner, 2026-11-14), so a Vietnamese passphrase
+/// unlocks whether the keyboard wrote precomposed letters or combining marks.
+String normalizePassphrase(String passphrase) => unorm.nfc(passphrase.trim());
 
 enum PassphraseProblem { tooShort, tooCommon }
 
 /// Null when [passphrase] may be used.
 PassphraseProblem? checkPassphrase(String passphrase) {
-  final p = passphrase.trim();
+  final p = normalizePassphrase(passphrase);
   if (p.runes.length < minPassphraseLength) return PassphraseProblem.tooShort;
   final lower = p.toLowerCase();
   final core = lower.replaceAll(_ends, '');
