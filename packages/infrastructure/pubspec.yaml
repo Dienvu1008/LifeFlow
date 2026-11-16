@@ -28,6 +28,8 @@ dependencies:
   cryptography: 2.9.0
   # NFC for sync passphrases, so accents typed either way unlock (MIT, VS-45; ADR-0054).
   unorm_dart: 0.3.3
+  # The sync server's REST API (BSD-3, Dart team; already shipped via supabase; ADR-0055).
+  http: 1.6.0
 
 dev_dependencies:
   test: ^1.25.0
