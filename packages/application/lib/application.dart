@@ -15,3 +15,4 @@ export 'src/planning.dart';
 export 'src/ports.dart';
 export 'src/remote.dart';
 export 'src/reminders.dart';
+export 'src/sync.dart';

@@ -14,7 +14,8 @@ library;
 //                     CalendarCommandHandler, FocusCommandHandler,
 //                     MeasurementCommandHandler, PeriodCloseHandler,
 //                     GoalCommandHandler, ListCommandHandler,
-//                     WorkspaceSettingsCommandHandler, SyncApplyHandler
+//                     WorkspaceSettingsCommandHandler, SyncApplyHandler,
+//                     SyncSetupHandler
 import 'package:application/application.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -132,6 +133,7 @@ void main() {
   const goalHandler = GoalCommandHandler();
   const settingsHandler = WorkspaceSettingsCommandHandler();
   const syncHandler = SyncApplyHandler();
+  const setupHandler = SyncSetupHandler();
   // P04 T3: a pulled task, as the sync engine applies it.
   Map<String, Object?> pulledTask() => {
         'id': 'ts1', 'workspaceId': wsId, 'ownerId': profileId, 'version': 3,
@@ -143,11 +145,11 @@ void main() {
       };
 
   Command command(String type, Map<String, Object?> payload,
-          {String? opId, Version? expected}) =>
+          {String? opId, Version? expected, String? workspace}) =>
       Command(
         operationId: opId ?? 'op-${n++}',
         actor: ActorRef(ActorKind.owner, profileId),
-        workspaceId: wsId,
+        workspaceId: workspace ?? wsId,
         type: type,
         payload: payload,
         expectedVersion: expected,
@@ -327,6 +329,21 @@ void main() {
           (v, op) => command('SetManualResults', {'op': 'setManualResults', 'id': wsId, 'value': 'tick'}, opId: op, expected: v)),
       ('workspaceSettings.setManualResults', settingsHandler, 'workspaceSettings', wsId,
           (v, op) => command('SetManualResults', {'op': 'setManualResults', 'id': wsId, 'value': 'target'}, opId: op, expected: v)),
+      // P04 T4 (ADR-0057): turning sync off and on, joining the account's
+      // workspace and undoing it (sync is on since 'sync.apply'). Last: the
+      // join moves the workspace.
+      ('syncSetup.turnOff', setupHandler, 'syncSetup', wsId,
+          (v, op) => command(turnSyncOffAction, {'op': 'turnOff', 'id': wsId}, opId: op, expected: v)),
+      ('syncSetup.turnOn', setupHandler, 'syncSetup', wsId,
+          (v, op) => command(turnSyncOnAction, {'op': 'turnOn', 'id': wsId, 'deviceId': 'dev'}, opId: op, expected: v)),
+      ('syncSetup.turnOff(2)', setupHandler, 'syncSetup', wsId,
+          (v, op) => command(turnSyncOffAction, {'op': 'turnOff', 'id': wsId}, opId: op, expected: v)),
+      ('syncSetup.join', setupHandler, 'syncSetup', wsId,
+          (v, op) => command(joinSyncAction,
+              {'op': 'join', 'id': wsId, 'accountWorkspaceId': 'w-acc', 'deviceId': 'dev', 'mode': 'merge'},
+              opId: op, expected: v)),
+      ('syncSetup.undoJoin', setupHandler, 'syncSetup', 'w-acc',
+          (v, op) => command(undoSyncJoinAction, {'op': 'undoJoin', 'id': 'w-acc'}, opId: op, expected: v, workspace: 'w-acc')),
     ];
   });
 
@@ -346,7 +363,8 @@ void main() {
               label.startsWith('focus.start') ||
               label.startsWith('measurement.') ||
               label == 'period.close' ||
-              label == 'sync.apply'
+              label == 'sync.apply' ||
+              label.startsWith('syncSetup.')
           ? null
           : Version(await versionOf(table, id));
 

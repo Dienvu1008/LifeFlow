@@ -27,43 +27,6 @@ import '../record_kinds.dart';
 import 'sealing.dart';
 import 'sync_apply_handler.dart';
 
-enum SyncOutcome {
-  /// Everything is on the server and this device has everything.
-  upToDate,
-
-  /// No connection, a timeout, or the server is paused or down.
-  offline,
-
-  /// Not signed in any more.
-  signedOut,
-
-  /// The server says the workspace is not this account's.
-  notYours,
-
-  /// The server has a change of a kind or schema this app version does not
-  /// know: update LifeFlow (p04-plan.md D10). Pushing still works.
-  updateNeeded,
-
-  /// Something else; see [SyncReport.detail].
-  failed,
-}
-
-class SyncReport {
-  SyncReport(this.outcome, {this.pushed = 0, this.pulled = 0, this.merged = 0, this.reviews = 0, this.failedRecords = 0, this.detail = ''});
-  final SyncOutcome outcome;
-  final int pushed;
-  final int pulled;
-  final int merged;
-  final int reviews;
-
-  /// Records the server refused; set aside, the rest still synced.
-  final int failedRecords;
-  final String detail;
-  @override
-  String toString() =>
-      'SyncReport(${outcome.name}, pushed $pushed, pulled $pulled, merged $merged, reviews $reviews, failed $failedRecords) $detail';
-}
-
 /// Waiting time before the next try after [failures] failed syncs in a row:
 /// 5 s, 15 s, 1 min, 5 min, then every 15 min.
 Duration syncBackoff(int failures) => switch (failures) {
@@ -110,6 +73,10 @@ class SyncEngine {
     if (state == null) throw StateError('sync is not on for this workspace on this device');
     SyncReport report;
     try {
+      // ADR-0057: is the workspace still there, sealed with this device's key?
+      final here = (await remote.workspaces()).where((w) => w.workspaceId == workspaceId).firstOrNull;
+      if (here == null) return await _finish(_report(SyncOutcome.workspaceGone));
+      if (here.keyId.isNotEmpty && here.keyId != sealer.keyId) return await _finish(_report(SyncOutcome.keyChanged));
       var settled = false;
       for (var i = 0; i < rounds && !settled; i++) {
         final conflicts = await _push();
@@ -130,6 +97,10 @@ class SyncEngine {
         RemoteFailureKind.refused => SyncOutcome.failed,
       }, e.detail);
     }
+    return _finish(report);
+  }
+
+  Future<SyncReport> _finish(SyncReport report) async {
     await (db.update(db.syncState)..where((s) => s.workspaceId.equals(workspaceId)))
         .write(SyncStateCompanion(lastResult: Value(report.outcome.name)));
     return report;

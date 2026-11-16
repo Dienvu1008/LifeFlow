@@ -73,6 +73,7 @@ class RemoteWorkspace {
     required this.unlockKind,
     this.unlockSalt,
     this.lastSeq = 0,
+    this.keyId = '',
   });
   final String workspaceId;
   final Uint8List wrappedKey;
@@ -81,6 +82,11 @@ class RemoteWorkspace {
   final String unlockKind;
   final Uint8List? unlockSalt;
   final int lastSeq;
+
+  /// A fingerprint of the workspace key (64 hex characters, made on the
+  /// device, reveals nothing): another one means the workspace was reset
+  /// with a new key (ADR-0057). Re-wrapping keeps it.
+  final String keyId;
 }
 
 /// Why the server could not be used. [kind] decides what the app says.
