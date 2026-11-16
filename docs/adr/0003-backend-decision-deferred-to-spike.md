@@ -1,6 +1,6 @@
 # ADR-0003: Backend choice deferred to a spike (default lean: Supabase)
 
-- Status: Partially Accepted — **auth half Accepted (Supabase Auth)** after spike S-03a (2026-11-04); data/sync half still Proposed (pending S-03/S-04)
+- Status: Accepted — **auth half Accepted (Supabase Auth)** after spike S-03a (2026-11-04); **data/sync half decided by [ADR-0052](0052-sync-backend-and-end-to-end-encryption.md)** (Supabase with end-to-end encrypted records, 2026-11-14, after S-03/S-04/S-15)
 - Date: 2026-11-04
 - Deciders: Project owner (auth decided after S-03a; data/sync after S-03/S-04)
 
