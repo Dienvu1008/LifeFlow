@@ -6,6 +6,7 @@
 //
 // Every record table uses the shared syncable columns (ADR-0009): text id,
 // workspaceId, ownerId, version, createdAt, updatedAt, deletedAt (tombstone).
+import 'package:domain/domain.dart' show DataClassification, personalMeasurementSources;
 import 'package:drift/drift.dart';
 
 import 'app_database.dart';
@@ -170,3 +171,36 @@ const optionalRefs = <(String, String, String)>[
   ('executionRecord', 'sessionId', 'focusSession'),
   ('measurement', 'recordId', 'executionRecord'),
 ];
+
+/// P04 T7 (ADR-0059; data-classification.md §1, §3): the class of each kind's
+/// records. A task carries its notes (Confidential); a workspace's settings
+/// and a goal link are bookkeeping of Personal data. A guard test fails when
+/// a kind of [recordKinds] is missing here.
+const kindClasses = <String, DataClassification>{
+  'taskList': DataClassification.personal,
+  'task': DataClassification.confidential,
+  'calendar': DataClassification.personal,
+  'event': DataClassification.personal,
+  'schedule': DataClassification.personal,
+  'exception': DataClassification.personal,
+  'completion': DataClassification.personal,
+  'reminder': DataClassification.personal,
+  'focusSession': DataClassification.personal,
+  'executionRecord': DataClassification.personal,
+  'measurement': DataClassification.personal,
+  'periodResult': DataClassification.personal,
+  'goal': DataClassification.personal,
+  'milestone': DataClassification.personal,
+  'goalLink': DataClassification.personal,
+  'workspaceSettings': DataClassification.personal,
+};
+
+/// The class of one record: its kind's, raised to Restricted for a
+/// measurement from a health source (P08). An unknown kind is Restricted,
+/// so nothing unclassified leaves the device (LF-INV-PRIV-001).
+DataClassification dataClassOf(String kind, Row row) {
+  final c = kindClasses[kind];
+  if (c == null) return DataClassification.restricted;
+  if (kind == 'measurement' && !personalMeasurementSources.contains(row['source'])) return DataClassification.restricted;
+  return c;
+}

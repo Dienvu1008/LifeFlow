@@ -81,6 +81,9 @@ PLAN-004/010/011/012/013 and CAL-001/002 are enforced and tested; the test files
 ## P03 status (2026-11-14)
 EXEC-001/002/003/004, HEALTH-002/004 (manual path), TASK-010, GOAL-001/002/003 and ORDER-001…004 (U2) are enforced and tested; the test files for each are listed in [p03-exit-gate.md](../testing/p03-exit-gate.md). LF-INV-GOAL-003 is proved on the real store (integration), not only by a unit test as its row says. HEALTH-001/003/005/006 stay with P08.
 
+## P04a status (2026-11-16)
+SYNC-001/002/003/004 are enforced and tested on the sync harness (two and three devices, property runs), against the in-memory server and local Supabase. GS-17 and GS-14 pass. GS-08's rule (per type, never a global last-writer-wins) is proved on P04a's own types; GS-08 proper (documents) stays with P05. PRIV-001/003 are enforced at the **sync** egress (ADR-0059); the AI egress, GS-16 and FF-ARCH-08 proper stay with P06. OUTBOX-001, GOV-001 and ID-001 also hold for the sync commands (apply, setup, review). The test files are listed in [p04a-exit-gate.md](../testing/p04a-exit-gate.md).
+
 ## Coverage summary
 - 62 invariants (60 harvested + LF-INV-DOC-005 + LF-INV-SEC-011). Every one has at least one verification method. **0 critical gaps.**
 - Invariants with only unit coverage and no golden scenario (for example several Dictionary/Document detail invariants) are lower severity; a golden scenario can be added in their phase if needed.

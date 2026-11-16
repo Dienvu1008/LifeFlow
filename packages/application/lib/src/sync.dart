@@ -38,7 +38,13 @@ enum SyncOutcome {
 
 class SyncReport {
   SyncReport(this.outcome,
-      {this.pushed = 0, this.pulled = 0, this.merged = 0, this.reviews = 0, this.failedRecords = 0, this.detail = ''});
+      {this.pushed = 0,
+      this.pulled = 0,
+      this.merged = 0,
+      this.reviews = 0,
+      this.failedRecords = 0,
+      this.withheld = 0,
+      this.detail = ''});
   final SyncOutcome outcome;
   final int pushed;
   final int pulled;
@@ -48,11 +54,15 @@ class SyncReport {
   /// Records the server refused; set aside, the rest still synced.
   final int failedRecords;
 
+  /// Records kept on the device by their classification (Restricted data,
+  /// ADR-0059); never sealed, never sent.
+  final int withheld;
+
   /// For logs; never content or a key.
   final String detail;
   @override
   String toString() =>
-      'SyncReport(${outcome.name}, pushed $pushed, pulled $pulled, merged $merged, reviews $reviews, failed $failedRecords) $detail';
+      'SyncReport(${outcome.name}, pushed $pushed, pulled $pulled, merged $merged, reviews $reviews, failed $failedRecords, withheld $withheld) $detail';
 }
 
 /// What turning sync on will do for this profile.
