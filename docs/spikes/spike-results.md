@@ -32,7 +32,7 @@ Fixed entry format: **Question / Hypothesis / What was done / Measured result / 
 **PASS (2026-11-14; branch `p04/s04-sync-harness`).**
 - **Question:** Can outbox/inbox sync reconcile deliberate offline conflicts per type (ADR-0015, p04-plan.md D6/D7) without data loss, with an idempotent replay? (p04-plan.md S-04; R-OFFLINE-SYNC.)
 - **Hypothesis:** the P01–P03 outbox, versions and tombstones are enough: push what pending outbox rows touched with the last synced version as base; pull in change-number order; merge per type only when this device also changed the record.
-- **What was done:** a prototype in `packages/infrastructure/test/sync_spike/`:
+- **What was done** (the prototype was replaced by the sync engine in P04 T3, ADR-0056, and removed): a prototype in `packages/infrastructure/test/sync_spike/`:
   - `fake_server.dart`: the semantics of the S-03 SQL functions (version check, replay accepted once, change numbers, purge keeps the tombstone), plus a dropped connection and a lost answer;
   - `replica.dart`: push and pull over a real profile store, the last synced copy per record, deterministic operation ids per (device, record, version), local purge;
   - `resolve.dart`: the per-type rules as one pure function of (last synced, this device, server).

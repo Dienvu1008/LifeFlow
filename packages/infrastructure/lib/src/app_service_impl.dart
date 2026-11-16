@@ -11,6 +11,7 @@ import 'package:uuid/uuid.dart';
 import 'package:time_kernel/time_kernel.dart' as tk;
 
 import 'app_database.dart';
+import 'sync/sync_apply_handler.dart' show syncApplyAction;
 import 'profile_directory.dart';
 import 'profile_store.dart';
 import 'schedule_inputs.dart';
@@ -28,6 +29,17 @@ class WorkspaceOwnerAuthorization implements AuthorizationService {
   @override
   Future<String?> denyReason(
       ActorRef actor, String action, ResourceRef ref) async {
+    // P04 T3 (ADR-0056): sync only carries changes the owner already made on
+    // another device. It may apply them, and nothing else, and only to a
+    // workspace this device syncs, under this device's id.
+    if (actor.kind == ActorKind.sync) {
+      if (action != syncApplyAction) return 'sync may only apply pulled changes';
+      final state = await (db.select(db.syncState)..where((s) => s.workspaceId.equals(ref.workspaceId)))
+          .getSingleOrNull();
+      if (state == null) return 'this workspace is not synced on this device';
+      if (state.deviceId != actor.id) return 'not this device';
+      return null;
+    }
     if (actor.kind != ActorKind.owner) {
       return 'only the workspace owner may act in the MVP';
     }

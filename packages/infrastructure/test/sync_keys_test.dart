@@ -27,8 +27,6 @@ import 'package:test/test.dart';
 import 'package:unorm_dart/unorm_dart.dart' as unorm;
 
 import 'profile_harness.dart' show MemoryKeys;
-import 'sync_spike/fake_server.dart';
-import 'sync_spike/replica.dart';
 
 String ok(CommandResult r) {
   expect(r, isA<CommandOk>(), reason: '$r');
@@ -247,11 +245,10 @@ void main() {
 
   test('end to end: A turns sync on, B joins with the 24 words; the server holds nothing readable', () async {
     final dir = Directory.systemTemp.createTempSync('lifeflow_keys_');
-    final server = FakeServer();
+    final server = MemoryRemoteServer();
     final fa = File('${dir.path}/a.db');
     final dbA = AppDatabase(NativeDatabase(fa));
-    final profile = await ProfileStore(dbA).ensureFirstProfile();
-    final wsA = profile.activeWorkspaceId.value;
+    final wsA = (await ProfileStore(dbA).ensureFirstProfile()).activeWorkspaceId.value;
     final gwA = DriftCommandGateway(dbA, WorkspaceOwnerAuthorization(dbA));
     final keysA = WorkspaceKeyring(MemoryKeys().call);
     final setup = await keysA.setUpWithRecoveryKey(wsA);
@@ -259,33 +256,48 @@ void main() {
     final (p1, p2) = RecoveryKey.checkPositions();
     expect(setup.recoveryKey!.confirms((p1, p2), (words[p1 - 1], words[p2 - 1])), isTrue);
     await keysA.keep(wsA, setup);
-    final a = Replica('a', dbA, server, sealer: await RecordSealer.of((await keysA.keyOf(wsA))!));
+    final remoteA = MemoryRemoteGateway(server, accountId: 'acc');
+    await remoteA.createWorkspace(RemoteWorkspace(
+        workspaceId: wsA, wrappedKey: setup.wrapped.bytes, unlockKind: setup.wrapped.kind.name));
+    await dbA.into(dbA.syncState).insert(SyncStateCompanion.insert(workspaceId: wsA, deviceId: 'a'));
     final t = ok(await DriftTaskService(dbA, gwA).create('Call the bank'));
     ok(await DriftTaskService(dbA, gwA).setNotes(t, 'about the loan, account 12-345'));
-    await a.sync();
+    final a = SyncEngine(
+        db: dbA, gateway: gwA, remote: remoteA, sealer: await RecordSealer.of((await keysA.keyOf(wsA))!),
+        workspaceId: wsA, deviceId: 'a');
+    expect((await a.sync()).outcome, SyncOutcome.upToDate);
     await dbA.close();
 
+    // B: the same profile file without its tasks, unlocked with the words
+    // and the wrapped key the server keeps.
     final dbB = AppDatabase(NativeDatabase(fa.copySync('${dir.path}/b.db')));
     addTearDown(() async {
       await dbB.close();
       dir.deleteSync(recursive: true);
     });
-    await dbB.customStatement('DELETE FROM tasks'); // B gets everything from the server
+    await dbB.customStatement('DELETE FROM tasks');
+    await dbB.customStatement('DELETE FROM sync_base');
+    await dbB.customStatement("UPDATE sync_state SET cursor = 0, device_id = 'b'");
+    final remoteB = MemoryRemoteGateway(server, accountId: 'acc');
+    final kept = (await remoteB.workspaces()).single;
     final keysB = WorkspaceKeyring(MemoryKeys().call);
-    final key = await keysB.unlock(wsA, setup.wrapped, recoveryKey: RecoveryKey.parse(words.join(' ')));
-    final b = Replica('b', dbB, server, sealer: await RecordSealer.of(key));
-    await b.pull();
+    final key = await keysB.unlock(wsA, WrappedKey(kept.wrappedKey, UnlockKind.values.byName(kept.unlockKind)),
+        recoveryKey: RecoveryKey.parse(words.join(' ')));
+    final b = SyncEngine(
+        db: dbB, gateway: DriftCommandGateway(dbB, WorkspaceOwnerAuthorization(dbB)), remote: remoteB,
+        sealer: await RecordSealer.of(key), workspaceId: wsA, deviceId: 'b');
+    expect((await b.sync()).outcome, SyncOutcome.upToDate);
     final row = (await recordKindByName['task']!.readAll(dbB)).single;
     expect((row['title'], row['notes']), ('Call the bank', 'about the loan, account 12-345'));
 
-    for (final r in server.records.values) {
+    for (final r in server.dump(wsA)) {
       expect(r.id, matches(RegExp(r'^[0-9a-f]{64}$')));
-      final asText = latin1.decode(base64Decode(r.sealed!));
+      final asText = latin1.decode(r.sealed!);
       for (final secret in ['Call the bank', 'loan', '12-345', t, 'task', 'title', wsA]) {
         expect(asText.contains(secret), isFalse, reason: '"$secret" is readable on the server');
       }
     }
-    expect(base64Encode(setup.wrapped.bytes).contains(base64Encode(await key.extractBytes())), isFalse);
+    expect(base64Encode(kept.wrappedKey).contains(base64Encode(await key.extractBytes())), isFalse);
   });
 
   test('speed: 10 000 records sealed and opened; one Argon2id derivation', () async {

@@ -14,7 +14,7 @@ typedef Row = Map<String, dynamic>;
 
 /// One record table: how to read it as JSON rows and write rows back.
 class RecordKind {
-  const RecordKind._(this.name, this.exportKey, this._read, this._write, this._insert);
+  const RecordKind._(this.name, this.exportKey, this._read, this._write, this._insert, this._readOne, this.tableName);
 
   /// Kind name used in plans and outbox rows ('task', 'schedule', ...).
   final String name;
@@ -29,6 +29,14 @@ class RecordKind {
 
   /// Plain insert into an empty store.
   final void Function(Batch b, AppDatabase db, List<Row> rows) _insert;
+
+  final Future<Row?> Function(AppDatabase db, String id) _readOne;
+
+  /// The SQL table (P04 T3: purging a record).
+  final String tableName;
+
+  /// One row as JSON, or null (P04 T3: the push reads the current record).
+  Future<Row?> readOne(AppDatabase db, String id) => _readOne(db, id);
 
   Future<List<Row>> readAll(AppDatabase db) => _read(db);
   void upsert(Batch b, AppDatabase db, List<Row> rows) {
@@ -83,6 +91,13 @@ RecordKind _kind<T extends Table, D extends Insertable<D>>(
       (b, db, rows) => b.insertAllOnConflictUpdate(
           table(db), [for (final r in rows) companion(fromJson(r))]),
       (b, db, rows) => b.insertAll(table(db), [for (final r in rows) fromJson(r)]),
+      (db, id) async {
+        final t = table(db);
+        final rows = await db.customSelect('SELECT * FROM ${t.actualTableName} WHERE id = ?',
+            variables: [Variable<String>(id)], readsFrom: {t}).get();
+        return rows.isEmpty ? null : (t.map(rows.single.data) as DataClass).toJson();
+      },
+      exportKey.replaceAllMapped(RegExp('[A-Z]'), (m) => '_${m[0]!.toLowerCase()}'),
     );
 
 /// In write order: a row is written after the rows it points to.

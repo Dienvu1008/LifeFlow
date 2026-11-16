@@ -14447,8 +14447,15 @@ class $SyncBaseTable extends SyncBase
   late final GeneratedColumn<String> data = GeneratedColumn<String>(
       'data', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _serverIdMeta =
+      const VerificationMeta('serverId');
   @override
-  List<GeneratedColumn> get $columns => [kind, recordId, version, data];
+  late final GeneratedColumn<String> serverId = GeneratedColumn<String>(
+      'server_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [kind, recordId, version, data, serverId];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -14483,6 +14490,10 @@ class $SyncBaseTable extends SyncBase
     } else if (isInserting) {
       context.missing(_dataMeta);
     }
+    if (data.containsKey('server_id')) {
+      context.handle(_serverIdMeta,
+          serverId.isAcceptableOrUnknown(data['server_id']!, _serverIdMeta));
+    }
     return context;
   }
 
@@ -14500,6 +14511,8 @@ class $SyncBaseTable extends SyncBase
           .read(DriftSqlType.int, data['${effectivePrefix}version'])!,
       data: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}data'])!,
+      serverId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}server_id']),
     );
   }
 
@@ -14514,11 +14527,13 @@ class SyncBaseRow extends DataClass implements Insertable<SyncBaseRow> {
   final String recordId;
   final int version;
   final String data;
+  final String? serverId;
   const SyncBaseRow(
       {required this.kind,
       required this.recordId,
       required this.version,
-      required this.data});
+      required this.data,
+      this.serverId});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -14526,6 +14541,9 @@ class SyncBaseRow extends DataClass implements Insertable<SyncBaseRow> {
     map['record_id'] = Variable<String>(recordId);
     map['version'] = Variable<int>(version);
     map['data'] = Variable<String>(data);
+    if (!nullToAbsent || serverId != null) {
+      map['server_id'] = Variable<String>(serverId);
+    }
     return map;
   }
 
@@ -14535,6 +14553,9 @@ class SyncBaseRow extends DataClass implements Insertable<SyncBaseRow> {
       recordId: Value(recordId),
       version: Value(version),
       data: Value(data),
+      serverId: serverId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverId),
     );
   }
 
@@ -14546,6 +14567,7 @@ class SyncBaseRow extends DataClass implements Insertable<SyncBaseRow> {
       recordId: serializer.fromJson<String>(json['recordId']),
       version: serializer.fromJson<int>(json['version']),
       data: serializer.fromJson<String>(json['data']),
+      serverId: serializer.fromJson<String?>(json['serverId']),
     );
   }
   @override
@@ -14556,16 +14578,22 @@ class SyncBaseRow extends DataClass implements Insertable<SyncBaseRow> {
       'recordId': serializer.toJson<String>(recordId),
       'version': serializer.toJson<int>(version),
       'data': serializer.toJson<String>(data),
+      'serverId': serializer.toJson<String?>(serverId),
     };
   }
 
   SyncBaseRow copyWith(
-          {String? kind, String? recordId, int? version, String? data}) =>
+          {String? kind,
+          String? recordId,
+          int? version,
+          String? data,
+          Value<String?> serverId = const Value.absent()}) =>
       SyncBaseRow(
         kind: kind ?? this.kind,
         recordId: recordId ?? this.recordId,
         version: version ?? this.version,
         data: data ?? this.data,
+        serverId: serverId.present ? serverId.value : this.serverId,
       );
   SyncBaseRow copyWithCompanion(SyncBaseCompanion data) {
     return SyncBaseRow(
@@ -14573,6 +14601,7 @@ class SyncBaseRow extends DataClass implements Insertable<SyncBaseRow> {
       recordId: data.recordId.present ? data.recordId.value : this.recordId,
       version: data.version.present ? data.version.value : this.version,
       data: data.data.present ? data.data.value : this.data,
+      serverId: data.serverId.present ? data.serverId.value : this.serverId,
     );
   }
 
@@ -14582,13 +14611,14 @@ class SyncBaseRow extends DataClass implements Insertable<SyncBaseRow> {
           ..write('kind: $kind, ')
           ..write('recordId: $recordId, ')
           ..write('version: $version, ')
-          ..write('data: $data')
+          ..write('data: $data, ')
+          ..write('serverId: $serverId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(kind, recordId, version, data);
+  int get hashCode => Object.hash(kind, recordId, version, data, serverId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -14596,7 +14626,8 @@ class SyncBaseRow extends DataClass implements Insertable<SyncBaseRow> {
           other.kind == this.kind &&
           other.recordId == this.recordId &&
           other.version == this.version &&
-          other.data == this.data);
+          other.data == this.data &&
+          other.serverId == this.serverId);
 }
 
 class SyncBaseCompanion extends UpdateCompanion<SyncBaseRow> {
@@ -14604,12 +14635,14 @@ class SyncBaseCompanion extends UpdateCompanion<SyncBaseRow> {
   final Value<String> recordId;
   final Value<int> version;
   final Value<String> data;
+  final Value<String?> serverId;
   final Value<int> rowid;
   const SyncBaseCompanion({
     this.kind = const Value.absent(),
     this.recordId = const Value.absent(),
     this.version = const Value.absent(),
     this.data = const Value.absent(),
+    this.serverId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SyncBaseCompanion.insert({
@@ -14617,6 +14650,7 @@ class SyncBaseCompanion extends UpdateCompanion<SyncBaseRow> {
     required String recordId,
     required int version,
     required String data,
+    this.serverId = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : kind = Value(kind),
         recordId = Value(recordId),
@@ -14627,6 +14661,7 @@ class SyncBaseCompanion extends UpdateCompanion<SyncBaseRow> {
     Expression<String>? recordId,
     Expression<int>? version,
     Expression<String>? data,
+    Expression<String>? serverId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -14634,6 +14669,7 @@ class SyncBaseCompanion extends UpdateCompanion<SyncBaseRow> {
       if (recordId != null) 'record_id': recordId,
       if (version != null) 'version': version,
       if (data != null) 'data': data,
+      if (serverId != null) 'server_id': serverId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -14643,12 +14679,14 @@ class SyncBaseCompanion extends UpdateCompanion<SyncBaseRow> {
       Value<String>? recordId,
       Value<int>? version,
       Value<String>? data,
+      Value<String?>? serverId,
       Value<int>? rowid}) {
     return SyncBaseCompanion(
       kind: kind ?? this.kind,
       recordId: recordId ?? this.recordId,
       version: version ?? this.version,
       data: data ?? this.data,
+      serverId: serverId ?? this.serverId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -14668,6 +14706,9 @@ class SyncBaseCompanion extends UpdateCompanion<SyncBaseRow> {
     if (data.present) {
       map['data'] = Variable<String>(data.value);
     }
+    if (serverId.present) {
+      map['server_id'] = Variable<String>(serverId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -14681,6 +14722,7 @@ class SyncBaseCompanion extends UpdateCompanion<SyncBaseRow> {
           ..write('recordId: $recordId, ')
           ..write('version: $version, ')
           ..write('data: $data, ')
+          ..write('serverId: $serverId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -15008,6 +15050,513 @@ class SyncStateCompanion extends UpdateCompanion<SyncStateRow> {
   }
 }
 
+class $SyncReviewsTable extends SyncReviews
+    with TableInfo<$SyncReviewsTable, SyncReviewRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SyncReviewsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _workspaceIdMeta =
+      const VerificationMeta('workspaceId');
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+      'workspace_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+      'kind', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _recordIdMeta =
+      const VerificationMeta('recordId');
+  @override
+  late final GeneratedColumn<String> recordId = GeneratedColumn<String>(
+      'record_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _fieldMeta = const VerificationMeta('field');
+  @override
+  late final GeneratedColumn<String> field = GeneratedColumn<String>(
+      'field', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _keptMeta = const VerificationMeta('kept');
+  @override
+  late final GeneratedColumn<String> kept = GeneratedColumn<String>(
+      'kept', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _otherMeta = const VerificationMeta('other');
+  @override
+  late final GeneratedColumn<String> other = GeneratedColumn<String>(
+      'other', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
+  @override
+  late final GeneratedColumn<String> reason = GeneratedColumn<String>(
+      'reason', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _resolvedAtMeta =
+      const VerificationMeta('resolvedAt');
+  @override
+  late final GeneratedColumn<DateTime> resolvedAt = GeneratedColumn<DateTime>(
+      'resolved_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        workspaceId,
+        kind,
+        recordId,
+        field,
+        kept,
+        other,
+        reason,
+        createdAt,
+        resolvedAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sync_reviews';
+  @override
+  VerificationContext validateIntegrity(Insertable<SyncReviewRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+          _workspaceIdMeta,
+          workspaceId.isAcceptableOrUnknown(
+              data['workspace_id']!, _workspaceIdMeta));
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+          _kindMeta, kind.isAcceptableOrUnknown(data['kind']!, _kindMeta));
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('record_id')) {
+      context.handle(_recordIdMeta,
+          recordId.isAcceptableOrUnknown(data['record_id']!, _recordIdMeta));
+    } else if (isInserting) {
+      context.missing(_recordIdMeta);
+    }
+    if (data.containsKey('field')) {
+      context.handle(
+          _fieldMeta, field.isAcceptableOrUnknown(data['field']!, _fieldMeta));
+    } else if (isInserting) {
+      context.missing(_fieldMeta);
+    }
+    if (data.containsKey('kept')) {
+      context.handle(
+          _keptMeta, kept.isAcceptableOrUnknown(data['kept']!, _keptMeta));
+    } else if (isInserting) {
+      context.missing(_keptMeta);
+    }
+    if (data.containsKey('other')) {
+      context.handle(
+          _otherMeta, other.isAcceptableOrUnknown(data['other']!, _otherMeta));
+    } else if (isInserting) {
+      context.missing(_otherMeta);
+    }
+    if (data.containsKey('reason')) {
+      context.handle(_reasonMeta,
+          reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta));
+    } else if (isInserting) {
+      context.missing(_reasonMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('resolved_at')) {
+      context.handle(
+          _resolvedAtMeta,
+          resolvedAt.isAcceptableOrUnknown(
+              data['resolved_at']!, _resolvedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SyncReviewRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SyncReviewRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      workspaceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}workspace_id'])!,
+      kind: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}kind'])!,
+      recordId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}record_id'])!,
+      field: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}field'])!,
+      kept: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}kept'])!,
+      other: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}other'])!,
+      reason: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}reason'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      resolvedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}resolved_at']),
+    );
+  }
+
+  @override
+  $SyncReviewsTable createAlias(String alias) {
+    return $SyncReviewsTable(attachedDatabase, alias);
+  }
+}
+
+class SyncReviewRow extends DataClass implements Insertable<SyncReviewRow> {
+  final String id;
+  final String workspaceId;
+  final String kind;
+  final String recordId;
+  final String field;
+  final String kept;
+  final String other;
+  final String reason;
+  final DateTime createdAt;
+  final DateTime? resolvedAt;
+  const SyncReviewRow(
+      {required this.id,
+      required this.workspaceId,
+      required this.kind,
+      required this.recordId,
+      required this.field,
+      required this.kept,
+      required this.other,
+      required this.reason,
+      required this.createdAt,
+      this.resolvedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['kind'] = Variable<String>(kind);
+    map['record_id'] = Variable<String>(recordId);
+    map['field'] = Variable<String>(field);
+    map['kept'] = Variable<String>(kept);
+    map['other'] = Variable<String>(other);
+    map['reason'] = Variable<String>(reason);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || resolvedAt != null) {
+      map['resolved_at'] = Variable<DateTime>(resolvedAt);
+    }
+    return map;
+  }
+
+  SyncReviewsCompanion toCompanion(bool nullToAbsent) {
+    return SyncReviewsCompanion(
+      id: Value(id),
+      workspaceId: Value(workspaceId),
+      kind: Value(kind),
+      recordId: Value(recordId),
+      field: Value(field),
+      kept: Value(kept),
+      other: Value(other),
+      reason: Value(reason),
+      createdAt: Value(createdAt),
+      resolvedAt: resolvedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(resolvedAt),
+    );
+  }
+
+  factory SyncReviewRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SyncReviewRow(
+      id: serializer.fromJson<String>(json['id']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      kind: serializer.fromJson<String>(json['kind']),
+      recordId: serializer.fromJson<String>(json['recordId']),
+      field: serializer.fromJson<String>(json['field']),
+      kept: serializer.fromJson<String>(json['kept']),
+      other: serializer.fromJson<String>(json['other']),
+      reason: serializer.fromJson<String>(json['reason']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      resolvedAt: serializer.fromJson<DateTime?>(json['resolvedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'kind': serializer.toJson<String>(kind),
+      'recordId': serializer.toJson<String>(recordId),
+      'field': serializer.toJson<String>(field),
+      'kept': serializer.toJson<String>(kept),
+      'other': serializer.toJson<String>(other),
+      'reason': serializer.toJson<String>(reason),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'resolvedAt': serializer.toJson<DateTime?>(resolvedAt),
+    };
+  }
+
+  SyncReviewRow copyWith(
+          {String? id,
+          String? workspaceId,
+          String? kind,
+          String? recordId,
+          String? field,
+          String? kept,
+          String? other,
+          String? reason,
+          DateTime? createdAt,
+          Value<DateTime?> resolvedAt = const Value.absent()}) =>
+      SyncReviewRow(
+        id: id ?? this.id,
+        workspaceId: workspaceId ?? this.workspaceId,
+        kind: kind ?? this.kind,
+        recordId: recordId ?? this.recordId,
+        field: field ?? this.field,
+        kept: kept ?? this.kept,
+        other: other ?? this.other,
+        reason: reason ?? this.reason,
+        createdAt: createdAt ?? this.createdAt,
+        resolvedAt: resolvedAt.present ? resolvedAt.value : this.resolvedAt,
+      );
+  SyncReviewRow copyWithCompanion(SyncReviewsCompanion data) {
+    return SyncReviewRow(
+      id: data.id.present ? data.id.value : this.id,
+      workspaceId:
+          data.workspaceId.present ? data.workspaceId.value : this.workspaceId,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      recordId: data.recordId.present ? data.recordId.value : this.recordId,
+      field: data.field.present ? data.field.value : this.field,
+      kept: data.kept.present ? data.kept.value : this.kept,
+      other: data.other.present ? data.other.value : this.other,
+      reason: data.reason.present ? data.reason.value : this.reason,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      resolvedAt:
+          data.resolvedAt.present ? data.resolvedAt.value : this.resolvedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncReviewRow(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('kind: $kind, ')
+          ..write('recordId: $recordId, ')
+          ..write('field: $field, ')
+          ..write('kept: $kept, ')
+          ..write('other: $other, ')
+          ..write('reason: $reason, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('resolvedAt: $resolvedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, workspaceId, kind, recordId, field, kept,
+      other, reason, createdAt, resolvedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SyncReviewRow &&
+          other.id == this.id &&
+          other.workspaceId == this.workspaceId &&
+          other.kind == this.kind &&
+          other.recordId == this.recordId &&
+          other.field == this.field &&
+          other.kept == this.kept &&
+          other.other == this.other &&
+          other.reason == this.reason &&
+          other.createdAt == this.createdAt &&
+          other.resolvedAt == this.resolvedAt);
+}
+
+class SyncReviewsCompanion extends UpdateCompanion<SyncReviewRow> {
+  final Value<String> id;
+  final Value<String> workspaceId;
+  final Value<String> kind;
+  final Value<String> recordId;
+  final Value<String> field;
+  final Value<String> kept;
+  final Value<String> other;
+  final Value<String> reason;
+  final Value<DateTime> createdAt;
+  final Value<DateTime?> resolvedAt;
+  final Value<int> rowid;
+  const SyncReviewsCompanion({
+    this.id = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.recordId = const Value.absent(),
+    this.field = const Value.absent(),
+    this.kept = const Value.absent(),
+    this.other = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.resolvedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SyncReviewsCompanion.insert({
+    required String id,
+    required String workspaceId,
+    required String kind,
+    required String recordId,
+    required String field,
+    required String kept,
+    required String other,
+    required String reason,
+    required DateTime createdAt,
+    this.resolvedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        workspaceId = Value(workspaceId),
+        kind = Value(kind),
+        recordId = Value(recordId),
+        field = Value(field),
+        kept = Value(kept),
+        other = Value(other),
+        reason = Value(reason),
+        createdAt = Value(createdAt);
+  static Insertable<SyncReviewRow> custom({
+    Expression<String>? id,
+    Expression<String>? workspaceId,
+    Expression<String>? kind,
+    Expression<String>? recordId,
+    Expression<String>? field,
+    Expression<String>? kept,
+    Expression<String>? other,
+    Expression<String>? reason,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? resolvedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (kind != null) 'kind': kind,
+      if (recordId != null) 'record_id': recordId,
+      if (field != null) 'field': field,
+      if (kept != null) 'kept': kept,
+      if (other != null) 'other': other,
+      if (reason != null) 'reason': reason,
+      if (createdAt != null) 'created_at': createdAt,
+      if (resolvedAt != null) 'resolved_at': resolvedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SyncReviewsCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? workspaceId,
+      Value<String>? kind,
+      Value<String>? recordId,
+      Value<String>? field,
+      Value<String>? kept,
+      Value<String>? other,
+      Value<String>? reason,
+      Value<DateTime>? createdAt,
+      Value<DateTime?>? resolvedAt,
+      Value<int>? rowid}) {
+    return SyncReviewsCompanion(
+      id: id ?? this.id,
+      workspaceId: workspaceId ?? this.workspaceId,
+      kind: kind ?? this.kind,
+      recordId: recordId ?? this.recordId,
+      field: field ?? this.field,
+      kept: kept ?? this.kept,
+      other: other ?? this.other,
+      reason: reason ?? this.reason,
+      createdAt: createdAt ?? this.createdAt,
+      resolvedAt: resolvedAt ?? this.resolvedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (recordId.present) {
+      map['record_id'] = Variable<String>(recordId.value);
+    }
+    if (field.present) {
+      map['field'] = Variable<String>(field.value);
+    }
+    if (kept.present) {
+      map['kept'] = Variable<String>(kept.value);
+    }
+    if (other.present) {
+      map['other'] = Variable<String>(other.value);
+    }
+    if (reason.present) {
+      map['reason'] = Variable<String>(reason.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (resolvedAt.present) {
+      map['resolved_at'] = Variable<DateTime>(resolvedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncReviewsCompanion(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('kind: $kind, ')
+          ..write('recordId: $recordId, ')
+          ..write('field: $field, ')
+          ..write('kept: $kept, ')
+          ..write('other: $other, ')
+          ..write('reason: $reason, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('resolvedAt: $resolvedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -15041,6 +15590,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $WorkspaceSettingsTable(this);
   late final $SyncBaseTable syncBase = $SyncBaseTable(this);
   late final $SyncStateTable syncState = $SyncStateTable(this);
+  late final $SyncReviewsTable syncReviews = $SyncReviewsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -15070,7 +15620,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         goalLinks,
         workspaceSettings,
         syncBase,
-        syncState
+        syncState,
+        syncReviews
       ];
 }
 
@@ -21739,6 +22290,7 @@ typedef $$SyncBaseTableCreateCompanionBuilder = SyncBaseCompanion Function({
   required String recordId,
   required int version,
   required String data,
+  Value<String?> serverId,
   Value<int> rowid,
 });
 typedef $$SyncBaseTableUpdateCompanionBuilder = SyncBaseCompanion Function({
@@ -21746,6 +22298,7 @@ typedef $$SyncBaseTableUpdateCompanionBuilder = SyncBaseCompanion Function({
   Value<String> recordId,
   Value<int> version,
   Value<String> data,
+  Value<String?> serverId,
   Value<int> rowid,
 });
 
@@ -21769,6 +22322,9 @@ class $$SyncBaseTableFilterComposer
 
   ColumnFilters<String> get data => $composableBuilder(
       column: $table.data, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get serverId => $composableBuilder(
+      column: $table.serverId, builder: (column) => ColumnFilters(column));
 }
 
 class $$SyncBaseTableOrderingComposer
@@ -21791,6 +22347,9 @@ class $$SyncBaseTableOrderingComposer
 
   ColumnOrderings<String> get data => $composableBuilder(
       column: $table.data, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get serverId => $composableBuilder(
+      column: $table.serverId, builder: (column) => ColumnOrderings(column));
 }
 
 class $$SyncBaseTableAnnotationComposer
@@ -21813,6 +22372,9 @@ class $$SyncBaseTableAnnotationComposer
 
   GeneratedColumn<String> get data =>
       $composableBuilder(column: $table.data, builder: (column) => column);
+
+  GeneratedColumn<String> get serverId =>
+      $composableBuilder(column: $table.serverId, builder: (column) => column);
 }
 
 class $$SyncBaseTableTableManager extends RootTableManager<
@@ -21842,6 +22404,7 @@ class $$SyncBaseTableTableManager extends RootTableManager<
             Value<String> recordId = const Value.absent(),
             Value<int> version = const Value.absent(),
             Value<String> data = const Value.absent(),
+            Value<String?> serverId = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               SyncBaseCompanion(
@@ -21849,6 +22412,7 @@ class $$SyncBaseTableTableManager extends RootTableManager<
             recordId: recordId,
             version: version,
             data: data,
+            serverId: serverId,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -21856,6 +22420,7 @@ class $$SyncBaseTableTableManager extends RootTableManager<
             required String recordId,
             required int version,
             required String data,
+            Value<String?> serverId = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               SyncBaseCompanion.insert(
@@ -21863,6 +22428,7 @@ class $$SyncBaseTableTableManager extends RootTableManager<
             recordId: recordId,
             version: version,
             data: data,
+            serverId: serverId,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
@@ -22063,6 +22629,258 @@ typedef $$SyncStateTableProcessedTableManager = ProcessedTableManager<
     ),
     SyncStateRow,
     PrefetchHooks Function()>;
+typedef $$SyncReviewsTableCreateCompanionBuilder = SyncReviewsCompanion
+    Function({
+  required String id,
+  required String workspaceId,
+  required String kind,
+  required String recordId,
+  required String field,
+  required String kept,
+  required String other,
+  required String reason,
+  required DateTime createdAt,
+  Value<DateTime?> resolvedAt,
+  Value<int> rowid,
+});
+typedef $$SyncReviewsTableUpdateCompanionBuilder = SyncReviewsCompanion
+    Function({
+  Value<String> id,
+  Value<String> workspaceId,
+  Value<String> kind,
+  Value<String> recordId,
+  Value<String> field,
+  Value<String> kept,
+  Value<String> other,
+  Value<String> reason,
+  Value<DateTime> createdAt,
+  Value<DateTime?> resolvedAt,
+  Value<int> rowid,
+});
+
+class $$SyncReviewsTableFilterComposer
+    extends Composer<_$AppDatabase, $SyncReviewsTable> {
+  $$SyncReviewsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get kind => $composableBuilder(
+      column: $table.kind, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get recordId => $composableBuilder(
+      column: $table.recordId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get field => $composableBuilder(
+      column: $table.field, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get kept => $composableBuilder(
+      column: $table.kept, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get other => $composableBuilder(
+      column: $table.other, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get reason => $composableBuilder(
+      column: $table.reason, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get resolvedAt => $composableBuilder(
+      column: $table.resolvedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$SyncReviewsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SyncReviewsTable> {
+  $$SyncReviewsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+      column: $table.kind, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get recordId => $composableBuilder(
+      column: $table.recordId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get field => $composableBuilder(
+      column: $table.field, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get kept => $composableBuilder(
+      column: $table.kept, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get other => $composableBuilder(
+      column: $table.other, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get reason => $composableBuilder(
+      column: $table.reason, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get resolvedAt => $composableBuilder(
+      column: $table.resolvedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$SyncReviewsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SyncReviewsTable> {
+  $$SyncReviewsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get recordId =>
+      $composableBuilder(column: $table.recordId, builder: (column) => column);
+
+  GeneratedColumn<String> get field =>
+      $composableBuilder(column: $table.field, builder: (column) => column);
+
+  GeneratedColumn<String> get kept =>
+      $composableBuilder(column: $table.kept, builder: (column) => column);
+
+  GeneratedColumn<String> get other =>
+      $composableBuilder(column: $table.other, builder: (column) => column);
+
+  GeneratedColumn<String> get reason =>
+      $composableBuilder(column: $table.reason, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get resolvedAt => $composableBuilder(
+      column: $table.resolvedAt, builder: (column) => column);
+}
+
+class $$SyncReviewsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $SyncReviewsTable,
+    SyncReviewRow,
+    $$SyncReviewsTableFilterComposer,
+    $$SyncReviewsTableOrderingComposer,
+    $$SyncReviewsTableAnnotationComposer,
+    $$SyncReviewsTableCreateCompanionBuilder,
+    $$SyncReviewsTableUpdateCompanionBuilder,
+    (
+      SyncReviewRow,
+      BaseReferences<_$AppDatabase, $SyncReviewsTable, SyncReviewRow>
+    ),
+    SyncReviewRow,
+    PrefetchHooks Function()> {
+  $$SyncReviewsTableTableManager(_$AppDatabase db, $SyncReviewsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SyncReviewsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SyncReviewsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SyncReviewsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> workspaceId = const Value.absent(),
+            Value<String> kind = const Value.absent(),
+            Value<String> recordId = const Value.absent(),
+            Value<String> field = const Value.absent(),
+            Value<String> kept = const Value.absent(),
+            Value<String> other = const Value.absent(),
+            Value<String> reason = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime?> resolvedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SyncReviewsCompanion(
+            id: id,
+            workspaceId: workspaceId,
+            kind: kind,
+            recordId: recordId,
+            field: field,
+            kept: kept,
+            other: other,
+            reason: reason,
+            createdAt: createdAt,
+            resolvedAt: resolvedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String workspaceId,
+            required String kind,
+            required String recordId,
+            required String field,
+            required String kept,
+            required String other,
+            required String reason,
+            required DateTime createdAt,
+            Value<DateTime?> resolvedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SyncReviewsCompanion.insert(
+            id: id,
+            workspaceId: workspaceId,
+            kind: kind,
+            recordId: recordId,
+            field: field,
+            kept: kept,
+            other: other,
+            reason: reason,
+            createdAt: createdAt,
+            resolvedAt: resolvedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable<$SyncReviewsTable, SyncReviewRow>(table),
+                    BaseReferences<_$AppDatabase, $SyncReviewsTable,
+                        SyncReviewRow>(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$SyncReviewsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $SyncReviewsTable,
+    SyncReviewRow,
+    $$SyncReviewsTableFilterComposer,
+    $$SyncReviewsTableOrderingComposer,
+    $$SyncReviewsTableAnnotationComposer,
+    $$SyncReviewsTableCreateCompanionBuilder,
+    $$SyncReviewsTableUpdateCompanionBuilder,
+    (
+      SyncReviewRow,
+      BaseReferences<_$AppDatabase, $SyncReviewsTable, SyncReviewRow>
+    ),
+    SyncReviewRow,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -22117,4 +22935,6 @@ class $AppDatabaseManager {
       $$SyncBaseTableTableManager(_db, _db.syncBase);
   $$SyncStateTableTableManager get syncState =>
       $$SyncStateTableTableManager(_db, _db.syncState);
+  $$SyncReviewsTableTableManager get syncReviews =>
+      $$SyncReviewsTableTableManager(_db, _db.syncReviews);
 }

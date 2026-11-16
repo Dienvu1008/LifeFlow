@@ -51,7 +51,7 @@ final List<String> exportedTables = [
 /// undo copy of the last restore (an export itself); exporting it would nest
 /// old data in every file. `syncBase` and `syncState` are this device's
 /// sync bookkeeping (P04 T1): another device or a restore starts its own.
-const notExportedTables = ['restoreSnapshots', 'syncBase', 'syncState'];
+const notExportedTables = ['restoreSnapshots', 'syncBase', 'syncState', 'syncReviews'];
 
 /// A file that must not be restored. [message] is safe to show to the user and
 /// never echoes file contents.
