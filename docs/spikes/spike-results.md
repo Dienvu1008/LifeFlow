@@ -64,6 +64,48 @@ Fixed entry format: **Question / Hypothesis / What was done / Measured result / 
 - **Findings for T1b:** the passphrase check (D15 "minimum strength") is still to be chosen (a length rule plus a list of common passwords is the proposal); the recovery key must be confirmed by the user (for example by typing two of the words) before sync starts; the BIP-39 list ships as a Dart constant with its MIT notice.
 - **Human gate:** owner review with the other P04 spikes.
 
+## S-16 — Members of a shared space on the server, and their keys (P04b)
+**PASS (2026-11-16, local Supabase in Docker; branch `p04b/s16-members-spike`).**
+- **Question:** Can the server let the members of a shared space read it, let only owners and editors write, keep membership, roles, invitations and rules changeable by the owner only, even against crafted requests (R-PERMISSION, OQ-V5), at a speed fit for pulls? Can the space key reach each member, and only them, with the library already in use (p04b-plan.md B5, B7, B8)?
+- **Hypothesis:**
+  - Server: a `space_members` table, a security-definer helper for the caller's role, RLS for reads, owner- or role-checked security-definer functions for every write, and no direct write grants.
+  - Keys: X25519 + HKDF-SHA-256 + AES-256-GCM per member from `cryptography` 2.9.0 (VS-42).
+- **What was done:**
+  - **`supabase/tests/database/s16_spaces_spike.test.sql`** builds the spike's schema inside the test's transaction and rolls it back, so the migrations are untouched.
+    - Tables: `account_public_keys`, `account_private_keys`, `spaces` (with the leaving, export and invitation rules), `space_members`, `space_invitations` (a hash of the code only).
+    - Functions: `create_space`, `invite`, `peek_invitation`, `accept_invitation`, `approve_member`, `set_my_wrapped_key`, `remove_member`, `leave_space`, `set_role`, `hand_over`, `set_space_rules`, `rotate_space_key`. `push_records` and `purge_records` were extended to check the role.
+    - 79 assertions over the owner, an editor, a viewer, someone waiting for approval, someone who joined at once, a removed member, a stranger and a caller without a session:
+      - reads and writes by role, including a viewer's push refused by the server;
+      - crafted direct table writes refused (making oneself owner, adding a member, changing the rules, deleting invitations, deleting the space);
+      - owner-only actions refused to an editor;
+      - rules seen before joining and after a change;
+      - a code used once, its wrapped key erased on use;
+      - removal and a rotation wrapped for exactly the active members;
+      - leaving, handing over the owner role (one owner at a time);
+      - the 10-member limit;
+      - deleting the space removes everything of it;
+      - a P04a personal workspace unchanged.
+  - **`s16_spaces_speed_spike.test.sql`**: 20 000 records in the space plus 20 000 of other accounts, 10 members; a page of 1000 and a full count timed under two read policies.
+  - **`packages/infrastructure/test/spike_s16_keys_test.dart`**, 5 tests:
+    - the private key sealed with the personal workspace key opens only with that key and for that account;
+    - the space key wrapped for one member opens for that member only, in that space only, and a changed byte is refused;
+    - a "join at once" code opens the key, and its hash (what the server keeps) does not;
+    - after a rotation, the removed member's old key opens nothing new and cannot even compute the new server ids;
+    - speed.
+- **Measured result:**
+  - The read policy must be **by set** (`workspace_id in (select my_workspace_ids())`, the function runs once per query), not **per row** (`space_role(workspace_id) is not null`). On 22 222 visible rows, a page of 1000 took 1.0 ms against 10.9 ms, and a full count 5.5 ms against 400–460 ms.
+  - Keys (development PC, pure Dart): wrapping the space key for 10 members took 15 ms; opening it 10 times took 8 ms. A wrapped key is 93 bytes.
+  - Mutations 7 of 7 killed on the server side: a viewer allowed to push, private keys readable by others, an editor passing the owner check, a rotation not wrapped for every member, a waiting member counted as active (in the role helper and in the set policy), an invitation code usable twice.
+- **Success:** PASS. OQ-V5 is answered: membership RLS on Supabase works, and is fast with a set-based policy.
+- **Findings for T9 and T10:**
+  1. **T9:** make the spike's functions real migrations. `must_own` becomes a private schema function, since the spike used `pg_temp`. Use the set-based read policy. `account_workspaces.account_id` follows the owner when the space is handed over. Add `unlock_kind` `space`.
+  2. **T10:** a member's private key is sealed with their personal workspace key. Resetting personal sync (a new personal key, ADR-0054), or deleting the personal server copy, must seal it again or keep it. Turning personal sync off leaves the shared spaces unreachable, which matches B5 ("sync must be on").
+  3. **T10:** a rotation also changes every server id (the id HMAC comes from the space key). The owner's device uploads the space again under the new key. The old rows go only after the new copy is complete (R-DATA-LOSS).
+  4. With end-to-end encryption, the server checks roles only at the level of "owner or editor may write". Finer rules stay in the app (as planned, p04b-plan.md §4).
+  5. The older pgTAP files count every row, so locally they need `supabase db reset` before `supabase test db` once other tests have left accounts behind. CI always starts from a fresh database.
+- **Decision:** feeds the P04b ADRs of T9 and T10.
+- **Human gate:** owner review.
+
 ## S-01 — Flutter + Drift
 **PASS on Windows (2026-11-04):** CRUD + transaction + persistence across restart + rollback, proven on-device; headless 2/2. Finding → **OQ-STACK-2**: resolved stack is sqlite3 2.9.4 + sqlite3_flutter_libs 0.5.42 (CMake bundling), not sqlite3 3.x build hooks (3.x path not smooth on Flutter yet). Android a follow-up.
 
