@@ -47,9 +47,12 @@ class _TaskPageState extends ConsumerState<TaskPage> {
   @override
   void initState() {
     super.initState();
-    // Leaving the field saves it.
+    // Leaving the field saves it. P04 T6: then the page builds again, so
+    // notes another device synced while the field had the focus show.
     _notesFocus.addListener(() {
-      if (!_notesFocus.hasFocus) _saveNotes();
+      if (_notesFocus.hasFocus) return;
+      _saveNotes();
+      if (mounted) setState(() {});
     });
     _notes.addListener(() => setState(() {}));
   }

@@ -77,3 +77,12 @@ After the v12 fix, the owner's "Sync now" on Windows logged `SyncReport(failed, 
 - **Cause.** `pull_records` returns the sealed bytes with Postgres `encode(..., 'base64')`, which breaks the text into lines of 76 characters. Dart's `base64Decode` refuses the line breaks, so any record over 57 bytes could not be pulled: every real record. The contract test passed only because its test records were a few bytes long. This was most likely what both devices hit from the first sync on; the outbox key bug above was real too.
 - **Fix.** `HttpRemoteGateway.pull` drops whitespace before decoding. No server change is needed.
 - **Test.** A contract case pushes and pulls a 5000-byte record, on the in-memory server and on local Supabase (CI job `supabase-db`). It fails without the fix.
+
+## T6 finding 3 (2026-11-16): the task page and notes from another device
+After "Take the other" on one device, the owner saw each device with its own note.
+- **What the agent checked.** `sync_supabase_e2e_test.dart` runs two devices with their own stores on a local Supabase with the project's migrations, through the real `HttpRemoteGateway`, with real-size records. After "Take the other" and Sync now on both, the notes are the same. Before its next sync, the other device still shows the kept note; this is D8, since a device takes changes in on return to the app, on Sync now, or every 5 minutes. The engine converges in every sync order (`sync_review_test.dart` "T6 step 3 …").
+- **The bug found.** On the task page, if the notes field had the focus (tapped, nothing typed) when notes came in from the other device, leaving the field did not rebuild the page, so it kept showing the old notes. Nothing was written back, because an unchanged field is not saved.
+- **Fix.** Leaving the field rebuilds the page, which then shows the synced notes.
+- **Tests.**
+  - `ui/test/task_page_flow_test.dart` "P04 T6 step 3: notes from the other device show in the open page; nothing is written back" (mutation killed).
+  - The end-to-end test also runs in CI (job `supabase-db`).

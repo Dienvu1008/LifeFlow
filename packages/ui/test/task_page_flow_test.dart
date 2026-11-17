@@ -76,6 +76,26 @@ void main() {
     expect(w.calls.last, 'notes:p:-');
   });
 
+  testWidgets('P04 T6 step 3: notes from the other device show in the open page; nothing is written back', (tester) async {
+    final w = world();
+    await pumpApp(tester, w);
+    await openPage(tester, 'Visa');
+    TextEditingController notes() => tester.widget<TextField>(find.byKey(const Key('task-page-notes'))).controller!;
+    w.pulledNotes('p', 'Forms, from the other device');
+    await tester.pumpAndSettle();
+    expect(notes().text, 'Forms, from the other device');
+    expect(find.byKey(const Key('task-page-save-notes')), findsNothing, reason: 'not an edit here');
+    // Into the field and out again without typing: still nothing written.
+    await tester.tap(find.byKey(const Key('task-page-notes')));
+    await tester.pump();
+    w.pulledNotes('p', 'Forms, changed again');
+    await tester.pumpAndSettle();
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
+    expect(notes().text, 'Forms, changed again', reason: 'shown once the field is left');
+    expect(w.calls.where((c) => c.startsWith('notes:')), isEmpty, reason: 'the pulled notes are never saved back as an edit');
+  });
+
   testWidgets('rename, colour, move to another list', (tester) async {
     final w = world();
     await pumpApp(tester, w);

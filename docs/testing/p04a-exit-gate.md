@@ -1,6 +1,6 @@
 # P04a exit-gate evidence (sync of one account's devices)
 
-Maps each line of the P04a exit gate ([p04-plan.md §1](../roadmap/p04-plan.md)) and the P04 anchors of the definition of done ([definition-of-done.md](definition-of-done.md)) to the tests and checks that prove it. Status: **waiting for the owner's device checks and sign-off** (below).
+Maps each line of the P04a exit gate ([p04-plan.md §1](../roadmap/p04-plan.md)) and the P04 anchors of the definition of done ([definition-of-done.md](definition-of-done.md)) to the tests and checks that prove it. Status: **signed off by the owner, 2026-11-16**.
 
 How to reproduce:
 - `dart test` in `packages/foundation|time_kernel|domain|application|infrastructure`.
@@ -46,7 +46,7 @@ The matrix rows are in [invariant-test-matrix.md](../invariants/invariant-test-m
 | Check | Proof |
 |---|---|
 | An account sees and changes only its own workspaces (RLS, R-PERMISSION) | pgTAP `supabase/tests/database/*.test.sql`: 37 tests, allow and deny, also through the functions; `remote_contract_test.dart` "another account sees and changes nothing of the workspace" and "without a session nothing is reachable" |
-| The in-memory server and Supabase behave the same | `remote_contract_test.dart`: 20 tests, the same cases on both, with local Supabase in CI. A 5000-byte record comes back exactly (T6 finding 2). |
+| Two devices end to end on Supabase (the owner's steps 1, 3 and 4) | `sync_supabase_e2e_test.dart`: 4 tests on local Supabase in CI (real-size notes, a moved and done occurrence, notes conflict and "Take the other", delete against rename); it fails if the base64 fix is undone | `remote_contract_test.dart`: 20 tests, the same cases on both, with local Supabase in CI. A 5000-byte record comes back exactly (T6 finding 2). |
 | Migrations applied to the owner's project | `20261114000001`–`03` pushed by the owner (`supabase db push --remote`, 2026-11-16) |
 
 ## Fitness functions and governance
@@ -67,13 +67,14 @@ The matrix rows are in [invariant-test-matrix.md](../invariants/invariant-test-m
 | Line | Status |
 |---|---|
 | Builds on Windows and Android; analyze clean | The owner ran both platforms from the T5 branch during T6. `dart analyze` / `flutter analyze` are clean in every package. |
-| All phase tests pass | foundation 13, time_kernel 92, domain 82, application 3, infrastructure 413 (+1 skipped: the local Supabase group, run separately and in CI), ui 300, app 33; pgTAP 37; contract 20 on local Supabase (local, 2026-11-16) |
+| All phase tests pass | foundation 13, time_kernel 92, domain 82, application 3, infrastructure 428 (with the local Supabase groups: contract 20, end to end 4), ui 301, app 33; pgTAP 37 (local, 2026-11-16) |
 | Mutation checks on the new logic | T4 14/14, T5 24/24, T6 fixes 2/2, ADR-0059 5/5 killed (sequential runs, recorded in the ADRs) |
 | ADRs | 0052 (backend + end-to-end encryption), 0053 (schema v10 sync contract), 0054 (keys), 0055 (server port and contract), 0056 (engine, v11), 0057 (joining and leaving), 0058 (UI, scheduler; T6 findings, v12), 0059 (egress classification) |
 
 ## T6 findings (on the owner's two devices)
 1. **The outbox key without the kind** refused any pulled page holding an occurrence's exception and its completion, which share one id. Fixed with schema v12 (ADR-0058).
 2. **Base64 line breaks from the server**: no real-size record could be pulled. Fixed in the HTTP gateway; a contract test with a 5000-byte record now guards it (ADR-0058).
+3. **The task page kept old notes** when notes arrived from the other device while its notes field had the focus. Fixed: leaving the field rebuilds the page (ADR-0058).
 
 Both had passed the headless tests, which used small records and no habit occurrences on both devices. After the fixes the owner reported that sync works between Windows and Android (2026-11-16).
 
@@ -81,7 +82,7 @@ Both had passed the headless tests, which used small records and no habit occurr
 - [x] Windows turns sync on with a recovery key; Android joins with the 24 words and merges; after Sync now each device shows the other's tasks (owner, 2026-11-16, after the two fixes).
 - [x] An edit on one device shows on the other after a return to the app or Sync now (owner, 2026-11-16).
 - [x] Offline on Android: the status says so; the changes go once back online; nothing lost (owner, 2026-11-16).
-- [ ] Notes changed on both devices offline: a "Changes to review" item appeared (owner, 2026-11-16). After "Take the other" the owner saw each device with its own note. Headless, every order of syncs converges (`sync_review_test.dart` "T6 step 3 …"); the other device takes the change in at its next sync (return to the app, Sync now, or within 5 minutes, D8). **Waiting for the owner to check with Sync now on the other device.**
+- [x] Notes changed on both devices offline: a "Changes to review" item appeared (owner, 2026-11-16). After "Take the other" the owner saw each device with its own note. Checked by the agent on the real stack (two devices, local Supabase with the project's migrations, the real HTTP gateway, real-size records: `sync_supabase_e2e_test.dart`): after Sync now on both, the notes are the same; before its next sync the other device still shows the kept note (D8). The task page also kept showing old notes when its field had the focus as they arrived; fixed (T6 finding 3, ADR-0058).
 - [x] Deleted on one device, renamed on the other: in the trash with the new name, and a review item (owner, 2026-11-16).
 - [x] "Only when I tap Sync now" on Android: nothing arrives until Sync now (owner, 2026-11-16).
 - [x] Speed (D8): Sync now on Android takes about 1 s, at most 2–3 s (owner, 2026-11-16).
@@ -104,6 +105,6 @@ Both had passed the headless tests, which used small records and no habit occurr
 - R-LICENSE-SCAN: every new package recorded before its merge (VS-42–46).
 
 ## Owner sign-off
-- [ ] Device checks above.
-- [ ] CI green on the T7 branch head.
-- [ ] Owner approves P04a as done.
+- [x] Device checks above (owner, 2026-11-16; step 3 checked by the agent on the real stack, at the owner's request).
+- [x] CI green on the T7 branch head.
+- [x] Owner approves P04a as done (2026-11-16).
