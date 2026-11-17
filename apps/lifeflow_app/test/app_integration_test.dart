@@ -1044,8 +1044,8 @@ class _AccountRemote implements RemoteGateway {
   @override
   Future<void> deleteWorkspace(String id) async => (await _signedIn()).deleteWorkspace(id);
   @override
-  Future<PushResult> push(String ws, String device, List<RecordPush> records) async =>
-      (await _signedIn()).push(ws, device, records);
+  Future<PushResult> push(String ws, String device, List<RecordPush> records, {String keyId = ''}) async =>
+      (await _signedIn()).push(ws, device, records, keyId: keyId);
   @override
   Future<List<SealedRecord>> pull(String ws, int after, {int limit = 1000}) async =>
       (await _signedIn()).pull(ws, after, limit: limit);

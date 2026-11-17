@@ -100,8 +100,36 @@ class WorkspaceKeyring {
         : _wrapForPassphrase(key, passphrase!, workspaceId);
   }
 
-  /// Forgets this device's key (sync turned off, or the profile deleted).
-  Future<void> forget(String workspaceId) => _slot(workspaceId).delete();
+  /// Forgets this device's key (sync turned off, or the profile deleted),
+  /// and the key before it.
+  Future<void> forget(String workspaceId) async {
+    await _slot(workspaceId).delete();
+    await _previousSlot(workspaceId).delete();
+  }
+
+  // P04b T10 (ADR-0062): a shared space's key reaches the device wrapped for
+  // its account (space_key_service.dart), not by a recovery key. After a
+  // rotation the key before it is kept too, to read the rows still sealed
+  // with it until they are sealed again.
+  DatabaseKeyStore _previousSlot(String workspaceId) => _slotFor('lifeflow.sync.key.$workspaceId.previous');
+
+  /// Keeps [key] as the workspace's key; with [keepPrevious] the key it
+  /// replaces stays as the previous one.
+  Future<void> keepKey(String workspaceId, SecretKey key, {bool keepPrevious = false}) async {
+    final old = await keyOf(workspaceId);
+    if (keepPrevious && old != null) {
+      await _previousSlot(workspaceId).write(base64Encode(await old.extractBytes()));
+    }
+    await _keep(workspaceId, key);
+  }
+
+  /// The key before the current one, while a rotation is not finished.
+  Future<SecretKey?> previousKeyOf(String workspaceId) async {
+    final s = await _previousSlot(workspaceId).read();
+    return s == null ? null : SecretKey(base64Decode(s));
+  }
+
+  Future<void> forgetPrevious(String workspaceId) => _previousSlot(workspaceId).delete();
 
   Future<WrappedKey> _wrapForRecovery(SecretKey key, RecoveryKey recovery, String workspaceId) async =>
       WrappedKey(await wrapWith(await unlockFromRecoveryKey(recovery.bytes), key, workspaceId), UnlockKind.recoveryKey);

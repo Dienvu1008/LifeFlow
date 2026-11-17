@@ -220,6 +220,10 @@ abstract interface class SpaceGateway {
 
   /// A new space key, wrapped for exactly the active members.
   Future<void> rotateKey(String workspaceId, String keyId, Map<String, Uint8List> wrappedFor);
+
+  /// After a rotation, once the records are sealed again with the current
+  /// key: drops the rows of any other key (the owner only). Returns how many.
+  Future<int> dropOldKeyRecords(String workspaceId);
 }
 
 /// The most members of one space and the most spaces of one account (B13).

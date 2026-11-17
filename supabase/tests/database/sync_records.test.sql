@@ -97,7 +97,7 @@ select pg_temp.as_admin();
 select is((select count(*)::int from public.account_workspaces), 1, 'B''s delete removed nothing of A');
 
 -- A caller without a session reaches nothing.
-select ok(not has_function_privilege('anon', 'public.push_records(uuid, text, jsonb)', 'execute'),
+select ok(not has_function_privilege('anon', 'public.push_records(uuid, text, jsonb, text)', 'execute'),
           'anon has no right to call push_records');
 select ok(not has_function_privilege('anon', 'public.purge_records(uuid, timestamptz)', 'execute'),
           'anon has no right to call purge_records');

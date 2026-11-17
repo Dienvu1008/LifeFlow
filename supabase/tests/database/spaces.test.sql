@@ -169,11 +169,11 @@ select is((select count(*)::int from public.account_public_keys), 6,
 
 -- Writes by role (SHARE-002).
 select is((public.push_records('20000000-0000-4000-8000-0000000000f1', 'o',
-            jsonb_build_array(pg_temp.rec(1, '30000000-0000-4000-8000-000000000011'))) -> 'accepted') -> 0 ->> 'seq', '1',
+            jsonb_build_array(pg_temp.rec(1, '30000000-0000-4000-8000-000000000011')), repeat('a', 64)) -> 'accepted') -> 0 ->> 'seq', '1',
           'the owner writes');
 select pg_temp.as_account(2);
 select is((public.push_records('20000000-0000-4000-8000-0000000000f1', 'e',
-            jsonb_build_array(pg_temp.rec(2, '30000000-0000-4000-8000-000000000012'))) -> 'accepted') -> 0 ->> 'seq', '2',
+            jsonb_build_array(pg_temp.rec(2, '30000000-0000-4000-8000-000000000012')), repeat('a', 64)) -> 'accepted') -> 0 ->> 'seq', '2',
           'an editor writes');
 select is((select count(*)::int from public.sync_records), 2, 'an editor reads the space');
 select is((select (status, leave_rule, wrapped_key, key_id = repeat('a', 64)) from public.my_spaces())::text,
@@ -320,7 +320,7 @@ select lives_ok($$ select public.hand_over('20000000-0000-4000-8000-0000000000f1
                 'O hands the space to E');
 select is(private.role_in('20000000-0000-4000-8000-0000000000f1'), 'editor', 'O is an editor now');
 select is((public.push_records('20000000-0000-4000-8000-0000000000f1', 'o',
-            jsonb_build_array(pg_temp.rec(6, '30000000-0000-4000-8000-000000000016'))) -> 'accepted') -> 0 ->> 'seq', '3',
+            jsonb_build_array(pg_temp.rec(6, '30000000-0000-4000-8000-000000000016')), repeat('b', 64)) -> 'accepted') -> 0 ->> 'seq', '3',
           'and still writes');
 select throws_ok($$ select public.remove_member('20000000-0000-4000-8000-0000000000f1', pg_temp.who(5)) $$,
                  '42501', null, 'O can no longer remove members');

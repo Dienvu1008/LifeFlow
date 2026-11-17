@@ -50,6 +50,8 @@ export 'src/sync/memory_remote.dart';
 export 'src/sync/passphrase_policy.dart';
 export 'src/sync/recovery_key.dart';
 export 'src/sync/sealing.dart';
+export 'src/sync/space_key_service.dart';
+export 'src/sync/space_keys.dart';
 export 'src/sync/sync_apply_handler.dart';
 export 'src/sync/sync_engine.dart';
 export 'src/sync/sync_review_handler.dart';

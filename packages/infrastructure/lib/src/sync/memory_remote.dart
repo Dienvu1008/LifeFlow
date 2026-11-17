@@ -26,8 +26,10 @@ class _Workspace {
 }
 
 class _Row {
-  _Row(this.id, this.version, this.seq, this.deleted, this.sealed, this.deviceId, this.operationId, this.updatedAt);
+  _Row(this.id, this.version, this.seq, this.deleted, this.sealed, this.deviceId, this.operationId, this.updatedAt,
+      [this.keyId = '']);
   final String id;
+  String keyId;
   int version;
   int seq;
   bool deleted;
@@ -210,9 +212,11 @@ class MemoryRemoteGateway implements RemoteGateway, SpaceGateway {
   }
 
   @override
-  Future<PushResult> push(String workspaceId, String deviceId, List<RecordPush> records) async {
+  Future<PushResult> push(String workspaceId, String deviceId, List<RecordPush> records, {String keyId = ''}) async {
     if (records.length > maxPushBatch) throw const RemoteFailure(RemoteFailureKind.refused, 'batch too large');
     final w = _writable(workspaceId);
+    // ADR-0062: a space takes records sealed with its current key only.
+    if (w.isSpace && keyId != w.info.keyId) throw const SpaceFailure(SpaceRefusal.staleKey);
     if (deviceId.isEmpty || deviceId.length > 64) throw const RemoteFailure(RemoteFailureKind.refused, 'bad device id');
     for (final r in records) {
       if (!_hex64.hasMatch(r.id)) throw const RemoteFailure(RemoteFailureKind.refused, 'ids are 64 hex characters');
@@ -238,7 +242,7 @@ class MemoryRemoteGateway implements RemoteGateway, SpaceGateway {
         accepted[r.id] = s;
         writes.add(() {
           final now = server.clock();
-          w.records[r.id] = _Row(r.id, r.version, s, r.deleted, r.sealed, deviceId, r.operationId, now);
+          w.records[r.id] = _Row(r.id, r.version, s, r.deleted, r.sealed, deviceId, r.operationId, now, keyId);
         });
       } else {
         conflicts[r.id] = curVersion;
@@ -264,7 +268,14 @@ class MemoryRemoteGateway implements RemoteGateway, SpaceGateway {
     final rows = [for (final r in w.records.values) if (r.seq > after) r]..sort((x, y) => x.seq.compareTo(y.seq));
     return [
       for (final r in rows.take(limit.clamp(1, maxPullPage)))
-        SealedRecord(id: r.id, version: r.version, seq: r.seq, deleted: r.deleted, sealed: r.sealed, deviceId: r.deviceId),
+        SealedRecord(
+            id: r.id,
+            version: r.version,
+            seq: r.seq,
+            deleted: r.deleted,
+            sealed: r.sealed,
+            deviceId: r.deviceId,
+            keyId: r.keyId),
     ];
   }
 
@@ -564,6 +575,15 @@ class MemoryRemoteGateway implements RemoteGateway, SpaceGateway {
     w.info = RemoteWorkspace(workspaceId: workspaceId, wrappedKey: wrappedFor[a]!, unlockKind: 'space', keyId: keyId);
     server._invitations.removeWhere(
         (_, i) => i.workspaceId == workspaceId && i.usedBy == null && i.kind == InviteKind.joinAtOnce);
+  }
+
+  @override
+  Future<int> dropOldKeyRecords(String workspaceId) async {
+    _ownedSpace(workspaceId);
+    final w = server._workspaces[workspaceId]!;
+    final before = w.records.length;
+    w.records.removeWhere((_, r) => r.keyId != w.info.keyId);
+    return before - w.records.length;
   }
 
   void _checkKey(Uint8List wrapped, String keyId) {
