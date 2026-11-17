@@ -193,8 +193,9 @@ abstract interface class SharingService {
   /// Joins with a code; "approve" invitations wait for the owner.
   Future<SharingResult> join(String text);
 
-  /// The space's members, as the server says (the owner sees who waits).
-  Future<List<RemoteMember>> members(String spaceId);
+  /// The space's members, as the server says (the owner sees who waits),
+  /// with their names.
+  Future<List<SpaceMemberView>> members(String spaceId);
   Future<SharingResult> approve(String spaceId, String accountId);
 
   /// Removes a member (or turns down someone waiting); the space's key is
@@ -223,4 +224,35 @@ abstract interface class SharingService {
 
   /// Lets a left space go from this device (its copy, B8).
   Future<SharingResult> forgetSpace(String spaceId);
+
+  /// P04b T13 (ADR-0065): this account's name in the space, as the others
+  /// see it.
+  Future<SharingResult> setMyName(String spaceId, String name);
+
+  /// The names of the space's members known here, by account id.
+  Future<Map<String, String>> memberNames(String spaceId);
+
+  /// This profile's account id (to find "me" among members and assignees).
+  Future<String?> myAccountId();
+
+  /// The space's rules as last known on this device.
+  Future<SpaceRules> rulesOf(String spaceId);
+}
+
+/// A member of a space as the app shows them (P04b T13).
+class SpaceMemberView {
+  const SpaceMemberView({
+    required this.accountId,
+    required this.role,
+    required this.status,
+    required this.isMe,
+    this.name,
+  });
+  final String accountId;
+
+  /// Their name in the space (ADR-0065), or null when not known here.
+  final String? name;
+  final SpaceRole role;
+  final MemberStatus status;
+  final bool isMe;
 }

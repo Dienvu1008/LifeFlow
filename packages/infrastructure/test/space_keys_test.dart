@@ -98,6 +98,18 @@ void main() {
     expect({for (var i = 0; i < 200; i++) newInvitationCode()}.length, 200);
   });
 
+  test('T13: a name sealed for the owner opens for the owner only, for that space and that sender', () async {
+    final owner = await AccountKeyPair.generate();
+    final other = await AccountKeyPair.generate();
+    final sealed = await sealNameFor('Lan', owner.publicKey, space, 'acc-lan');
+    expect(await openNameAs(sealed, owner, space, 'acc-lan'), 'Lan');
+    await expectLater(openNameAs(sealed, other, space, 'acc-lan'), throwsA(isA<SealBroken>()));
+    await expectLater(openNameAs(sealed, owner, '20000000-0000-4000-8000-0000000000f2', 'acc-lan'), throwsA(isA<SealBroken>()),
+        reason: 'another space');
+    await expectLater(openNameAs(sealed, owner, space, 'acc-minh'), throwsA(isA<SealBroken>()),
+        reason: 'said to be from someone else');
+  });
+
   test('speed: wrapping for 10 members and opening on a member device', () async {
     final members = [for (var i = 0; i < 10; i++) await AccountKeyPair.generate()];
     final key = await newWorkspaceKey();

@@ -511,7 +511,10 @@ class SyncEngine {
     // record, nor one of another space, by naming its id), are not taken.
     var local = await kind.readOne(db, id);
     if (space != null) {
-      if (!sharedSpaceKinds.contains(kind.name) || remoteRow['workspaceId'] != workspaceId) {
+      if (!sharedSpaceKinds.contains(kind.name) ||
+          remoteRow['workspaceId'] != workspaceId ||
+          // P04b T13: a member card is of one member of this space.
+          (kind.name == 'memberCard' && remoteRow['id'] != '$workspaceId:${remoteRow['accountId']}')) {
         _refused++;
         return true;
       }

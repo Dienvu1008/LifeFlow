@@ -457,6 +457,18 @@ class SyncBase extends Table {
   Set<Column> get primaryKey => {workspaceId, kind, recordId};
 }
 
+/// P04b T13 (schema v15, ADR-0065): a member's name in a shared space, a
+/// record of the space (sealed with its key; the server never sees it). Its
+/// id is '<space>:<account>'. Written by the space's owner (from the name
+/// sealed for them when the person asked to join) or by the member.
+@DataClassName('MemberCard')
+class MemberCards extends Table with SyncableColumns {
+  TextColumn get accountId => text()();
+  TextColumn get displayName => text()();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 /// P04b T12 (schema v14, ADR-0064): a change of a shared space this device
 /// did not take because the record is still in another workspace here (it
 /// was moved into the space on another device of the account, and that

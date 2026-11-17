@@ -72,7 +72,8 @@ class _Both implements Server {
   @override
   Future<InvitationPreview> peekInvitation(String h) => s.peekInvitation(h);
   @override
-  Future<AcceptedInvitation> acceptInvitation(String h) => s.acceptInvitation(h);
+  Future<AcceptedInvitation> acceptInvitation(String h, {Uint8List? sealedName}) =>
+      s.acceptInvitation(h, sealedName: sealedName);
   @override
   Future<void> approveMember(String w, String a, Uint8List k, String id) => s.approveMember(w, a, k, id);
   @override
@@ -226,6 +227,18 @@ void contract(String name, Future<Accounts> Function() open) {
       expect([for (final r in await g(editor).pull(ws, 0)) r.id], [x]);
       await g(editor).push(ws, 'e', [rec(y)], keyId: keyA);
       expect([for (final r in await g(owner).pull(ws, 0)) (r.id, r.seq)], [(x, 1), (y, 2)]);
+    });
+
+    test('T13: an invitation gives the owner\'s public key; a name sealed for the owner comes with the request', () async {
+      final h = hex64();
+      await g(owner).invite(ws, h, SpaceRole.editor, InviteKind.approve);
+      expect((await g(waiting).peekInvitation(h)).ownerPublicKey, publicKeyOf(owner));
+      await g(waiting).acceptInvitation(h, sealedName: b([7, 7, 7]));
+      final row = (await g(owner).members(ws)).singleWhere((m) => m.accountId == idOf(waiting));
+      expect([row.status, row.sealedName], [MemberStatus.pending, [7, 7, 7]]);
+      final h2 = hex64();
+      await g(owner).invite(ws, h2, SpaceRole.viewer, InviteKind.approve);
+      await expectFailure(g(viewer).acceptInvitation(h2, sealedName: b(List.filled(1025, 1))), RemoteFailureKind.refused);
     });
 
     test('an invitation can be cancelled, by the owner only', () async {

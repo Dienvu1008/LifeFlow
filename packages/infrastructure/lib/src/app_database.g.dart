@@ -17277,6 +17277,557 @@ class SyncParkedCompanion extends UpdateCompanion<SyncParkedRow> {
   }
 }
 
+class $MemberCardsTable extends MemberCards
+    with TableInfo<$MemberCardsTable, MemberCard> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MemberCardsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _workspaceIdMeta =
+      const VerificationMeta('workspaceId');
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+      'workspace_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _ownerIdMeta =
+      const VerificationMeta('ownerId');
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+      'owner_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _versionMeta =
+      const VerificationMeta('version');
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+      'version', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _deletedByMeta =
+      const VerificationMeta('deletedBy');
+  @override
+  late final GeneratedColumn<String> deletedBy = GeneratedColumn<String>(
+      'deleted_by', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _changedByMeta =
+      const VerificationMeta('changedBy');
+  @override
+  late final GeneratedColumn<String> changedBy = GeneratedColumn<String>(
+      'changed_by', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _accountIdMeta =
+      const VerificationMeta('accountId');
+  @override
+  late final GeneratedColumn<String> accountId = GeneratedColumn<String>(
+      'account_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _displayNameMeta =
+      const VerificationMeta('displayName');
+  @override
+  late final GeneratedColumn<String> displayName = GeneratedColumn<String>(
+      'display_name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        workspaceId,
+        ownerId,
+        version,
+        createdAt,
+        updatedAt,
+        deletedAt,
+        deletedBy,
+        changedBy,
+        accountId,
+        displayName
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'member_cards';
+  @override
+  VerificationContext validateIntegrity(Insertable<MemberCard> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+          _workspaceIdMeta,
+          workspaceId.isAcceptableOrUnknown(
+              data['workspace_id']!, _workspaceIdMeta));
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(_ownerIdMeta,
+          ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta));
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('version')) {
+      context.handle(_versionMeta,
+          version.isAcceptableOrUnknown(data['version']!, _versionMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
+    if (data.containsKey('deleted_by')) {
+      context.handle(_deletedByMeta,
+          deletedBy.isAcceptableOrUnknown(data['deleted_by']!, _deletedByMeta));
+    }
+    if (data.containsKey('changed_by')) {
+      context.handle(_changedByMeta,
+          changedBy.isAcceptableOrUnknown(data['changed_by']!, _changedByMeta));
+    }
+    if (data.containsKey('account_id')) {
+      context.handle(_accountIdMeta,
+          accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta));
+    } else if (isInserting) {
+      context.missing(_accountIdMeta);
+    }
+    if (data.containsKey('display_name')) {
+      context.handle(
+          _displayNameMeta,
+          displayName.isAcceptableOrUnknown(
+              data['display_name']!, _displayNameMeta));
+    } else if (isInserting) {
+      context.missing(_displayNameMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  MemberCard map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MemberCard(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      workspaceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}workspace_id'])!,
+      ownerId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}owner_id'])!,
+      version: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}version'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
+      deletedBy: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}deleted_by']),
+      changedBy: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}changed_by']),
+      accountId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}account_id'])!,
+      displayName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}display_name'])!,
+    );
+  }
+
+  @override
+  $MemberCardsTable createAlias(String alias) {
+    return $MemberCardsTable(attachedDatabase, alias);
+  }
+}
+
+class MemberCard extends DataClass implements Insertable<MemberCard> {
+  final String id;
+  final String workspaceId;
+  final String ownerId;
+  final int version;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final String? deletedBy;
+  final String? changedBy;
+  final String accountId;
+  final String displayName;
+  const MemberCard(
+      {required this.id,
+      required this.workspaceId,
+      required this.ownerId,
+      required this.version,
+      required this.createdAt,
+      required this.updatedAt,
+      this.deletedAt,
+      this.deletedBy,
+      this.changedBy,
+      required this.accountId,
+      required this.displayName});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['version'] = Variable<int>(version);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || deletedBy != null) {
+      map['deleted_by'] = Variable<String>(deletedBy);
+    }
+    if (!nullToAbsent || changedBy != null) {
+      map['changed_by'] = Variable<String>(changedBy);
+    }
+    map['account_id'] = Variable<String>(accountId);
+    map['display_name'] = Variable<String>(displayName);
+    return map;
+  }
+
+  MemberCardsCompanion toCompanion(bool nullToAbsent) {
+    return MemberCardsCompanion(
+      id: Value(id),
+      workspaceId: Value(workspaceId),
+      ownerId: Value(ownerId),
+      version: Value(version),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      deletedBy: deletedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedBy),
+      changedBy: changedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(changedBy),
+      accountId: Value(accountId),
+      displayName: Value(displayName),
+    );
+  }
+
+  factory MemberCard.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MemberCard(
+      id: serializer.fromJson<String>(json['id']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      version: serializer.fromJson<int>(json['version']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      deletedBy: serializer.fromJson<String?>(json['deletedBy']),
+      changedBy: serializer.fromJson<String?>(json['changedBy']),
+      accountId: serializer.fromJson<String>(json['accountId']),
+      displayName: serializer.fromJson<String>(json['displayName']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'version': serializer.toJson<int>(version),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'deletedBy': serializer.toJson<String?>(deletedBy),
+      'changedBy': serializer.toJson<String?>(changedBy),
+      'accountId': serializer.toJson<String>(accountId),
+      'displayName': serializer.toJson<String>(displayName),
+    };
+  }
+
+  MemberCard copyWith(
+          {String? id,
+          String? workspaceId,
+          String? ownerId,
+          int? version,
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          Value<DateTime?> deletedAt = const Value.absent(),
+          Value<String?> deletedBy = const Value.absent(),
+          Value<String?> changedBy = const Value.absent(),
+          String? accountId,
+          String? displayName}) =>
+      MemberCard(
+        id: id ?? this.id,
+        workspaceId: workspaceId ?? this.workspaceId,
+        ownerId: ownerId ?? this.ownerId,
+        version: version ?? this.version,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+        deletedBy: deletedBy.present ? deletedBy.value : this.deletedBy,
+        changedBy: changedBy.present ? changedBy.value : this.changedBy,
+        accountId: accountId ?? this.accountId,
+        displayName: displayName ?? this.displayName,
+      );
+  MemberCard copyWithCompanion(MemberCardsCompanion data) {
+    return MemberCard(
+      id: data.id.present ? data.id.value : this.id,
+      workspaceId:
+          data.workspaceId.present ? data.workspaceId.value : this.workspaceId,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      version: data.version.present ? data.version.value : this.version,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      deletedBy: data.deletedBy.present ? data.deletedBy.value : this.deletedBy,
+      changedBy: data.changedBy.present ? data.changedBy.value : this.changedBy,
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
+      displayName:
+          data.displayName.present ? data.displayName.value : this.displayName,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MemberCard(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('version: $version, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedBy: $deletedBy, ')
+          ..write('changedBy: $changedBy, ')
+          ..write('accountId: $accountId, ')
+          ..write('displayName: $displayName')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, workspaceId, ownerId, version, createdAt,
+      updatedAt, deletedAt, deletedBy, changedBy, accountId, displayName);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MemberCard &&
+          other.id == this.id &&
+          other.workspaceId == this.workspaceId &&
+          other.ownerId == this.ownerId &&
+          other.version == this.version &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.deletedBy == this.deletedBy &&
+          other.changedBy == this.changedBy &&
+          other.accountId == this.accountId &&
+          other.displayName == this.displayName);
+}
+
+class MemberCardsCompanion extends UpdateCompanion<MemberCard> {
+  final Value<String> id;
+  final Value<String> workspaceId;
+  final Value<String> ownerId;
+  final Value<int> version;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> deletedBy;
+  final Value<String?> changedBy;
+  final Value<String> accountId;
+  final Value<String> displayName;
+  final Value<int> rowid;
+  const MemberCardsCompanion({
+    this.id = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.version = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.deletedBy = const Value.absent(),
+    this.changedBy = const Value.absent(),
+    this.accountId = const Value.absent(),
+    this.displayName = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MemberCardsCompanion.insert({
+    required String id,
+    required String workspaceId,
+    required String ownerId,
+    this.version = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.deletedBy = const Value.absent(),
+    this.changedBy = const Value.absent(),
+    required String accountId,
+    required String displayName,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        workspaceId = Value(workspaceId),
+        ownerId = Value(ownerId),
+        createdAt = Value(createdAt),
+        updatedAt = Value(updatedAt),
+        accountId = Value(accountId),
+        displayName = Value(displayName);
+  static Insertable<MemberCard> custom({
+    Expression<String>? id,
+    Expression<String>? workspaceId,
+    Expression<String>? ownerId,
+    Expression<int>? version,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? deletedBy,
+    Expression<String>? changedBy,
+    Expression<String>? accountId,
+    Expression<String>? displayName,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (version != null) 'version': version,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (deletedBy != null) 'deleted_by': deletedBy,
+      if (changedBy != null) 'changed_by': changedBy,
+      if (accountId != null) 'account_id': accountId,
+      if (displayName != null) 'display_name': displayName,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MemberCardsCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? workspaceId,
+      Value<String>? ownerId,
+      Value<int>? version,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<DateTime?>? deletedAt,
+      Value<String?>? deletedBy,
+      Value<String?>? changedBy,
+      Value<String>? accountId,
+      Value<String>? displayName,
+      Value<int>? rowid}) {
+    return MemberCardsCompanion(
+      id: id ?? this.id,
+      workspaceId: workspaceId ?? this.workspaceId,
+      ownerId: ownerId ?? this.ownerId,
+      version: version ?? this.version,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      deletedBy: deletedBy ?? this.deletedBy,
+      changedBy: changedBy ?? this.changedBy,
+      accountId: accountId ?? this.accountId,
+      displayName: displayName ?? this.displayName,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (deletedBy.present) {
+      map['deleted_by'] = Variable<String>(deletedBy.value);
+    }
+    if (changedBy.present) {
+      map['changed_by'] = Variable<String>(changedBy.value);
+    }
+    if (accountId.present) {
+      map['account_id'] = Variable<String>(accountId.value);
+    }
+    if (displayName.present) {
+      map['display_name'] = Variable<String>(displayName.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MemberCardsCompanion(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('version: $version, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedBy: $deletedBy, ')
+          ..write('changedBy: $changedBy, ')
+          ..write('accountId: $accountId, ')
+          ..write('displayName: $displayName, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -17313,6 +17864,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SyncReviewsTable syncReviews = $SyncReviewsTable(this);
   late final $SpaceMembersTable spaceMembers = $SpaceMembersTable(this);
   late final $SyncParkedTable syncParked = $SyncParkedTable(this);
+  late final $MemberCardsTable memberCards = $MemberCardsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -17345,7 +17897,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         syncState,
         syncReviews,
         spaceMembers,
-        syncParked
+        syncParked,
+        memberCards
       ];
 }
 
@@ -25365,6 +25918,267 @@ typedef $$SyncParkedTableProcessedTableManager = ProcessedTableManager<
     ),
     SyncParkedRow,
     PrefetchHooks Function()>;
+typedef $$MemberCardsTableCreateCompanionBuilder = MemberCardsCompanion
+    Function({
+  required String id,
+  required String workspaceId,
+  required String ownerId,
+  Value<int> version,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String?> deletedBy,
+  Value<String?> changedBy,
+  required String accountId,
+  required String displayName,
+  Value<int> rowid,
+});
+typedef $$MemberCardsTableUpdateCompanionBuilder = MemberCardsCompanion
+    Function({
+  Value<String> id,
+  Value<String> workspaceId,
+  Value<String> ownerId,
+  Value<int> version,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String?> deletedBy,
+  Value<String?> changedBy,
+  Value<String> accountId,
+  Value<String> displayName,
+  Value<int> rowid,
+});
+
+class $$MemberCardsTableFilterComposer
+    extends Composer<_$AppDatabase, $MemberCardsTable> {
+  $$MemberCardsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerId => $composableBuilder(
+      column: $table.ownerId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deletedBy => $composableBuilder(
+      column: $table.deletedBy, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get changedBy => $composableBuilder(
+      column: $table.changedBy, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get accountId => $composableBuilder(
+      column: $table.accountId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get displayName => $composableBuilder(
+      column: $table.displayName, builder: (column) => ColumnFilters(column));
+}
+
+class $$MemberCardsTableOrderingComposer
+    extends Composer<_$AppDatabase, $MemberCardsTable> {
+  $$MemberCardsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get ownerId => $composableBuilder(
+      column: $table.ownerId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deletedBy => $composableBuilder(
+      column: $table.deletedBy, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get changedBy => $composableBuilder(
+      column: $table.changedBy, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get accountId => $composableBuilder(
+      column: $table.accountId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get displayName => $composableBuilder(
+      column: $table.displayName, builder: (column) => ColumnOrderings(column));
+}
+
+class $$MemberCardsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MemberCardsTable> {
+  $$MemberCardsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerId =>
+      $composableBuilder(column: $table.ownerId, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get deletedBy =>
+      $composableBuilder(column: $table.deletedBy, builder: (column) => column);
+
+  GeneratedColumn<String> get changedBy =>
+      $composableBuilder(column: $table.changedBy, builder: (column) => column);
+
+  GeneratedColumn<String> get accountId =>
+      $composableBuilder(column: $table.accountId, builder: (column) => column);
+
+  GeneratedColumn<String> get displayName => $composableBuilder(
+      column: $table.displayName, builder: (column) => column);
+}
+
+class $$MemberCardsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $MemberCardsTable,
+    MemberCard,
+    $$MemberCardsTableFilterComposer,
+    $$MemberCardsTableOrderingComposer,
+    $$MemberCardsTableAnnotationComposer,
+    $$MemberCardsTableCreateCompanionBuilder,
+    $$MemberCardsTableUpdateCompanionBuilder,
+    (MemberCard, BaseReferences<_$AppDatabase, $MemberCardsTable, MemberCard>),
+    MemberCard,
+    PrefetchHooks Function()> {
+  $$MemberCardsTableTableManager(_$AppDatabase db, $MemberCardsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MemberCardsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MemberCardsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MemberCardsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> workspaceId = const Value.absent(),
+            Value<String> ownerId = const Value.absent(),
+            Value<int> version = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String?> deletedBy = const Value.absent(),
+            Value<String?> changedBy = const Value.absent(),
+            Value<String> accountId = const Value.absent(),
+            Value<String> displayName = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              MemberCardsCompanion(
+            id: id,
+            workspaceId: workspaceId,
+            ownerId: ownerId,
+            version: version,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            deletedBy: deletedBy,
+            changedBy: changedBy,
+            accountId: accountId,
+            displayName: displayName,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String workspaceId,
+            required String ownerId,
+            Value<int> version = const Value.absent(),
+            required DateTime createdAt,
+            required DateTime updatedAt,
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String?> deletedBy = const Value.absent(),
+            Value<String?> changedBy = const Value.absent(),
+            required String accountId,
+            required String displayName,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              MemberCardsCompanion.insert(
+            id: id,
+            workspaceId: workspaceId,
+            ownerId: ownerId,
+            version: version,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            deletedBy: deletedBy,
+            changedBy: changedBy,
+            accountId: accountId,
+            displayName: displayName,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable<$MemberCardsTable, MemberCard>(table),
+                    BaseReferences<_$AppDatabase, $MemberCardsTable,
+                        MemberCard>(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$MemberCardsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $MemberCardsTable,
+    MemberCard,
+    $$MemberCardsTableFilterComposer,
+    $$MemberCardsTableOrderingComposer,
+    $$MemberCardsTableAnnotationComposer,
+    $$MemberCardsTableCreateCompanionBuilder,
+    $$MemberCardsTableUpdateCompanionBuilder,
+    (MemberCard, BaseReferences<_$AppDatabase, $MemberCardsTable, MemberCard>),
+    MemberCard,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -25425,4 +26239,6 @@ class $AppDatabaseManager {
       $$SpaceMembersTableTableManager(_db, _db.spaceMembers);
   $$SyncParkedTableTableManager get syncParked =>
       $$SyncParkedTableTableManager(_db, _db.syncParked);
+  $$MemberCardsTableTableManager get memberCards =>
+      $$MemberCardsTableTableManager(_db, _db.memberCards);
 }

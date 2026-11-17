@@ -1741,4 +1741,437 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get spSpaces => 'Spaces';
+
+  @override
+  String get spPersonal => 'Personal';
+
+  @override
+  String get spNewSpace => 'New space…';
+
+  @override
+  String get spJoinSpace => 'Join with a code…';
+
+  @override
+  String spChooseSpace(String name) {
+    return 'Spaces: $name';
+  }
+
+  @override
+  String get spUnnamed => 'A shared space';
+
+  @override
+  String spRole(String role) {
+    String _temp0 = intl.Intl.selectLogic(
+      role,
+      {
+        'owner': 'Owner',
+        'editor': 'Editor',
+        'viewer': 'Viewer',
+        'other': 'Member',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String spPeople(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n people',
+      one: '1 person',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get spViewOnly => 'View only';
+
+  @override
+  String get spLeftCopy => 'A read-only copy: you are no longer in this space';
+
+  @override
+  String get spLeftExport =>
+      'You are no longer in this space. Export a copy, then remove it.';
+
+  @override
+  String spBarLabel(String name, String details) {
+    return '$name, $details. Space details';
+  }
+
+  @override
+  String get spSpaceName => 'Name of the space';
+
+  @override
+  String get spCreate => 'Create';
+
+  @override
+  String get spCreated =>
+      'The space is ready. Invite someone from its details.';
+
+  @override
+  String get spJoinTitle => 'Join a space';
+
+  @override
+  String get spJoinHint =>
+      'The code or the lifeflow://join/ link you were given';
+
+  @override
+  String get spLook => 'Look';
+
+  @override
+  String spInvitedAs(String role) {
+    return 'You are invited as $role.';
+  }
+
+  @override
+  String get spJoinApproveNote =>
+      'The owner lets you in after you ask. Until then you see nothing of the space.';
+
+  @override
+  String get spJoinAtOnceNote => 'You are in as soon as you join.';
+
+  @override
+  String get spRulesTitle => 'The space\'s rules';
+
+  @override
+  String spLeaveRuleText(String rule) {
+    String _temp0 = intl.Intl.selectLogic(
+      rule,
+      {
+        'disappear':
+            'If you leave or are removed, the space disappears from your devices.',
+        'disappearWithExport':
+            'If you leave or are removed, you may export a copy first; then it disappears from your devices.',
+        'keepReadOnly':
+            'If you leave or are removed, you keep a read-only copy of what was there.',
+        'other': '',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String spExportRuleText(String rule) {
+    String _temp0 = intl.Intl.selectLogic(
+      rule,
+      {
+        'ownerOnly': 'Only the owner can export the space.',
+        'everyMember': 'Every member can export the space.',
+        'other': '',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String spInviteRuleText(String kind) {
+    String _temp0 = intl.Intl.selectLogic(
+      kind,
+      {
+        'approve': 'The owner approves who joins.',
+        'joinAtOnce': 'People join at once with a code.',
+        'other': '',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get spCannotEnforce =>
+      'LifeFlow keeps these rules, but anyone in the space can read everything while they are in it, and can take screenshots or copy it by hand.';
+
+  @override
+  String get spJoin => 'Join';
+
+  @override
+  String get spAskedToJoin => 'You asked to join. The owner lets you in.';
+
+  @override
+  String get spJoined => 'You are in the space.';
+
+  @override
+  String spProblem(String problem) {
+    String _temp0 = intl.Intl.selectLogic(
+      problem,
+      {
+        'notSignedIn': 'Sign in to an account first (Profiles).',
+        'syncOff':
+            'Turn sync on first (Settings → Sync): it carries the keys of your spaces.',
+        'offline':
+            'Can\'t reach the server. Check your connection and try again.',
+        'notAllowed': 'Your role in this space does not allow that.',
+        'noSuchInvitation':
+            'That code is not valid: it was used, cancelled or has expired.',
+        'alreadyMember': 'You are already in this space.',
+        'spaceFull': 'This space already has 10 members.',
+        'tooManySpaces': 'You are already in 10 spaces.',
+        'ownerMustHandOver': 'Make someone else the owner before you leave.',
+        'changedSinceShown': 'Something changed since you looked. Look again.',
+        'cannotMove': 'This cannot move.',
+        'exportNotAllowed':
+            'The space\'s export rule does not allow you to export it.',
+        'other': 'Something went wrong. Try again.',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get spDetails => 'Space details';
+
+  @override
+  String get spRename => 'Rename the space';
+
+  @override
+  String get spYourName => 'Your name in this space';
+
+  @override
+  String get spYourNameHint => 'Shown to the other members';
+
+  @override
+  String get spMembers => 'Members';
+
+  @override
+  String get spWaiting => 'Asks to join';
+
+  @override
+  String get spApprove => 'Let in';
+
+  @override
+  String get spTurnDown => 'Turn down';
+
+  @override
+  String get spRemove => 'Remove from the space';
+
+  @override
+  String spRemoveConfirm(String name) {
+    return 'Remove $name? They can no longer open the space; what stays on their devices is the space\'s leaving rule.';
+  }
+
+  @override
+  String spMakeRole(String role) {
+    return 'Make $role';
+  }
+
+  @override
+  String get spHandOver => 'Make the owner';
+
+  @override
+  String spHandOverConfirm(String name) {
+    return 'Make $name the owner? You become an editor.';
+  }
+
+  @override
+  String spYou(String name) {
+    return '$name (you)';
+  }
+
+  @override
+  String get spSomeone => 'A member';
+
+  @override
+  String spMemberActions(String name) {
+    return 'Actions for $name';
+  }
+
+  @override
+  String get spInvite => 'Invite someone';
+
+  @override
+  String get spInviteRole => 'As';
+
+  @override
+  String get spInviteKind => 'How they get in';
+
+  @override
+  String get spInviteApprove => 'I approve who joins';
+
+  @override
+  String get spInviteAtOnce => 'Join at once';
+
+  @override
+  String get spInviteAtOnceWarning =>
+      'Anyone who gets this code before it is used can join. Send it only to the person.';
+
+  @override
+  String get spInviteMake => 'Make the invitation';
+
+  @override
+  String get spInviteReady => 'Send this to the person, by any messenger';
+
+  @override
+  String get spInviteCode => 'Code';
+
+  @override
+  String get spInviteLink => 'Link';
+
+  @override
+  String get spCopy => 'Copy';
+
+  @override
+  String get spCopied => 'Copied.';
+
+  @override
+  String get spInviteQr => 'QR code of the invitation';
+
+  @override
+  String get spInviteOnce => 'For one person, valid for 7 days.';
+
+  @override
+  String get spOpenInvitations => 'Open invitations';
+
+  @override
+  String spInvitationLine(String role, String kind, String date) {
+    return '$role · $kind · until $date';
+  }
+
+  @override
+  String get spCancelInvitation => 'Cancel the invitation';
+
+  @override
+  String get spRules => 'Rules';
+
+  @override
+  String get spRuleLeave => 'When someone leaves';
+
+  @override
+  String spRuleLeaveOption(String rule) {
+    String _temp0 = intl.Intl.selectLogic(
+      rule,
+      {
+        'disappear': 'The space disappears',
+        'disappearWithExport': 'They may export first',
+        'keepReadOnly': 'They keep a read-only copy',
+        'other': '',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get spRuleExport => 'Who can export';
+
+  @override
+  String spRuleExportOption(String rule) {
+    String _temp0 = intl.Intl.selectLogic(
+      rule,
+      {
+        'ownerOnly': 'Only the owner',
+        'everyMember': 'Every member',
+        'other': '',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get spRuleInvite => 'Invitations by default';
+
+  @override
+  String spRulesChanged(String name) {
+    return 'The owner changed the rules of $name.';
+  }
+
+  @override
+  String get spGotIt => 'Got it';
+
+  @override
+  String get spExport => 'Export a copy';
+
+  @override
+  String get spExported => 'Saved.';
+
+  @override
+  String get spLeave => 'Leave the space';
+
+  @override
+  String spLeaveConfirm(String name) {
+    return 'Leave $name?';
+  }
+
+  @override
+  String get spDelete => 'Delete the space for everyone';
+
+  @override
+  String spDeleteConfirm(String name) {
+    return 'Delete $name for everyone? Nobody can open it any more.';
+  }
+
+  @override
+  String get spForget => 'Remove this copy';
+
+  @override
+  String get spMoveTo => 'Move to a space…';
+
+  @override
+  String get spMoveOut => 'Move to Personal…';
+
+  @override
+  String get spPickSpace => 'Move to which space?';
+
+  @override
+  String spMoveTitle(String name) {
+    return 'Move to $name?';
+  }
+
+  @override
+  String spMoveBody(String name) {
+    return 'Everyone in $name will see:';
+  }
+
+  @override
+  String get spMoveOutBody =>
+      'It leaves the space: for the others it is like a delete. It moves:';
+
+  @override
+  String get spMoveNotes => 'Its notes';
+
+  @override
+  String get spMoveDates => 'Its dates and repeats';
+
+  @override
+  String spMoveMore(int n) {
+    return 'and $n more';
+  }
+
+  @override
+  String get spMoveStays => 'Reminders and tracking stay with you.';
+
+  @override
+  String get spMove => 'Move';
+
+  @override
+  String get spMoved => 'Moved.';
+
+  @override
+  String spCannotMove(String reason) {
+    return 'This cannot move: $reason';
+  }
+
+  @override
+  String get spAssignedTo => 'Assigned to';
+
+  @override
+  String get spNobody => 'Nobody';
+
+  @override
+  String get spAssignedToMe => 'Assigned to me';
+
+  @override
+  String spChangedBy(String name, String time) {
+    return 'Changed by $name, $time';
+  }
+
+  @override
+  String get spSpaceDetails => 'Details';
+
+  @override
+  String get spNoSpaces => 'Spaces are not available in this build.';
+
+  @override
+  String get spSyncNow => 'Sync now';
 }

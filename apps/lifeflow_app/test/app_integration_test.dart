@@ -11,6 +11,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:application/application.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:foundation/foundation.dart';
@@ -54,13 +55,15 @@ class RecordingAuth implements AuthGateway {
 
 /// A provider that always signs the same GitHub account in.
 class OkAuth implements AuthGateway {
+  OkAuth([this.account = 'acc-gh']);
+  final String account;
   @override
   bool get isConfigured => true;
   @override
   Stream<void> get sessionRevoked => const Stream.empty();
   @override
   Future<AuthSession> signIn(SignInRequest request) async => AuthSession(
-      accountId: 'acc-gh', provider: 'github', issuedAt: Instant.now());
+      accountId: account, provider: 'github', issuedAt: Instant.now());
   @override
   Future<AuthSession?> currentSession() async => null;
   @override
@@ -1022,11 +1025,12 @@ void main() {
   focusRecoveryOnOpen();
   habitPeriodsCloseOnOpen();
   syncThroughTheUi();
+  shareThroughTheUi();
 }
 
 /// The in-memory sync server as the profile's own account sees it: like the
 /// app's HttpRemoteGateway, it asks for the profile's account at each call.
-class _AccountRemote implements RemoteGateway {
+class _AccountRemote implements RemoteGateway, SpaceGateway {
   _AccountRemote(this.server, this.accountOf) : inner = MemoryRemoteGateway(server);
   final MemoryRemoteServer server;
   final Future<String?> Function() accountOf;
@@ -1051,6 +1055,53 @@ class _AccountRemote implements RemoteGateway {
       (await _signedIn()).pull(ws, after, limit: limit);
   @override
   Future<int> purge(String ws, DateTime before) async => (await _signedIn()).purge(ws, before);
+
+  // P04b T13: the spaces, for the same account at each call.
+  @override
+  Future<AccountKeys?> myKeys() async => (await _signedIn()).myKeys();
+  @override
+  Future<void> setMyKeys(AccountKeys k) async => (await _signedIn()).setMyKeys(k);
+  @override
+  Future<Map<String, Uint8List>> publicKeys(List<String> ids) async => (await _signedIn()).publicKeys(ids);
+  @override
+  Future<List<RemoteSpace>> spaces() async => (await _signedIn()).spaces();
+  @override
+  Future<void> createSpace(String w, Uint8List k, String id) async => (await _signedIn()).createSpace(w, k, id);
+  @override
+  Future<void> deleteSpace(String w) async => (await _signedIn()).deleteSpace(w);
+  @override
+  Future<List<RemoteMember>> members(String w) async => (await _signedIn()).members(w);
+  @override
+  Future<List<RemoteInvitation>> invitations(String w) async => (await _signedIn()).invitations(w);
+  @override
+  Future<void> invite(String w, String h, SpaceRole role, InviteKind kind,
+          {Uint8List? wrappedKey, String keyId = '', int days = 7}) async =>
+      (await _signedIn()).invite(w, h, role, kind, wrappedKey: wrappedKey, keyId: keyId, days: days);
+  @override
+  Future<void> cancelInvitation(String h) async => (await _signedIn()).cancelInvitation(h);
+  @override
+  Future<InvitationPreview> peekInvitation(String h) async => (await _signedIn()).peekInvitation(h);
+  @override
+  Future<AcceptedInvitation> acceptInvitation(String h, {Uint8List? sealedName}) async =>
+      (await _signedIn()).acceptInvitation(h, sealedName: sealedName);
+  @override
+  Future<void> approveMember(String w, String a, Uint8List k, String id) async => (await _signedIn()).approveMember(w, a, k, id);
+  @override
+  Future<void> setMyWrappedKey(String w, Uint8List k, String id) async => (await _signedIn()).setMyWrappedKey(w, k, id);
+  @override
+  Future<void> removeMember(String w, String a) async => (await _signedIn()).removeMember(w, a);
+  @override
+  Future<void> leaveSpace(String w) async => (await _signedIn()).leaveSpace(w);
+  @override
+  Future<void> setRole(String w, String a, SpaceRole role) async => (await _signedIn()).setRole(w, a, role);
+  @override
+  Future<void> handOver(String w, String a) async => (await _signedIn()).handOver(w, a);
+  @override
+  Future<void> setRules(String w, SpaceRules rules) async => (await _signedIn()).setRules(w, rules);
+  @override
+  Future<void> rotateKey(String w, String id, Map<String, Uint8List> wraps) async => (await _signedIn()).rotateKey(w, id, wraps);
+  @override
+  Future<int> dropOldKeyRecords(String w) async => (await _signedIn()).dropOldKeyRecords(w);
 }
 
 /// P04 T5 (ADR-0058; D5, D9, D15): two devices of one account, each with its
@@ -1245,4 +1296,146 @@ Future<void> tapAddTask(WidgetTester tester) async {
     await tester.pumpAndSettle();
   }
   await tester.tap(find.byTooltip('Add task').last);
+}
+
+/// P04b T13 (ADR-0065): two people, each signed in to their own account on
+/// their own device, one in-memory server, through the real UI: Lan makes a
+/// space and an invitation; Minh asks to join with the code (the rules shown
+/// first); Lan lets Minh in, by name; Lan's task reaches Minh; the server
+/// never sees a title or a name.
+void shareThroughTheUi() {
+  testWidgets('P04b T13: a space made, an invitation, a request let in, a task shared', (tester) async {
+    tester.view.physicalSize = const Size(1000, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final server = MemoryRemoteServer();
+
+    Future<void> tapAndSettle(Finder f, [int rounds = 8]) async {
+      await tester.ensureVisible(f);
+      await settle(tester, 2);
+      await tester.tap(f);
+      await settle(tester, rounds);
+    }
+
+    Future<void> open(World w, OkAuth auth) async {
+      final id = (await tester.runAsync(() => w.directory.active()))!.id;
+      await tester.pumpWidget(LifeFlowRoot(
+        initialProfileId: id,
+        openSession: (id, host, route) => openSession(
+          directory: w.directory,
+          profileId: id,
+          platform: StoragePlatform.android,
+          auth: auth,
+          host: host,
+          initialRoute: route,
+          files: w.files,
+          sync: SyncWiring(remoteFor: (accountOf) => _AccountRemote(server, accountOf), keysFor: w.keys.call),
+        ),
+      ));
+      await settle(tester);
+    }
+
+    Future<void> close() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await settle(tester, 2);
+    }
+
+    /// A person's device: signed in, named, personal sync on (B5).
+    Future<World> person(String account, String name) async {
+      final w = World();
+      await tester.runAsync(() => w.open(StoragePlatform.android));
+      final p = (await tester.runAsync(() => w.directory.active()))!;
+      await tester.runAsync(() async {
+        final store = await w.directory.openProfile(p.id);
+        await store.db.update(store.db.profiles).write(ProfilesCompanion(displayName: Value(name)));
+        await store.db.close();
+      });
+      final auth = OkAuth(account);
+      await open(w, auth);
+      await tapAndSettle(find.byKey(const Key('rail-profile')));
+      await tapAndSettle(find.widgetWithText(FilledButton, 'Sign in'));
+      await tapAndSettle(find.text('Continue with GitHub'), 12);
+      await tester.pump(const Duration(seconds: 6));
+      await settle(tester, 2);
+      await tapAndSettle(find.byIcon(Icons.settings_outlined));
+      final list = tester.state<ScrollableState>(find.byType(Scrollable).last).position;
+      for (var i = 0; i < 20 && find.byKey(const Key('sync-settings')).evaluate().isEmpty; i++) {
+        list.jumpTo((list.pixels + 400).clamp(0, list.maxScrollExtent));
+        await settle(tester, 1);
+      }
+      await tapAndSettle(find.byKey(const Key('sync-settings')));
+      await tapAndSettle(find.byKey(const Key('sync-switch')), 10);
+      await tapAndSettle(find.byKey(const Key('setup-recovery-key')));
+      final words = [
+        for (var n = 1; n <= 24; n++) (tester.widget<Text>(find.byKey(Key('key-word-$n'))).data!).split(' ').last
+      ];
+      await tapAndSettle(find.byKey(const Key('setup-next')));
+      final prompt = tester.widget<Text>(find.textContaining('Type words')).data!;
+      final positions = [for (final m in RegExp(r'\d+').allMatches(prompt)) int.parse(m[0]!)];
+      await tester.enterText(find.byKey(const Key('setup-word-1')), words[positions[0] - 1]);
+      await tester.enterText(find.byKey(const Key('setup-word-2')), words[positions[1] - 1]);
+      await tapAndSettle(find.byKey(const Key('setup-turn-on')), 16);
+      expect(find.text('Sync is on.'), findsOneWidget);
+      await tapAndSettle(find.byIcon(Icons.checklist_outlined));
+      return w;
+    }
+
+    // Lan: a space, a task in it, an invitation.
+    final lan = await person('acc-lan', 'Lan');
+    await tapAndSettle(find.byKey(const Key('rail-spaces')));
+    await tapAndSettle(find.byKey(const Key('rail-space-new')));
+    await tester.enterText(find.byType(TextField), 'Family');
+    await tapAndSettle(find.widgetWithText(FilledButton, 'Create'), 16);
+    expect(find.byKey(const Key('space-bar')), findsOneWidget);
+    await tester.pump(const Duration(seconds: 6)); // the snackbar goes
+    await settle(tester, 2);
+    await tapAddTask(tester);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Family dinner');
+    await tapAndSettle(find.widgetWithText(FilledButton, 'Add'));
+    await tapAndSettle(find.byKey(const Key('space-bar')));
+    await tapAndSettle(find.byKey(const Key('invite-make')), 12);
+    final code = tester.widget<SelectableText>(find.byKey(const Key('invite-code'))).data!;
+    await tapAndSettle(find.byKey(const Key('space-sync-now')), 16);
+    await close();
+
+    // Minh: asks to join with the code; the rules first.
+    final minh = await person('acc-minh', 'Minh');
+    await tapAndSettle(find.byKey(const Key('rail-spaces')));
+    await tapAndSettle(find.byKey(const Key('rail-space-join')));
+    await tester.enterText(find.byKey(const Key('join-space-code')), code.toLowerCase());
+    await tapAndSettle(find.byKey(const Key('join-space-look')), 12);
+    expect(find.text('You are invited as Editor.'), findsOneWidget);
+    expect(find.byKey(const Key('join-space-leave-rule')), findsOneWidget);
+    await tapAndSettle(find.byKey(const Key('join-space-join')), 16);
+    expect(find.text('You asked to join. The owner lets you in.'), findsOneWidget);
+    await close();
+
+    // Lan lets Minh in, knowing it is Minh (the name sealed for Lan).
+    await open(lan, OkAuth('acc-lan'));
+    await tapAndSettle(find.byKey(const Key('space-bar')));
+    expect(find.text('Minh'), findsOneWidget);
+    await tapAndSettle(find.byKey(const ValueKey('member-approve-acc-minh')), 16);
+    await tapAndSettle(find.byKey(const Key('space-sync-now')), 16);
+    await close();
+
+    // Minh: the space appears (the space sync refreshes when the app opens);
+    // the task is there.
+    await open(minh, OkAuth('acc-minh'));
+    await settle(tester, 20);
+    await tapAndSettle(find.byKey(const Key('rail-spaces')), 12);
+    expect(find.text('Family'), findsWidgets);
+    await tapAndSettle(find.text('Family').last, 20);
+    expect(find.byKey(const Key('space-bar')), findsOneWidget);
+    expect(find.text('Family dinner'), findsOneWidget);
+    await close();
+
+    final space = (await tester.runAsync(() => MemoryRemoteGateway(server, accountId: 'acc-lan').spaces()))!.single;
+    for (final r in server.dump(space.workspaceId)) {
+      final text = String.fromCharCodes(r.sealed ?? const []);
+      expect(text, isNot(anyOf(contains('Family dinner'), contains('Minh'), contains('Family'))));
+    }
+    await tester.runAsync(lan.dispose);
+    await tester.runAsync(minh.dispose);
+  });
 }

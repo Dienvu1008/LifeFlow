@@ -5,6 +5,7 @@
 //   showGoalsOfTask  "Goals…" of a task: what it is part of, link / unlink
 // Progress comes from GoalView (derived below the port, LF-INV-GOAL-001);
 // nothing here computes it (AP-12).
+import 'spaces_ui.dart' show moveItemFlow, moveLabel;
 import 'package:application/application.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,7 +16,8 @@ import '../messages.dart';
 import '../shell.dart' show shellMenuButton;
 import '../providers.dart';
 import '../schedule_text.dart';
-import '../task_actions.dart';
+import '../task_actions.dart';
+
 import '../l10n.dart';
 import 'schedule_editor.dart' show EditorSection;
 
@@ -105,12 +107,15 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'fab-goals',
-        tooltip: context.l10n.newGoalOrProject,
-        onPressed: _create,
-        child: const Icon(Icons.add),
-      ),
+      // P04b T13 (B4): nothing to add where the space is only viewed.
+      floatingActionButton: ref.watch(canEditShownProvider)
+          ? FloatingActionButton(
+              heroTag: 'fab-goals',
+              tooltip: context.l10n.newGoalOrProject,
+              onPressed: _create,
+              child: const Icon(Icons.add),
+            )
+          : null,
       body: goals.when(
         loading: () => Center(child: CircularProgressIndicator(semanticsLabel: context.l10n.loadingGoals)),
         error: (e, _) => Center(child: Text(context.l10n.couldNotLoadTheGoals)),
@@ -203,7 +208,7 @@ class _ProgressBar extends StatelessWidget {
       );
 }
 
-enum _GoalAction { edit, done, reopen, archive, unarchive, trash }
+enum _GoalAction { edit, done, reopen, archive, unarchive, space, trash }
 
 class GoalPage extends ConsumerWidget {
   const GoalPage({super.key, required this.goalId});
@@ -227,6 +232,8 @@ class GoalPage extends ConsumerWidget {
                 if (g.status == GoalState.done) PopupMenuItem(value: _GoalAction.reopen, child: Text(context.l10n.markAsActive)),
                 if (g.status != GoalState.archived) PopupMenuItem(value: _GoalAction.archive, child: Text(context.l10n.archive)),
                 if (g.status == GoalState.archived) PopupMenuItem(value: _GoalAction.unarchive, child: Text(context.l10n.unarchive)),
+                // P04b T13 (B3).
+                if (moveLabel(context, ref) case final m?) PopupMenuItem(value: _GoalAction.space, child: Text(m)),
                 PopupMenuItem(value: _GoalAction.trash, child: Text(context.l10n.moveToTrash)),
               ],
             ),
@@ -255,6 +262,8 @@ class GoalPage extends ConsumerWidget {
         await reportResult(context, service.setStatus(g.id, GoalState.active));
       case _GoalAction.archive:
         await reportResult(context, service.setStatus(g.id, GoalState.archived));
+      case _GoalAction.space:
+        await moveItemFlow(context, ref, kind: 'goal', id: g.id);
       case _GoalAction.trash:
         final r = await service.trash(g.id);
         if (!context.mounted) return;

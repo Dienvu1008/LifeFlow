@@ -72,6 +72,7 @@ class RecordKind {
     'milestone': MilestoneRow.fromJson,
     'goalLink': GoalLinkRow.fromJson,
     'workspaceSettings': WorkspaceSetting.fromJson,
+    'memberCard': MemberCard.fromJson,
   };
   Object _parse(Row r) => _parsers[name]!(r);
 }
@@ -133,6 +134,8 @@ final List<RecordKind> recordKinds = [
   // P04 T1 (schema v10, ADR-0053): settings that sync with the workspace.
   _kind('workspaceSettings', 'workspaceSettings', (db) => db.workspaceSettings, WorkspaceSetting.fromJson,
       (d) => d.toCompanion(false)),
+  // P04b T13 (schema v15, ADR-0065): members' names in a shared space.
+  _kind('memberCard', 'memberCards', (db) => db.memberCards, MemberCard.fromJson, (d) => d.toCompanion(false)),
 ];
 
 final Map<String, RecordKind> recordKindByName = {for (final k in recordKinds) k.name: k};
@@ -144,7 +147,7 @@ final Map<String, RecordKind> recordKindByName = {for (final k in recordKinds) k
 /// results stay personal: a space's sync never sends or takes them.
 const sharedSpaceKinds = {
   'taskList', 'task', 'calendar', 'event', 'schedule', 'exception', 'completion', 'goal', 'milestone', 'goalLink',
-  'workspaceSettings',
+  'workspaceSettings', 'memberCard',
 };
 
 /// Kinds whose rows belong to another record (a task or an event).
@@ -203,6 +206,7 @@ const kindClasses = <String, DataClassification>{
   'milestone': DataClassification.personal,
   'goalLink': DataClassification.personal,
   'workspaceSettings': DataClassification.personal,
+  'memberCard': DataClassification.personal,
 };
 
 /// The class of one record: its kind's, raised to Restricted for a

@@ -160,6 +160,87 @@ void main() {
     expect((await lan.sharing.createSpace('')).problem, SharingProblem.failed);
   });
 
+  test('T13 names (ADR-0065): who waits is named for the owner only; members\' names are sealed records', () async {
+    final lan = await device('lan');
+    final minh = await device('minh');
+    final vy = await device('vy');
+    for (final (d, name) in [(lan, 'Lan'), (minh, 'Minh'), (vy, 'Vy')]) {
+      await (d.db.update(d.db.profiles)).write(ProfilesCompanion(displayName: Value(name)));
+    }
+    final ws = (await lan.sharing.createSpace('Family')).spaceId!;
+    final inv = (await lan.sharing.invite(ws, SpaceRole.viewer, InviteKind.approve)).invitation!;
+    okShare(await vy.sharing.join(inv.code));
+    final waiting = (await lan.sharing.members(ws)).singleWhere((m) => m.accountId == 'vy');
+    expect((waiting.status, waiting.name), (MemberStatus.pending, 'Vy'), reason: 'the owner sees who waits');
+    final raw = (await lan.remote.members(ws)).singleWhere((m) => m.accountId == 'vy').sealedName!;
+    expect(utf8.decode(raw, allowMalformed: true), isNot(contains('Vy')), reason: 'the server never sees it');
+
+    okShare(await lan.sharing.approve(ws, 'vy'));
+    final atOnce = (await lan.sharing.invite(ws, SpaceRole.editor, InviteKind.joinAtOnce)).invitation!;
+    okShare(await minh.sharing.join(atOnce.code));
+    expect(await lan.spaceSync.refresh(), isNull, reason: 'the owner\'s device writes the names it has');
+    await lan.syncSpace();
+    for (final d in [minh, vy]) {
+      expect(await d.spaceSync.refresh(), isNull);
+      await d.show(ws);
+      await d.syncSpace();
+    }
+    await minh.syncSpace(); // Minh's own card, then everyone's
+    await lan.syncSpace();
+    await vy.syncSpace();
+    for (final d in [lan, minh, vy]) {
+      final names = {for (final m in await d.sharing.members(ws)) m.accountId: m.name};
+      expect(names, {'lan': 'Lan', 'minh': 'Minh', 'vy': 'Vy'}, reason: d.account);
+      expect((await d.sharing.members(ws)).singleWhere((m) => m.isMe).accountId, d.account);
+    }
+    for (final s in server.dump(ws)) {
+      expect(utf8.decode(s.sealed!, allowMalformed: true), isNot(anyOf(contains('Minh'), contains('Vy'))));
+    }
+    okShare(await minh.sharing.setMyName(ws, 'Minh N.'));
+    expect((await vy.sharing.setMyName(ws, 'Not me')).problem, SharingProblem.notAllowed,
+        reason: 'a viewer writes nothing to the space; the owner wrote their name');
+    await minh.syncSpace();
+    await lan.syncSpace();
+    expect((await lan.sharing.memberNames(ws))['minh'], 'Minh N.');
+    expect((await lan.sharing.memberNames(ws))['vy'], 'Vy');
+    expect((await minh.sharing.setMyName(ws, '')).problem, SharingProblem.failed);
+    expect(await vy.sharing.myAccountId(), 'vy');
+
+    // Only the owner names someone else; a card pulled under another
+    // member's id is not taken.
+    final renameVy = await minh.gw.execute(
+        Command(
+            operationId: 'op-rename-vy',
+            actor: const ActorRef(ActorKind.member, 'minh'),
+            workspaceId: ws,
+            type: 'NameMember',
+            payload: {'op': 'setName', 'id': memberCardIdOf(ws, 'vy'), 'accountId': 'vy', 'name': 'Someone else'},
+            issuedAt: Instant.now()),
+        const MemberCardHandler());
+    expect(renameVy, isA<CommandFailure>());
+    final wrongId = await minh.gw.execute(
+        Command(
+            operationId: 'op-wrong-id',
+            actor: const ActorRef(ActorKind.member, 'minh'),
+            workspaceId: ws,
+            type: 'NameMember',
+            payload: {'op': 'setName', 'id': 'somewhere-else', 'accountId': 'minh', 'name': 'Minh'},
+            issuedAt: Instant.now()),
+        const MemberCardHandler());
+    expect(wrongId, isA<CommandFailure>(), reason: 'a card\'s id is <space>:<account>');
+    final sealer = await RecordSealer.of((await minh.keyring.keyOf(ws))!);
+    final sid = await sealer.serverId('memberCard', 'forged');
+    final card = {...(await minh.row('memberCard', memberCardIdOf(ws, 'minh')))!, 'id': 'forged', 'displayName': 'Forged', 'version': 1};
+    await minh.remote.push(ws, 'minh', [
+      RecordPush(id: sid, base: null, version: 1, deleted: false,
+          sealed: await sealer.seal(sid, 1, {'kind': 'memberCard', 'id': 'forged', 'schemaVersion': AppDatabase.recordSchemaVersion, 'row': card}),
+          operationId: 'op-forged')
+    ], keyId: sealer.keyId);
+    final r = await lan.syncSpace();
+    expect(r.notTaken, 1);
+    expect(await lan.row('memberCard', 'forged'), isNull);
+  });
+
   test('B5: without personal sync, or signed out, no space is made or joined', () async {
     final guest = await Device.open('nosync', server);
     open.add(guest);

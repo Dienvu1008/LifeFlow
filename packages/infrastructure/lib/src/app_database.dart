@@ -30,6 +30,7 @@ part 'app_database.g.dart';
 ///                sync_base.workspace_id (ADR-0060)
 ///   v14 (P04b T12) workspace_settings.name, sync_base keyed by workspace,
 ///                sync_parked, workspaces.left_at/left_keep (ADR-0064)
+///   v15 (P04b T13) member_cards: members' names in a space (ADR-0065)
 @DriftDatabase(
   tables: [
     Profiles, Workspaces, TaskLists, Tasks, AuditLog, Outbox, EventLog,
@@ -39,21 +40,22 @@ part 'app_database.g.dart';
     FocusSessions, ExecutionRecords, Measurements, PeriodResults, Goals,
     Milestones, GoalLinks,
     WorkspaceSettings, SyncBase, SyncState, SyncReviews,
-    SpaceMembers, SyncParked,
+    SpaceMembers, SyncParked, MemberCards,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   /// The schema this build writes (and the newest export it accepts).
-  static const currentSchemaVersion = 14;
+  static const currentSchemaVersion = 15;
 
   /// The last schema that changed a synced record's shape: what a sealed
   /// record says it is (ADR-0056). v12 changed only the local outbox. v13
   /// (ADR-0060) adds `changedBy` to every record and `assigneeId` to tasks;
   /// a pulled record of v11 or v12 is read with both null. v14 (ADR-0064)
-  /// adds a space's `name` to its settings and "moved away" changes.
-  static const recordSchemaVersion = 14;
+  /// adds a space's `name` to its settings and "moved away" changes. v15
+  /// (ADR-0065) adds the member card kind.
+  static const recordSchemaVersion = 15;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -162,6 +164,8 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(workspaces, workspaces.leftKeep);
             await m.createTable(syncParked);
           }
+          // P04b T13 (ADR-0065): members' names, a record of each space.
+          if (from < 15) await m.createTable(memberCards);
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');

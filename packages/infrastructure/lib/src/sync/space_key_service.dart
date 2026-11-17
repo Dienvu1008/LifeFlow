@@ -17,6 +17,7 @@
 //                 the old key's rows
 // Keys never leave the device unwrapped, and are never logged.
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:application/application.dart';
 import 'package:cryptography/cryptography.dart';
@@ -203,9 +204,18 @@ class SpaceKeyService {
 
   /// Accepts [code]. "Join at once": the key is opened with the code,
   /// checked against the key id, wrapped again for the account and kept.
-  Future<AcceptedInvitation> accept(String accountId, String code) async {
+  /// [name] goes with the request, sealed for the space's owner (ADR-0065).
+  Future<AcceptedInvitation> accept(String accountId, String code, {String? name}) async {
     final pair = await _pair(accountId);
-    final accepted = await _server.acceptInvitation(await invitationHash(code));
+    final hash = await invitationHash(code);
+    Uint8List? sealedName;
+    final trimmed = name?.trim() ?? '';
+    if (trimmed.isNotEmpty) {
+      final p = await _server.peekInvitation(hash);
+      final ownerKey = p.ownerPublicKey;
+      if (ownerKey != null) sealedName = await sealNameFor(trimmed, ownerKey, p.workspaceId, accountId);
+    }
+    final accepted = await _server.acceptInvitation(hash, sealedName: sealedName);
     final wrapped = accepted.wrappedKey;
     if (accepted.preview.kind == InviteKind.joinAtOnce && wrapped != null) {
       final spaceId = accepted.preview.workspaceId;

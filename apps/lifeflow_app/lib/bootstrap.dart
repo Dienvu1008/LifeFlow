@@ -177,6 +177,8 @@ Future<AppWiring> openSession({
     DriftSyncService? syncService;
     SyncScheduler? scheduler;
     SyncScheduler? spaceScheduler;
+    DriftSpaceSyncService? spaceSyncService;
+    DriftSharingService? sharing;
     if (sync != null) {
       final profiles = ProfileStore(db);
       final remote = sync.remoteFor(() async {
@@ -198,15 +200,20 @@ Future<AppWiring> openSession({
       unawaited(scheduler.start());
       // P04b T11 (ADR-0063, B12): the shown shared space, every minute.
       if (remote case final SpaceGateway spaces) {
+        final keys = SpaceKeyService(server: spaces, keyring: keyring, slots: sync.keysFor);
         final spaceSync = DriftSpaceSyncService(
           db: db,
           gateway: gateway,
           remote: remote,
           spaces: spaces,
           keyring: keyring,
-          keys: SpaceKeyService(server: spaces, keyring: keyring, slots: sync.keysFor),
+          keys: keys,
           log: (line) => onWarning?.call(line),
         );
+        spaceSyncService = spaceSync;
+        // P04b T13: the sharing commands of the UI (ADR-0064, ADR-0065).
+        sharing = DriftSharingService(
+            db: db, gateway: gateway, server: spaces, keys: keys, keyring: keyring, sync: spaceSync);
         spaceScheduler = SyncScheduler(
             service: spaceSync,
             when: settings.syncWhen,
@@ -243,6 +250,11 @@ Future<AppWiring> openSession({
         accountServiceProvider.overrideWithValue(accounts),
         dataTransferServiceProvider.overrideWithValue(transfer),
         syncServiceProvider.overrideWithValue(syncService),
+        // P04b T13: spaces always (the personal one at least); sharing and
+        // the space sync with a sync server.
+        spaceServiceProvider.overrideWithValue(DriftSpaceService(db, gateway)),
+        sharingServiceProvider.overrideWithValue(sharing),
+        spaceSyncProvider.overrideWithValue(spaceSyncService),
         fileGatewayProvider.overrideWithValue(files),
         settingsServiceProvider.overrideWithValue(settings),
         taskSchedulingProvider.overrideWithValue(DriftTaskScheduling(db, gateway)),

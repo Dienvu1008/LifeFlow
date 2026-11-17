@@ -21,7 +21,16 @@ class TaskView {
     this.colorIndex,
     this.orderKey = 'a0',
     this.notes,
+    this.assigneeId,
+    this.changedBy,
+    this.updatedAt,
   });
+
+  /// P04b T13 (B9, B10): in a shared space, the member it is assigned to
+  /// and who changed it last (account ids), and when.
+  final String? assigneeId;
+  final String? changedBy;
+  final DateTime? updatedAt;
 
   final String id;
   final String title;

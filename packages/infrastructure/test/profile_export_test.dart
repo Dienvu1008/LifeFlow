@@ -143,6 +143,7 @@ void main() {
         'sync_reviews', // P04 T3 (schema v11), not exported
         'space_members', // P04b T8 (schema v13), a server cache, not exported
         'sync_parked', // P04b T12 (schema v14), sync bookkeeping, not exported
+        'member_cards', // P04b T13 (schema v15): a record kind of shared spaces
       });
       expect(host.db.allTables.length,
           exportedTables.length + notExportedTables.length);

@@ -3015,6 +3015,594 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{problem, select, offline{Can\'t reach the server. Check your connection and try again.} signedOut{You are signed out. Sign in again in Profiles.} notYours{This account can\'t sync this profile.} recoveryKeyNotConfirmed{Those words don\'t match. Check the words at those positions.} recoveryKeyInvalid{That isn\'t a valid recovery key.} wrongRecoveryKey{That recovery key doesn\'t open this account\'s data.} wrongPassphrase{That passphrase doesn\'t open this account\'s data.} passphraseTooShort{Use at least 12 characters.} passphraseTooCommon{That passphrase is too common. Choose another.} alreadyOn{Sync is already on.} notOn{Sync is off.} nothingToUndo{There is nothing to undo.} reviewGone{This was already closed, or its item is gone.} other{Something went wrong. Try again.}}'**
   String syProblem(String problem);
+
+  /// No description provided for @spSpaces.
+  ///
+  /// In en, this message translates to:
+  /// **'Spaces'**
+  String get spSpaces;
+
+  /// No description provided for @spPersonal.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal'**
+  String get spPersonal;
+
+  /// No description provided for @spNewSpace.
+  ///
+  /// In en, this message translates to:
+  /// **'New space…'**
+  String get spNewSpace;
+
+  /// No description provided for @spJoinSpace.
+  ///
+  /// In en, this message translates to:
+  /// **'Join with a code…'**
+  String get spJoinSpace;
+
+  /// No description provided for @spChooseSpace.
+  ///
+  /// In en, this message translates to:
+  /// **'Spaces: {name}'**
+  String spChooseSpace(String name);
+
+  /// No description provided for @spUnnamed.
+  ///
+  /// In en, this message translates to:
+  /// **'A shared space'**
+  String get spUnnamed;
+
+  /// No description provided for @spRole.
+  ///
+  /// In en, this message translates to:
+  /// **'{role, select, owner{Owner} editor{Editor} viewer{Viewer} other{Member}}'**
+  String spRole(String role);
+
+  /// No description provided for @spPeople.
+  ///
+  /// In en, this message translates to:
+  /// **'{n, plural, =1{1 person} other{{n} people}}'**
+  String spPeople(int n);
+
+  /// No description provided for @spViewOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'View only'**
+  String get spViewOnly;
+
+  /// No description provided for @spLeftCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'A read-only copy: you are no longer in this space'**
+  String get spLeftCopy;
+
+  /// No description provided for @spLeftExport.
+  ///
+  /// In en, this message translates to:
+  /// **'You are no longer in this space. Export a copy, then remove it.'**
+  String get spLeftExport;
+
+  /// No description provided for @spBarLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}, {details}. Space details'**
+  String spBarLabel(String name, String details);
+
+  /// No description provided for @spSpaceName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name of the space'**
+  String get spSpaceName;
+
+  /// No description provided for @spCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get spCreate;
+
+  /// No description provided for @spCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'The space is ready. Invite someone from its details.'**
+  String get spCreated;
+
+  /// No description provided for @spJoinTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Join a space'**
+  String get spJoinTitle;
+
+  /// No description provided for @spJoinHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The code or the lifeflow://join/ link you were given'**
+  String get spJoinHint;
+
+  /// No description provided for @spLook.
+  ///
+  /// In en, this message translates to:
+  /// **'Look'**
+  String get spLook;
+
+  /// No description provided for @spInvitedAs.
+  ///
+  /// In en, this message translates to:
+  /// **'You are invited as {role}.'**
+  String spInvitedAs(String role);
+
+  /// No description provided for @spJoinApproveNote.
+  ///
+  /// In en, this message translates to:
+  /// **'The owner lets you in after you ask. Until then you see nothing of the space.'**
+  String get spJoinApproveNote;
+
+  /// No description provided for @spJoinAtOnceNote.
+  ///
+  /// In en, this message translates to:
+  /// **'You are in as soon as you join.'**
+  String get spJoinAtOnceNote;
+
+  /// No description provided for @spRulesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The space\'s rules'**
+  String get spRulesTitle;
+
+  /// No description provided for @spLeaveRuleText.
+  ///
+  /// In en, this message translates to:
+  /// **'{rule, select, disappear{If you leave or are removed, the space disappears from your devices.} disappearWithExport{If you leave or are removed, you may export a copy first; then it disappears from your devices.} keepReadOnly{If you leave or are removed, you keep a read-only copy of what was there.} other{}}'**
+  String spLeaveRuleText(String rule);
+
+  /// No description provided for @spExportRuleText.
+  ///
+  /// In en, this message translates to:
+  /// **'{rule, select, ownerOnly{Only the owner can export the space.} everyMember{Every member can export the space.} other{}}'**
+  String spExportRuleText(String rule);
+
+  /// No description provided for @spInviteRuleText.
+  ///
+  /// In en, this message translates to:
+  /// **'{kind, select, approve{The owner approves who joins.} joinAtOnce{People join at once with a code.} other{}}'**
+  String spInviteRuleText(String kind);
+
+  /// No description provided for @spCannotEnforce.
+  ///
+  /// In en, this message translates to:
+  /// **'LifeFlow keeps these rules, but anyone in the space can read everything while they are in it, and can take screenshots or copy it by hand.'**
+  String get spCannotEnforce;
+
+  /// No description provided for @spJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get spJoin;
+
+  /// No description provided for @spAskedToJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'You asked to join. The owner lets you in.'**
+  String get spAskedToJoin;
+
+  /// No description provided for @spJoined.
+  ///
+  /// In en, this message translates to:
+  /// **'You are in the space.'**
+  String get spJoined;
+
+  /// No description provided for @spProblem.
+  ///
+  /// In en, this message translates to:
+  /// **'{problem, select, notSignedIn{Sign in to an account first (Profiles).} syncOff{Turn sync on first (Settings → Sync): it carries the keys of your spaces.} offline{Can\'t reach the server. Check your connection and try again.} notAllowed{Your role in this space does not allow that.} noSuchInvitation{That code is not valid: it was used, cancelled or has expired.} alreadyMember{You are already in this space.} spaceFull{This space already has 10 members.} tooManySpaces{You are already in 10 spaces.} ownerMustHandOver{Make someone else the owner before you leave.} changedSinceShown{Something changed since you looked. Look again.} cannotMove{This cannot move.} exportNotAllowed{The space\'s export rule does not allow you to export it.} other{Something went wrong. Try again.}}'**
+  String spProblem(String problem);
+
+  /// No description provided for @spDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Space details'**
+  String get spDetails;
+
+  /// No description provided for @spRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename the space'**
+  String get spRename;
+
+  /// No description provided for @spYourName.
+  ///
+  /// In en, this message translates to:
+  /// **'Your name in this space'**
+  String get spYourName;
+
+  /// No description provided for @spYourNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Shown to the other members'**
+  String get spYourNameHint;
+
+  /// No description provided for @spMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Members'**
+  String get spMembers;
+
+  /// No description provided for @spWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Asks to join'**
+  String get spWaiting;
+
+  /// No description provided for @spApprove.
+  ///
+  /// In en, this message translates to:
+  /// **'Let in'**
+  String get spApprove;
+
+  /// No description provided for @spTurnDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn down'**
+  String get spTurnDown;
+
+  /// No description provided for @spRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from the space'**
+  String get spRemove;
+
+  /// No description provided for @spRemoveConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name}? They can no longer open the space; what stays on their devices is the space\'s leaving rule.'**
+  String spRemoveConfirm(String name);
+
+  /// No description provided for @spMakeRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Make {role}'**
+  String spMakeRole(String role);
+
+  /// No description provided for @spHandOver.
+  ///
+  /// In en, this message translates to:
+  /// **'Make the owner'**
+  String get spHandOver;
+
+  /// No description provided for @spHandOverConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Make {name} the owner? You become an editor.'**
+  String spHandOverConfirm(String name);
+
+  /// No description provided for @spYou.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} (you)'**
+  String spYou(String name);
+
+  /// No description provided for @spSomeone.
+  ///
+  /// In en, this message translates to:
+  /// **'A member'**
+  String get spSomeone;
+
+  /// No description provided for @spMemberActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Actions for {name}'**
+  String spMemberActions(String name);
+
+  /// No description provided for @spInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite someone'**
+  String get spInvite;
+
+  /// No description provided for @spInviteRole.
+  ///
+  /// In en, this message translates to:
+  /// **'As'**
+  String get spInviteRole;
+
+  /// No description provided for @spInviteKind.
+  ///
+  /// In en, this message translates to:
+  /// **'How they get in'**
+  String get spInviteKind;
+
+  /// No description provided for @spInviteApprove.
+  ///
+  /// In en, this message translates to:
+  /// **'I approve who joins'**
+  String get spInviteApprove;
+
+  /// No description provided for @spInviteAtOnce.
+  ///
+  /// In en, this message translates to:
+  /// **'Join at once'**
+  String get spInviteAtOnce;
+
+  /// No description provided for @spInviteAtOnceWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone who gets this code before it is used can join. Send it only to the person.'**
+  String get spInviteAtOnceWarning;
+
+  /// No description provided for @spInviteMake.
+  ///
+  /// In en, this message translates to:
+  /// **'Make the invitation'**
+  String get spInviteMake;
+
+  /// No description provided for @spInviteReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Send this to the person, by any messenger'**
+  String get spInviteReady;
+
+  /// No description provided for @spInviteCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Code'**
+  String get spInviteCode;
+
+  /// No description provided for @spInviteLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Link'**
+  String get spInviteLink;
+
+  /// No description provided for @spCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get spCopy;
+
+  /// No description provided for @spCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied.'**
+  String get spCopied;
+
+  /// No description provided for @spInviteQr.
+  ///
+  /// In en, this message translates to:
+  /// **'QR code of the invitation'**
+  String get spInviteQr;
+
+  /// No description provided for @spInviteOnce.
+  ///
+  /// In en, this message translates to:
+  /// **'For one person, valid for 7 days.'**
+  String get spInviteOnce;
+
+  /// No description provided for @spOpenInvitations.
+  ///
+  /// In en, this message translates to:
+  /// **'Open invitations'**
+  String get spOpenInvitations;
+
+  /// No description provided for @spInvitationLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{role} · {kind} · until {date}'**
+  String spInvitationLine(String role, String kind, String date);
+
+  /// No description provided for @spCancelInvitation.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel the invitation'**
+  String get spCancelInvitation;
+
+  /// No description provided for @spRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Rules'**
+  String get spRules;
+
+  /// No description provided for @spRuleLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'When someone leaves'**
+  String get spRuleLeave;
+
+  /// No description provided for @spRuleLeaveOption.
+  ///
+  /// In en, this message translates to:
+  /// **'{rule, select, disappear{The space disappears} disappearWithExport{They may export first} keepReadOnly{They keep a read-only copy} other{}}'**
+  String spRuleLeaveOption(String rule);
+
+  /// No description provided for @spRuleExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can export'**
+  String get spRuleExport;
+
+  /// No description provided for @spRuleExportOption.
+  ///
+  /// In en, this message translates to:
+  /// **'{rule, select, ownerOnly{Only the owner} everyMember{Every member} other{}}'**
+  String spRuleExportOption(String rule);
+
+  /// No description provided for @spRuleInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Invitations by default'**
+  String get spRuleInvite;
+
+  /// No description provided for @spRulesChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The owner changed the rules of {name}.'**
+  String spRulesChanged(String name);
+
+  /// No description provided for @spGotIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get spGotIt;
+
+  /// No description provided for @spExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export a copy'**
+  String get spExport;
+
+  /// No description provided for @spExported.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved.'**
+  String get spExported;
+
+  /// No description provided for @spLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave the space'**
+  String get spLeave;
+
+  /// No description provided for @spLeaveConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave {name}?'**
+  String spLeaveConfirm(String name);
+
+  /// No description provided for @spDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete the space for everyone'**
+  String get spDelete;
+
+  /// No description provided for @spDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name} for everyone? Nobody can open it any more.'**
+  String spDeleteConfirm(String name);
+
+  /// No description provided for @spForget.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this copy'**
+  String get spForget;
+
+  /// No description provided for @spMoveTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to a space…'**
+  String get spMoveTo;
+
+  /// No description provided for @spMoveOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to Personal…'**
+  String get spMoveOut;
+
+  /// No description provided for @spPickSpace.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to which space?'**
+  String get spPickSpace;
+
+  /// No description provided for @spMoveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to {name}?'**
+  String spMoveTitle(String name);
+
+  /// No description provided for @spMoveBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone in {name} will see:'**
+  String spMoveBody(String name);
+
+  /// No description provided for @spMoveOutBody.
+  ///
+  /// In en, this message translates to:
+  /// **'It leaves the space: for the others it is like a delete. It moves:'**
+  String get spMoveOutBody;
+
+  /// No description provided for @spMoveNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Its notes'**
+  String get spMoveNotes;
+
+  /// No description provided for @spMoveDates.
+  ///
+  /// In en, this message translates to:
+  /// **'Its dates and repeats'**
+  String get spMoveDates;
+
+  /// No description provided for @spMoveMore.
+  ///
+  /// In en, this message translates to:
+  /// **'and {n} more'**
+  String spMoveMore(int n);
+
+  /// No description provided for @spMoveStays.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders and tracking stay with you.'**
+  String get spMoveStays;
+
+  /// No description provided for @spMove.
+  ///
+  /// In en, this message translates to:
+  /// **'Move'**
+  String get spMove;
+
+  /// No description provided for @spMoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved.'**
+  String get spMoved;
+
+  /// No description provided for @spCannotMove.
+  ///
+  /// In en, this message translates to:
+  /// **'This cannot move: {reason}'**
+  String spCannotMove(String reason);
+
+  /// No description provided for @spAssignedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned to'**
+  String get spAssignedTo;
+
+  /// No description provided for @spNobody.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody'**
+  String get spNobody;
+
+  /// No description provided for @spAssignedToMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned to me'**
+  String get spAssignedToMe;
+
+  /// No description provided for @spChangedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Changed by {name}, {time}'**
+  String spChangedBy(String name, String time);
+
+  /// No description provided for @spSpaceDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get spSpaceDetails;
+
+  /// No description provided for @spNoSpaces.
+  ///
+  /// In en, this message translates to:
+  /// **'Spaces are not available in this build.'**
+  String get spNoSpaces;
+
+  /// No description provided for @spSyncNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync now'**
+  String get spSyncNow;
 }
 
 class _AppLocalizationsDelegate

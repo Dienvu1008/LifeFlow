@@ -47,12 +47,13 @@ class _Space {
 }
 
 class _Member {
-  _Member(this.role, this.status, this.wrappedKey, this.keyId, this.joinedAt);
+  _Member(this.role, this.status, this.wrappedKey, this.keyId, this.joinedAt, [this.sealedName]);
   SpaceRole role;
   MemberStatus status;
   Uint8List? wrappedKey;
   String keyId;
   final DateTime joinedAt;
+  final Uint8List? sealedName;
 }
 
 class _Invitation {
@@ -385,7 +386,7 @@ class MemoryRemoteGateway implements RemoteGateway, SpaceGateway {
       for (final e in s.members.entries)
         if (canSee || e.key == a)
           RemoteMember(accountId: e.key, role: e.value.role, status: e.value.status, keyId: e.value.keyId,
-              joinedAt: e.value.joinedAt),
+              joinedAt: e.value.joinedAt, sealedName: e.value.sealedName),
     ]..sort((x, y) => x.joinedAt.compareTo(y.joinedAt));
     return rows;
   }
@@ -445,7 +446,9 @@ class MemoryRemoteGateway implements RemoteGateway, SpaceGateway {
         kind: i.kind,
         leave: s.rules.leave,
         export: s.rules.export,
-        expiresAt: i.expiresAt);
+        expiresAt: i.expiresAt,
+        ownerPublicKey: server._publicKeys[
+            s.members.entries.where((e) => e.value.role == SpaceRole.owner).firstOrNull?.key ?? '']);
   }
 
   @override
@@ -455,9 +458,12 @@ class MemoryRemoteGateway implements RemoteGateway, SpaceGateway {
   }
 
   @override
-  Future<AcceptedInvitation> acceptInvitation(String codeHash) async {
+  Future<AcceptedInvitation> acceptInvitation(String codeHash, {Uint8List? sealedName}) async {
     final a = _account();
     final i = _open(codeHash);
+    if (sealedName != null && (sealedName.isEmpty || sealedName.length > 1024)) {
+      throw const RemoteFailure(RemoteFailureKind.refused, 'a sealed name is at most 1024 bytes');
+    }
     if (!server._publicKeys.containsKey(a)) throw const SpaceFailure(SpaceRefusal.noPublicKey);
     final s = server._spaces[i.workspaceId]!;
     if (s.members.containsKey(a)) throw const SpaceFailure(SpaceRefusal.alreadyMember);
@@ -469,7 +475,7 @@ class MemoryRemoteGateway implements RemoteGateway, SpaceGateway {
       ..usedBy = a
       ..wrappedKey = null;
     s.members[a] = _Member(i.role, atOnce ? MemberStatus.active : MemberStatus.pending, atOnce ? wrapped : null,
-        atOnce ? i.keyId : '', server.clock());
+        atOnce ? i.keyId : '', server.clock(), sealedName);
     return AcceptedInvitation(
         preview: InvitationPreview(
             workspaceId: i.workspaceId, role: i.role, kind: i.kind, leave: s.rules.leave, export: s.rules.export),

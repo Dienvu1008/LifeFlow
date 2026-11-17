@@ -85,12 +85,17 @@ class RemoteMember {
     required this.status,
     required this.keyId,
     required this.joinedAt,
+    this.sealedName,
   });
   final String accountId;
   final SpaceRole role;
   final MemberStatus status;
   final String keyId;
   final DateTime joinedAt;
+
+  /// P04b T13 (ADR-0065): the name of someone who asked to join, sealed for
+  /// the owner (only the owner's devices open it); null if none was given.
+  final Uint8List? sealedName;
 }
 
 /// An open invitation, as its space's owner sees it (never the code).
@@ -116,6 +121,7 @@ class InvitationPreview {
     required this.leave,
     required this.export,
     this.expiresAt,
+    this.ownerPublicKey,
   });
   final String workspaceId;
   final SpaceRole role;
@@ -123,6 +129,9 @@ class InvitationPreview {
   final LeaveRule leave;
   final ExportRule export;
   final DateTime? expiresAt;
+
+  /// P04b T13: the owner's public key, to seal one's name to (ADR-0065).
+  final Uint8List? ownerPublicKey;
 }
 
 /// An accepted invitation: for "join at once", the space key wrapped with a
@@ -201,7 +210,8 @@ abstract interface class SpaceGateway {
       {Uint8List? wrappedKey, String keyId = '', int days = 7});
   Future<void> cancelInvitation(String codeHash);
   Future<InvitationPreview> peekInvitation(String codeHash);
-  Future<AcceptedInvitation> acceptInvitation(String codeHash);
+  /// [sealedName]: the joiner's name sealed for the owner (ADR-0065).
+  Future<AcceptedInvitation> acceptInvitation(String codeHash, {Uint8List? sealedName});
 
   /// Lets someone waiting in, with the current key wrapped for them.
   Future<void> approveMember(String workspaceId, String accountId, Uint8List wrappedKey, String keyId);

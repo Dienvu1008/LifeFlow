@@ -19,9 +19,13 @@ import 'dart:async';
 
 import 'package:application/application.dart';
 import 'package:drift/drift.dart' show BooleanExpressionOperators, TableUpdateQuery, Value, Variable;
+import 'package:foundation/foundation.dart';
+import 'package:uuid/uuid.dart';
 
 import '../app_database.dart' hide Workspace;
 import '../command_gateway.dart';
+import '../member_card_handler.dart';
+import 'space_keys.dart';
 import '../profile_store.dart';
 import '../record_kinds.dart';
 import 'sealing.dart';
@@ -139,6 +143,7 @@ class DriftSpaceSyncService implements SyncRunner {
             deviceId: (await _stateOf(s.workspaceId))?.deviceId ?? newSyncDeviceId(),
             cursor: Value((await _stateOf(s.workspaceId))?.cursor ?? 0),
           ));
+      await _writeMissingNames(account, s, members);
     }
     // No longer in it (removed, left, or deleted): it stops syncing here,
     // nobody acts in it as a member, and what stays is its leaving rule's
@@ -150,6 +155,46 @@ class DriftSpaceSyncService implements SyncRunner {
     }
     _changed.add(null);
     return null;
+  }
+
+  /// P04b T13 (ADR-0065): names nobody wrote yet. The owner's device writes
+  /// those of the members who sent theirs sealed for it (viewers cannot
+  /// write to the space); an owner's or editor's device writes its own.
+  Future<void> _writeMissingNames(String account, RemoteSpace s, List<RemoteMember> members) async {
+    if (s.role == SpaceRole.viewer) return;
+    final known = await memberNamesOf(db, s.workspaceId);
+    final pair = await keys.accountKeyPair(account);
+    final profileName = (await _store.getActiveProfile())?.displayName.trim() ?? '';
+    for (final m in members) {
+      if (m.status != MemberStatus.active || known.containsKey(m.accountId)) continue;
+      String? name;
+      if (m.accountId == account) {
+        name = profileName.isEmpty ? null : profileName;
+      } else if (s.role == SpaceRole.owner && m.sealedName != null && pair != null) {
+        try {
+          name = await openNameAs(m.sealedName!, pair, s.workspaceId, m.accountId);
+        } on SealBroken {
+          name = null;
+        }
+      }
+      if (name == null || name.trim().isEmpty) continue;
+      await gateway.execute(
+        Command(
+          operationId: const Uuid().v7(),
+          actor: ActorRef(ActorKind.member, account),
+          workspaceId: s.workspaceId,
+          type: 'NameMember',
+          payload: {
+            'op': 'setName',
+            'id': memberCardIdOf(s.workspaceId, m.accountId),
+            'accountId': m.accountId,
+            'name': name.length > maxMemberNameLength ? name.substring(0, maxMemberNameLength) : name,
+          },
+          issuedAt: Instant.now(),
+        ),
+        const MemberCardHandler(),
+      );
+    }
   }
 
   Future<SyncStateRow?> _stateOf(String ws) =>
@@ -228,8 +273,20 @@ class DriftSpaceSyncService implements SyncRunner {
       } else {
         final shown = await _shownSpace();
         // A rotation between the refresh and this sync ends it as keyChanged;
-        // the next run's refresh fetches the new key.
-        r = shown == null ? SyncReport(SyncOutcome.notOn) : await syncSpace(shown);
+        // the next run's refresh fetches the new key. P04b T13: with the
+        // personal workspace shown, the refresh alone (a space someone let
+        // this account into appears).
+        if (shown == null) {
+          // A space never synced here gets its first sync now, so its name
+          // and members' names are known before it is shown.
+          final shared = await _sharedIds();
+          for (final s in await db.select(db.syncState).get()) {
+            if (shared.contains(s.workspaceId) && s.lastSyncAt == null) await syncSpace(s.workspaceId);
+          }
+          r = SyncReport(SyncOutcome.upToDate);
+        } else {
+          r = await syncSpace(shown);
+        }
       }
     } on RemoteFailure catch (e) {
       r = SyncReport(switch (e.kind) {
@@ -245,12 +302,15 @@ class DriftSpaceSyncService implements SyncRunner {
     return r;
   }
 
-  /// On while a shared space is shown (its sync state is made by the first
-  /// sync's refresh).
+  /// The shown space's status (its sync state is made by the first sync's
+  /// refresh).
   @override
   Future<SyncStatus> status() async {
+    // P04b T13: on for a signed-in account (the spaces are refreshed every
+    // minute, the shown one synced); off for a guest.
+    if (await _account() == null) return const SyncStatus(on: false);
     final ws = await _shownSpace();
-    if (ws == null) return const SyncStatus(on: false);
+    if (ws == null) return SyncStatus(on: true, syncing: _running != null);
     final s = await _stateOf(ws);
     final kinds = recordKinds.map((k) => "'${k.name}'").join(',');
     final pending = (await db.customSelect(

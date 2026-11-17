@@ -276,7 +276,7 @@ class HttpRemoteGateway implements RemoteGateway, SpaceGateway {
   @override
   Future<List<RemoteMember>> members(String workspaceId) async {
     final rows = await _send('GET', _uri('space_members', {
-      'select': 'account_id,role,status,key_id,created_at',
+      'select': 'account_id,role,status,key_id,created_at,sealed_name',
       'workspace_id': 'eq.$workspaceId',
       'order': 'created_at',
     })) as List;
@@ -288,6 +288,7 @@ class HttpRemoteGateway implements RemoteGateway, SpaceGateway {
           status: MemberStatus.values.byName(r['status'] as String),
           keyId: r['key_id'] as String,
           joinedAt: DateTime.parse(r['created_at'] as String),
+          sealedName: r['sealed_name'] == null ? null : _fromHex(r['sealed_name'] as String),
         ),
     ];
   }
@@ -337,6 +338,9 @@ class HttpRemoteGateway implements RemoteGateway, SpaceGateway {
         leave: LeaveRule.values.byName(r['leave_rule'] as String),
         export: ExportRule.values.byName(r['export_rule'] as String),
         expiresAt: r['expires_at'] == null ? null : DateTime.parse(r['expires_at'] as String),
+        ownerPublicKey: r['owner_public_key'] == null
+            ? null
+            : base64Decode((r['owner_public_key'] as String).replaceAll(_whitespace, '')),
       );
 
   @override
@@ -344,8 +348,11 @@ class HttpRemoteGateway implements RemoteGateway, SpaceGateway {
       _previewOf(await _rpc('peek_invitation', {'p_code_hash': codeHash}) as Map);
 
   @override
-  Future<AcceptedInvitation> acceptInvitation(String codeHash) async {
-    final r = await _rpc('accept_invitation', {'p_code_hash': codeHash}) as Map;
+  Future<AcceptedInvitation> acceptInvitation(String codeHash, {Uint8List? sealedName}) async {
+    final r = await _rpc('accept_invitation', {
+      'p_code_hash': codeHash,
+      if (sealedName != null) 'p_sealed_name': _toHex(sealedName),
+    }) as Map;
     final wrapped = r['wrapped_key'] as String?;
     return AcceptedInvitation(
       preview: _previewOf(r),

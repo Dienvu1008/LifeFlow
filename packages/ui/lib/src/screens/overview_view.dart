@@ -22,6 +22,7 @@ import 'focus_page.dart';
 import 'goals_screen.dart';
 import 'habit_page.dart';
 import 'schedule_editor.dart';
+import 'spaces_ui.dart' show assignedTo, moveItemFlow, moveLabel;
 import 'task_page.dart';
 import 'tasks_screen.dart' show addTaskWithDialog, showTextDialog, trashTask;
 
@@ -244,12 +245,14 @@ class _OverviewViewState extends ConsumerState<OverviewView> {
     });
   }
 
+  List<OverviewEventView> events(WidgetRef ref) =>
+      ref.watch(overviewEventsProvider).valueOrNull ?? const <OverviewEventView>[];
+
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final tasks = ref.watch(tasksProvider);
     final lists = ref.watch(listsProvider).valueOrNull ?? const <TaskListView>[];
-    final events = ref.watch(overviewEventsProvider).valueOrNull ?? const <OverviewEventView>[];
     final collapsed = ref.watch(collapsedItemsProvider);
     return tasks.when(
       loading: () => Center(child: CircularProgressIndicator(semanticsLabel: l.ovLoading)),
@@ -259,7 +262,12 @@ class _OverviewViewState extends ConsumerState<OverviewView> {
           child: Text(l.ovLoadError, style: Theme.of(context).textTheme.bodyLarge),
         ),
       ),
-      data: (list) {
+      data: (all) {
+        // P04b T13 (B9): "Assigned to me" in a shared space.
+        final me = ref.watch(myAccountProvider).valueOrNull;
+        final mine = ref.watch(assignedToMeProvider) && ref.watch(shownSharedSpaceProvider) != null && me != null;
+        final list = mine ? assignedTo(all, me) : all;
+        final events = mine ? const <OverviewEventView>[] : this.events(ref);
         if (list.isEmpty && lists.isEmpty && events.isEmpty) {
           return Center(
             child: Padding(
@@ -732,6 +740,7 @@ class _ListHeader extends ConsumerWidget {
               _item('rename', l.ovRename),
               _item('colour', l.ovColour),
               ..._moveItems(context, ix, list.id),
+              if (moveLabel(context, ref) case final m?) _item('space', m),
               _item('trash', l.moveToTrash),
             ],
           ),
@@ -746,6 +755,8 @@ class _ListHeader extends ConsumerWidget {
     final s = ref.read(overviewServiceProvider);
     if (await _onMoveAction(context, ref, ix, list.id, a) || !context.mounted) return;
     switch (a) {
+      case 'space':
+        await moveItemFlow(context, ref, kind: 'taskList', id: list.id);
       case 'task':
         final id = await addTaskWithDialog(context, ref, null, listId: list.id);
         if (id != null) ref.read(collapsedItemsProvider.notifier).expand(list.id);
@@ -854,6 +865,8 @@ class _TaskItem extends ConsumerWidget {
             if (ix.levelOf(t.id) < maxTaskLevel) _item('subtask', l.ovAddSubtask),
             _item('colour', l.ovColour),
             ..._moveItems(context, ix, t.id),
+            if (t.parentId == null)
+              if (moveLabel(context, ref) case final m?) _item('space', m),
             _item('trash', l.moveToTrash),
           ],
         ),
@@ -866,6 +879,8 @@ class _TaskItem extends ConsumerWidget {
     final t = row.task;
     if (await _onMoveAction(context, ref, ix, t.id, a) || !context.mounted) return;
     switch (a) {
+      case 'space':
+        await moveItemFlow(context, ref, kind: 'task', id: t.id);
       case 'focus':
         await startFocus(context, ref, taskId: t.id, taskTitle: t.title);
       case 'rename':
@@ -932,6 +947,7 @@ class _EventItem extends ConsumerWidget {
             _item('edit', l.edit),
             _item('colour', l.ovColour),
             ..._moveItems(context, ix, e.id),
+            if (moveLabel(context, ref) case final m?) _item('space', m),
             _item('trash', l.moveToTrash),
           ],
         ),
@@ -944,6 +960,8 @@ class _EventItem extends ConsumerWidget {
     final e = row.event;
     if (await _onMoveAction(context, ref, ix, e.id, a) || !context.mounted) return;
     switch (a) {
+      case 'space':
+        await moveItemFlow(context, ref, kind: 'event', id: e.id);
       case 'edit':
         await openEventEditor(context, ref, eventId: e.id);
       case 'colour':
