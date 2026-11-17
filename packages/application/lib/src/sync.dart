@@ -44,6 +44,7 @@ class SyncReport {
       this.reviews = 0,
       this.failedRecords = 0,
       this.withheld = 0,
+      this.notTaken = 0,
       this.detail = ''});
   final SyncOutcome outcome;
   final int pushed;
@@ -58,11 +59,15 @@ class SyncReport {
   /// ADR-0059); never sealed, never sent.
   final int withheld;
 
+  /// P04b T11: changes pulled into a shared space and not taken: a kind
+  /// that stays personal (B2), or a record that is not the space's.
+  final int notTaken;
+
   /// For logs; never content or a key.
   final String detail;
   @override
   String toString() =>
-      'SyncReport(${outcome.name}, pushed $pushed, pulled $pulled, merged $merged, reviews $reviews, failed $failedRecords, withheld $withheld) $detail';
+      'SyncReport(${outcome.name}, pushed $pushed, pulled $pulled, merged $merged, reviews $reviews, failed $failedRecords, withheld $withheld${notTaken > 0 ? ', not taken $notTaken' : ''}) $detail';
 }
 
 /// What turning sync on will do for this profile.
@@ -228,11 +233,25 @@ class SyncReviewView {
   final DateTime createdAt;
 }
 
-abstract interface class SyncService {
+/// P04b T11 (ADR-0063): what the automatic sync needs of a sync: the
+/// profile's own (SyncService) and the shown shared space's (every minute).
+abstract interface class SyncRunner {
+  Future<SyncStatus> status();
+
+  /// [status] now and after every change of it.
+  Stream<SyncStatus> watchStatus();
+
+  /// Syncs now; while a sync runs, waits for it instead of starting another.
+  Future<SyncReport> syncNow();
+}
+
+abstract interface class SyncService implements SyncRunner {
+  @override
   Future<SyncStatus> status();
 
   /// [status] now and after every change of it (a sync starting or ending,
   /// an edit waiting to be sent, a review item).
+  @override
   Stream<SyncStatus> watchStatus();
 
   /// The open "Changes to review" items, newest first.
@@ -264,6 +283,7 @@ abstract interface class SyncService {
   Future<SyncSetupResult> undoJoin();
 
   /// Syncs now; while a sync runs, waits for it instead of starting another.
+  @override
   Future<SyncReport> syncNow();
 
   /// Stops syncing this profile here; its data stays on the device (D11).

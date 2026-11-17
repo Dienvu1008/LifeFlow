@@ -137,6 +137,16 @@ final List<RecordKind> recordKinds = [
 
 final Map<String, RecordKind> recordKindByName = {for (final k in recordKinds) k.name: k};
 
+/// P04b B2 (ADR-0063): the kinds a shared space holds: lists, tasks with
+/// their schedules, repeats and done ticks, events and calendars, goals and
+/// milestones (and the links between them), and the space's settings.
+/// Reminders, focus sessions, execution records, measurements and period
+/// results stay personal: a space's sync never sends or takes them.
+const sharedSpaceKinds = {
+  'taskList', 'task', 'calendar', 'event', 'schedule', 'exception', 'completion', 'goal', 'milestone', 'goalLink',
+  'workspaceSettings',
+};
+
 /// Kinds whose rows belong to another record (a task or an event).
 const subjectKinds = {'schedule', 'exception', 'reminder'};
 
