@@ -127,6 +127,41 @@ void main() {
     expect(await a.sync.reviews(), isEmpty);
   });
 
+  test('T6 step 3: after "Take the other" both devices end with the same notes, whatever the order', () async {
+    for (final order in ['ab', 'ba', 'abab', 'baba']) {
+      for (final where in ['a', 'b']) {
+        server = MemoryRemoteServer();
+        final (a, b) = await pair();
+        final devices = {'a': a, 'b': b};
+        final id = ok(await a.tasks.create('Pay the rent'));
+        await a.sync.syncNow();
+        await b.sync.syncNow();
+        ok(await a.tasks.setNotes(id, 'From A'));
+        ok(await b.tasks.setNotes(id, 'From B'));
+        for (final d in order.split('')) {
+          await devices[d]!.sync.syncNow();
+        }
+        final reviewers = [for (final e in devices.entries) if ((await e.value.sync.reviews()).isNotEmpty) e.key];
+        final who = devices[reviewers.contains(where) ? where : reviewers.first]!;
+        final item = (await who.sync.reviews()).single;
+        expect((await who.sync.resolveReview(item.id, takeOther: true)).problem, isNull);
+        for (final d in 'abab'.split('')) {
+          await devices[d]!.sync.syncNow();
+        }
+        final na = (await a.task(id))['notes'], nb = (await b.task(id))['notes'];
+        expect(na, nb, reason: 'order $order, reviews on $reviewers, taken on ${who == a ? 'a' : 'b'}');
+        expect(na, item.other);
+        for (final db in open) {
+          await db.close();
+        }
+        open.clear();
+        for (final f in dir.listSync()) {
+          f.deleteSync(recursive: true);
+        }
+      }
+    }
+  });
+
   test('a whole value (the workspace\'s result policy) is put back as a whole', () async {
     final (a, b) = await pair();
     ok(await DriftHabitService(b.db, b.gw, _Utc()).setManualResults(ManualResults.tick));

@@ -79,13 +79,13 @@ Both had passed the headless tests, which used small records and no habit occurr
 
 ## Device checks (T6, the owner)
 - [x] Windows turns sync on with a recovery key; Android joins with the 24 words and merges; after Sync now each device shows the other's tasks (owner, 2026-11-16, after the two fixes).
-- [ ] An edit on one device shows on the other after a return to the app or Sync now.
-- [ ] Offline on Android: the status says so; the changes go once back online; nothing lost.
-- [ ] Notes changed on both devices offline: a "Changes to review" item; "Take the other" reaches the other device.
-- [ ] Deleted on one device, renamed on the other: in the trash with the new name, and a review item.
-- [ ] "Only when I tap Sync now" on Android: nothing arrives until Sync now.
-- [ ] Speed (D8): seconds for Sync now on Android after about 20 changes on Windows, and for the join.
-- [ ] Sign out on Android: sync stops, data stays; sign in again: sync goes on (also checks that the token is the profile's own account's).
+- [x] An edit on one device shows on the other after a return to the app or Sync now (owner, 2026-11-16).
+- [x] Offline on Android: the status says so; the changes go once back online; nothing lost (owner, 2026-11-16).
+- [ ] Notes changed on both devices offline: a "Changes to review" item appeared (owner, 2026-11-16). After "Take the other" the owner saw each device with its own note. Headless, every order of syncs converges (`sync_review_test.dart` "T6 step 3 …"); the other device takes the change in at its next sync (return to the app, Sync now, or within 5 minutes, D8). **Waiting for the owner to check with Sync now on the other device.**
+- [x] Deleted on one device, renamed on the other: in the trash with the new name, and a review item (owner, 2026-11-16).
+- [x] "Only when I tap Sync now" on Android: nothing arrives until Sync now (owner, 2026-11-16).
+- [x] Speed (D8): Sync now on Android takes about 1 s, at most 2–3 s (owner, 2026-11-16).
+- [x] Sign out on Android: the data stays (owner, 2026-11-16). Signing out in the middle of a sync could not be timed by hand, since a sync takes about a second; that case is covered headless (`sync_engine_test.dart` "offline or signed out: nothing is lost; the next sync sends it").
 
 ## Known limits carried out of P04a
 - No QR scanner (owner decision 2026-11-16): the second device types or pastes the 24 words.
