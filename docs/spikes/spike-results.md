@@ -71,7 +71,7 @@ Fixed entry format: **Question / Hypothesis / What was done / Measured result / 
   - Server: a `space_members` table, a security-definer helper for the caller's role, RLS for reads, owner- or role-checked security-definer functions for every write, and no direct write grants.
   - Keys: X25519 + HKDF-SHA-256 + AES-256-GCM per member from `cryptography` 2.9.0 (VS-42).
 - **What was done:**
-  - **`supabase/tests/database/s16_spaces_spike.test.sql`** builds the spike's schema inside the test's transaction and rolls it back, so the migrations are untouched.
+  - **`supabase/tests/database/s16_spaces_spike.test.sql`** builds the spike's schema inside the test's transaction and rolls it back, so the migrations are untouched. (T9 replaced both spike files with the migration `20261117000001_spaces.sql` and `spaces.test.sql` / `spaces_speed.test.sql`; see ADR-0061. They remain in the git history at `84a5eb3`.)
     - Tables: `account_public_keys`, `account_private_keys`, `spaces` (with the leaving, export and invitation rules), `space_members`, `space_invitations` (a hash of the code only).
     - Functions: `create_space`, `invite`, `peek_invitation`, `accept_invitation`, `approve_member`, `set_my_wrapped_key`, `remove_member`, `leave_space`, `set_role`, `hand_over`, `set_space_rules`, `rotate_space_key`. `push_records` and `purge_records` were extended to check the role.
     - 79 assertions over the owner, an editor, a viewer, someone waiting for approval, someone who joined at once, a removed member, a stranger and a caller without a session:

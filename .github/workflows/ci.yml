@@ -107,7 +107,7 @@ jobs:
         run: |
           dart pub get
           test -n "$LIFEFLOW_TEST_SUPABASE_URL"
-          dart test test/remote_contract_test.dart test/sync_supabase_e2e_test.dart
+          dart test test/remote_contract_test.dart test/remote_spaces_contract_test.dart test/sync_supabase_e2e_test.dart
   # P01 still adds:
   # - behavioral fitness functions FF-ARCH-06/08/09
   # - golden scenarios
