@@ -3,6 +3,7 @@
 /// FF-ARCH-01). Task Management lands in P01; other contexts in their phases.
 library domain;
 
+export 'src/data_classification.dart';
 export 'src/focus.dart';
 export 'src/goals.dart';
 export 'src/item_color.dart';

@@ -11,6 +11,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:application/application.dart';
+import 'package:domain/domain.dart' show DataClassification;
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:foundation/foundation.dart';
@@ -126,6 +127,41 @@ void main() {
     expect(await a.sync.reviews(), isEmpty);
   });
 
+  test('T6 step 3: after "Take the other" both devices end with the same notes, whatever the order', () async {
+    for (final order in ['ab', 'ba', 'abab', 'baba']) {
+      for (final where in ['a', 'b']) {
+        server = MemoryRemoteServer();
+        final (a, b) = await pair();
+        final devices = {'a': a, 'b': b};
+        final id = ok(await a.tasks.create('Pay the rent'));
+        await a.sync.syncNow();
+        await b.sync.syncNow();
+        ok(await a.tasks.setNotes(id, 'From A'));
+        ok(await b.tasks.setNotes(id, 'From B'));
+        for (final d in order.split('')) {
+          await devices[d]!.sync.syncNow();
+        }
+        final reviewers = [for (final e in devices.entries) if ((await e.value.sync.reviews()).isNotEmpty) e.key];
+        final who = devices[reviewers.contains(where) ? where : reviewers.first]!;
+        final item = (await who.sync.reviews()).single;
+        expect((await who.sync.resolveReview(item.id, takeOther: true)).problem, isNull);
+        for (final d in 'abab'.split('')) {
+          await devices[d]!.sync.syncNow();
+        }
+        final na = (await a.task(id))['notes'], nb = (await b.task(id))['notes'];
+        expect(na, nb, reason: 'order $order, reviews on $reviewers, taken on ${who == a ? 'a' : 'b'}');
+        expect(na, item.other);
+        for (final db in open) {
+          await db.close();
+        }
+        open.clear();
+        for (final f in dir.listSync()) {
+          f.deleteSync(recursive: true);
+        }
+      }
+    }
+  });
+
   test('a whole value (the workspace\'s result policy) is put back as a whole', () async {
     final (a, b) = await pair();
     ok(await DriftHabitService(b.db, b.gw, _Utc()).setManualResults(ManualResults.tick));
@@ -201,6 +237,42 @@ void main() {
     expect(lines.single, isNot(contains('Still here')), reason: 'no content in the log');
     expect((await a.sync.status()).lastResult, SyncOutcome.failed);
     expect((await a.sync.syncNow()).outcome, SyncOutcome.upToDate, reason: 'the next sync goes on');
+  });
+
+  group('egress (ADR-0059, PRIV-001/003, FF-ARCH-08 prepared)', () {
+    test('every record kind has a class; an unknown kind is Restricted', () {
+      expect(kindClasses.keys.toSet(), {for (final k in recordKinds) k.name});
+      expect(dataClassOf('somethingNew', const {}), DataClassification.restricted);
+      expect(dataClassOf('task', const {}), DataClassification.confidential, reason: 'a task carries its notes');
+    });
+
+    test('a measurement from a health source never leaves the device; a typed one syncs', () async {
+      final (a, b) = await pair();
+      final habits = DriftHabitService(a.db, a.gw, _Utc());
+      final id = ok(await a.tasks.create('Walk'));
+      ok(await habits.setTarget(id, const TargetInput(kind: TargetKind.atLeast, min: 5000, unit: 'steps')));
+      ok(await habits.recordMeasurement(id, 6000));
+      final typed = (await recordKindByName['measurement']!.readAll(a.db)).single;
+      // As a health import (P08) would write it: its own row and outbox row.
+      final health = {...typed, 'id': 'm-health', 'source': 'healthConnect', 'value': 7000.0};
+      await a.db.batch((x) => recordKindByName['measurement']!.upsert(x, a.db, [health]));
+      await a.db.into(a.db.outbox).insert(OutboxCompanion.insert(
+          operationId: 'op-health', entityId: 'm-health', entityType: 'measurement', workspaceId: typed['workspaceId'] as String,
+          actorId: 'device', operationType: 'create', payload: '{}', createdAt: DateTime.utc(2026, 11, 16)));
+
+      final r = await a.sync.syncNow();
+      expect((r.outcome, r.withheld), (SyncOutcome.upToDate, 1));
+      final ws = typed['workspaceId'] as String;
+      final sid = await RecordSealer.of((await a.sync.keyring.keyOf(ws))!).then((s) => s.serverId('measurement', 'm-health'));
+      expect(server.dump(ws).map((x) => x.id), isNot(contains(sid)), reason: 'not even sealed');
+      final row = await (a.db.select(a.db.outbox)..where((o) => o.entityId.equals('m-health'))).getSingle();
+      expect(row.status, 'local');
+      expect((await a.sync.status()).pending, 0, reason: 'nothing waits for it');
+
+      await b.sync.syncNow();
+      final there = await recordKindByName['measurement']!.readAll(b.db);
+      expect([for (final m in there) m['source']], ['manual']);
+    });
   });
 
   test('the status is watched: a waiting edit and a running sync show', () async {

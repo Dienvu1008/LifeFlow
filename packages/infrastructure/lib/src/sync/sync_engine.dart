@@ -17,7 +17,7 @@
 import 'dart:convert';
 
 import 'package:application/application.dart';
-import 'package:domain/domain.dart' show mergeRecord, SyncReviewReason;
+import 'package:domain/domain.dart' show cloudSyncAllowed, mergeRecord, SyncReviewReason;
 import 'package:drift/drift.dart';
 import 'package:foundation/foundation.dart';
 import 'package:uuid/uuid.dart';
@@ -61,13 +61,13 @@ class SyncEngine {
   final int pageSize;
   final DateTime Function() clock;
 
-  int _pushed = 0, _pulled = 0, _merged = 0, _reviews = 0, _failed = 0;
+  int _pushed = 0, _pulled = 0, _merged = 0, _reviews = 0, _failed = 0, _withheld = 0;
   bool _updateNeeded = false;
 
   /// Push, pull and push again until nothing is left (a conflict is merged
   /// by the pull and its merge pushed in the next round).
   Future<SyncReport> sync({int rounds = 4}) async {
-    _pushed = _pulled = _merged = _reviews = _failed = 0;
+    _pushed = _pulled = _merged = _reviews = _failed = _withheld = 0;
     _updateNeeded = false;
     final state = await _state();
     if (state == null) throw StateError('sync is not on for this workspace on this device');
@@ -113,7 +113,7 @@ class SyncEngine {
   }
 
   SyncReport _report(SyncOutcome o, [String detail = '']) => SyncReport(o,
-      pushed: _pushed, pulled: _pulled, merged: _merged, reviews: _reviews, failedRecords: _failed, detail: detail);
+      pushed: _pushed, pulled: _pulled, merged: _merged, reviews: _reviews, failedRecords: _failed, withheld: _withheld, detail: detail);
 
   Future<SyncStateRow?> _state() =>
       (db.select(db.syncState)..where((s) => s.workspaceId.equals(workspaceId))).getSingleOrNull();
@@ -154,6 +154,13 @@ class SyncEngine {
       final base = await _base(kind, id);
       if (row == null || (base != null && base.version == row['version'])) {
         await _setOutboxStatus(kind, id, 'acked');
+        continue;
+      }
+      // P04 T7 (ADR-0059, LF-INV-PRIV-001/003): the classification decides
+      // before anything is sealed or sent. Restricted data stays here.
+      if (!cloudSyncAllowed(dataClassOf(kind, row))) {
+        await _setOutboxStatus(kind, id, 'local');
+        _withheld++;
         continue;
       }
       final version = row['version'] as int;

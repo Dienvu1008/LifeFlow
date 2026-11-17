@@ -80,8 +80,8 @@ One branch per task; merge after the headless tests pass and, where marked, you 
 | **T3** Sync engine (**done**: [ADR-0056](../adr/0056-sync-engine.md)) | Push, pull, apply as actor `sync`, per-type resolver, review items, tombstones and purge, backoff, partial failure | GS-17, GS-14, SYNC-001…004, property tests over interleavings | no | 5–7 |
 | **T4** Joining and leaving (**done**: [ADR-0057](../adr/0057-joining-and-leaving-sync.md)) | Turn sync on (first device / merge / use the account's data, D5), sign-out (D11), delete my server data | merge keeps ids and loses nothing; undo restores; GS-22 still holds | no | 3–4 |
 | **T5** UI (**done**: [ADR-0058](../adr/0058-sync-ui-and-scheduler.md)) | Sync status, Settings → Sync, Changes to review, update notice (D9, D10) | widget tests; app integration test on real stores with the fake server | **yes** | 3–4 |
-| **T6** Two real devices | Your Supabase project, Windows + Android: offline edits, conflicts, deletes, a second device joining; measure sync time (D8) | your check on both devices | **yes** | 1–2 |
-| **T7** P04a exit gate | p04a-exit-gate.md, ADRs, risk register, invariant matrix; your review | all suites, CI | yes | 1 |
+| **T6** Two real devices (**done** 2026-11-16: three findings fixed, ADR-0058; checks in [p04a-exit-gate.md](../testing/p04a-exit-gate.md)) | Your Supabase project, Windows + Android: offline edits, conflicts, deletes, a second device joining; measure sync time (D8) | your check on both devices | **yes** | 1–2 |
+| **T7** P04a exit gate (**done**, signed off 2026-11-16: [p04a-exit-gate.md](../testing/p04a-exit-gate.md); egress check [ADR-0059](../adr/0059-sync-egress-classification.md)) | p04a-exit-gate.md, ADRs, risk register, invariant matrix; your review | all suites, CI | yes | 1 |
 
 Order: S-03, S-04 and S-15 → ADR-0052 → T1 → T1b → T2 → T3 → T4 → T5 → T6 → T7. P04a total about 28–41 person-days; P04b is estimated at its start (roughly 15–25).
 

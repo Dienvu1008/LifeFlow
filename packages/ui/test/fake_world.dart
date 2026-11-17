@@ -509,6 +509,10 @@ class FakeWorld
         isSignedOut: signedOut);
   }
 
+  /// P04 T6: notes changed on another device and pulled by sync (no call is
+  /// recorded: this device wrote nothing).
+  void pulledNotes(String id, String? notes) => _replace(id, (t) => _copy(t, setNotes: true, notes: notes));
+
   void _replace(String id, TaskView Function(TaskView) f) {
     final list = _mine();
     final i = list.indexWhere((t) => t.id == id);

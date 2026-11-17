@@ -58,7 +58,7 @@ The egress matrix above governs data **leaving** the device. At-rest protection 
 - LF-INV-PRIV-001 (default-deny egress), LF-INV-PRIV-002 (Restricted never reaches cloud AI; never shared implicitly), LF-INV-PRIV-003 (classification is enforced at every egress point), LF-INV-SEC-001 (secrets only in secure storage).
 
 ## 6. Open questions
-- OQ-CLASS-1: whether Confidential may sync to cloud by default at P04 or stays opt-in. Proposal: opt-in per category. Collaboration/sync batch.
+- OQ-CLASS-1: whether Confidential may sync to cloud by default at P04 or stays opt-in. Proposal: opt-in per category. Collaboration/sync batch. **Answered for P04 by the owner's D4 (p04-plan.md):** once the user turns sync on for a profile, Confidential data (task notes) syncs, end-to-end encrypted (D12). Restricted stays denied. Enforced at the sync egress ([ADR-0059](../adr/0059-sync-egress-classification.md)).
 - OQ-CLASS-2: analytics scope (the MVP has none; NFR-PRIV-01). Revisit only if analytics is ever added.
 
 ## 7. Self-check
