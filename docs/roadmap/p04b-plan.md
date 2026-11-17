@@ -99,7 +99,7 @@ One branch per task, as in P04a; merge after the headless tests, and after your 
 
 | Task | Content | Main proof | Your check | Est. (pd) |
 |---|---|---|---|---|
-| **S-16** Spike: members on the server | Membership RLS, role checks in the functions, invitations, per-member key wrapping with X25519, on local Supabase | pgTAP allow/deny per role (owner, editor, viewer, removed, stranger), also with crafted requests; OQ-V5 answered | no | 2–3 |
+| **S-16** Spike: members on the server (**PASS** 2026-11-16: [spike-results.md](../spikes/spike-results.md#s-16--members-of-a-shared-space-on-the-server-and-their-keys-p04b)) | Membership RLS, role checks in the functions, invitations, per-member key wrapping with X25519, on local Supabase | pgTAP allow/deny per role (owner, editor, viewer, removed, stranger), also with crafted requests; OQ-V5 answered | no | 2–3 |
 | **T8** Spaces in one store | Schema v13, personal + shared workspaces, the active space and switching, WA-001 refined, member identity, export rules (B14) | upgrade test v2…v12 → v13; every view follows a space switch; GS-11 still holds | no | 3–4 |
 | **T9** Server schema | Migrations for spaces, members, invitations, account keys; RLS and functions; contract test memory ↔ Supabase | contract and pgTAP suites green; limits (B13) | no | 3–4 |
 | **T10** Keys for spaces | Account key pair, space keys wrapped per member, both kinds of invitation (B7: approval, join at once), rotation on removal (B8) | only a member opens the space; a removed member cannot open anything sealed after the removal | no | 2–3 |
