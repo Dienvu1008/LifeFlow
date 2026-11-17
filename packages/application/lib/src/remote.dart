@@ -15,7 +15,13 @@ class SealedRecord {
     required this.deleted,
     required this.sealed,
     required this.deviceId,
+    this.keyId = '',
   });
+
+  /// Which key the record is sealed with ('' when the device did not say).
+  /// While a shared space's key is rotated, rows of the old and the new key
+  /// are both there; a device skips those of a key it does not hold.
+  final String keyId;
 
   /// 64 hex characters, made on the device.
   final String id;
@@ -127,8 +133,11 @@ abstract interface class RemoteGateway {
   /// "Delete my data from the server" (D11): the workspace and all its records.
   Future<void> deleteWorkspace(String workspaceId);
 
-  /// At most 500 records per call.
-  Future<PushResult> push(String workspaceId, String deviceId, List<RecordPush> records);
+  /// At most 500 records per call, all sealed with the key named [keyId]. A
+  /// shared space takes only its current key (else
+  /// `SpaceFailure(SpaceRefusal.staleKey)`, ADR-0062); a personal workspace
+  /// keeps what it is given ('' from P04a devices).
+  Future<PushResult> push(String workspaceId, String deviceId, List<RecordPush> records, {String keyId = ''});
 
   /// Changes after [after], in change-number order, at most [limit] (≤ 1000).
   Future<List<SealedRecord>> pull(String workspaceId, int after, {int limit = 1000});

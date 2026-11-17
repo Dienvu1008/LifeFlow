@@ -142,10 +142,13 @@ class HttpRemoteGateway implements RemoteGateway, SpaceGateway {
   }
 
   @override
-  Future<PushResult> push(String workspaceId, String deviceId, List<RecordPush> records) async {
+  Future<PushResult> push(String workspaceId, String deviceId, List<RecordPush> records, {String keyId = ''}) async {
     final res = await _send('POST', _uri('rpc/push_records'), body: {
       'p_workspace': workspaceId,
       'p_device': deviceId,
+      // Only when named, so a P04a push also reaches a server without
+      // 20261118000001 (ADR-0062).
+      if (keyId.isNotEmpty) 'p_key_id': keyId,
       'p_records': [
         for (final r in records)
           {
@@ -183,6 +186,7 @@ class HttpRemoteGateway implements RemoteGateway, SpaceGateway {
           // (T6 finding): the line breaks are not part of the data.
           sealed: r['sealed'] == null ? null : base64Decode((r['sealed'] as String).replaceAll(_whitespace, '')),
           deviceId: r['device_id'] as String,
+          keyId: r['key_id'] as String? ?? '',
         ),
     ];
   }
@@ -395,6 +399,10 @@ class HttpRemoteGateway implements RemoteGateway, SpaceGateway {
       'p_invite': rules.inviteDefault.name,
     });
   }
+
+  @override
+  Future<int> dropOldKeyRecords(String workspaceId) async =>
+      ((await _rpc('drop_old_key_records', {'p_workspace': workspaceId})) as num).toInt();
 
   @override
   Future<void> rotateKey(String workspaceId, String keyId, Map<String, Uint8List> wrappedFor) async {

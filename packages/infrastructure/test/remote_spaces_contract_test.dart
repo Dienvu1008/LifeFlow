@@ -42,7 +42,7 @@ class _Both implements Server {
   @override
   Future<void> deleteWorkspace(String w) => r.deleteWorkspace(w);
   @override
-  Future<PushResult> push(String w, String d, List<RecordPush> x) => r.push(w, d, x);
+  Future<PushResult> push(String w, String d, List<RecordPush> x, {String keyId = ''}) => r.push(w, d, x, keyId: keyId);
   @override
   Future<List<SealedRecord>> pull(String w, int after, {int limit = maxPullPage}) => r.pull(w, after, limit: limit);
   @override
@@ -89,6 +89,8 @@ class _Both implements Server {
   Future<void> setRules(String w, SpaceRules rules) => s.setRules(w, rules);
   @override
   Future<void> rotateKey(String w, String id, Map<String, Uint8List> wraps) => s.rotateKey(w, id, wraps);
+  @override
+  Future<int> dropOldKeyRecords(String w) => s.dropOldKeyRecords(w);
 }
 
 /// Accounts by role in the cases: 0 owner, 1 editor, 2 viewer, 3 waits for
@@ -111,8 +113,8 @@ RecordPush rec(String rid) =>
 Future<void> expectFailure(Future<Object?> f, RemoteFailureKind kind) =>
     expectLater(f, throwsA(isA<RemoteFailure>().having((e) => e.kind, 'kind', kind)));
 
-Future<void> expectRefusal(Future<Object?> f, SpaceRefusal reason) =>
-    expectLater(f, throwsA(isA<SpaceFailure>().having((e) => e.reason, 'reason', reason)));
+Future<void> expectRefusal(Future<Object?> f, SpaceRefusal refusal, {String? reason}) =>
+    expectLater(f, throwsA(isA<SpaceFailure>().having((e) => e.reason, 'reason', refusal)), reason: reason);
 
 void contract(String name, Future<Accounts> Function() open) {
   group(name, () {
@@ -202,7 +204,7 @@ void contract(String name, Future<Accounts> Function() open) {
       expect((a.preview.kind, a.wrappedKey), (InviteKind.approve, null));
       final waitingRow = spaceOf(await g(editor).spaces())!;
       expect((waitingRow.status, waitingRow.rules, waitingRow.wrappedKey), (MemberStatus.pending, null, null));
-      await expectFailure(g(editor).push(ws, 'e', [rec(hex64())]), RemoteFailureKind.notYours);
+      await expectFailure(g(editor).push(ws, 'e', [rec(hex64())], keyId: keyA), RemoteFailureKind.notYours);
       expect(await g(editor).pull(ws, 0), isEmpty);
       await expectRefusal(g(editor).acceptInvitation(h), SpaceRefusal.noSuchInvitation);
       await expectRefusal(g(viewer).acceptInvitation(h), SpaceRefusal.noSuchInvitation);
@@ -220,9 +222,9 @@ void contract(String name, Future<Accounts> Function() open) {
       expect(await g(stranger).members(ws), isEmpty);
 
       final x = hex64(), y = hex64();
-      await g(owner).push(ws, 'o', [rec(x)]);
+      await g(owner).push(ws, 'o', [rec(x)], keyId: keyA);
       expect([for (final r in await g(editor).pull(ws, 0)) r.id], [x]);
-      await g(editor).push(ws, 'e', [rec(y)]);
+      await g(editor).push(ws, 'e', [rec(y)], keyId: keyA);
       expect([for (final r in await g(owner).pull(ws, 0)) (r.id, r.seq)], [(x, 1), (y, 2)]);
     });
 
@@ -255,9 +257,9 @@ void contract(String name, Future<Accounts> Function() open) {
       await expectFailure(g(atOnce).setMyWrappedKey(ws, b([5]), keyB), RemoteFailureKind.notYours);
       await expectFailure(g(stranger).setMyWrappedKey(ws, b([5]), keyA), RemoteFailureKind.notYours);
 
-      await g(owner).push(ws, 'o', [rec(hex64())]);
+      await g(owner).push(ws, 'o', [rec(hex64())], keyId: keyA);
       expect(await g(atOnce).pull(ws, 0), hasLength(1), reason: 'a viewer reads');
-      await expectFailure(g(atOnce).push(ws, 'j', [rec(hex64())]), RemoteFailureKind.notYours);
+      await expectFailure(g(atOnce).push(ws, 'j', [rec(hex64())], keyId: keyA), RemoteFailureKind.notYours);
       await expectFailure(g(atOnce).purge(ws, DateTime.now()), RemoteFailureKind.notYours);
     });
 
@@ -274,9 +276,9 @@ void contract(String name, Future<Accounts> Function() open) {
       await expectFailure(e.deleteSpace(ws), RemoteFailureKind.notYours);
       expect(await e.invitations(ws), isEmpty);
 
-      await expectFailure(g(viewer).push(ws, 'v', [rec(hex64())]), RemoteFailureKind.notYours);
+      await expectFailure(g(viewer).push(ws, 'v', [rec(hex64())], keyId: keyA), RemoteFailureKind.notYours);
       await g(owner).setRole(ws, idOf(viewer), SpaceRole.editor);
-      await g(viewer).push(ws, 'v', [rec(hex64())]);
+      await g(viewer).push(ws, 'v', [rec(hex64())], keyId: keyA);
       await expectFailure(g(owner).setRole(ws, idOf(viewer), SpaceRole.owner), RemoteFailureKind.refused);
       await expectRefusal(g(owner).setRole(ws, idOf(stranger), SpaceRole.viewer), SpaceRefusal.notAMember);
 
@@ -287,7 +289,7 @@ void contract(String name, Future<Accounts> Function() open) {
       expect(spaceOf(await g(editor).spaces())!.role, SpaceRole.owner);
       expect(spaceOf(await g(owner).spaces())!.role, SpaceRole.editor);
       await expectFailure(g(owner).removeMember(ws, idOf(viewer)), RemoteFailureKind.notYours);
-      await g(owner).push(ws, 'o', [rec(hex64())]);
+      await g(owner).push(ws, 'o', [rec(hex64())], keyId: keyA);
       await g(editor).removeMember(ws, idOf(viewer));
       expect([for (final m in await g(editor).members(ws)) (m.accountId, m.role)],
           [(idOf(owner), SpaceRole.editor), (idOf(editor), SpaceRole.owner)]);
@@ -318,11 +320,11 @@ void contract(String name, Future<Accounts> Function() open) {
       final hp = hex64();
       await g(owner).invite(ws, hp, SpaceRole.editor, InviteKind.approve);
       await g(waiting).acceptInvitation(hp);
-      await g(owner).push(ws, 'o', [rec(hex64())]);
+      await g(owner).push(ws, 'o', [rec(hex64())], keyId: keyA);
 
       await g(owner).removeMember(ws, idOf(editor));
       expect(await g(editor).pull(ws, 0), isEmpty);
-      await expectFailure(g(editor).push(ws, 'e', [rec(hex64())]), RemoteFailureKind.notYours);
+      await expectFailure(g(editor).push(ws, 'e', [rec(hex64())], keyId: keyA), RemoteFailureKind.notYours);
       expect(spaceOf(await g(editor).spaces()), isNull);
       await expectRefusal(g(owner).removeMember(ws, idOf(owner)), SpaceRefusal.notAMember);
       await expectRefusal(g(owner).removeMember(ws, idOf(editor)), SpaceRefusal.notAMember);
@@ -352,6 +354,36 @@ void contract(String name, Future<Accounts> Function() open) {
       await g(6).acceptInvitation(hw);
       await g(6).leaveSpace(ws);
       expect(spaceOf(await g(6).spaces()), isNull, reason: 'a request to join is withdrawn');
+    });
+
+    test('rotation: a push names the current key; the old key\'s rows go only when the owner drops them', () async {
+      await join(editor);
+      final x = hex64(), y = hex64();
+      await g(owner).push(ws, 'o', [rec(x)], keyId: keyA);
+      await expectRefusal(g(owner).push(ws, 'o', [rec(hex64())], keyId: keyB), SpaceRefusal.staleKey);
+      await expectRefusal(g(owner).push(ws, 'o', [rec(hex64())]), SpaceRefusal.staleKey);
+      await g(owner).rotateKey(ws, keyB, {idOf(owner): b([3]), idOf(editor): b([3])});
+      await expectRefusal(g(editor).push(ws, 'e', [rec(y)], keyId: keyA), SpaceRefusal.staleKey,
+          reason: 'nothing is sealed with the old key after the rotation (SHARE-004)');
+      await g(editor).push(ws, 'e', [rec(y)], keyId: keyB);
+      expect([for (final r in await g(editor).pull(ws, 0)) (r.id, r.keyId)], [(x, keyA), (y, keyB)],
+          reason: 'until the drop, both are there, each with its key');
+      await expectFailure(g(editor).dropOldKeyRecords(ws), RemoteFailureKind.notYours);
+      expect(await g(owner).dropOldKeyRecords(ws), 1);
+      expect([for (final r in await g(editor).pull(ws, 0)) r.id], [y]);
+      expect(await g(owner).dropOldKeyRecords(ws), 0);
+
+      final personal = const Uuid().v4();
+      await g(many).createWorkspace(RemoteWorkspace(workspaceId: personal, wrappedKey: b([1]), unlockKind: 'recoveryKey'));
+      try {
+        await g(many).push(personal, 'pc', [rec(x)], keyId: keyB);
+        await g(many).push(personal, 'pc', [rec(y)]);
+        expect([for (final r in await g(many).pull(personal, 0)) r.keyId], [keyB, ''],
+            reason: 'a personal workspace keeps what it is given and checks nothing');
+        await expectFailure(g(many).dropOldKeyRecords(personal), RemoteFailureKind.notYours);
+      } finally {
+        await g(many).deleteWorkspace(personal);
+      }
     });
 
     test('limits: 10 members a space, counting those waiting; 10 spaces an account (B13)', () async {
@@ -393,14 +425,14 @@ void contract(String name, Future<Accounts> Function() open) {
 
     test('a stranger reaches nothing; deleting the space deletes everything in it', () async {
       await join(editor);
-      await g(owner).push(ws, 'o', [rec(hex64())]);
+      await g(owner).push(ws, 'o', [rec(hex64())], keyId: keyA);
       await g(owner).invite(ws, hex64(), SpaceRole.viewer, InviteKind.approve);
       final s = g(stranger);
       expect(await s.pull(ws, 0), isEmpty);
       expect(spaceOf(await s.spaces()), isNull);
       expect(await s.members(ws), isEmpty);
       expect(await s.invitations(ws), isEmpty);
-      await expectFailure(s.push(ws, 's', [rec(hex64())]), RemoteFailureKind.notYours);
+      await expectFailure(s.push(ws, 's', [rec(hex64())], keyId: keyA), RemoteFailureKind.notYours);
       await expectFailure(s.purge(ws, DateTime.now()), RemoteFailureKind.notYours);
       await expectFailure(s.deleteSpace(ws), RemoteFailureKind.notYours);
       await expectFailure(s.removeMember(ws, idOf(editor)), RemoteFailureKind.notYours);

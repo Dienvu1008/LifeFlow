@@ -39,9 +39,9 @@ class _Picky implements RemoteGateway {
   final RemoteGateway inner;
   final Set<String> refuse;
   @override
-  Future<PushResult> push(String w, String d, List<RecordPush> r) {
+  Future<PushResult> push(String w, String d, List<RecordPush> r, {String keyId = ''}) {
     if (r.any((x) => refuse.contains(x.id))) throw const RemoteFailure(RemoteFailureKind.refused, 'picky');
-    return inner.push(w, d, r);
+    return inner.push(w, d, r, keyId: keyId);
   }
 
   @override

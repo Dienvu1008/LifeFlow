@@ -86,7 +86,7 @@ Fixed entry format: **Question / Hypothesis / What was done / Measured result / 
       - deleting the space removes everything of it;
       - a P04a personal workspace unchanged.
   - **`s16_spaces_speed_spike.test.sql`**: 20 000 records in the space plus 20 000 of other accounts, 10 members; a page of 1000 and a full count timed under two read policies.
-  - **`packages/infrastructure/test/spike_s16_keys_test.dart`**, 5 tests:
+  - **`packages/infrastructure/test/spike_s16_keys_test.dart`** (T10 replaced it with `space_keys.dart` and its tests; see ADR-0062), 5 tests:
     - the private key sealed with the personal workspace key opens only with that key and for that account;
     - the space key wrapped for one member opens for that member only, in that space only, and a changed byte is refused;
     - a "join at once" code opens the key, and its hash (what the server keeps) does not;
