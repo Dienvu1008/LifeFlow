@@ -1,6 +1,6 @@
 # P04b plan: Sharing with other people
 
-- Status: **Decisions taken by the owner 2026-11-16**: B1–B6 and B9–B13 as proposed; **B7, B8 and B14 decided by the owner** (below). Waiting for the owner to approve this text.
+- Status: **Decisions taken by the owner 2026-11-16**: B1–B6 and B9–B13 as proposed; **B7, B8 and B14 decided by the owner** (below). **Accepted by the owner 2026-11-16.**
 - Date: 2026-11-16
 - Inputs: [p04-plan.md](p04-plan.md) (D1, D12, D14; the P04b line of the exit gate), [p04a-exit-gate.md](../testing/p04a-exit-gate.md), [authorization-model.md](../governance/authorization-model.md) (§3, §5, OQ-AUTHZ-1), [workspace-and-access.md](../domains/workspace-and-access.md) (Membership, WA-001), [data-classification.md](../data/data-classification.md) (the "shared" row of the egress matrix), [sync-protocol.md](../data/sync-protocol.md) §9, ADR-0052, ADR-0054, ADR-0057, ADR-0059; requirements FR-TASK-10, FR-CAL-05, FR-GOAL-06; persona PER-2; use cases UC-13, UC-19; invariants PRIV-002/003, ID-001/002, GOV-001/002, WA-001, GOAL-003; open questions OQ-AUTHZ-1, OQ-V5
 - Estimate: about 23–31 person-days (with the owner's B7/B8/B14: two kinds of invitation and the space's rules) (p04-plan.md guessed 15–25 before the design; the end-to-end keys and the multi-space store add to it), plus a 30 % risk buffer.
