@@ -15,7 +15,8 @@ library;
 //                     MeasurementCommandHandler, PeriodCloseHandler,
 //                     GoalCommandHandler, ListCommandHandler,
 //                     WorkspaceSettingsCommandHandler, SyncApplyHandler,
-//                     SyncSetupHandler, SyncReviewHandler
+//                     SyncSetupHandler, SyncReviewHandler,
+//                     SpaceMoveHandler
 import 'package:application/application.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -122,6 +123,7 @@ void main() {
 
   /// One handler operation: how to build its command.
   final taskHandler = TaskCommandHandler();
+  const moveTaskHandler = SpaceMoveHandler('task');
   const profileHandler = ProfileCommandHandler();
   const restoreHandler = ProfileRestoreHandler();
   const eventHandler = EventCommandHandler();
@@ -342,6 +344,22 @@ void main() {
           (v, op) => command('ShowSpace', {'op': 'switchSpace', 'id': profileId, 'workspaceId': sharedWs}, opId: op, expected: v)),
       ('task.create(member)', taskHandler, 'task', 'tm1',
           (v, op) => memberCommand('CreateTask', {'op': 'create', 'id': 'tm1', 'title': 'Ours'}, opId: op)),
+      // P04b T12 (ADR-0064): the owner names the space; a task is assigned;
+      // a personal task with its subtask moves in and back out (B3).
+      ('spaceSettings.create', settingsHandler, 'workspaceSettings', sharedWs,
+          (v, op) => memberCommand('NameSpace', {'op': 'setName', 'id': sharedWs, 'name': 'Family'}, opId: op)),
+      ('task.assign', taskHandler, 'task', 'tm1',
+          (v, op) => memberCommand('AssignTask', {'op': 'assign', 'id': 'tm1', 'assigneeId': 'acc'}, opId: op)),
+      ('task.create(movable)', taskHandler, 'task', 'tmv',
+          (v, op) => command('CreateTask', {'op': 'create', 'id': 'tmv', 'title': 'Move me'}, opId: op, expected: v)),
+      ('task.create(movable sub)', taskHandler, 'task', 'tmv2',
+          (v, op) => command('CreateTask', {'op': 'create', 'id': 'tmv2', 'title': 'And me', 'parentId': 'tmv'}, opId: op, expected: v)),
+      ('space.moveIn', moveTaskHandler, 'task', 'tmv',
+          (v, op) => memberCommand('MoveIntoSpace',
+              {'op': 'move', 'id': 'tmv', 'from': wsId, 'expect': ['task:tmv:1', 'task:tmv2:1']}, opId: op)),
+      ('space.moveOut', moveTaskHandler, 'task', 'tmv',
+          (v, op) => command('MoveOutOfSpace',
+              {'op': 'move', 'id': 'tmv', 'from': sharedWs, 'expect': ['task:tmv:2', 'task:tmv2:2']}, opId: op, expected: v)),
       ('profile.switchSpace(back)', profileHandler, 'profile', profileId,
           (v, op) => command('ShowSpace', {'op': 'switchSpace', 'id': profileId, 'workspaceId': wsId}, opId: op, expected: v)),
       // P03 UX U6 (U-D13); a setting of the workspace since P04 T1.
@@ -389,8 +407,9 @@ void main() {
         // A shared space this (bound) profile's account is an editor of.
         await ProfileStore(db).cacheSpace(const SpaceSnapshot(
             workspaceId: sharedWs, ownerAccountId: 'acc-owner', name: 'Family', members: [
-          SpaceMemberSnapshot(accountId: 'acc-owner', role: 'owner'),
-          SpaceMemberSnapshot(accountId: 'acc', role: 'editor'),
+          // P04b T12: its owner, so it can name the space.
+          SpaceMemberSnapshot(accountId: 'acc', role: 'owner'),
+          SpaceMemberSnapshot(accountId: 'acc-editor', role: 'editor'),
         ]));
       }
       if (label == 'focus.markUnrecoverable') {

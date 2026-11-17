@@ -590,6 +590,17 @@ class $WorkspacesTable extends Workspaces
   late final GeneratedColumn<DateTime> rulesSeenAt = GeneratedColumn<DateTime>(
       'rules_seen_at', aliasedName, true,
       type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _leftAtMeta = const VerificationMeta('leftAt');
+  @override
+  late final GeneratedColumn<DateTime> leftAt = GeneratedColumn<DateTime>(
+      'left_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _leftKeepMeta =
+      const VerificationMeta('leftKeep');
+  @override
+  late final GeneratedColumn<String> leftKeep = GeneratedColumn<String>(
+      'left_keep', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -601,7 +612,9 @@ class $WorkspacesTable extends Workspaces
         exportRule,
         inviteDefault,
         rulesChangedAt,
-        rulesSeenAt
+        rulesSeenAt,
+        leftAt,
+        leftKeep
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -666,6 +679,14 @@ class $WorkspacesTable extends Workspaces
           rulesSeenAt.isAcceptableOrUnknown(
               data['rules_seen_at']!, _rulesSeenAtMeta));
     }
+    if (data.containsKey('left_at')) {
+      context.handle(_leftAtMeta,
+          leftAt.isAcceptableOrUnknown(data['left_at']!, _leftAtMeta));
+    }
+    if (data.containsKey('left_keep')) {
+      context.handle(_leftKeepMeta,
+          leftKeep.isAcceptableOrUnknown(data['left_keep']!, _leftKeepMeta));
+    }
     return context;
   }
 
@@ -695,6 +716,10 @@ class $WorkspacesTable extends Workspaces
           DriftSqlType.dateTime, data['${effectivePrefix}rules_changed_at']),
       rulesSeenAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}rules_seen_at']),
+      leftAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}left_at']),
+      leftKeep: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}left_keep']),
     );
   }
 
@@ -715,6 +740,8 @@ class Workspace extends DataClass implements Insertable<Workspace> {
   final String? inviteDefault;
   final DateTime? rulesChangedAt;
   final DateTime? rulesSeenAt;
+  final DateTime? leftAt;
+  final String? leftKeep;
   const Workspace(
       {required this.id,
       required this.kind,
@@ -725,7 +752,9 @@ class Workspace extends DataClass implements Insertable<Workspace> {
       this.exportRule,
       this.inviteDefault,
       this.rulesChangedAt,
-      this.rulesSeenAt});
+      this.rulesSeenAt,
+      this.leftAt,
+      this.leftKeep});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -750,6 +779,12 @@ class Workspace extends DataClass implements Insertable<Workspace> {
     }
     if (!nullToAbsent || rulesSeenAt != null) {
       map['rules_seen_at'] = Variable<DateTime>(rulesSeenAt);
+    }
+    if (!nullToAbsent || leftAt != null) {
+      map['left_at'] = Variable<DateTime>(leftAt);
+    }
+    if (!nullToAbsent || leftKeep != null) {
+      map['left_keep'] = Variable<String>(leftKeep);
     }
     return map;
   }
@@ -776,6 +811,11 @@ class Workspace extends DataClass implements Insertable<Workspace> {
       rulesSeenAt: rulesSeenAt == null && nullToAbsent
           ? const Value.absent()
           : Value(rulesSeenAt),
+      leftAt:
+          leftAt == null && nullToAbsent ? const Value.absent() : Value(leftAt),
+      leftKeep: leftKeep == null && nullToAbsent
+          ? const Value.absent()
+          : Value(leftKeep),
     );
   }
 
@@ -793,6 +833,8 @@ class Workspace extends DataClass implements Insertable<Workspace> {
       inviteDefault: serializer.fromJson<String?>(json['inviteDefault']),
       rulesChangedAt: serializer.fromJson<DateTime?>(json['rulesChangedAt']),
       rulesSeenAt: serializer.fromJson<DateTime?>(json['rulesSeenAt']),
+      leftAt: serializer.fromJson<DateTime?>(json['leftAt']),
+      leftKeep: serializer.fromJson<String?>(json['leftKeep']),
     );
   }
   @override
@@ -809,6 +851,8 @@ class Workspace extends DataClass implements Insertable<Workspace> {
       'inviteDefault': serializer.toJson<String?>(inviteDefault),
       'rulesChangedAt': serializer.toJson<DateTime?>(rulesChangedAt),
       'rulesSeenAt': serializer.toJson<DateTime?>(rulesSeenAt),
+      'leftAt': serializer.toJson<DateTime?>(leftAt),
+      'leftKeep': serializer.toJson<String?>(leftKeep),
     };
   }
 
@@ -822,7 +866,9 @@ class Workspace extends DataClass implements Insertable<Workspace> {
           Value<String?> exportRule = const Value.absent(),
           Value<String?> inviteDefault = const Value.absent(),
           Value<DateTime?> rulesChangedAt = const Value.absent(),
-          Value<DateTime?> rulesSeenAt = const Value.absent()}) =>
+          Value<DateTime?> rulesSeenAt = const Value.absent(),
+          Value<DateTime?> leftAt = const Value.absent(),
+          Value<String?> leftKeep = const Value.absent()}) =>
       Workspace(
         id: id ?? this.id,
         kind: kind ?? this.kind,
@@ -836,6 +882,8 @@ class Workspace extends DataClass implements Insertable<Workspace> {
         rulesChangedAt:
             rulesChangedAt.present ? rulesChangedAt.value : this.rulesChangedAt,
         rulesSeenAt: rulesSeenAt.present ? rulesSeenAt.value : this.rulesSeenAt,
+        leftAt: leftAt.present ? leftAt.value : this.leftAt,
+        leftKeep: leftKeep.present ? leftKeep.value : this.leftKeep,
       );
   Workspace copyWithCompanion(WorkspacesCompanion data) {
     return Workspace(
@@ -855,6 +903,8 @@ class Workspace extends DataClass implements Insertable<Workspace> {
           : this.rulesChangedAt,
       rulesSeenAt:
           data.rulesSeenAt.present ? data.rulesSeenAt.value : this.rulesSeenAt,
+      leftAt: data.leftAt.present ? data.leftAt.value : this.leftAt,
+      leftKeep: data.leftKeep.present ? data.leftKeep.value : this.leftKeep,
     );
   }
 
@@ -870,14 +920,16 @@ class Workspace extends DataClass implements Insertable<Workspace> {
           ..write('exportRule: $exportRule, ')
           ..write('inviteDefault: $inviteDefault, ')
           ..write('rulesChangedAt: $rulesChangedAt, ')
-          ..write('rulesSeenAt: $rulesSeenAt')
+          ..write('rulesSeenAt: $rulesSeenAt, ')
+          ..write('leftAt: $leftAt, ')
+          ..write('leftKeep: $leftKeep')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode => Object.hash(id, kind, ownerId, createdAt, name, leaveRule,
-      exportRule, inviteDefault, rulesChangedAt, rulesSeenAt);
+      exportRule, inviteDefault, rulesChangedAt, rulesSeenAt, leftAt, leftKeep);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -891,7 +943,9 @@ class Workspace extends DataClass implements Insertable<Workspace> {
           other.exportRule == this.exportRule &&
           other.inviteDefault == this.inviteDefault &&
           other.rulesChangedAt == this.rulesChangedAt &&
-          other.rulesSeenAt == this.rulesSeenAt);
+          other.rulesSeenAt == this.rulesSeenAt &&
+          other.leftAt == this.leftAt &&
+          other.leftKeep == this.leftKeep);
 }
 
 class WorkspacesCompanion extends UpdateCompanion<Workspace> {
@@ -905,6 +959,8 @@ class WorkspacesCompanion extends UpdateCompanion<Workspace> {
   final Value<String?> inviteDefault;
   final Value<DateTime?> rulesChangedAt;
   final Value<DateTime?> rulesSeenAt;
+  final Value<DateTime?> leftAt;
+  final Value<String?> leftKeep;
   final Value<int> rowid;
   const WorkspacesCompanion({
     this.id = const Value.absent(),
@@ -917,6 +973,8 @@ class WorkspacesCompanion extends UpdateCompanion<Workspace> {
     this.inviteDefault = const Value.absent(),
     this.rulesChangedAt = const Value.absent(),
     this.rulesSeenAt = const Value.absent(),
+    this.leftAt = const Value.absent(),
+    this.leftKeep = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   WorkspacesCompanion.insert({
@@ -930,6 +988,8 @@ class WorkspacesCompanion extends UpdateCompanion<Workspace> {
     this.inviteDefault = const Value.absent(),
     this.rulesChangedAt = const Value.absent(),
     this.rulesSeenAt = const Value.absent(),
+    this.leftAt = const Value.absent(),
+    this.leftKeep = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         ownerId = Value(ownerId),
@@ -945,6 +1005,8 @@ class WorkspacesCompanion extends UpdateCompanion<Workspace> {
     Expression<String>? inviteDefault,
     Expression<DateTime>? rulesChangedAt,
     Expression<DateTime>? rulesSeenAt,
+    Expression<DateTime>? leftAt,
+    Expression<String>? leftKeep,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -958,6 +1020,8 @@ class WorkspacesCompanion extends UpdateCompanion<Workspace> {
       if (inviteDefault != null) 'invite_default': inviteDefault,
       if (rulesChangedAt != null) 'rules_changed_at': rulesChangedAt,
       if (rulesSeenAt != null) 'rules_seen_at': rulesSeenAt,
+      if (leftAt != null) 'left_at': leftAt,
+      if (leftKeep != null) 'left_keep': leftKeep,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -973,6 +1037,8 @@ class WorkspacesCompanion extends UpdateCompanion<Workspace> {
       Value<String?>? inviteDefault,
       Value<DateTime?>? rulesChangedAt,
       Value<DateTime?>? rulesSeenAt,
+      Value<DateTime?>? leftAt,
+      Value<String?>? leftKeep,
       Value<int>? rowid}) {
     return WorkspacesCompanion(
       id: id ?? this.id,
@@ -985,6 +1051,8 @@ class WorkspacesCompanion extends UpdateCompanion<Workspace> {
       inviteDefault: inviteDefault ?? this.inviteDefault,
       rulesChangedAt: rulesChangedAt ?? this.rulesChangedAt,
       rulesSeenAt: rulesSeenAt ?? this.rulesSeenAt,
+      leftAt: leftAt ?? this.leftAt,
+      leftKeep: leftKeep ?? this.leftKeep,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1022,6 +1090,12 @@ class WorkspacesCompanion extends UpdateCompanion<Workspace> {
     if (rulesSeenAt.present) {
       map['rules_seen_at'] = Variable<DateTime>(rulesSeenAt.value);
     }
+    if (leftAt.present) {
+      map['left_at'] = Variable<DateTime>(leftAt.value);
+    }
+    if (leftKeep.present) {
+      map['left_keep'] = Variable<String>(leftKeep.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1041,6 +1115,8 @@ class WorkspacesCompanion extends UpdateCompanion<Workspace> {
           ..write('inviteDefault: $inviteDefault, ')
           ..write('rulesChangedAt: $rulesChangedAt, ')
           ..write('rulesSeenAt: $rulesSeenAt, ')
+          ..write('leftAt: $leftAt, ')
+          ..write('leftKeep: $leftKeep, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -14919,6 +14995,11 @@ class $WorkspaceSettingsTable extends WorkspaceSettings
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultValue: const Constant('target'));
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -14930,7 +15011,8 @@ class $WorkspaceSettingsTable extends WorkspaceSettings
         deletedAt,
         deletedBy,
         changedBy,
-        manualResults
+        manualResults,
+        name
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -14995,6 +15077,10 @@ class $WorkspaceSettingsTable extends WorkspaceSettings
           manualResults.isAcceptableOrUnknown(
               data['manual_results']!, _manualResultsMeta));
     }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    }
     return context;
   }
 
@@ -15024,6 +15110,8 @@ class $WorkspaceSettingsTable extends WorkspaceSettings
           .read(DriftSqlType.string, data['${effectivePrefix}changed_by']),
       manualResults: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}manual_results'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name']),
     );
   }
 
@@ -15045,6 +15133,7 @@ class WorkspaceSetting extends DataClass
   final String? deletedBy;
   final String? changedBy;
   final String manualResults;
+  final String? name;
   const WorkspaceSetting(
       {required this.id,
       required this.workspaceId,
@@ -15055,7 +15144,8 @@ class WorkspaceSetting extends DataClass
       this.deletedAt,
       this.deletedBy,
       this.changedBy,
-      required this.manualResults});
+      required this.manualResults,
+      this.name});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -15075,6 +15165,9 @@ class WorkspaceSetting extends DataClass
       map['changed_by'] = Variable<String>(changedBy);
     }
     map['manual_results'] = Variable<String>(manualResults);
+    if (!nullToAbsent || name != null) {
+      map['name'] = Variable<String>(name);
+    }
     return map;
   }
 
@@ -15096,6 +15189,7 @@ class WorkspaceSetting extends DataClass
           ? const Value.absent()
           : Value(changedBy),
       manualResults: Value(manualResults),
+      name: name == null && nullToAbsent ? const Value.absent() : Value(name),
     );
   }
 
@@ -15113,6 +15207,7 @@ class WorkspaceSetting extends DataClass
       deletedBy: serializer.fromJson<String?>(json['deletedBy']),
       changedBy: serializer.fromJson<String?>(json['changedBy']),
       manualResults: serializer.fromJson<String>(json['manualResults']),
+      name: serializer.fromJson<String?>(json['name']),
     );
   }
   @override
@@ -15129,6 +15224,7 @@ class WorkspaceSetting extends DataClass
       'deletedBy': serializer.toJson<String?>(deletedBy),
       'changedBy': serializer.toJson<String?>(changedBy),
       'manualResults': serializer.toJson<String>(manualResults),
+      'name': serializer.toJson<String?>(name),
     };
   }
 
@@ -15142,7 +15238,8 @@ class WorkspaceSetting extends DataClass
           Value<DateTime?> deletedAt = const Value.absent(),
           Value<String?> deletedBy = const Value.absent(),
           Value<String?> changedBy = const Value.absent(),
-          String? manualResults}) =>
+          String? manualResults,
+          Value<String?> name = const Value.absent()}) =>
       WorkspaceSetting(
         id: id ?? this.id,
         workspaceId: workspaceId ?? this.workspaceId,
@@ -15154,6 +15251,7 @@ class WorkspaceSetting extends DataClass
         deletedBy: deletedBy.present ? deletedBy.value : this.deletedBy,
         changedBy: changedBy.present ? changedBy.value : this.changedBy,
         manualResults: manualResults ?? this.manualResults,
+        name: name.present ? name.value : this.name,
       );
   WorkspaceSetting copyWithCompanion(WorkspaceSettingsCompanion data) {
     return WorkspaceSetting(
@@ -15170,6 +15268,7 @@ class WorkspaceSetting extends DataClass
       manualResults: data.manualResults.present
           ? data.manualResults.value
           : this.manualResults,
+      name: data.name.present ? data.name.value : this.name,
     );
   }
 
@@ -15185,14 +15284,15 @@ class WorkspaceSetting extends DataClass
           ..write('deletedAt: $deletedAt, ')
           ..write('deletedBy: $deletedBy, ')
           ..write('changedBy: $changedBy, ')
-          ..write('manualResults: $manualResults')
+          ..write('manualResults: $manualResults, ')
+          ..write('name: $name')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode => Object.hash(id, workspaceId, ownerId, version, createdAt,
-      updatedAt, deletedAt, deletedBy, changedBy, manualResults);
+      updatedAt, deletedAt, deletedBy, changedBy, manualResults, name);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -15206,7 +15306,8 @@ class WorkspaceSetting extends DataClass
           other.deletedAt == this.deletedAt &&
           other.deletedBy == this.deletedBy &&
           other.changedBy == this.changedBy &&
-          other.manualResults == this.manualResults);
+          other.manualResults == this.manualResults &&
+          other.name == this.name);
 }
 
 class WorkspaceSettingsCompanion extends UpdateCompanion<WorkspaceSetting> {
@@ -15220,6 +15321,7 @@ class WorkspaceSettingsCompanion extends UpdateCompanion<WorkspaceSetting> {
   final Value<String?> deletedBy;
   final Value<String?> changedBy;
   final Value<String> manualResults;
+  final Value<String?> name;
   final Value<int> rowid;
   const WorkspaceSettingsCompanion({
     this.id = const Value.absent(),
@@ -15232,6 +15334,7 @@ class WorkspaceSettingsCompanion extends UpdateCompanion<WorkspaceSetting> {
     this.deletedBy = const Value.absent(),
     this.changedBy = const Value.absent(),
     this.manualResults = const Value.absent(),
+    this.name = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   WorkspaceSettingsCompanion.insert({
@@ -15245,6 +15348,7 @@ class WorkspaceSettingsCompanion extends UpdateCompanion<WorkspaceSetting> {
     this.deletedBy = const Value.absent(),
     this.changedBy = const Value.absent(),
     this.manualResults = const Value.absent(),
+    this.name = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         workspaceId = Value(workspaceId),
@@ -15262,6 +15366,7 @@ class WorkspaceSettingsCompanion extends UpdateCompanion<WorkspaceSetting> {
     Expression<String>? deletedBy,
     Expression<String>? changedBy,
     Expression<String>? manualResults,
+    Expression<String>? name,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -15275,6 +15380,7 @@ class WorkspaceSettingsCompanion extends UpdateCompanion<WorkspaceSetting> {
       if (deletedBy != null) 'deleted_by': deletedBy,
       if (changedBy != null) 'changed_by': changedBy,
       if (manualResults != null) 'manual_results': manualResults,
+      if (name != null) 'name': name,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -15290,6 +15396,7 @@ class WorkspaceSettingsCompanion extends UpdateCompanion<WorkspaceSetting> {
       Value<String?>? deletedBy,
       Value<String?>? changedBy,
       Value<String>? manualResults,
+      Value<String?>? name,
       Value<int>? rowid}) {
     return WorkspaceSettingsCompanion(
       id: id ?? this.id,
@@ -15302,6 +15409,7 @@ class WorkspaceSettingsCompanion extends UpdateCompanion<WorkspaceSetting> {
       deletedBy: deletedBy ?? this.deletedBy,
       changedBy: changedBy ?? this.changedBy,
       manualResults: manualResults ?? this.manualResults,
+      name: name ?? this.name,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -15339,6 +15447,9 @@ class WorkspaceSettingsCompanion extends UpdateCompanion<WorkspaceSetting> {
     if (manualResults.present) {
       map['manual_results'] = Variable<String>(manualResults.value);
     }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -15358,6 +15469,7 @@ class WorkspaceSettingsCompanion extends UpdateCompanion<WorkspaceSetting> {
           ..write('deletedBy: $deletedBy, ')
           ..write('changedBy: $changedBy, ')
           ..write('manualResults: $manualResults, ')
+          ..write('name: $name, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -15457,7 +15569,7 @@ class $SyncBaseTable extends SyncBase
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {kind, recordId};
+  Set<GeneratedColumn> get $primaryKey => {workspaceId, kind, recordId};
   @override
   SyncBaseRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -16894,6 +17006,277 @@ class SpaceMembersCompanion extends UpdateCompanion<SpaceMemberRow> {
   }
 }
 
+class $SyncParkedTable extends SyncParked
+    with TableInfo<$SyncParkedTable, SyncParkedRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SyncParkedTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _workspaceIdMeta =
+      const VerificationMeta('workspaceId');
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+      'workspace_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+      'kind', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _recordIdMeta =
+      const VerificationMeta('recordId');
+  @override
+  late final GeneratedColumn<String> recordId = GeneratedColumn<String>(
+      'record_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _seqMeta = const VerificationMeta('seq');
+  @override
+  late final GeneratedColumn<int> seq = GeneratedColumn<int>(
+      'seq', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [workspaceId, kind, recordId, seq];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sync_parked';
+  @override
+  VerificationContext validateIntegrity(Insertable<SyncParkedRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+          _workspaceIdMeta,
+          workspaceId.isAcceptableOrUnknown(
+              data['workspace_id']!, _workspaceIdMeta));
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+          _kindMeta, kind.isAcceptableOrUnknown(data['kind']!, _kindMeta));
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('record_id')) {
+      context.handle(_recordIdMeta,
+          recordId.isAcceptableOrUnknown(data['record_id']!, _recordIdMeta));
+    } else if (isInserting) {
+      context.missing(_recordIdMeta);
+    }
+    if (data.containsKey('seq')) {
+      context.handle(
+          _seqMeta, seq.isAcceptableOrUnknown(data['seq']!, _seqMeta));
+    } else if (isInserting) {
+      context.missing(_seqMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {workspaceId, kind, recordId};
+  @override
+  SyncParkedRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SyncParkedRow(
+      workspaceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}workspace_id'])!,
+      kind: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}kind'])!,
+      recordId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}record_id'])!,
+      seq: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}seq'])!,
+    );
+  }
+
+  @override
+  $SyncParkedTable createAlias(String alias) {
+    return $SyncParkedTable(attachedDatabase, alias);
+  }
+}
+
+class SyncParkedRow extends DataClass implements Insertable<SyncParkedRow> {
+  final String workspaceId;
+  final String kind;
+  final String recordId;
+  final int seq;
+  const SyncParkedRow(
+      {required this.workspaceId,
+      required this.kind,
+      required this.recordId,
+      required this.seq});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['kind'] = Variable<String>(kind);
+    map['record_id'] = Variable<String>(recordId);
+    map['seq'] = Variable<int>(seq);
+    return map;
+  }
+
+  SyncParkedCompanion toCompanion(bool nullToAbsent) {
+    return SyncParkedCompanion(
+      workspaceId: Value(workspaceId),
+      kind: Value(kind),
+      recordId: Value(recordId),
+      seq: Value(seq),
+    );
+  }
+
+  factory SyncParkedRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SyncParkedRow(
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      kind: serializer.fromJson<String>(json['kind']),
+      recordId: serializer.fromJson<String>(json['recordId']),
+      seq: serializer.fromJson<int>(json['seq']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'kind': serializer.toJson<String>(kind),
+      'recordId': serializer.toJson<String>(recordId),
+      'seq': serializer.toJson<int>(seq),
+    };
+  }
+
+  SyncParkedRow copyWith(
+          {String? workspaceId, String? kind, String? recordId, int? seq}) =>
+      SyncParkedRow(
+        workspaceId: workspaceId ?? this.workspaceId,
+        kind: kind ?? this.kind,
+        recordId: recordId ?? this.recordId,
+        seq: seq ?? this.seq,
+      );
+  SyncParkedRow copyWithCompanion(SyncParkedCompanion data) {
+    return SyncParkedRow(
+      workspaceId:
+          data.workspaceId.present ? data.workspaceId.value : this.workspaceId,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      recordId: data.recordId.present ? data.recordId.value : this.recordId,
+      seq: data.seq.present ? data.seq.value : this.seq,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncParkedRow(')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('kind: $kind, ')
+          ..write('recordId: $recordId, ')
+          ..write('seq: $seq')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(workspaceId, kind, recordId, seq);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SyncParkedRow &&
+          other.workspaceId == this.workspaceId &&
+          other.kind == this.kind &&
+          other.recordId == this.recordId &&
+          other.seq == this.seq);
+}
+
+class SyncParkedCompanion extends UpdateCompanion<SyncParkedRow> {
+  final Value<String> workspaceId;
+  final Value<String> kind;
+  final Value<String> recordId;
+  final Value<int> seq;
+  final Value<int> rowid;
+  const SyncParkedCompanion({
+    this.workspaceId = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.recordId = const Value.absent(),
+    this.seq = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SyncParkedCompanion.insert({
+    required String workspaceId,
+    required String kind,
+    required String recordId,
+    required int seq,
+    this.rowid = const Value.absent(),
+  })  : workspaceId = Value(workspaceId),
+        kind = Value(kind),
+        recordId = Value(recordId),
+        seq = Value(seq);
+  static Insertable<SyncParkedRow> custom({
+    Expression<String>? workspaceId,
+    Expression<String>? kind,
+    Expression<String>? recordId,
+    Expression<int>? seq,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (kind != null) 'kind': kind,
+      if (recordId != null) 'record_id': recordId,
+      if (seq != null) 'seq': seq,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SyncParkedCompanion copyWith(
+      {Value<String>? workspaceId,
+      Value<String>? kind,
+      Value<String>? recordId,
+      Value<int>? seq,
+      Value<int>? rowid}) {
+    return SyncParkedCompanion(
+      workspaceId: workspaceId ?? this.workspaceId,
+      kind: kind ?? this.kind,
+      recordId: recordId ?? this.recordId,
+      seq: seq ?? this.seq,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (recordId.present) {
+      map['record_id'] = Variable<String>(recordId.value);
+    }
+    if (seq.present) {
+      map['seq'] = Variable<int>(seq.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncParkedCompanion(')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('kind: $kind, ')
+          ..write('recordId: $recordId, ')
+          ..write('seq: $seq, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -16929,6 +17312,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SyncStateTable syncState = $SyncStateTable(this);
   late final $SyncReviewsTable syncReviews = $SyncReviewsTable(this);
   late final $SpaceMembersTable spaceMembers = $SpaceMembersTable(this);
+  late final $SyncParkedTable syncParked = $SyncParkedTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -16960,7 +17344,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         syncBase,
         syncState,
         syncReviews,
-        spaceMembers
+        spaceMembers,
+        syncParked
       ];
 }
 
@@ -17224,6 +17609,8 @@ typedef $$WorkspacesTableCreateCompanionBuilder = WorkspacesCompanion Function({
   Value<String?> inviteDefault,
   Value<DateTime?> rulesChangedAt,
   Value<DateTime?> rulesSeenAt,
+  Value<DateTime?> leftAt,
+  Value<String?> leftKeep,
   Value<int> rowid,
 });
 typedef $$WorkspacesTableUpdateCompanionBuilder = WorkspacesCompanion Function({
@@ -17237,6 +17624,8 @@ typedef $$WorkspacesTableUpdateCompanionBuilder = WorkspacesCompanion Function({
   Value<String?> inviteDefault,
   Value<DateTime?> rulesChangedAt,
   Value<DateTime?> rulesSeenAt,
+  Value<DateTime?> leftAt,
+  Value<String?> leftKeep,
   Value<int> rowid,
 });
 
@@ -17279,6 +17668,12 @@ class $$WorkspacesTableFilterComposer
 
   ColumnFilters<DateTime> get rulesSeenAt => $composableBuilder(
       column: $table.rulesSeenAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get leftAt => $composableBuilder(
+      column: $table.leftAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get leftKeep => $composableBuilder(
+      column: $table.leftKeep, builder: (column) => ColumnFilters(column));
 }
 
 class $$WorkspacesTableOrderingComposer
@@ -17321,6 +17716,12 @@ class $$WorkspacesTableOrderingComposer
 
   ColumnOrderings<DateTime> get rulesSeenAt => $composableBuilder(
       column: $table.rulesSeenAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get leftAt => $composableBuilder(
+      column: $table.leftAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get leftKeep => $composableBuilder(
+      column: $table.leftKeep, builder: (column) => ColumnOrderings(column));
 }
 
 class $$WorkspacesTableAnnotationComposer
@@ -17361,6 +17762,12 @@ class $$WorkspacesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get rulesSeenAt => $composableBuilder(
       column: $table.rulesSeenAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get leftAt =>
+      $composableBuilder(column: $table.leftAt, builder: (column) => column);
+
+  GeneratedColumn<String> get leftKeep =>
+      $composableBuilder(column: $table.leftKeep, builder: (column) => column);
 }
 
 class $$WorkspacesTableTableManager extends RootTableManager<
@@ -17396,6 +17803,8 @@ class $$WorkspacesTableTableManager extends RootTableManager<
             Value<String?> inviteDefault = const Value.absent(),
             Value<DateTime?> rulesChangedAt = const Value.absent(),
             Value<DateTime?> rulesSeenAt = const Value.absent(),
+            Value<DateTime?> leftAt = const Value.absent(),
+            Value<String?> leftKeep = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               WorkspacesCompanion(
@@ -17409,6 +17818,8 @@ class $$WorkspacesTableTableManager extends RootTableManager<
             inviteDefault: inviteDefault,
             rulesChangedAt: rulesChangedAt,
             rulesSeenAt: rulesSeenAt,
+            leftAt: leftAt,
+            leftKeep: leftKeep,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -17422,6 +17833,8 @@ class $$WorkspacesTableTableManager extends RootTableManager<
             Value<String?> inviteDefault = const Value.absent(),
             Value<DateTime?> rulesChangedAt = const Value.absent(),
             Value<DateTime?> rulesSeenAt = const Value.absent(),
+            Value<DateTime?> leftAt = const Value.absent(),
+            Value<String?> leftKeep = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               WorkspacesCompanion.insert(
@@ -17435,6 +17848,8 @@ class $$WorkspacesTableTableManager extends RootTableManager<
             inviteDefault: inviteDefault,
             rulesChangedAt: rulesChangedAt,
             rulesSeenAt: rulesSeenAt,
+            leftAt: leftAt,
+            leftKeep: leftKeep,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
@@ -23728,6 +24143,7 @@ typedef $$WorkspaceSettingsTableCreateCompanionBuilder
   Value<String?> deletedBy,
   Value<String?> changedBy,
   Value<String> manualResults,
+  Value<String?> name,
   Value<int> rowid,
 });
 typedef $$WorkspaceSettingsTableUpdateCompanionBuilder
@@ -23742,6 +24158,7 @@ typedef $$WorkspaceSettingsTableUpdateCompanionBuilder
   Value<String?> deletedBy,
   Value<String?> changedBy,
   Value<String> manualResults,
+  Value<String?> name,
   Value<int> rowid,
 });
 
@@ -23783,6 +24200,9 @@ class $$WorkspaceSettingsTableFilterComposer
 
   ColumnFilters<String> get manualResults => $composableBuilder(
       column: $table.manualResults, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
 }
 
 class $$WorkspaceSettingsTableOrderingComposer
@@ -23824,6 +24244,9 @@ class $$WorkspaceSettingsTableOrderingComposer
   ColumnOrderings<String> get manualResults => $composableBuilder(
       column: $table.manualResults,
       builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
 }
 
 class $$WorkspaceSettingsTableAnnotationComposer
@@ -23864,6 +24287,9 @@ class $$WorkspaceSettingsTableAnnotationComposer
 
   GeneratedColumn<String> get manualResults => $composableBuilder(
       column: $table.manualResults, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
 }
 
 class $$WorkspaceSettingsTableTableManager extends RootTableManager<
@@ -23904,6 +24330,7 @@ class $$WorkspaceSettingsTableTableManager extends RootTableManager<
             Value<String?> deletedBy = const Value.absent(),
             Value<String?> changedBy = const Value.absent(),
             Value<String> manualResults = const Value.absent(),
+            Value<String?> name = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               WorkspaceSettingsCompanion(
@@ -23917,6 +24344,7 @@ class $$WorkspaceSettingsTableTableManager extends RootTableManager<
             deletedBy: deletedBy,
             changedBy: changedBy,
             manualResults: manualResults,
+            name: name,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -23930,6 +24358,7 @@ class $$WorkspaceSettingsTableTableManager extends RootTableManager<
             Value<String?> deletedBy = const Value.absent(),
             Value<String?> changedBy = const Value.absent(),
             Value<String> manualResults = const Value.absent(),
+            Value<String?> name = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               WorkspaceSettingsCompanion.insert(
@@ -23943,6 +24372,7 @@ class $$WorkspaceSettingsTableTableManager extends RootTableManager<
             deletedBy: deletedBy,
             changedBy: changedBy,
             manualResults: manualResults,
+            name: name,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
@@ -24775,6 +25205,166 @@ typedef $$SpaceMembersTableProcessedTableManager = ProcessedTableManager<
     ),
     SpaceMemberRow,
     PrefetchHooks Function()>;
+typedef $$SyncParkedTableCreateCompanionBuilder = SyncParkedCompanion Function({
+  required String workspaceId,
+  required String kind,
+  required String recordId,
+  required int seq,
+  Value<int> rowid,
+});
+typedef $$SyncParkedTableUpdateCompanionBuilder = SyncParkedCompanion Function({
+  Value<String> workspaceId,
+  Value<String> kind,
+  Value<String> recordId,
+  Value<int> seq,
+  Value<int> rowid,
+});
+
+class $$SyncParkedTableFilterComposer
+    extends Composer<_$AppDatabase, $SyncParkedTable> {
+  $$SyncParkedTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get kind => $composableBuilder(
+      column: $table.kind, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get recordId => $composableBuilder(
+      column: $table.recordId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get seq => $composableBuilder(
+      column: $table.seq, builder: (column) => ColumnFilters(column));
+}
+
+class $$SyncParkedTableOrderingComposer
+    extends Composer<_$AppDatabase, $SyncParkedTable> {
+  $$SyncParkedTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+      column: $table.kind, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get recordId => $composableBuilder(
+      column: $table.recordId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get seq => $composableBuilder(
+      column: $table.seq, builder: (column) => ColumnOrderings(column));
+}
+
+class $$SyncParkedTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SyncParkedTable> {
+  $$SyncParkedTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get recordId =>
+      $composableBuilder(column: $table.recordId, builder: (column) => column);
+
+  GeneratedColumn<int> get seq =>
+      $composableBuilder(column: $table.seq, builder: (column) => column);
+}
+
+class $$SyncParkedTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $SyncParkedTable,
+    SyncParkedRow,
+    $$SyncParkedTableFilterComposer,
+    $$SyncParkedTableOrderingComposer,
+    $$SyncParkedTableAnnotationComposer,
+    $$SyncParkedTableCreateCompanionBuilder,
+    $$SyncParkedTableUpdateCompanionBuilder,
+    (
+      SyncParkedRow,
+      BaseReferences<_$AppDatabase, $SyncParkedTable, SyncParkedRow>
+    ),
+    SyncParkedRow,
+    PrefetchHooks Function()> {
+  $$SyncParkedTableTableManager(_$AppDatabase db, $SyncParkedTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SyncParkedTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SyncParkedTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SyncParkedTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> workspaceId = const Value.absent(),
+            Value<String> kind = const Value.absent(),
+            Value<String> recordId = const Value.absent(),
+            Value<int> seq = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SyncParkedCompanion(
+            workspaceId: workspaceId,
+            kind: kind,
+            recordId: recordId,
+            seq: seq,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String workspaceId,
+            required String kind,
+            required String recordId,
+            required int seq,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SyncParkedCompanion.insert(
+            workspaceId: workspaceId,
+            kind: kind,
+            recordId: recordId,
+            seq: seq,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable<$SyncParkedTable, SyncParkedRow>(table),
+                    BaseReferences<_$AppDatabase, $SyncParkedTable,
+                        SyncParkedRow>(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$SyncParkedTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $SyncParkedTable,
+    SyncParkedRow,
+    $$SyncParkedTableFilterComposer,
+    $$SyncParkedTableOrderingComposer,
+    $$SyncParkedTableAnnotationComposer,
+    $$SyncParkedTableCreateCompanionBuilder,
+    $$SyncParkedTableUpdateCompanionBuilder,
+    (
+      SyncParkedRow,
+      BaseReferences<_$AppDatabase, $SyncParkedTable, SyncParkedRow>
+    ),
+    SyncParkedRow,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -24833,4 +25423,6 @@ class $AppDatabaseManager {
       $$SyncReviewsTableTableManager(_db, _db.syncReviews);
   $$SpaceMembersTableTableManager get spaceMembers =>
       $$SpaceMembersTableTableManager(_db, _db.spaceMembers);
+  $$SyncParkedTableTableManager get syncParked =>
+      $$SyncParkedTableTableManager(_db, _db.syncParked);
 }

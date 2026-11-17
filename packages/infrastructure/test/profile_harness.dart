@@ -97,6 +97,24 @@ class Services {
 /// Turns a current profile store back into what a build with schema [version]
 /// wrote (for migration tests). Data in the tables that remain is kept.
 Future<void> rewindProfileStore(AppDatabase db, int version) async {
+  if (version < 14) {
+    // P04b T12 (ADR-0064): no space names, last synced copies keyed by
+    // record only, nothing kept aside, nothing left of a left space.
+    await db.customStatement('DROP TABLE sync_parked');
+    for (final c in ['left_at', 'left_keep']) {
+      await db.customStatement('ALTER TABLE workspaces DROP COLUMN $c');
+    }
+    await db.customStatement('ALTER TABLE workspace_settings DROP COLUMN name');
+    final ddl = (await db.customSelect("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'sync_base'").getSingle())
+        .read<String>('sql');
+    final old = ddl.replaceFirst(
+        RegExp(r'PRIMARY KEY\s*\(\s*"?workspace_id"?\s*,\s*"?kind"?\s*,\s*"?record_id"?\s*\)'), 'PRIMARY KEY (kind, record_id)');
+    if (old == ddl) throw StateError('the v14 sync_base key was not found: $ddl');
+    await db.customStatement('ALTER TABLE sync_base RENAME TO sync_base_v14');
+    await db.customStatement(old);
+    await db.customStatement('INSERT OR IGNORE INTO sync_base SELECT * FROM sync_base_v14');
+    await db.customStatement('DROP TABLE sync_base_v14');
+  }
   if (version < 13) {
     // P04b T8 (ADR-0060): no shared spaces, no changed_by, no assignee.
     await db.customStatement('DROP TABLE space_members');

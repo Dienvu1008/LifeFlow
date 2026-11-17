@@ -28,6 +28,8 @@ part 'app_database.g.dart';
 ///   v13 (P04b T8) shared spaces: workspaces name and rules, space_members,
 ///                tasks.assignee_id, changed_by on every record,
 ///                sync_base.workspace_id (ADR-0060)
+///   v14 (P04b T12) workspace_settings.name, sync_base keyed by workspace,
+///                sync_parked, workspaces.left_at/left_keep (ADR-0064)
 @DriftDatabase(
   tables: [
     Profiles, Workspaces, TaskLists, Tasks, AuditLog, Outbox, EventLog,
@@ -37,20 +39,21 @@ part 'app_database.g.dart';
     FocusSessions, ExecutionRecords, Measurements, PeriodResults, Goals,
     Milestones, GoalLinks,
     WorkspaceSettings, SyncBase, SyncState, SyncReviews,
-    SpaceMembers,
+    SpaceMembers, SyncParked,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   /// The schema this build writes (and the newest export it accepts).
-  static const currentSchemaVersion = 13;
+  static const currentSchemaVersion = 14;
 
   /// The last schema that changed a synced record's shape: what a sealed
   /// record says it is (ADR-0056). v12 changed only the local outbox. v13
   /// (ADR-0060) adds `changedBy` to every record and `assigneeId` to tasks;
-  /// a pulled record of v11 or v12 is read with both null.
-  static const recordSchemaVersion = 13;
+  /// a pulled record of v11 or v12 is read with both null. v14 (ADR-0064)
+  /// adds a space's `name` to its settings and "moved away" changes.
+  static const recordSchemaVersion = 14;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -147,6 +150,17 @@ class AppDatabase extends _$AppDatabase {
                   'UPDATE sync_base SET workspace_id = COALESCE((SELECT workspace_id FROM sync_state LIMIT 1), '
                   '(SELECT active_workspace_id FROM profiles LIMIT 1), \'\')');
             }
+          }
+          if (from < 14) {
+            // P04b T12 (ADR-0064): sharing commands.
+            if (from >= 10) {
+              await m.addColumn(workspaceSettings, workspaceSettings.name);
+              // The last synced copies are kept per workspace (a new key).
+              await m.alterTable(TableMigration(syncBase));
+            }
+            await m.addColumn(workspaces, workspaces.leftAt);
+            await m.addColumn(workspaces, workspaces.leftKeep);
+            await m.createTable(syncParked);
           }
         },
         beforeOpen: (details) async {

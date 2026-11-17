@@ -45,7 +45,7 @@ class SyncApplyHandler implements CommandHandler {
     final order = {for (final (i, k) in recordKinds.indexed) k.name: i};
     changes.sort((a, b) => (order[a['kind']] ?? 99).compareTo(order[b['kind']] ?? 99));
     final now = DateTime.now().toUtc();
-    var written = 0, purged = 0;
+    var written = 0, purged = 0, moved = 0;
 
     for (final c in changes) {
       final kind = recordKindByName[c['kind']];
@@ -55,8 +55,39 @@ class SyncApplyHandler implements CommandHandler {
       if (mode == 'purge') {
         final id = c['id'] as String;
         await db.customStatement('DELETE FROM ${kind.tableName} WHERE id = ? AND workspace_id = ?', [id, cmd.workspaceId]);
-        await (db.delete(db.syncBase)..where((b) => b.kind.equals(kind.name) & b.recordId.equals(id))).go();
+        await (db.delete(db.syncBase)
+              ..where((b) => b.workspaceId.equals(cmd.workspaceId) & b.kind.equals(kind.name) & b.recordId.equals(id)))
+            .go();
         purged++;
+        continue;
+      }
+      if (mode == 'movedAway') {
+        // P04b T12 (ADR-0064): moved into a shared space on another device
+        // of the account. It leaves this workspace here; the space's copy
+        // comes by the space's sync (taken now, or pulled again from where
+        // it was kept aside).
+        final id = c['id'] as String;
+        final to = c['to'] as String;
+        final marker = (c['row'] as Map).cast<String, dynamic>();
+        await db.customStatement('DELETE FROM ${kind.tableName} WHERE id = ? AND workspace_id = ?', [id, cmd.workspaceId]);
+        await db.into(db.syncBase).insertOnConflictUpdate(SyncBaseCompanion.insert(
+              kind: kind.name,
+              recordId: id,
+              version: marker['version'] as int,
+              data: jsonEncode(marker),
+              serverId: Value(serverId),
+              workspaceId: Value(cmd.workspaceId),
+            ));
+        final parked = await (db.select(db.syncParked)
+              ..where((x) => x.workspaceId.equals(to) & x.kind.equals(kind.name) & x.recordId.equals(id)))
+            .getSingleOrNull();
+        if (parked != null) {
+          await db.customStatement('UPDATE sync_state SET cursor = MIN(cursor, ?) WHERE workspace_id = ?', [parked.seq - 1, to]);
+          await (db.delete(db.syncParked)
+                ..where((x) => x.workspaceId.equals(to) & x.kind.equals(kind.name) & x.recordId.equals(id)))
+              .go();
+        }
+        moved++;
         continue;
       }
       if (mode != 'remote' && mode != 'merged') throw DomainRejection('unknown change mode');
@@ -119,7 +150,7 @@ class SyncApplyHandler implements CommandHandler {
       // and an outbox row under this operation.
       entityId: 'sync:${cmd.workspaceId}',
       operationType: 'update',
-      changeSet: {'cursor': cursor, 'written': written, 'purged': purged, 'reviews': reviews},
+      changeSet: {'cursor': cursor, 'written': written, 'purged': purged, 'moved': moved, 'reviews': reviews},
       events: [
         DomainEvent('SyncApplied', {'workspaceId': cmd.workspaceId, 'written': written, 'purged': purged, 'reviews': reviews})
       ],

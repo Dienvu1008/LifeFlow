@@ -153,7 +153,9 @@ class ProfileCommandHandler implements CommandHandler {
           ? null
           : await (db.select(db.spaceMembers)..where((x) => x.workspaceId.equals(to) & x.accountId.equals(account)))
               .getSingleOrNull();
-      if (m == null || m.status != 'active') throw DomainRejection('not a member of this space');
+      // P04b T12 (B8 (c)): a read-only copy left after leaving is shown too.
+      final copy = ws.leftAt != null && ws.leftKeep == 'readOnly';
+      if (!copy && (m == null || m.status != 'active')) throw DomainRejection('not a member of this space');
       if (row.signedOut) throw DomainRejection('this profile is signed out');
     } else if (ws.ownerId != row.id) {
       throw DomainRejection('not this profile\'s workspace');

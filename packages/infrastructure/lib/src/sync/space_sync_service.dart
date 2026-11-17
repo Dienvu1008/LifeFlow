@@ -26,6 +26,7 @@ import '../profile_store.dart';
 import '../record_kinds.dart';
 import 'sealing.dart';
 import 'space_key_service.dart';
+import 'space_leaving.dart';
 import 'sync_engine.dart';
 import 'sync_setup_handler.dart' show newSyncDeviceId;
 import 'workspace_keyring.dart';
@@ -102,6 +103,7 @@ class DriftSpaceSyncService implements SyncRunner {
       final members = s.status == MemberStatus.active ? await spaces.members(s.workspaceId) : const <RemoteMember>[];
       final owner = members.where((m) => m.role == SpaceRole.owner).firstOrNull?.accountId ?? '';
       final rules = s.rules;
+      final before = here.where((w) => w.id == s.workspaceId).firstOrNull;
       await _store.cacheSpace(SpaceSnapshot(
         workspaceId: s.workspaceId,
         ownerAccountId: owner,
@@ -115,6 +117,13 @@ class DriftSpaceSyncService implements SyncRunner {
         inviteDefault: (rules ?? const SpaceRules()).inviteDefault.name,
         rulesChangedAt: s.rulesChangedAt,
       ));
+      // P04b T12: the rules first become known when the owner approves; the
+      // person saw them before asking to join (SHARE-005), so that is no
+      // notice. A change after that is.
+      if (before != null && before.rulesChangedAt == null && before.rulesSeenAt != null && s.rulesChangedAt != null) {
+        await (db.update(db.workspaces)..where((w) => w.id.equals(s.workspaceId)))
+            .write(WorkspacesCompanion(rulesSeenAt: Value(s.rulesChangedAt)));
+      }
       if (s.status != MemberStatus.active) continue;
       try {
         await keys.openSpaceKey(account, s);
@@ -131,14 +140,13 @@ class DriftSpaceSyncService implements SyncRunner {
             cursor: Value((await _stateOf(s.workspaceId))?.cursor ?? 0),
           ));
     }
-    // No longer in it (removed, left, or deleted): it stops syncing here and
-    // nobody acts in it as a member; its data stays until the leaving rule
-    // is applied (T12).
+    // No longer in it (removed, left, or deleted): it stops syncing here,
+    // nobody acts in it as a member, and what stays is its leaving rule's
+    // (B8, ADR-0064).
     final still = {for (final s in mine) s.workspaceId};
     for (final w in here) {
       if (still.contains(w.id)) continue;
-      await (db.delete(db.syncState)..where((s) => s.workspaceId.equals(w.id))).go();
-      await (db.delete(db.spaceMembers)..where((m) => m.workspaceId.equals(w.id))).go();
+      await leaveSpaceHere(db, gateway, keyring, w.id);
     }
     _changed.add(null);
     return null;

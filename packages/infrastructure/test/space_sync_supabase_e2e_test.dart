@@ -135,6 +135,33 @@ void main() {
     expect((await lan.personalSync.syncNow()).outcome, SyncOutcome.upToDate);
   });
 
+  test('T12: a named space; a personal task moved in after confirming; the member sees both', () async {
+    final lan = await person('lan');
+    final minh = await person('minh');
+    final lanShare = DriftSharingService(
+        db: lan.db, gateway: lan.gw, server: lan.remote, keys: lan.keys, keyring: lan.keyring, sync: lan.spaceSync);
+    final minhShare = DriftSharingService(
+        db: minh.db, gateway: minh.gw, server: minh.remote, keys: minh.keys, keyring: minh.keyring, sync: minh.spaceSync);
+    final made = await lanShare.createSpace('Family');
+    expect(made.problem, isNull, reason: made.detail);
+    final ws = made.spaceId!;
+    final inv = await lanShare.invite(ws, SpaceRole.editor, InviteKind.joinAtOnce);
+    expect((await minhShare.join(inv.invitation!.link)).problem, isNull);
+    ok(await minh.spaces.show(ws));
+
+    ok(await lan.spaces.show((await ProfileStore(lan.db).personalWorkspaceId())!));
+    final t = ok(await lan.tasks.create('Dinner on Saturday'));
+    final preview = await lanShare.previewMove('task', t, ws);
+    expect(preview.titles, ['Dinner on Saturday']);
+    expect((await lanShare.move(preview)).problem, isNull);
+    expect((await lan.personalSync.syncNow()).outcome, SyncOutcome.upToDate);
+    ok(await lan.spaces.show(ws));
+    await lan.now();
+    await minh.now();
+    expect((await minh.task(t))!['title'], 'Dinner on Saturday');
+    expect((await minh.spaces.spaces()).singleWhere((s) => s.shared).name, 'Family');
+  });
+
   test('rotate: a member removed; the owner seals everything again; the others catch up; the removed one stops', () async {
     final lan = await person('lan');
     final minh = await person('minh');

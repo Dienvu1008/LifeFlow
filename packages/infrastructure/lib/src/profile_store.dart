@@ -161,7 +161,8 @@ class ProfileStore {
     final rows = [
       for (final r in await db.select(db.workspaces).get())
         WorkspaceInfo(id: r.id, shared: r.kind == 'shared', name: r.name, ownerId: r.ownerId,
-            leaveRule: r.leaveRule, exportRule: r.exportRule, rulesChangedAt: r.rulesChangedAt, rulesSeenAt: r.rulesSeenAt)
+            leaveRule: r.leaveRule, exportRule: r.exportRule, rulesChangedAt: r.rulesChangedAt, rulesSeenAt: r.rulesSeenAt,
+            leftAt: r.leftAt, leftKeep: r.leftKeep)
     ];
     rows.sort((a, b) {
       if (a.shared != b.shared) return a.shared ? 1 : -1;
@@ -201,6 +202,9 @@ class ProfileStore {
             exportRule: Value(s.exportRule),
             inviteDefault: Value(s.inviteDefault),
             rulesChangedAt: Value(s.rulesChangedAt),
+            // P04b T12: a member again (joined again after leaving).
+            leftAt: const Value(null),
+            leftKeep: const Value(null),
           ));
       await (db.delete(db.spaceMembers)..where((m) => m.workspaceId.equals(s.workspaceId))).go();
       for (final m in s.members) {
@@ -250,6 +254,8 @@ class WorkspaceInfo {
     this.exportRule,
     this.rulesChangedAt,
     this.rulesSeenAt,
+    this.leftAt,
+    this.leftKeep,
   });
   final String id;
   final bool shared;
@@ -259,6 +265,10 @@ class WorkspaceInfo {
   final String? exportRule;
   final DateTime? rulesChangedAt;
   final DateTime? rulesSeenAt;
+
+  /// P04b T12: when the account left it, and what was kept (B8).
+  final DateTime? leftAt;
+  final String? leftKeep;
 }
 
 /// A shared space as the server describes it (cached, LF-INV-SHARE-003).

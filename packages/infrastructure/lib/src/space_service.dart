@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 import 'app_database.dart' hide Workspace;
 import 'profile_command_handler.dart';
 import 'profile_store.dart';
+import 'workspace_settings_handler.dart' show spaceNameOf;
 
 class DriftSpaceService implements SpaceService {
   DriftSpaceService(this.db, this.gateway) : _store = ProfileStore(db);
@@ -27,6 +28,21 @@ class DriftSpaceService implements SpaceService {
         out.add(SpaceView(id: w.id, shared: false, isShown: w.id == p.activeWorkspaceId.value));
         continue;
       }
+      // P04b T12: the name the owner gave it (synced, sealed), else the cache.
+      final name = await spaceNameOf(db, w.id) ?? w.name;
+      final changed = w.rulesChangedAt != null && (w.rulesSeenAt == null || w.rulesSeenAt!.isBefore(w.rulesChangedAt!));
+      if (w.leftAt != null) {
+        // What its leaving rule left here (B8).
+        out.add(SpaceView(
+          id: w.id,
+          shared: true,
+          isShown: w.id == p.activeWorkspaceId.value,
+          name: name,
+          role: SpaceRole.viewer,
+          left: w.leftKeep == 'readOnly' ? SpaceLeft.readOnly : SpaceLeft.exportFirst,
+        ));
+        continue;
+      }
       final members = await _store.members(w.id);
       final me = members.where((m) => m.accountId == account && m.status == 'active').firstOrNull;
       if (me == null) continue; // waiting for approval, or no longer a member
@@ -34,9 +50,10 @@ class DriftSpaceService implements SpaceService {
         id: w.id,
         shared: true,
         isShown: w.id == p.activeWorkspaceId.value,
-        name: w.name,
+        name: name,
         role: SpaceRole.values.where((r) => r.name == me.role).firstOrNull,
         members: members.where((m) => m.status == 'active').length,
+        rulesChanged: changed,
       ));
     }
     return out;
