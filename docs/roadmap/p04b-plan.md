@@ -1,9 +1,9 @@
 # P04b plan: Sharing with other people
 
-- Status: **Proposal, waiting for the owner's decisions B1–B14** (2026-11-16)
+- Status: **Decisions taken by the owner 2026-11-16**: B1–B6 and B9–B13 as proposed; **B7, B8 and B14 decided by the owner** (below). Waiting for the owner to approve this text.
 - Date: 2026-11-16
 - Inputs: [p04-plan.md](p04-plan.md) (D1, D12, D14; the P04b line of the exit gate), [p04a-exit-gate.md](../testing/p04a-exit-gate.md), [authorization-model.md](../governance/authorization-model.md) (§3, §5, OQ-AUTHZ-1), [workspace-and-access.md](../domains/workspace-and-access.md) (Membership, WA-001), [data-classification.md](../data/data-classification.md) (the "shared" row of the egress matrix), [sync-protocol.md](../data/sync-protocol.md) §9, ADR-0052, ADR-0054, ADR-0057, ADR-0059; requirements FR-TASK-10, FR-CAL-05, FR-GOAL-06; persona PER-2; use cases UC-13, UC-19; invariants PRIV-002/003, ID-001/002, GOV-001/002, WA-001, GOAL-003; open questions OQ-AUTHZ-1, OQ-V5
-- Estimate: about 21–29 person-days (p04-plan.md guessed 15–25 before the design; the end-to-end keys and the multi-space store add to it), plus a 30 % risk buffer.
+- Estimate: about 23–31 person-days (with the owner's B7/B8/B14: two kinds of invitation and the space's rules) (p04-plan.md guessed 15–25 before the design; the end-to-end keys and the multi-space store add to it), plus a 30 % risk buffer.
 
 ## 1. Goal and exit gate
 A few people (PER-2: family, a small team) share a space of lists, tasks, events and goals, each with a role. Personal data stays private unless the user moves an item into a shared space. P04a's properties hold for shared spaces too: local-first, end-to-end encrypted, and nothing lost in a conflict.
@@ -40,14 +40,16 @@ Out of scope (proposed, B11): comments and an activity feed; email invitations; 
 | B4 | Roles and what each may do (OQ-AUTHZ-1) | **Owner**: everything, plus members, roles, invitations, the space's name, and deleting the space. **Editor**: create, edit, complete, move in and out, delete to the trash, assign. **Viewer**: read only. The server refuses any write from a viewer. One owner per space; the owner can hand the role to another member. The full matrix is in §4. |
 | B5 | Who can be invited | **Only people with a LifeFlow account** (signed in). To create a space or join one, your profile must have **sync turned on**, because your personal key carries the keys of your spaces to your other devices. Guests cannot join. |
 | B6 | How an invitation is sent | **An invitation code** (also shown as a QR code and as a `lifeflow://join/…` link), which the owner sends by any messenger. It is for one person and one role, and it expires after 7 days. *Not proposed now: by email.* Supabase's built-in email only reaches the project's own team, so email needs an outside email service set up first (an account and DNS records; free plans exist). That can come later. |
-| B7 | How the new member gets the space's key (end-to-end) | **The owner approves each new member**: the person enters the code, the owner's device shows "Lan (lan@…) wants to join as Editor", and the owner taps Approve. The owner's device then gives the space key to that person only (wrapped with their public key). Joining therefore finishes the next time the owner's app syncs. *Alternative: the code itself carries the key*, so joining is immediate, but anyone who gets the code before it is used can join. |
-| B8 | Removing a member, or leaving | The person loses access on the server at once. **The owner's device then makes a new space key and seals the space again**, so a removed member cannot read anything new even with their old key. On the removed or leaving person's devices **the space disappears**, and they are offered an export first. *Alternative: they keep a read-only copy of what they had.* |
+| B7 | How the new member gets the space's key (end-to-end) | **Owner: both ways; the owner chooses per invitation.** **"I approve who joins"** (the default): the person enters the code; the owner's device shows "Lan (lan@…) wants to join as Editor"; on Approve it gives the space key to that person only (wrapped with their public key), so joining finishes at the owner's next sync. **"Join at once"**: the code itself carries what opens the space key, so the person is in as soon as they enter it; anyone who gets the code before it is used can join, which the invitation screen says. Both kinds are single-use and expire after 7 days; the owner sees every member and can remove anyone. |
+| B8 | Removing a member, or leaving | **Owner: a rule of the space, set by its owner and known to every member.** On the server the person loses access at once, and the owner's device makes a new space key and seals the space again, so a removed member cannot read anything new (in every case). What stays on that person's devices is the space's **leaving rule**, chosen by the owner: **(a) the space disappears** (the default); **(b) it disappears, and they may export it first**; **(c) they keep a read-only copy** of what they had, with no new changes. The rule is shown on the invitation before anyone joins and in the space's details; when the owner changes it, every member sees a notice at their next sync. |
 | B9 | Assignment (FR-TASK-10, part) | A task in a shared space can be **assigned to one member** (an editor or the owner). The task shows who it is assigned to, and the space has an "Assigned to me" filter. Anyone with the editor role can complete it. **No push notification**: the assignee sees it at their next sync (LifeFlow does not run in the background, D8). |
 | B10 | Who did what | Each item in a shared space shows **"changed by Lan, 10:42"** (the last change) and who created it. *Comments and an activity feed: not in P04b (B11).* |
 | B11 | Left out of P04b | Comments, activity feed, email invitations, instant updates (Supabase Realtime), event attendees and replies, mixed personal + shared views (B1), public links. Each can be its own later task. |
 | B12 | How soon others see a change | As in P04a (D8): your change is sent about 5 seconds after you make it; the others get it when they return to the app, tap Sync now, or **within 1 minute while a shared space is open** (5 minutes for personal data). *Alternative: instant updates with Supabase Realtime* (free plan: 200 connections) as a "something changed" signal. Proposed only if 1 minute proves too slow in T14. |
 | B13 | Limits | **Up to 10 members per space and 10 shared spaces per account**, which is enough for a family or a small team on the free plan (500 MB, D2). Checked on the server. |
-| B14 | Export | **"Export" saves your personal data, as today.** A shared space can be exported by any member as a copy of what they can read; the file says it holds other people's data. *Alternative: only the owner can export a shared space.* |
+| B14 | Export | **Owner: a rule of the space, set by its owner and known to every member.** "Export" saves your personal data, as today. Whether members may export a shared space is the space's **export rule**: **only the owner** (the default) or **every member**. Shown on the invitation and in the space's details; a change shows a notice to every member. |
+
+**What the app can and cannot enforce (B8, B14).** The rules are kept by LifeFlow on every member's device, and the server checks the roles. A member can still read everything while they are a member, and nothing stops them from taking screenshots or copying text by hand. The rules decide what LifeFlow offers ("export", "keep a copy"), not what a person can see. The invitation screen says this in plain words.
 
 ## 4. Permission matrix (B4)
 Rows are actions in a shared space; "server" means the server enforces it as well as the app.
@@ -60,6 +62,8 @@ Rows are actions in a shared space; "server" means the server enforces it as wel
 | Assign a task | yes | yes | no (server) |
 | Invite, approve, remove members, change roles | yes (server) | no | no |
 | Rename the space; delete the space for everyone | yes (server) | no | no |
+| Set the space's rules: leaving (B8), export (B14), the default kind of invitation (B7) | yes (server) | no | no |
+| Export the shared space | yes | if the export rule allows | if the export rule allows |
 | Leave the space | after handing over the owner role | yes | yes |
 
 With end-to-end encryption the server cannot see what a write changes. It can only check that the writer is an owner or editor of the space. Finer rules (for example "only the assignee may complete") would be app rules only, so none are proposed.
@@ -87,6 +91,7 @@ With end-to-end encryption the server cannot see what a write changes. It can on
   - The `sync` actor may apply pulled changes in any space the device syncs, from any member. The server already checked that the writer is an owner or editor.
   - FF-ARCH-09: authorize before domain, for every new command.
 - **Share egress.** "Move to space" asks ADR-0059's classification: Personal and Confidential (notes) move after the explicit confirmation; Restricted never moves (PRIV-002). It is one command (FF-ARCH-06), audited.
+- **Space rules (B7, B8, B14).** The rules (leaving, export, invitation kind) are plain fields of the space on the server: they hold no content, and an invitee must see them before having the key. Only the owner changes them, through an owner-checked function; devices cache them, and a change is shown as a notice. A "join at once" invitation stores the space key wrapped with a key derived from a secret in the code; the server keeps only a hash of the code and accepts it once.
 - **Conflicts.** Two people are two devices: P04a's per-type merges apply unchanged. A membership change is never merged; the server decides.
 
 ## 6. Tasks (P04b)
@@ -97,10 +102,10 @@ One branch per task, as in P04a; merge after the headless tests, and after your 
 | **S-16** Spike: members on the server | Membership RLS, role checks in the functions, invitations, per-member key wrapping with X25519, on local Supabase | pgTAP allow/deny per role (owner, editor, viewer, removed, stranger), also with crafted requests; OQ-V5 answered | no | 2–3 |
 | **T8** Spaces in one store | Schema v13, personal + shared workspaces, the active space and switching, WA-001 refined, member identity, export rules (B14) | upgrade test v2…v12 → v13; every view follows a space switch; GS-11 still holds | no | 3–4 |
 | **T9** Server schema | Migrations for spaces, members, invitations, account keys; RLS and functions; contract test memory ↔ Supabase | contract and pgTAP suites green; limits (B13) | no | 3–4 |
-| **T10** Keys for spaces | Account key pair, space keys wrapped per member, approval (B7), rotation on removal (B8) | only a member opens the space; a removed member cannot open anything sealed after the removal | no | 2–3 |
+| **T10** Keys for spaces | Account key pair, space keys wrapped per member, both kinds of invitation (B7: approval, join at once), rotation on removal (B8) | only a member opens the space; a removed member cannot open anything sealed after the removal | no | 2–3 |
 | **T11** Sync and roles | The engine per space, the role policy, the sync actor in a space, viewers read only, the 1-minute interval (B12) | two people editing one space: GS-14, GS-17, SYNC-003 hold; a viewer's write is refused on the device and on the server | no | 2–3 |
-| **T12** Sharing commands | Create a space, move in and out (B3, with the classification check), invite, accept, approve, remove, leave, change role, hand over ownership, assign (B9) | FF-ARCH-06/09 steps; PRIV-002 (nothing moves without confirmation; Restricted never) | no | 3–4 |
-| **T13** UI | Spaces in the drawer, the space's members and roles, invite (code, QR, link), join with a code, approve, "Move to space…" with its confirmation, assignee and "Assigned to me", "changed by", read-only views for viewers | widget tests; app integration test with two accounts on the in-memory server | **yes** | 4–5 |
+| **T12** Sharing commands | Create a space, move in and out (B3, with the classification check), invite, accept, approve, remove, leave (applying the leaving rule, B8), change role, hand over ownership, assign (B9), set the space's rules (B7, B8, B14) | FF-ARCH-06/09 steps; PRIV-002 (nothing moves without confirmation; Restricted never) | no | 3–4 |
+| **T13** UI | Spaces in the drawer, the space's members and roles, its rules and the notice when they change, invite (code, QR, link; the kind of invitation), join with a code (the rules shown first), approve, "Move to space…" with its confirmation, assignee and "Assigned to me", "changed by", read-only views for viewers | widget tests; app integration test with two accounts on the in-memory server | **yes** | 4–5 |
 | **T14** Two people | Your project, two accounts (yours and a second person's or a second account), Windows + Android: invite, join, edit, conflict, assign, remove; measure how soon changes appear (B12) | your check | **yes** | 1–2 |
 | **T15** P04b exit gate | p04b-exit-gate.md, ADRs, invariants, risks; your review | all suites, CI | yes | 1 |
 
@@ -111,6 +116,7 @@ Order: S-16 → T8 → T9 → T10 → T11 → T12 → T13 → T14 → T15.
 - LF-INV-SHARE-002: a write to a shared space is accepted only from its owner or an editor. Enforced on the device and on the server.
 - LF-INV-SHARE-003: membership, roles and invitations change only on the server, through owner-checked functions. Devices only cache them.
 - LF-INV-SHARE-004: after a member is removed, nothing sealed afterwards can be opened with a key that member had.
+- LF-INV-SHARE-005: a space's rules (B7, B8, B14) are shown to a person before they join, change only by the owner, and every change is shown to every member.
 - Golden scenarios: GS-23 (a stranger and a removed member read and write nothing, even with crafted requests), GS-24 (a viewer cannot write), GS-25 (a move into a space shows what becomes visible, and nothing else moves), GS-26 (two people edit one task offline: P04a's merge rules hold).
 
 ## 8. Risks
