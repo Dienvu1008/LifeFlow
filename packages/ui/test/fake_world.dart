@@ -544,6 +544,9 @@ class FakeWorld
         colorIndex: setColor ? colorIndex : t.colorIndex,
         orderKey: orderKey ?? t.orderKey,
         notes: setNotes ? notes : t.notes,
+        assigneeId: t.assigneeId,
+        changedBy: t.changedBy,
+        updatedAt: t.updatedAt,
       );
 
   /// Lists, moves and colours of the Overview (P03 UX U3).
@@ -1189,8 +1192,11 @@ extension on ProfileView {
 }
 
 TaskView task(String id, String title,
-        {String? parent, String status = 'inbox', TaskScheduleInput? schedule, String? list, int? color}) =>
+        {String? parent, String status = 'inbox', TaskScheduleInput? schedule, String? list, int? color, String? assignee, String? changedBy}) =>
     TaskView(
+        assigneeId: assignee,
+        changedBy: changedBy,
+        updatedAt: changedBy == null ? null : DateTime.utc(2026, 11, 9, 3, 42),
         id: id,
         title: title,
         status: status,
@@ -1229,9 +1235,14 @@ ProfileView profile(String id, String name,
         provider: provider);
 
 /// The full app with the ports overridden by [world].
-Widget appWith(FakeWorld world, {StorageNotice? notice, SyncService? sync}) => ProviderScope(
+Widget appWith(FakeWorld world,
+        {StorageNotice? notice, SyncService? sync, SpaceService? spaces, SharingService? sharing, SyncRunner? spaceSync}) =>
+    ProviderScope(
       overrides: [
         syncServiceProvider.overrideWithValue(sync),
+        spaceServiceProvider.overrideWithValue(spaces),
+        sharingServiceProvider.overrideWithValue(sharing),
+        spaceSyncProvider.overrideWithValue(spaceSync),
         taskQueriesProvider.overrideWithValue(world),
         taskServiceProvider.overrideWithValue(world),
         profileServiceProvider.overrideWithValue(world),

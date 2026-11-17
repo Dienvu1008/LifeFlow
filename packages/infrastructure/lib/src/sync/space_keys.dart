@@ -122,6 +122,43 @@ Future<SecretKey> openForMember(List<int> wrapped, AccountKeyPair me, String spa
   }
 }
 
+// --- A name for one account (P04b T13, ADR-0065) ----------------------------
+
+List<int> _nameAad(String spaceId, String fromAccount) => utf8.encode('lifeflow member name v1:$spaceId:$fromAccount');
+
+/// [name] sealed for the account with [publicKey] (the space's owner), by
+/// [fromAccount] asking to join [spaceId]: the same construction as a
+/// member wrap, bound to both.
+Future<Uint8List> sealNameFor(String name, List<int> publicKey, String spaceId, String fromAccount) async {
+  if (publicKey.length != 32) throw ArgumentError('a public key is 32 bytes');
+  final eph = await _x25519.newKeyPair();
+  final ephPub = (await eph.extractPublicKey()).bytes;
+  final shared = await _x25519.sharedSecretKey(
+      keyPair: eph, remotePublicKey: SimplePublicKey(publicKey, type: KeyPairType.x25519));
+  final aad = _nameAad(spaceId, fromAccount);
+  final kek = await _hkdf.deriveKey(secretKey: shared, nonce: [...ephPub, ...publicKey], info: aad);
+  final box = await _aes.encrypt(utf8.encode(name), secretKey: kek, aad: aad);
+  return Uint8List.fromList([spaceKeyFormat, ...ephPub, ...box.concatenation()]);
+}
+
+/// The name [fromAccount] sealed for [me]. Throws [SealBroken].
+Future<String> openNameAs(List<int> sealed, AccountKeyPair me, String spaceId, String fromAccount) async {
+  if (sealed.length < 1 + 32) throw const SealBroken('not a sealed name');
+  final box = _box(sealed, 'not a sealed name', 32);
+  final ephPub = sealed.sublist(1, 33);
+  final shared = await _x25519.sharedSecretKey(
+      keyPair: me._pair, remotePublicKey: SimplePublicKey(ephPub, type: KeyPairType.x25519));
+  final aad = _nameAad(spaceId, fromAccount);
+  try {
+    final kek = await _hkdf.deriveKey(secretKey: shared, nonce: [...ephPub, ...me.publicKey], info: aad);
+    return utf8.decode(await _aes.decrypt(box, secretKey: kek, aad: aad));
+  } on SecretBoxAuthenticationError {
+    throw const SealBroken('not for this account, or from someone else');
+  } on FormatException {
+    throw const SealBroken('not a name');
+  }
+}
+
 // --- Invitations (B6, B7) ---------------------------------------------------
 
 const _alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';

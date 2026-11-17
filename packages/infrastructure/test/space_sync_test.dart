@@ -257,7 +257,7 @@ void main() {
     // under the default leaving rule (B8 (a)) its data and key go.
     final vyKey = (await vy.keyring.keyOf(ws))!;
     expect(await vy.sync.refresh(), isNull);
-    expect((await vy.syncNow()).outcome, SyncOutcome.notOn);
+    expect((await vy.syncNow()).pushed, 0);
     expect(await vy.db.select(vy.db.syncState).get(), isEmpty);
     expect([for (final s in await vy.spaces.spaces()) s.shared], [false], reason: 'no longer listed');
     expect(await vy.task(t), isNull);
@@ -375,8 +375,9 @@ void main() {
     final [lan] = await space([('lan', SpaceRole.owner)]);
     expect((await lan.sync.status()).on, isTrue);
     await lan.show(lan.personal);
-    expect((await lan.sync.status()).on, isFalse);
-    expect((await lan.syncNow()).outcome, SyncOutcome.notOn);
+    // P04b T13: still on (the spaces are refreshed); nothing is synced.
+    expect((await lan.sync.status()).on, isTrue);
+    expect((await lan.syncNow()).outcome, SyncOutcome.upToDate);
     await lan.show(ws);
     final states = await lan.db.select(lan.db.syncState).get();
     expect([for (final s in states) s.workspaceId], [ws]);
@@ -393,13 +394,17 @@ void main() {
     expect(await lan.sync.refresh(), isNull);
   });
 
-  test('a scheduler of the space sync runs only while a space is shown, every minute (B12)', () async {
+  test('the space sync\'s scheduler: every minute (B12); with Personal shown it only refreshes; not for a guest', () async {
     final [lan] = await space([('lan', SpaceRole.owner)]);
     final scheduler = SyncScheduler(service: lan.sync, when: () async => SyncWhen.automatic, every: spaceSyncEvery);
     expect(spaceSyncEvery, const Duration(minutes: 1));
-    expect((await scheduler.run())?.outcome, SyncOutcome.upToDate);
+    expect((await scheduler.run())?.pushed, greaterThanOrEqualTo(0));
+    final t = ok(await lan.tasks.create('Not sent while Personal is shown'));
     await lan.show(lan.personal);
-    expect(await scheduler.run(), isNull);
+    expect((await scheduler.run())?.pushed, 0);
+    expect(server.dump(ws).length, lessThan(3), reason: '$t waits until the space is shown');
+    await (lan.db.update(lan.db.profiles)).write(const ProfilesCompanion(signedOut: Value(true)));
+    expect(await scheduler.run(), isNull, reason: 'signed out: off');
     await scheduler.stop();
   });
 

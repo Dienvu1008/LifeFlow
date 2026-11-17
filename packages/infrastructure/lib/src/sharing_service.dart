@@ -14,9 +14,11 @@ import 'package:uuid/uuid.dart';
 import 'app_database.dart' hide Workspace;
 import 'command_gateway.dart';
 import 'profile_store.dart';
+import 'member_card_handler.dart';
 import 'record_kinds.dart';
 import 'space_move_handler.dart';
 import 'space_service.dart';
+import 'sync/sealing.dart' show SealBroken;
 import 'sync/space_key_service.dart';
 import 'sync/space_keys.dart';
 import 'sync/space_leaving.dart';
@@ -250,7 +252,9 @@ class DriftSharingService implements SharingService {
     final code = parseInvitation(text);
     if (code == null) return const SharingResult.failed(SharingProblem.noSuchInvitation);
     return _guard((account) async {
-      final a = await keys.accept(account, code);
+      // The person's name goes with the request, sealed for the owner.
+      final name = (await _store.getActiveProfile())?.displayName;
+      final a = await keys.accept(account, code, name: name);
       await sync.refresh();
       final id = a.preview.workspaceId;
       // The rules were shown before joining (SHARE-005).
@@ -260,7 +264,60 @@ class DriftSharingService implements SharingService {
   }
 
   @override
-  Future<List<RemoteMember>> members(String spaceId) => server.members(spaceId);
+  Future<List<SpaceMemberView>> members(String spaceId) async {
+    final account = await _account();
+    final names = await memberNamesOf(db, spaceId);
+    final pair = account == null ? null : await keys.accountKeyPair(account);
+    return [
+      for (final m in await server.members(spaceId))
+        SpaceMemberView(
+          accountId: m.accountId,
+          role: m.role,
+          status: m.status,
+          isMe: m.accountId == account,
+          name: names[m.accountId] ?? await _sealedName(m, pair, spaceId),
+        ),
+    ];
+  }
+
+  /// The name someone sent sealed for this account (the owner's), or null.
+  Future<String?> _sealedName(RemoteMember m, AccountKeyPair? pair, String spaceId) async {
+    final sealed = m.sealedName;
+    if (sealed == null || pair == null) return null;
+    try {
+      return await openNameAs(sealed, pair, spaceId, m.accountId);
+    } on SealBroken {
+      return null;
+    }
+  }
+
+  @override
+  Future<SharingResult> setMyName(String spaceId, String name) async {
+    final account = await _account();
+    if (account == null) return const SharingResult.failed(SharingProblem.notSignedIn);
+    return _resultOf(await _asMember(account, spaceId, 'NameMember', {
+      'op': 'setName',
+      'id': memberCardIdOf(spaceId, account),
+      'accountId': account,
+      'name': name.trim(),
+    }, const MemberCardHandler()));
+  }
+
+  @override
+  Future<Map<String, String>> memberNames(String spaceId) => memberNamesOf(db, spaceId);
+
+  @override
+  Future<String?> myAccountId() => _account();
+
+  @override
+  Future<SpaceRules> rulesOf(String spaceId) async {
+    final w = await (db.select(db.workspaces)..where((x) => x.id.equals(spaceId))).getSingleOrNull();
+    return SpaceRules(
+      leave: LeaveRule.values.where((r) => r.name == w?.leaveRule).firstOrNull ?? LeaveRule.disappear,
+      export: ExportRule.values.where((r) => r.name == w?.exportRule).firstOrNull ?? ExportRule.ownerOnly,
+      inviteDefault: InviteKind.values.where((r) => r.name == w?.inviteDefault).firstOrNull ?? InviteKind.approve,
+    );
+  }
 
   @override
   Future<SharingResult> approve(String spaceId, String accountId) => _guard((_) async {

@@ -294,3 +294,74 @@ final syncReviewsProvider = FutureProvider.autoDispose<List<SyncReviewView>>((re
 final syncWhenProvider = FutureProvider.autoDispose<SyncWhen>(
   (ref) => ref.watch(settingsServiceProvider).syncWhen(),
 );
+
+// --- P04b T13: shared spaces (ADR-0065; p04b-plan.md B1–B14) --------------
+
+/// The spaces of the ACTIVE profile and which one is shown. Null where the
+/// app has none wired (widget tests that do not need it).
+final spaceServiceProvider = Provider<SpaceService?>((ref) => null);
+
+/// Sharing (needs an account and sync on, B5). Null without a sync server.
+final sharingServiceProvider = Provider<SharingService?>((ref) => null);
+
+/// The shown space's sync (every minute, B12); the UI asks for a sync right
+/// after showing a space. Null without a sync server.
+final spaceSyncProvider = Provider<SyncRunner?>((ref) => null);
+
+/// The space sync's status: it changes after each refresh, so the spaces
+/// are read again (a space someone let this account into appears).
+final spaceSyncStatusProvider = StreamProvider.autoDispose<SyncStatus?>((ref) {
+  ref.watch(activeProfileProvider);
+  final sync = ref.watch(spaceSyncProvider);
+  if (sync == null) return Stream.value(null);
+  return sync.watchStatus();
+});
+
+/// The spaces of the ACTIVE profile: the personal one first.
+final spacesProvider = FutureProvider.autoDispose<List<SpaceView>>((ref) async {
+  ref.watch(activeProfileProvider);
+  ref.watch(spaceSyncStatusProvider);
+  final spaces = ref.watch(spaceServiceProvider);
+  if (spaces == null) return const [];
+  return spaces.spaces();
+});
+
+/// The shown space, if it is a shared one.
+final shownSharedSpaceProvider = Provider.autoDispose<SpaceView?>((ref) {
+  final list = ref.watch(spacesProvider).valueOrNull ?? const <SpaceView>[];
+  return list.where((s) => s.isShown && s.shared).firstOrNull;
+});
+
+/// Whether this profile may change what is shown: not in a space it only
+/// views, nor in a copy left after leaving (B4, B8).
+final canEditShownProvider = Provider.autoDispose<bool>((ref) {
+  final s = ref.watch(shownSharedSpaceProvider);
+  return s == null || (s.role != SpaceRole.viewer && s.left == SpaceLeft.no);
+});
+
+/// This profile's account id (to find "me" among members and assignees).
+final myAccountProvider = FutureProvider.autoDispose<String?>((ref) async {
+  ref.watch(activeProfileProvider);
+  return ref.watch(sharingServiceProvider)?.myAccountId();
+});
+
+/// The names of a space's members known here (ADR-0065), by account id.
+final memberNamesProvider = FutureProvider.autoDispose.family<Map<String, String>, String>((ref, spaceId) async {
+  ref.watch(spacesProvider);
+  return await ref.watch(sharingServiceProvider)?.memberNames(spaceId) ?? const {};
+});
+
+/// A space's members as the server says; read again after each change.
+final spaceMembersProvider = FutureProvider.autoDispose.family<List<SpaceMemberView>, String>((ref, spaceId) async {
+  ref.watch(spacesProvider);
+  return await ref.watch(sharingServiceProvider)?.members(spaceId) ?? const [];
+});
+
+/// Spaces whose rules changed since this device showed them (SHARE-005).
+final rulesNoticesProvider = FutureProvider.autoDispose<List<RulesNotice>>((ref) async {
+  ref.watch(spacesProvider);
+  return await ref.watch(sharingServiceProvider)?.rulesNotices() ?? const [];
+});
+
+/// "Assigned to me" in the Overview of a shared space (B9).
+final assignedToMeProvider = StateProvider<bool>((ref) => false);

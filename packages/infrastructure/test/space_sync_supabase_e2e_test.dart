@@ -193,7 +193,7 @@ void main() {
     await lan.now();
     expect((await lan.task(t))!['title'], 'Budget for December');
     expect(await vy.spaceSync.refresh(), isNull);
-    expect((await vy.spaceSync.syncNow()).outcome, SyncOutcome.notOn);
+    expect((await vy.spaceSync.syncNow()).pushed, 0);
     expect(await vy.remote.pull(ws, 0), isEmpty);
   });
 }

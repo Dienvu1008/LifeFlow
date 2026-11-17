@@ -66,6 +66,36 @@ class _TaskPageState extends ConsumerState<TaskPage> {
 
   bool get _dirty => _loaded && _notes.text.trim() != (_stored ?? '');
 
+  /// P04b T13 (B9): to an owner or an editor of the space, or to nobody.
+  Future<void> _pickAssignee(String spaceId, TaskView t) async {
+    final sharing = ref.read(sharingServiceProvider);
+    if (sharing == null) return;
+    final l = context.l10n;
+    final members = [
+      for (final m in await sharing.members(spaceId))
+        if (m.status == MemberStatus.active && m.role != SpaceRole.viewer) m
+    ];
+    if (!mounted) return;
+    final picked = await showDialog<String>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: Text(l.spAssignedTo),
+        children: [
+          SimpleDialogOption(key: const Key('assign-nobody'), onPressed: () => Navigator.pop(ctx, ''), child: Text(l.spNobody)),
+          for (final m in members)
+            SimpleDialogOption(
+              key: ValueKey('assign-${m.accountId}'),
+              onPressed: () => Navigator.pop(ctx, m.accountId),
+              child: Text(m.isMe ? l.spYou(m.name ?? l.spSomeone) : (m.name ?? l.spSomeone)),
+            ),
+        ],
+      ),
+    );
+    if (picked == null || !mounted) return;
+    final r = await sharing.assign(t.id, picked.isEmpty ? null : picked);
+    if (!r.ok && mounted) showMessage(context, l.spProblem(r.problem!.name));
+  }
+
   Future<void> _saveNotes() async {
     if (!_dirty || !mounted) return;
     final text = _notes.text.trim();
@@ -109,6 +139,8 @@ class _TaskPageState extends ConsumerState<TaskPage> {
     final zone = ref.watch(deviceZoneProvider);
     final colour = itemColorOf(context, t.colorIndex);
     final theme = Theme.of(context);
+    final space = ref.watch(shownSharedSpaceProvider);
+    final names = space == null ? const <String, String>{} : ref.watch(memberNamesProvider(space.id)).valueOrNull ?? const {};
 
     Widget section(String text) => Padding(
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
@@ -190,6 +222,27 @@ class _TaskPageState extends ConsumerState<TaskPage> {
                 if (plan != null) await runMove(context, ref, plan);
               },
             ),
+          // P04b T13 (B9, B10): in a shared space, who it is assigned to and
+          // who changed it last.
+          if (space != null) ...[
+            ListTile(
+              key: const Key('task-page-assignee'),
+              leading: const Icon(Icons.assignment_ind_outlined),
+              title: Text(l.spAssignedTo),
+              trailing: Text(t.assigneeId == null ? l.spNobody : (names[t.assigneeId] ?? l.spSomeone)),
+              enabled: ref.watch(canEditShownProvider),
+              onTap: () => _pickAssignee(space.id, t),
+            ),
+            if (t.changedBy != null && t.updatedAt != null)
+              ListTile(
+                key: const Key('task-page-changed-by'),
+                leading: const Icon(Icons.history),
+                title: Text(l.spChangedBy(names[t.changedBy] ?? l.spSomeone,
+                    MaterialLocalizations.of(context).formatShortDate(t.updatedAt!.toLocal()) +
+                        ' ' +
+                        MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(t.updatedAt!.toLocal())))),
+              ),
+          ],
           ListTile(
             key: const Key('task-page-colour'),
             leading: Icon(Icons.circle, color: colour ?? theme.colorScheme.outlineVariant),

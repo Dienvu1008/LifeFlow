@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers.dart';
-import '../task_actions.dart';
+import '../task_actions.dart';
+
 import '../l10n.dart';
+import 'spaces_ui.dart' show moveItemFlow, moveLabel;
 
 /// Colours offered for a calendar (ARGB), with names for assistive tech.
 const calendarPalette = <(int, String)>[
@@ -65,6 +67,14 @@ class CalendarsDialog extends ConsumerWidget {
                                 await reportResult(context, service.update(c.id, name: r.$1, color: r.$2));
                               },
                             ),
+                            // P04b T13 (B3): with its events.
+                            if (moveLabel(context, ref) case final m?)
+                              IconButton(
+                                key: ValueKey('calendar-space-${c.id}'),
+                                tooltip: m,
+                                icon: const Icon(Icons.drive_file_move_outline),
+                                onPressed: () => moveItemFlow(context, ref, kind: 'calendar', id: c.id),
+                              ),
                             IconButton(
                               tooltip: context.l10n.moveNameToTheTrash2(c.name),
                               icon: const Icon(Icons.delete_outline),

@@ -16,7 +16,7 @@ library;
 //                     GoalCommandHandler, ListCommandHandler,
 //                     WorkspaceSettingsCommandHandler, SyncApplyHandler,
 //                     SyncSetupHandler, SyncReviewHandler,
-//                     SpaceMoveHandler
+//                     SpaceMoveHandler, MemberCardHandler
 import 'package:application/application.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -124,6 +124,7 @@ void main() {
   /// One handler operation: how to build its command.
   final taskHandler = TaskCommandHandler();
   const moveTaskHandler = SpaceMoveHandler('task');
+  const cardHandler = MemberCardHandler();
   const profileHandler = ProfileCommandHandler();
   const restoreHandler = ProfileRestoreHandler();
   const eventHandler = EventCommandHandler();
@@ -348,6 +349,10 @@ void main() {
       // a personal task with its subtask moves in and back out (B3).
       ('spaceSettings.create', settingsHandler, 'workspaceSettings', sharedWs,
           (v, op) => memberCommand('NameSpace', {'op': 'setName', 'id': sharedWs, 'name': 'Family'}, opId: op)),
+      // P04b T13 (ADR-0065): a member's name in the space.
+      ('memberCard.create', cardHandler, 'memberCard', '$sharedWs:acc',
+          (v, op) => memberCommand('NameMember',
+              {'op': 'setName', 'id': '$sharedWs:acc', 'accountId': 'acc', 'name': 'Dien'}, opId: op)),
       ('task.assign', taskHandler, 'task', 'tm1',
           (v, op) => memberCommand('AssignTask', {'op': 'assign', 'id': 'tm1', 'assigneeId': 'acc'}, opId: op)),
       ('task.create(movable)', taskHandler, 'task', 'tmv',

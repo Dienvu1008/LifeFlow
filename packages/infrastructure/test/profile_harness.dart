@@ -97,6 +97,10 @@ class Services {
 /// Turns a current profile store back into what a build with schema [version]
 /// wrote (for migration tests). Data in the tables that remain is kept.
 Future<void> rewindProfileStore(AppDatabase db, int version) async {
+  if (version < 15) {
+    // P04b T13 (ADR-0065): no members' names.
+    await db.customStatement('DROP TABLE member_cards');
+  }
   if (version < 14) {
     // P04b T12 (ADR-0064): no space names, last synced copies keyed by
     // record only, nothing kept aside, nothing left of a left space.
@@ -123,6 +127,7 @@ Future<void> rewindProfileStore(AppDatabase db, int version) async {
     }
     await db.customStatement('ALTER TABLE tasks DROP COLUMN assignee_id');
     for (final k in recordKinds) {
+      if (k.name == 'memberCard') continue; // v15, already gone
       await db.customStatement('ALTER TABLE ${k.tableName} DROP COLUMN changed_by');
     }
     await db.customStatement('ALTER TABLE sync_base DROP COLUMN workspace_id');

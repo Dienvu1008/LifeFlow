@@ -46,6 +46,7 @@ export 'src/workspace_settings_handler.dart';
 export 'src/space_service.dart';
 export 'src/sharing_service.dart';
 export 'src/space_move_handler.dart';
+export 'src/member_card_handler.dart';
 export 'src/sync/space_leaving.dart';
 export 'src/sync/data_licenses.dart';
 export 'src/sync/http_remote.dart';

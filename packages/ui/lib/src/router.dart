@@ -14,6 +14,7 @@ import 'screens/focus_page.dart';
 import 'screens/goals_screen.dart';
 import 'screens/profiles_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/spaces_ui.dart';
 import 'screens/sync_screen.dart';
 import 'screens/tasks_screen.dart';
 import 'shell.dart';
@@ -47,6 +48,10 @@ GoRouter createRouter({String initialLocation = '/overview'}) => GoRouter(
               profile: ref.watch(activeProfileProvider).valueOrNull,
               // P04 T5 (D9): the sync status under the profile.
               syncLine: syncLineOf(context, ref.watch(syncStatusProvider).valueOrNull),
+              // P04b T13: shared spaces.
+              drawerSpaces: ref.watch(spaceServiceProvider) == null ? null : (close) => DrawerSpaces(onDone: close),
+              railSpaces: ref.watch(spaceServiceProvider) == null ? null : const RailSpaces(),
+              spaceBar: const SpaceBar(),
               // P03 T6b (D1, D4): the focus bar on every screen, and the
               // question about a session found at start.
               focusBar: const FocusBar(),

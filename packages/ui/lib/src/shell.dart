@@ -69,7 +69,16 @@ class AdaptiveScaffold extends StatefulWidget {
     this.focusBar,
     this.profile,
     this.syncLine,
+    this.drawerSpaces,
+    this.railSpaces,
+    this.spaceBar,
   });
+
+  /// P04b T13: the spaces in the drawer (given a way to close it), under the
+  /// profile in the rail, and the bar of a shown shared space.
+  final Widget Function(VoidCallback close)? drawerSpaces;
+  final Widget? railSpaces;
+  final Widget? spaceBar;
 
   final int selectedIndex;
   final ValueChanged<int> onSelected;
@@ -115,6 +124,8 @@ class _AdaptiveScaffoldState extends State<AdaptiveScaffold> {
           children: [
             if (showBanner)
               SafeArea(bottom: false, child: StorageBanner(notice: notice!)),
+            if (widget.spaceBar != null)
+              MediaQuery.removePadding(context: context, removeTop: showBanner, child: widget.spaceBar!),
             Expanded(
               // The banner already absorbed the status-bar inset.
               child: MediaQuery.removePadding(
@@ -145,6 +156,7 @@ class _AdaptiveScaffoldState extends State<AdaptiveScaffold> {
                 onTap: () => _go(profilesIndex),
               ),
               const SizedBox(height: 12),
+              if (widget.drawerSpaces != null) widget.drawerSpaces!(() => _scaffold.currentState?.closeDrawer()),
               for (final d in destinations)
                 NavigationDrawerDestination(
                   icon: Icon(d.icon),
@@ -166,12 +178,15 @@ class _AdaptiveScaffoldState extends State<AdaptiveScaffold> {
                 selectedIndex: selectedIndex < destinations.length ? selectedIndex : null,
                 onDestinationSelected: onSelected,
                 // The profile on top, as in the drawer (opens Profiles).
-                leading: RailProfileButton(
-                  profile: widget.profile,
-                  syncLine: widget.syncLine,
-                  selected: selectedIndex == profilesIndex,
-                  onTap: () => onSelected(profilesIndex),
-                ),
+                leading: Column(mainAxisSize: MainAxisSize.min, children: [
+                  RailProfileButton(
+                    profile: widget.profile,
+                    syncLine: widget.syncLine,
+                    selected: selectedIndex == profilesIndex,
+                    onTap: () => onSelected(profilesIndex),
+                  ),
+                  if (widget.railSpaces != null) widget.railSpaces!,
+                ]),
                 extended: extended,
                 labelType:
                     extended ? NavigationRailLabelType.none : NavigationRailLabelType.all,

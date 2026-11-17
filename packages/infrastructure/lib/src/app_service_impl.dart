@@ -251,6 +251,9 @@ class DriftTaskQueries implements TaskQueries {
                 colorIndex: r.colorIndex,
                 orderKey: r.orderKey,
                 notes: r.notes,
+                assigneeId: r.assigneeId,
+                changedBy: r.changedBy,
+                updatedAt: r.updatedAt,
               );
             }(),
         ]);

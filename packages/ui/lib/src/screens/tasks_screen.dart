@@ -53,13 +53,28 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
         appBar: AppBar(
           leading: shellMenuButton(context),
           title: Text(context.l10n.navOverview),
-          actions: [_focusAction(context, ref)],
+          actions: [
+            // P04b T13 (B9): "Assigned to me" in a shared space.
+            if (ref.watch(shownSharedSpaceProvider) != null)
+              IconButton(
+                key: const Key('assigned-to-me'),
+                tooltip: context.l10n.spAssignedToMe,
+                isSelected: ref.watch(assignedToMeProvider),
+                icon: const Icon(Icons.assignment_ind_outlined),
+                selectedIcon: const Icon(Icons.assignment_ind),
+                onPressed: () => ref.read(assignedToMeProvider.notifier).state = !ref.read(assignedToMeProvider),
+              ),
+            _focusAction(context, ref),
+          ],
         ),
-        floatingActionButton: OverviewAddButton(
-          onTask: () => _addTask(null),
-          onList: () => addList(context, ref),
-          onEvent: () => openEventEditor(context, ref),
-        ),
+        // P04b T13 (B4): nothing to add where the space is only viewed.
+        floatingActionButton: ref.watch(canEditShownProvider)
+            ? OverviewAddButton(
+                onTask: () => _addTask(null),
+                onList: () => addList(context, ref),
+                onEvent: () => openEventEditor(context, ref),
+              )
+            : null,
         body: OverviewView(
           revealId: _revealId,
           onRevealed: () => _revealId = null,
