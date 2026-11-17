@@ -40,6 +40,33 @@ Duration syncBackoff(int failures) => switch (failures) {
 
 const _opNamespace = '6f1b3a52-8c1e-4f0e-9c2b-7d4a1e5b9c33';
 
+/// P04b T11 (ADR-0063): what is different when the workspace is a shared
+/// space. Null for the personal workspace (P04a, unchanged).
+class SpaceSyncMode {
+  const SpaceSyncMode({
+    required this.check,
+    required this.currentKeyId,
+    this.previous,
+    this.canPush = true,
+  });
+
+  /// Before anything: null when the space is there and this device's key is
+  /// its current one; otherwise the outcome to report.
+  final Future<SyncOutcome?> Function() check;
+
+  /// The space's current key id as the server says it now (asked only when
+  /// a pulled row names a key this device does not know).
+  final Future<String?> Function() currentKeyId;
+
+  /// The key before the current one, while a rotation is not finished: rows
+  /// still sealed with it are opened with it.
+  final RecordSealer? previous;
+
+  /// False for a viewer: nothing is pushed (the server would refuse it too,
+  /// SHARE-002); pulling goes on.
+  final bool canPush;
+}
+
 class SyncEngine {
   SyncEngine({
     required this.db,
@@ -49,8 +76,12 @@ class SyncEngine {
     required this.workspaceId,
     required this.deviceId,
     this.pageSize = maxPullPage,
+    this.space,
     DateTime Function()? clock,
   }) : clock = clock ?? DateTime.now;
+
+  /// Set for a shared space (P04b T11).
+  final SpaceSyncMode? space;
 
   final AppDatabase db;
   final CommandGateway gateway;
@@ -61,32 +92,42 @@ class SyncEngine {
   final int pageSize;
   final DateTime Function() clock;
 
-  int _pushed = 0, _pulled = 0, _merged = 0, _reviews = 0, _failed = 0, _withheld = 0;
-  bool _updateNeeded = false;
+  int _pushed = 0, _pulled = 0, _merged = 0, _reviews = 0, _failed = 0, _withheld = 0, _refused = 0;
+  bool _updateNeeded = false, _keyChanged = false;
 
   /// Push, pull and push again until nothing is left (a conflict is merged
   /// by the pull and its merge pushed in the next round).
   Future<SyncReport> sync({int rounds = 4}) async {
-    _pushed = _pulled = _merged = _reviews = _failed = _withheld = 0;
-    _updateNeeded = false;
+    _pushed = _pulled = _merged = _reviews = _failed = _withheld = _refused = 0;
+    _updateNeeded = _keyChanged = false;
     final state = await _state();
     if (state == null) throw StateError('sync is not on for this workspace on this device');
     SyncReport report;
     try {
-      // ADR-0057: is the workspace still there, sealed with this device's key?
-      final here = (await remote.workspaces()).where((w) => w.workspaceId == workspaceId).firstOrNull;
-      if (here == null) return await _finish(_report(SyncOutcome.workspaceGone));
-      if (here.keyId.isNotEmpty && here.keyId != sealer.keyId) return await _finish(_report(SyncOutcome.keyChanged));
-      var settled = false;
-      for (var i = 0; i < rounds && !settled; i++) {
-        final conflicts = await _push();
-        await _pull();
-        settled = conflicts == 0 && await _pendingCount() == 0;
+      final space = this.space;
+      if (space != null) {
+        final stop = await space.check();
+        if (stop != null) return await _finish(_report(stop));
+      } else {
+        // ADR-0057: is the workspace still there, sealed with this device's key?
+        final here = (await remote.workspaces()).where((w) => w.workspaceId == workspaceId).firstOrNull;
+        if (here == null) return await _finish(_report(SyncOutcome.workspaceGone));
+        if (here.keyId.isNotEmpty && here.keyId != sealer.keyId) return await _finish(_report(SyncOutcome.keyChanged));
       }
-      try {
-        await remote.purge(workspaceId, clock().subtract(const Duration(days: 90)));
-      } on RemoteFailure {
-        // Purging can wait for the next sync.
+      final canPush = space?.canPush ?? true;
+      var settled = false;
+      for (var i = 0; i < rounds && !settled && !_keyChanged; i++) {
+        final conflicts = canPush ? await _push() : 0;
+        await _pull();
+        settled = conflicts == 0 && (!canPush || await _pendingCount() == 0);
+      }
+      if (_keyChanged) return await _finish(_report(SyncOutcome.keyChanged));
+      if (canPush) {
+        try {
+          await remote.purge(workspaceId, clock().subtract(const Duration(days: 90)));
+        } on RemoteFailure {
+          // Purging can wait for the next sync.
+        }
       }
       report = _report(_updateNeeded ? SyncOutcome.updateNeeded : SyncOutcome.upToDate);
     } on RemoteFailure catch (e) {
@@ -106,6 +147,65 @@ class SyncEngine {
     return _finish(report);
   }
 
+  /// P04b T11 (ADR-0063): after a rotation, on the owner's device. Every
+  /// record of the space here (deleted ones too, so a device that has not
+  /// pulled a delete still learns it) is sealed again with the current key
+  /// and pushed under its new server id. A record someone already pushed
+  /// under the new key is a conflict and stays as it is; the normal sync
+  /// takes it. Returns how many the server took. Call after a full sync
+  /// (so this device has everything), then finish the rotation.
+  Future<int> resealAll() async {
+    if (space == null) throw StateError('only a shared space is sealed again');
+    final items = <(RecordPush, String, String, Row)>[];
+    for (final kind in recordKinds) {
+      if (!sharedSpaceKinds.contains(kind.name)) continue;
+      for (final row in await kind.readAll(db)) {
+        if (row['workspaceId'] != workspaceId || !cloudSyncAllowed(dataClassOf(kind.name, row))) continue;
+        final id = row['id'] as String;
+        final version = row['version'] as int;
+        final sid = await sealer.serverId(kind.name, id);
+        items.add((
+          RecordPush(
+            id: sid,
+            base: null,
+            version: version,
+            deleted: row['deletedAt'] != null,
+            sealed: await sealer.seal(sid, version, {
+              'kind': kind.name,
+              'id': id,
+              'schemaVersion': AppDatabase.recordSchemaVersion,
+              'row': row,
+            }),
+            operationId: const Uuid().v5(_opNamespace, '$deviceId:${kind.name}:$id:$version:${sealer.keyId}'),
+          ),
+          kind.name,
+          id,
+          row,
+        ));
+      }
+    }
+    var taken = 0;
+    for (var i = 0; i < items.length; i += maxPushBatch) {
+      final batch = items.sublist(i, i + maxPushBatch > items.length ? items.length : i + maxPushBatch);
+      final result = await remote.push(workspaceId, deviceId, [for (final b in batch) b.$1], keyId: sealer.keyId);
+      await db.transaction(() async {
+        for (final (push, kind, id, row) in batch) {
+          if (!result.accepted.containsKey(push.id)) continue;
+          await db.into(db.syncBase).insertOnConflictUpdate(SyncBaseCompanion.insert(
+                kind: kind,
+                recordId: id,
+                version: push.version,
+                data: jsonEncode(row),
+                serverId: Value(push.id),
+                workspaceId: Value(workspaceId),
+              ));
+          taken++;
+        }
+      });
+    }
+    return taken;
+  }
+
   Future<SyncReport> _finish(SyncReport report) async {
     await (db.update(db.syncState)..where((s) => s.workspaceId.equals(workspaceId)))
         .write(SyncStateCompanion(lastResult: Value(report.outcome.name)));
@@ -113,7 +213,14 @@ class SyncEngine {
   }
 
   SyncReport _report(SyncOutcome o, [String detail = '']) => SyncReport(o,
-      pushed: _pushed, pulled: _pulled, merged: _merged, reviews: _reviews, failedRecords: _failed, withheld: _withheld, detail: detail);
+      pushed: _pushed,
+      pulled: _pulled,
+      merged: _merged,
+      reviews: _reviews,
+      failedRecords: _failed,
+      withheld: _withheld,
+      notTaken: _refused,
+      detail: detail);
 
   Future<SyncStateRow?> _state() =>
       (db.select(db.syncState)..where((s) => s.workspaceId.equals(workspaceId))).getSingleOrNull();
@@ -158,7 +265,8 @@ class SyncEngine {
       }
       // P04 T7 (ADR-0059, LF-INV-PRIV-001/003): the classification decides
       // before anything is sealed or sent. Restricted data stays here.
-      if (!cloudSyncAllowed(dataClassOf(kind, row))) {
+      // P04b B2 (ADR-0063): a space never sends what stays personal.
+      if (!cloudSyncAllowed(dataClassOf(kind, row)) || (space != null && !sharedSpaceKinds.contains(kind))) {
         await _setOutboxStatus(kind, id, 'local');
         _withheld++;
         continue;
@@ -190,6 +298,7 @@ class SyncEngine {
     for (var i = 0; i < items.length; i += maxPushBatch) {
       final batch = items.sublist(i, i + maxPushBatch > items.length ? items.length : i + maxPushBatch);
       conflicts += await _pushBatch(batch);
+      if (_keyChanged) break;
     }
     return conflicts;
   }
@@ -197,8 +306,16 @@ class SyncEngine {
   Future<int> _pushBatch(List<(RecordPush, String, String, Row)> batch) async {
     PushResult result;
     try {
-      result = await remote.push(workspaceId, deviceId, [for (final b in batch) b.$1]);
+      // A space takes only its current key (ADR-0062); P04a names none.
+      result = await remote.push(workspaceId, deviceId, [for (final b in batch) b.$1],
+          keyId: space == null ? '' : sealer.keyId);
     } on RemoteFailure catch (e) {
+      // The space's key was rotated meanwhile: nothing is set aside; the
+      // device takes the new key and pushes again (ADR-0063).
+      if (e is SpaceFailure && e.reason == SpaceRefusal.staleKey) {
+        _keyChanged = true;
+        return 0;
+      }
       if (e.kind != RemoteFailureKind.refused || batch.length == 1) {
         if (e.kind == RemoteFailureKind.refused) {
           // The one record the server will not take: set aside, the rest goes on.
@@ -265,9 +382,27 @@ class SyncEngine {
       if (known != null) changes.add({'kind': known.kind, 'mode': 'purge', 'id': known.recordId, 'serverId': s.id});
       return true;
     }
+    // P04b T11 (ADR-0063): during a rotation a space holds rows of the old
+    // and the new key. The previous key opens the old ones; a row of a key
+    // this device does not know is older (skipped) if this device's key is
+    // still the current one, or newer (the pull stops before it, to go on
+    // once the device has the new key).
+    var opener = sealer;
+    final space = this.space;
+    if (space != null && s.keyId.isNotEmpty && s.keyId != sealer.keyId) {
+      final previous = space.previous;
+      if (previous != null && s.keyId == previous.keyId) {
+        opener = previous;
+      } else if (await space.currentKeyId() == sealer.keyId) {
+        return true;
+      } else {
+        _keyChanged = true;
+        return false;
+      }
+    }
     final Map<String, dynamic> env;
     try {
-      env = await sealer.open(s.id, s.version, s.sealed!);
+      env = await opener.open(s.id, s.version, s.sealed!);
     } on SealBroken {
       reviews.add({'kind': '?', 'recordId': s.id, 'field': '*', 'kept': null, 'other': null, 'reason': 'unreadable'});
       return true;
@@ -281,10 +416,29 @@ class SyncEngine {
     }
     final id = env['id'] as String;
     final remoteRow = (env['row'] as Map).cast<String, dynamic>();
-    final base = await _base(kind.name, id);
-    if (base != null && base.version == s.version) return true; // this device's own push, or already here
-    _pulled++;
+    // P04b T11: what a space does not hold (B2), and a record of this id in
+    // another workspace of this store (a member cannot overwrite a personal
+    // record, nor one of another space, by naming its id), are not taken.
     final local = await kind.readOne(db, id);
+    if (space != null &&
+        (!sharedSpaceKinds.contains(kind.name) ||
+            remoteRow['workspaceId'] != workspaceId ||
+            (local != null && local['workspaceId'] != workspaceId))) {
+      _refused++;
+      return true;
+    }
+    final base = await _base(kind.name, id);
+    if (base != null && base.version == s.version) {
+      // This device's own push, or already here. After a rotation the same
+      // version comes again under its new server id: remember that id, so a
+      // later purge of it is recognised.
+      if (base.serverId != s.id) {
+        await (db.update(db.syncBase)..where((b) => b.kind.equals(kind.name) & b.recordId.equals(id)))
+            .write(SyncBaseCompanion(serverId: Value(s.id)));
+      }
+      return true;
+    }
+    _pulled++;
     final unchangedHere = local == null || (base != null && local['version'] == base.version);
     if (unchangedHere) {
       changes.add({'kind': kind.name, 'mode': 'remote', 'row': remoteRow, 'serverId': s.id});

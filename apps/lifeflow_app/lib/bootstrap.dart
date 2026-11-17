@@ -23,6 +23,7 @@ class AppWiring {
     this.reminders,
     this.focusLaunch = const NoActiveFocus(),
     this.sync,
+    this.spaceSync,
   });
 
   final String profileId;
@@ -45,12 +46,22 @@ class AppWiring {
   /// when the build has no sync server.
   final SyncScheduler? sync;
 
+  /// P04b T11 (B12): the shown shared space's automatic sync, every minute
+  /// while one is shown; null when the build has no sync server.
+  final SyncScheduler? spaceSync;
+
   /// The app came back to the front: sync now if automatic (D8).
-  void resumed() => sync?.resumed();
+  void resumed() {
+    sync?.resumed();
+    spaceSync?.resumed();
+  }
 
   /// Stops the automatic sync. Call BEFORE the next profile opens, as for
   /// reminders, so the old store is not synced while it closes.
-  Future<void> stopSync() async => sync?.stop();
+  Future<void> stopSync() async {
+    await sync?.stop();
+    await spaceSync?.stop();
+  }
 
   /// Ends the session: reminder sync, automatic sync, then the store.
   Future<void> close() async {
@@ -165,27 +176,49 @@ Future<AppWiring> openSession({
     // network (LF-INV-SEC-002).
     DriftSyncService? syncService;
     SyncScheduler? scheduler;
+    SyncScheduler? spaceScheduler;
     if (sync != null) {
       final profiles = ProfileStore(db);
+      final remote = sync.remoteFor(() async {
+        final p = await profiles.getActiveProfile();
+        if (p == null || p.signedOut) return null;
+        return p.binding?.accountId;
+      });
+      final keyring = WorkspaceKeyring(sync.keysFor);
       syncService = DriftSyncService(
         db: db,
         gateway: gateway,
-        remote: sync.remoteFor(() async {
-          final p = await profiles.getActiveProfile();
-          if (p == null || p.signedOut) return null;
-          return p.binding?.accountId;
-        }),
-        keyring: WorkspaceKeyring(sync.keysFor),
+        remote: remote,
+        keyring: keyring,
         transfer: transfer,
         log: (line) => onWarning?.call(line),
       );
       scheduler = SyncScheduler(
           service: syncService, when: settings.syncWhen, onError: (e) => onWarning?.call('[sync] $e'));
       unawaited(scheduler.start());
+      // P04b T11 (ADR-0063, B12): the shown shared space, every minute.
+      if (remote case final SpaceGateway spaces) {
+        final spaceSync = DriftSpaceSyncService(
+          db: db,
+          gateway: gateway,
+          remote: remote,
+          spaces: spaces,
+          keyring: keyring,
+          keys: SpaceKeyService(server: spaces, keyring: keyring, slots: sync.keysFor),
+          log: (line) => onWarning?.call(line),
+        );
+        spaceScheduler = SyncScheduler(
+            service: spaceSync,
+            when: settings.syncWhen,
+            every: spaceSyncEvery,
+            onError: (e) => onWarning?.call('[space sync] $e'));
+        unawaited(spaceScheduler.start());
+      }
     }
     return AppWiring(
       profileId: profileId,
       sync: scheduler,
+      spaceSync: spaceScheduler,
       db: db,
       notice: notice,
       onSessionRevoked: accounts.handleSessionRevoked,

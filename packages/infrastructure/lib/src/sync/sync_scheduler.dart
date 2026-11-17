@@ -25,7 +25,8 @@ class SyncScheduler {
     this.onError,
   });
 
-  final SyncService service;
+  /// The profile's sync, or a shared space's (P04b T11: every minute, B12).
+  final SyncRunner service;
 
   /// The device's "When to sync", read before every automatic sync.
   final Future<SyncWhen> Function() when;
