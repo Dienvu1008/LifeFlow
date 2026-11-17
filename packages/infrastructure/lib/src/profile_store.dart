@@ -112,7 +112,7 @@ class ProfileStore {
   /// The Personal Workspace owned by [profileId].
   Future<Workspace?> getPersonalWorkspace(String profileId) async {
     final row = await (db.select(db.workspaces)
-          ..where((w) => w.ownerId.equals(profileId))
+          ..where((w) => w.ownerId.equals(profileId) & w.kind.equals('personal'))
           ..limit(1))
         .getSingleOrNull();
     return row == null
@@ -124,6 +124,56 @@ class ProfileStore {
           );
   }
 
+  /// P04b T8 (ADR-0060): the id of the active profile's personal workspace,
+  /// whichever space is being shown. Sync, export and restore, reminders,
+  /// focus and closing habit periods work on it.
+  Future<String?> personalWorkspaceId() async {
+    final p = await getActiveProfile();
+    if (p == null) return null;
+    return (await getPersonalWorkspace(p.profileId.value))?.workspaceId.value;
+  }
+
+  /// P04b T8: the workspace a command of the user acts on (the one being
+  /// shown) and who acts there: the profile in its personal workspace, the
+  /// account as a [ActorKind.member] in a shared space.
+  Future<CommandContext?> commandContext() async {
+    final p = await getActiveProfile();
+    if (p == null) return null;
+    final ws = p.activeWorkspaceId.value;
+    final row = await (db.select(db.workspaces)..where((w) => w.id.equals(ws))).getSingleOrNull();
+    if (row != null && row.kind == 'shared') {
+      return CommandContext(ws, ActorRef(ActorKind.member, p.binding?.accountId ?? ''), shared: true);
+    }
+    return CommandContext(ws, ActorRef(ActorKind.owner, p.profileId.value));
+  }
+
+  /// The personal workspace's context, whichever space is shown.
+  Future<CommandContext?> personalContext() async {
+    final p = await getActiveProfile();
+    final ws = await personalWorkspaceId();
+    if (p == null || ws == null) return null;
+    return CommandContext(ws, ActorRef(ActorKind.owner, p.profileId.value));
+  }
+
+  /// Every workspace of the store: the personal one first, then the shared
+  /// spaces by name.
+  Future<List<WorkspaceInfo>> workspaces() async {
+    final rows = [
+      for (final r in await db.select(db.workspaces).get())
+        WorkspaceInfo(id: r.id, shared: r.kind == 'shared', name: r.name, ownerId: r.ownerId,
+            leaveRule: r.leaveRule, exportRule: r.exportRule, rulesChangedAt: r.rulesChangedAt, rulesSeenAt: r.rulesSeenAt)
+    ];
+    rows.sort((a, b) {
+      if (a.shared != b.shared) return a.shared ? 1 : -1;
+      return (a.name ?? '').toLowerCase().compareTo((b.name ?? '').toLowerCase());
+    });
+    return rows;
+  }
+
+  /// The cached members of [workspaceId] (shared spaces only).
+  Future<List<SpaceMemberRow>> members(String workspaceId) =>
+      (db.select(db.spaceMembers)..where((m) => m.workspaceId.equals(workspaceId))).get();
+
   Future<void> _setActive(String profileId) async {
     await db.transaction(() async {
       await db.update(db.profiles).write(const ProfilesCompanion(
@@ -131,6 +181,38 @@ class ProfileStore {
           ));
       await (db.update(db.profiles)..where((p) => p.id.equals(profileId)))
           .write(const ProfilesCompanion(isActive: Value(true)));
+    });
+  }
+
+  /// P04b T8: what the server says about a shared space this account belongs
+  /// to, written to the store's cache (LF-INV-SHARE-003: the server decides;
+  /// devices only keep a copy). The space's records arrive by its sync.
+  /// Called by the space sync (T11/T12) and by tests; never by the UI.
+  Future<void> cacheSpace(SpaceSnapshot s) async {
+    final now = DateTime.now().toUtc();
+    await db.transaction(() async {
+      await db.into(db.workspaces).insertOnConflictUpdate(WorkspacesCompanion.insert(
+            id: s.workspaceId,
+            kind: const Value('shared'),
+            ownerId: s.ownerAccountId,
+            createdAt: now,
+            name: Value(s.name),
+            leaveRule: Value(s.leaveRule),
+            exportRule: Value(s.exportRule),
+            inviteDefault: Value(s.inviteDefault),
+            rulesChangedAt: Value(s.rulesChangedAt),
+          ));
+      await (db.delete(db.spaceMembers)..where((m) => m.workspaceId.equals(s.workspaceId))).go();
+      for (final m in s.members) {
+        await db.into(db.spaceMembers).insert(SpaceMembersCompanion.insert(
+              workspaceId: s.workspaceId,
+              accountId: m.accountId,
+              role: m.role,
+              status: m.status,
+              displayName: Value(m.displayName),
+              updatedAt: now,
+            ));
+      }
     });
   }
 
@@ -147,4 +229,64 @@ class ProfileStore {
             : null,
         signedOut: row.signedOut,
       );
+}
+
+/// The workspace and actor of a user command (P04b T8, ADR-0060).
+class CommandContext {
+  const CommandContext(this.workspaceId, this.actor, {this.shared = false});
+  final String workspaceId;
+  final ActorRef actor;
+  final bool shared;
+}
+
+/// A workspace of the store, as the store sees it.
+class WorkspaceInfo {
+  const WorkspaceInfo({
+    required this.id,
+    required this.shared,
+    required this.ownerId,
+    this.name,
+    this.leaveRule,
+    this.exportRule,
+    this.rulesChangedAt,
+    this.rulesSeenAt,
+  });
+  final String id;
+  final bool shared;
+  final String ownerId;
+  final String? name;
+  final String? leaveRule;
+  final String? exportRule;
+  final DateTime? rulesChangedAt;
+  final DateTime? rulesSeenAt;
+}
+
+/// A shared space as the server describes it (cached, LF-INV-SHARE-003).
+class SpaceSnapshot {
+  const SpaceSnapshot({
+    required this.workspaceId,
+    required this.ownerAccountId,
+    required this.name,
+    required this.members,
+    this.leaveRule = 'disappear',
+    this.exportRule = 'ownerOnly',
+    this.inviteDefault = 'approve',
+    this.rulesChangedAt,
+  });
+  final String workspaceId;
+  final String ownerAccountId;
+  final String name;
+  final List<SpaceMemberSnapshot> members;
+  final String leaveRule;
+  final String exportRule;
+  final String inviteDefault;
+  final DateTime? rulesChangedAt;
+}
+
+class SpaceMemberSnapshot {
+  const SpaceMemberSnapshot({required this.accountId, required this.role, this.status = 'active', this.displayName = ''});
+  final String accountId;
+  final String role; // owner | editor | viewer
+  final String status; // pending | active
+  final String displayName;
 }

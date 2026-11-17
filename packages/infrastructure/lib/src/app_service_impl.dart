@@ -40,6 +40,18 @@ class WorkspaceOwnerAuthorization implements AuthorizationService {
       if (state.deviceId != actor.id) return 'not this device';
       return null;
     }
+    // P04b T8 (ADR-0060, p04b-plan.md §4): the local person in a shared space
+    // acts by their role there, as the server cached it (SHARE-002/003).
+    if (actor.kind == ActorKind.member) {
+      final ws = await (db.select(db.workspaces)..where((w) => w.id.equals(ref.workspaceId))).getSingleOrNull();
+      if (ws == null || ws.kind != 'shared') return 'not a shared space';
+      final m = await (db.select(db.spaceMembers)
+            ..where((x) => x.workspaceId.equals(ref.workspaceId) & x.accountId.equals(actor.id)))
+          .getSingleOrNull();
+      if (m == null || m.status != 'active') return 'not a member of this space';
+      if (m.role != 'owner' && m.role != 'editor') return 'a viewer cannot change the space';
+      return null;
+    }
     if (actor.kind != ActorKind.owner) {
       return 'only the workspace owner may act in the MVP';
     }
@@ -286,11 +298,13 @@ class DriftTaskService implements TaskService {
       return const CommandFailure(CommandFailureKind.notFound,
           reason: 'no active profile');
     }
+    // P04b T8 (ADR-0060): the workspace and the actor of this command.
+    final ctx = (await _store.commandContext())!;
     return gateway.execute(
       Command(
         operationId: _uuid.v7(),
-        actor: ActorRef(ActorKind.owner, profile.profileId.value),
-        workspaceId: profile.activeWorkspaceId.value,
+        actor: ctx.actor,
+        workspaceId: ctx.workspaceId,
         type: type,
         payload: payload,
         expectedVersion: expected,

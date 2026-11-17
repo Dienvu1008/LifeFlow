@@ -6,7 +6,10 @@ extension type const Version(int value) {
 }
 
 /// Actor performing a command (ADR-0009 / authorization-model).
-enum ActorKind { owner, aiAssistant, provider, sync }
+///   owner   the local person in their personal workspace (id: profile id)
+///   member  the local person in a shared space (id: their account id; the
+///           role comes from the space's members, P04b ADR-0060)
+enum ActorKind { owner, aiAssistant, provider, sync, member }
 
 class ActorRef {
   const ActorRef(this.kind, this.id);

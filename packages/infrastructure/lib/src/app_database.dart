@@ -24,6 +24,10 @@ part 'app_database.g.dart';
 ///   v10 (P04 T1) workspace_settings (takes over profiles.manual_results),
 ///                sync_base, sync_state; outbox index by status (ADR-0053)
 ///   v11 (P04 T3) sync_reviews: Changes to review; sync_base.server_id (ADR-0056)
+///   v12 (P04 T6) the outbox key gains the kind (ADR-0058)
+///   v13 (P04b T8) shared spaces: workspaces name and rules, space_members,
+///                tasks.assignee_id, changed_by on every record,
+///                sync_base.workspace_id (ADR-0060)
 @DriftDatabase(
   tables: [
     Profiles, Workspaces, TaskLists, Tasks, AuditLog, Outbox, EventLog,
@@ -33,18 +37,20 @@ part 'app_database.g.dart';
     FocusSessions, ExecutionRecords, Measurements, PeriodResults, Goals,
     Milestones, GoalLinks,
     WorkspaceSettings, SyncBase, SyncState, SyncReviews,
+    SpaceMembers,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   /// The schema this build writes (and the newest export it accepts).
-  static const currentSchemaVersion = 12;
+  static const currentSchemaVersion = 13;
 
   /// The last schema that changed a synced record's shape: what a sealed
-  /// record says it is (ADR-0056). v12 changed only the local outbox, so a
-  /// device on v11 still reads what a v12 device sends.
-  static const recordSchemaVersion = 11;
+  /// record says it is (ADR-0056). v12 changed only the local outbox. v13
+  /// (ADR-0060) adds `changedBy` to every record and `assigneeId` to tasks;
+  /// a pulled record of v11 or v12 is read with both null.
+  static const recordSchemaVersion = 13;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -111,6 +117,36 @@ class AppDatabase extends _$AppDatabase {
             await m.alterTable(TableMigration(outbox));
             await customStatement('DROP INDEX IF EXISTS outbox_status');
             await _createSyncIndexes();
+          }
+          if (from < 13) {
+            // P04b T8 (ADR-0060): shared spaces in the store.
+            for (final c in [workspaces.name, workspaces.leaveRule, workspaces.exportRule,
+                workspaces.inviteDefault, workspaces.rulesChangedAt, workspaces.rulesSeenAt]) {
+              await m.addColumn(workspaces, c);
+            }
+            await m.createTable(spaceMembers);
+            await m.addColumn(tasks, tasks.assigneeId);
+            // changed_by on every record table that existed before this
+            // upgrade (the ones made by an earlier step above are already whole).
+            final madeIn = <TableInfo, int>{
+              taskLists: 1, tasks: 1,
+              calendars: 4, events: 4, schedules: 4, occurrenceExceptions: 4, occurrenceCompletions: 4, reminders: 4,
+              focusSessions: 5, executionRecords: 5, measurements: 5, periodResults: 5, goals: 5, milestones: 5,
+              goalLinks: 5, workspaceSettings: 10,
+            };
+            for (final e in madeIn.entries) {
+              if (from >= e.value) {
+                await m.addColumn(e.key, (e.key.columnsByName['changed_by'] as GeneratedColumn));
+              }
+            }
+            if (from >= 10) {
+              await m.addColumn(syncBase, syncBase.workspaceId);
+              // Until now only one workspace could be synced: the one in
+              // sync_state, else the profile's.
+              await customStatement(
+                  'UPDATE sync_base SET workspace_id = COALESCE((SELECT workspace_id FROM sync_state LIMIT 1), '
+                  '(SELECT active_workspace_id FROM profiles LIMIT 1), \'\')');
+            }
           }
         },
         beforeOpen: (details) async {

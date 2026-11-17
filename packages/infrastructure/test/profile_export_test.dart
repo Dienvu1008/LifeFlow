@@ -141,6 +141,7 @@ void main() {
         // P04 T1 (schema v10): synced settings; sync bookkeeping (not exported)
         ...['workspace_settings', 'sync_base', 'sync_state'],
         'sync_reviews', // P04 T3 (schema v11), not exported
+        'space_members', // P04b T8 (schema v13), a server cache, not exported
       });
       expect(host.db.allTables.length,
           exportedTables.length + notExportedTables.length);

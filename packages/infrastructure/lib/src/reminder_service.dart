@@ -47,11 +47,13 @@ class DriftReminderService implements ReminderService {
         handler = const EventCommandHandler();
     }
     if (version == null) return const CommandFailure(CommandFailureKind.notFound, reason: 'item not found');
+    // P04b T8 (ADR-0060): the workspace and the actor of this command.
+    final ctx = (await _store.commandContext())!;
     return gateway.execute(
       Command(
         operationId: _uuid.v7(),
-        actor: ActorRef(ActorKind.owner, profile.profileId.value),
-        workspaceId: profile.activeWorkspaceId.value,
+        actor: ctx.actor,
+        workspaceId: ctx.workspaceId,
         type: subject == ReminderSubject.task ? 'SetTaskReminders' : 'SetEventReminders',
         payload: {'op': 'setReminders', 'id': id, 'reminders': [for (final r in reminders) reminderPayloadOf(r)]},
         expectedVersion: Version(version),
@@ -103,9 +105,11 @@ class DriftReminderPlanner {
   final ProfileStore _store;
 
   Future<List<PlannedReminder>> plan() async {
-    final profile = await _store.getActiveProfile();
-    if (profile == null) return const [];
-    final ws = profile.activeWorkspaceId.value;
+    // P04b T8 (ADR-0060, p04b-plan.md B2): reminders and running focus
+    // sessions are personal. The device's plan is the personal workspace's,
+    // whichever space is shown (a switch never drops a reminder).
+    final ws = await _store.personalWorkspaceId();
+    if (ws == null) return const [];
     final now = time.now();
     final zone = time.zone();
 

@@ -52,14 +52,17 @@ class DriftHabitService implements HabitService {
   LocalDate _today() => tk.dateAt(time.now(), time.zone());
 
   Future<CommandResult> _run(CommandHandler handler, String type, Map<String, Object?> payload,
-      {Version? expected}) async {
+      {Version? expected, bool personal = false}) async {
     final profile = await _store.getActiveProfile();
     if (profile == null) return const CommandFailure(CommandFailureKind.notFound, reason: 'no active profile');
+    // P04b T8 (ADR-0060): the workspace and the actor of this command; the
+    // closing of periods is of the personal workspace.
+    final ctx = (await (personal ? _store.personalContext() : _store.commandContext()))!;
     return gateway.execute(
       Command(
         operationId: _uuid.v7(),
-        actor: ActorRef(ActorKind.owner, profile.profileId.value),
-        workspaceId: profile.activeWorkspaceId.value,
+        actor: ctx.actor,
+        workspaceId: ctx.workspaceId,
         type: type,
         payload: {...payload, 'today': '${_today()}'},
         expectedVersion: expected,
@@ -134,11 +137,13 @@ class DriftHabitService implements HabitService {
 
   @override
   Future<int> closePeriods({String? taskId}) async {
-    final profile = await _store.getActiveProfile();
-    if (profile == null) return 0;
+    // P04b T8 (B2): habits and targets are personal; their periods close in
+    // the personal workspace, whichever space is shown.
+    final ws = await _store.personalWorkspaceId();
+    if (ws == null) return 0;
     final rows = await (db.select(db.tasks)
           ..where((t) =>
-              t.workspaceId.equals(profile.activeWorkspaceId.value) &
+              t.workspaceId.equals(ws) &
               t.deletedAt.isNull() &
               (t.isHabit.equals(true) | t.targetType.isNotNull()) &
               (taskId == null ? const Constant(true) : t.id.equals(taskId))))
@@ -150,7 +155,7 @@ class DriftHabitService implements HabitService {
       if (t == null) continue;
       for (final r in t.endedResults(today)) {
         if (t.stored.containsKey(r.id)) continue;
-        final res = await _run(_close, 'ClosePeriod', {'op': 'close', 'id': r.id, 'taskId': row.id});
+        final res = await _run(_close, 'ClosePeriod', {'op': 'close', 'id': r.id, 'taskId': row.id}, personal: true);
         if (res is CommandOk) n++;
       }
     }

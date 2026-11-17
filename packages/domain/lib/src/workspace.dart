@@ -38,8 +38,10 @@ class AccountBinding {
   int get hashCode => Object.hash(accountId, provider);
 }
 
-/// The single Personal Workspace a profile owns in the MVP (LF-INV-WA-001).
-/// [ownerId] is the owning profile's id; it is never re-keyed (LF-INV-ID-001).
+/// A workspace of a profile's store (LF-INV-WA-001, refined by P04b T8,
+/// ADR-0060): the profile's one personal workspace ([ownerId] = the profile
+/// id), or a shared space the profile's account belongs to ([ownerId] = the
+/// space owner's account id). Ids are never re-keyed (LF-INV-ID-001).
 class Workspace {
   const Workspace({
     required this.workspaceId,
@@ -49,7 +51,8 @@ class Workspace {
 
   final EntityId workspaceId;
   final String ownerId;
-  final String kind; // 'personal' in MVP; 'shared' in P04
+  final String kind; // 'personal' | 'shared' (P04b)
+  bool get isShared => kind == 'shared';
 
   @override
   bool operator ==(Object other) =>
@@ -63,8 +66,10 @@ class Workspace {
 }
 
 /// A device-local profile. Exists from first launch with a stable [profileId]
-/// and exactly one active Personal Workspace (LF-INV-WA-001). It may later be
-/// bound to one account; binding does not change any id (LF-INV-ID-001).
+/// and exactly one Personal Workspace; since P04b its store may also hold
+/// shared spaces, and [activeWorkspaceId] is the one being shown, personal or
+/// shared (LF-INV-WA-001 as refined by ADR-0060). It may later be bound to
+/// one account; binding does not change any id (LF-INV-ID-001).
 class LocalProfile {
   const LocalProfile({
     required this.profileId,

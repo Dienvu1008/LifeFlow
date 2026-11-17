@@ -14,6 +14,9 @@ mixin SyncableColumns on Table {
   DateTimeColumn get updatedAt => dateTime()();
   DateTimeColumn get deletedAt => dateTime().nullable()(); // tombstone
   TextColumn get deletedBy => text().nullable()();
+  // P04b T8 (schema v13, ADR-0060, p04b-plan.md B10): who changed the record
+  // last, in a shared space (an account id); null in a personal workspace.
+  TextColumn get changedBy => text().nullable()();
 }
 
 class Profiles extends Table {
@@ -38,13 +41,42 @@ class Profiles extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// A profile store holds its personal workspace (kind 'personal', owned by
+/// the profile) and, since P04b T8 (schema v13, ADR-0060), the shared spaces
+/// its account belongs to (kind 'shared', owned by the space's owner
+/// account). One is active at a time (`profiles.active_workspace_id`).
 class Workspaces extends Table {
   TextColumn get id => text()(); // workspaceId (UUID v7)
-  TextColumn get kind => text().withDefault(const Constant('personal'))();
+  TextColumn get kind => text().withDefault(const Constant('personal'))(); // personal | shared
   TextColumn get ownerId => text()();
   DateTimeColumn get createdAt => dateTime()();
+  // P04b (v13): a shared space's name and rules, cached from the server
+  // (LF-INV-SHARE-003: only the owner changes them there). Null for the
+  // personal workspace.
+  TextColumn get name => text().nullable()();
+  TextColumn get leaveRule => text().nullable()(); // disappear | disappearWithExport | keepReadOnly (B8)
+  TextColumn get exportRule => text().nullable()(); // ownerOnly | everyMember (B14)
+  TextColumn get inviteDefault => text().nullable()(); // approve | joinAtOnce (B7)
+  DateTimeColumn get rulesChangedAt => dateTime().nullable()();
+  // When this device last showed the rules to the user (the notice, SHARE-005).
+  DateTimeColumn get rulesSeenAt => dateTime().nullable()();
   @override
   Set<Column> get primaryKey => {id};
+}
+
+/// P04b T8 (schema v13, ADR-0060): the members of a shared space and their
+/// roles, cached from the server (LF-INV-SHARE-003). Read by the
+/// authorization policy; never synced, never exported.
+@DataClassName('SpaceMemberRow')
+class SpaceMembers extends Table {
+  TextColumn get workspaceId => text()();
+  TextColumn get accountId => text()();
+  TextColumn get role => text()(); // owner | editor | viewer
+  TextColumn get status => text()(); // pending | active
+  TextColumn get displayName => text().withDefault(const Constant(''))();
+  DateTimeColumn get updatedAt => dateTime()();
+  @override
+  Set<Column> get primaryKey => {workspaceId, accountId};
 }
 
 class TaskLists extends Table with SyncableColumns {
@@ -86,6 +118,9 @@ class Tasks extends Table with SyncableColumns {
   // and the fractional order key within the item's container.
   IntColumn get colorIndex => integer().nullable()();
   TextColumn get orderKey => text().withDefault(const Constant('a0'))();
+  // P04b T8 (schema v13, B9): the member a task of a shared space is assigned
+  // to (an account id), or null.
+  TextColumn get assigneeId => text().nullable()();
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -402,6 +437,9 @@ class SyncBase extends Table {
   TextColumn get data => text()(); // the record's JSON as last synced
   // P04 T3 (v11): the record's server id, to find it when the server purges.
   TextColumn get serverId => text().nullable()();
+  // P04b T8 (v13): the workspace the record was synced in, so turning one
+  // workspace's sync off or joining leaves the others' copies alone.
+  TextColumn get workspaceId => text().withDefault(const Constant(''))();
   @override
   Set<Column> get primaryKey => {kind, recordId};
 }

@@ -32,7 +32,9 @@ class DriftDataTransferService implements DataTransferService {
     final profile = await ProfileStore(db).getActiveProfile();
     final now = _clock();
     final text = await ProfileExport.build(db, now: now);
-    final taskCount = (await db.select(db.tasks).get()).length;
+    // P04b T8: the export holds the personal workspace only.
+    final personal = await ProfileStore(db).personalWorkspaceId();
+    final taskCount = (await (db.select(db.tasks)..where((t) => t.workspaceId.equals(personal ?? ''))).get()).length;
     return ExportFile(
       suggestedName: 'lifeflow-${_slug(profile?.displayName ?? '')}-${_date(now)}.lifeflow.json',
       contents: text,
@@ -46,7 +48,8 @@ class DriftDataTransferService implements DataTransferService {
   Future<({_Target kind, ParsedExport data, ProfileEntry? other})> _target(
       ParsedExport file) async {
     final ownRow = await db.select(db.profiles).getSingleOrNull();
-    final aligned = ownRow == null ? null : alignToProfile(file, ownRow);
+    final aligned =
+        ownRow == null ? null : alignToProfile(file, ownRow, personalWorkspaceId: await personalWorkspaceOf(db, ownRow));
     if (aligned != null) return (kind: _Target.active, data: aligned, other: null);
     final all = await directory.list();
     final sameId = all.where((e) => e.id == file.profileId).firstOrNull;
@@ -163,7 +166,8 @@ class DriftDataTransferService implements DataTransferService {
         Command(
           operationId: _uuid.v7(),
           actor: ActorRef(ActorKind.owner, id),
-          workspaceId: profile.activeWorkspaceId.value,
+          // P04b T8 (ADR-0060): export and restore are of the personal workspace.
+          workspaceId: (await ProfileStore(db).personalWorkspaceId()) ?? profile.activeWorkspaceId.value,
           type: type,
           payload: {...payload, 'id': id},
           expectedVersion: Version(row.version),

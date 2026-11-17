@@ -43,6 +43,7 @@ export 'src/organize_ops.dart';
 export 'src/organize_rows.dart';
 export 'src/overview_service.dart';
 export 'src/workspace_settings_handler.dart';
+export 'src/space_service.dart';
 export 'src/sync/data_licenses.dart';
 export 'src/sync/http_remote.dart';
 export 'src/sync/memory_remote.dart';

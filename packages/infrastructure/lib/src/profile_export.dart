@@ -51,7 +51,9 @@ final List<String> exportedTables = [
 /// undo copy of the last restore (an export itself); exporting it would nest
 /// old data in every file. `syncBase` and `syncState` are this device's
 /// sync bookkeeping (P04 T1): another device or a restore starts its own.
-const notExportedTables = ['restoreSnapshots', 'syncBase', 'syncState', 'syncReviews'];
+/// `spaceMembers` (P04b T8) is a cache of the server's members of shared
+/// spaces, which are not in a personal export either (ADR-0060).
+const notExportedTables = ['restoreSnapshots', 'syncBase', 'syncState', 'syncReviews', 'spaceMembers'];
 
 /// A file that must not be restored. [message] is safe to show to the user and
 /// never echoes file contents.
@@ -150,16 +152,48 @@ class ProfileExport {
 
   /// The export payload of [db], read in the CALLER's transaction (if any).
   /// Includes tombstones: they are part of the data (SYNC-004).
-  static Future<Map<String, Object?>> payloadOf(AppDatabase db) async =>
-      <String, Object?>{
-        'profiles': [for (final r in await db.select(db.profiles).get()) r.toJson()],
-        'workspaces': [for (final r in await db.select(db.workspaces).get()) r.toJson()],
-        for (final k in recordKinds) k.exportKey: await k.readAll(db),
-        'auditLog': [for (final r in await db.select(db.auditLog).get()) r.toJson()],
-        'outbox': [for (final r in await db.select(db.outbox).get()) r.toJson()],
-        'eventLog': [for (final r in await db.select(db.eventLog).get()) r.toJson()],
-        'opDedupe': [for (final r in await db.select(db.opDedupe).get()) r.toJson()],
-      };
+  ///
+  /// P04b T8 (ADR-0060, p04b-plan.md B14): only the PERSONAL workspace. A
+  /// shared space in the same store holds other people's data; it is never
+  /// part of the personal export, nor of the restore and join snapshots
+  /// built from this. Governance rows of the shared spaces' operations stay
+  /// out too.
+  static Future<Map<String, Object?>> payloadOf(AppDatabase db) async {
+    final profiles = await db.select(db.profiles).get();
+    final all = await db.select(db.workspaces).get();
+    final shared = {for (final w in all) if (w.kind == 'shared') w.id};
+    final personal = [for (final w in all) if (w.kind != 'shared') w];
+    final dedupe = await db.select(db.opDedupe).get();
+    final sharedOps = {for (final d in dedupe) if (shared.contains(d.workspaceId)) d.operationId};
+    // A profile whose active workspace is a shared space exports as showing
+    // its personal one.
+    final home = personal.where((w) => profiles.any((p) => p.id == w.ownerId)).firstOrNull;
+    return <String, Object?>{
+      'profiles': [
+        for (final r in profiles)
+          (home != null && shared.contains(r.activeWorkspaceId) ? r.copyWith(activeWorkspaceId: home.id) : r).toJson()
+      ],
+      'workspaces': [for (final r in personal) r.toJson()],
+      for (final k in recordKinds)
+        k.exportKey: [
+          for (final r in await k.readAll(db))
+            if (!shared.contains(r['workspaceId'])) r
+        ],
+      'auditLog': [
+        for (final r in await db.select(db.auditLog).get())
+          if (!sharedOps.contains(r.operationId)) r.toJson()
+      ],
+      'outbox': [
+        for (final r in await db.select(db.outbox).get())
+          if (!shared.contains(r.workspaceId)) r.toJson()
+      ],
+      'eventLog': [
+        for (final r in await db.select(db.eventLog).get())
+          if (!sharedOps.contains(r.operationId)) r.toJson()
+      ],
+      'opDedupe': [for (final r in dedupe) if (!shared.contains(r.workspaceId)) r.toJson()],
+    };
+  }
 
   /// Wraps [payload] in the envelope with counts and checksum. Public so tests
   /// can build files that are structurally wrong but correctly sealed.

@@ -55,6 +55,16 @@ void main() {
     expect((tie.row['title'], tie.reviews.length), ('B', 0), reason: "device 'b' > 'a'");
   });
 
+  test('P04b: "changed by" is who made the kept change; records before v13 have none', () {
+    final base = task();
+    final l = {...task(version: 2, updatedAt: 5, title: 'Mine'), 'changedBy': 'acc-a'};
+    final r = {...task(version: 2, updatedAt: 9, notes: 'Theirs'), 'changedBy': 'acc-b'};
+    final m = merge('task', base, l, r);
+    expect((m.row['title'], m.row['notes'], m.row['changedBy']), ('Mine', 'Theirs', 'acc-b'), reason: 'the later side');
+    expect(merge('task', base, task(version: 2, title: 'x'), task(version: 2, notes: 'y')).row.containsKey('changedBy'), isFalse);
+    expect(m.reviews, isEmpty, reason: 'bookkeeping, not content');
+  });
+
   test('a task\'s status never goes down: a completion is not lost', () {
     for (final (l, r) in [('done', 'inProgress'), ('inProgress', 'done'), ('done', 'todo'), ('todo', 'done')]) {
       final m = merge('task', base, task(version: 2, updatedAt: 9, status: l), task(version: 2, updatedAt: 3, status: r));

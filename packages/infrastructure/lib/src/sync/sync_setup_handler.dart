@@ -49,7 +49,11 @@ class SyncSetupHandler implements CommandHandler {
     final ws = p['id'] as String;
     if (ws != cmd.workspaceId) throw DomainRejection('sync setup of another workspace');
     final now = DateTime.now().toUtc();
-    final profile = await (db.select(db.profiles)..where((x) => x.activeWorkspaceId.equals(ws))).getSingleOrNull();
+    // P04b T8 (ADR-0060): personal sync is of the personal workspace, even
+    // while a shared space is shown.
+    final wsRow = await (db.select(db.workspaces)..where((w) => w.id.equals(ws))).getSingleOrNull();
+    if (wsRow == null || wsRow.kind != 'personal') throw DomainRejection('not this profile\'s workspace');
+    final profile = await (db.select(db.profiles)..where((x) => x.id.equals(wsRow.ownerId))).getSingleOrNull();
     if (profile == null) throw DomainRejection('not this profile\'s workspace');
     final state = await (db.select(db.syncState)..where((s) => s.workspaceId.equals(ws))).getSingleOrNull();
 
@@ -72,15 +76,16 @@ class SyncSetupHandler implements CommandHandler {
         await db.into(db.restoreSnapshots).insert(RestoreSnapshotsCompanion.insert(
             id: syncJoinSnapshotId, operationId: cmd.operationId, createdAt: now, exportText: before));
         await _rehome(db, from: ws, to: target, owner: profile.id);
-        await (db.delete(db.syncBase)).go();
-        await (db.delete(db.syncReviews)).go();
+        await (db.delete(db.syncBase)..where((b) => b.workspaceId.isIn([ws, target]))).go();
+        await (db.delete(db.syncReviews)..where((r) => r.workspaceId.isIn([ws, target]))).go();
         await db.into(db.syncState).insert(SyncStateCompanion.insert(workspaceId: target, deviceId: _device(p)));
         var n = 0;
         if (mode == 'replace') {
           for (final k in recordKinds) {
             await db.customStatement('DELETE FROM ${k.tableName} WHERE workspace_id = ?', [target]);
           }
-          await db.customStatement("UPDATE outbox SET status = 'local' WHERE status = 'pending'");
+          await db.customStatement(
+              "UPDATE outbox SET status = 'local' WHERE status = 'pending' AND workspace_id = ?", [target]);
         } else {
           n = await _uploadAll(db, cmd, target, now, workspaceOfCommand: ws);
         }
@@ -106,27 +111,30 @@ class SyncSetupHandler implements CommandHandler {
             k.upsert(b, db, file.records[k.name] ?? const []);
           }
         });
-        await (db.update(db.profiles)..where((x) => x.id.equals(profile.id)))
-            .write(ProfilesCompanion(activeWorkspaceId: Value(old)));
+        // The profile shows its personal workspace again, unless a shared
+        // space is shown.
+        await db.customStatement(
+            'UPDATE profiles SET active_workspace_id = ? WHERE id = ? AND active_workspace_id = ?', [old, profile.id, ws]);
         await db.customStatement('UPDATE outbox SET workspace_id = ? WHERE workspace_id = ?', [old, ws]);
         await db.customStatement('UPDATE op_dedupe SET workspace_id = ? WHERE workspace_id = ?', [old, ws]);
-        await db.customStatement("UPDATE outbox SET status = 'local' WHERE status = 'pending'");
+        await db.customStatement("UPDATE outbox SET status = 'local' WHERE status = 'pending' AND workspace_id = ?", [old]);
         // Every restored record has its outbox row (LF-INV-OUTBOX-001); sync
         // is off, so nothing is sent.
         await _uploadAll(db, cmd, old, now, status: 'local');
         await (db.delete(db.workspaces)..where((w) => w.id.equals(ws))).go();
-        await (db.delete(db.syncState)).go();
-        await (db.delete(db.syncBase)).go();
-        await (db.delete(db.syncReviews)).go();
+        await (db.delete(db.syncState)..where((s) => s.workspaceId.equals(ws))).go();
+        await (db.delete(db.syncBase)..where((b) => b.workspaceId.isIn([ws, old]))).go();
+        await (db.delete(db.syncReviews)..where((r) => r.workspaceId.isIn([ws, old]))).go();
         await (db.delete(db.restoreSnapshots)..where((s) => s.id.equals(syncJoinSnapshotId))).go();
         return _outcome(ws, 'SyncJoinUndone', {'back': old});
 
       case 'turnOff':
         if (state == null) throw DomainRejection('sync is not on');
         await (db.delete(db.syncState)..where((s) => s.workspaceId.equals(ws))).go();
-        await (db.delete(db.syncBase)).go();
+        await (db.delete(db.syncBase)..where((b) => b.workspaceId.equals(ws))).go();
         await (db.delete(db.syncReviews)..where((r) => r.workspaceId.equals(ws))).go();
-        await db.customStatement("UPDATE outbox SET status = 'local' WHERE status IN ('pending', 'failed')");
+        await db.customStatement(
+            "UPDATE outbox SET status = 'local' WHERE status IN ('pending', 'failed') AND workspace_id = ?", [ws]);
         // A join can no longer be undone once sync is off.
         await (db.delete(db.restoreSnapshots)..where((s) => s.id.equals(syncJoinSnapshotId))).go();
         return _outcome(ws, 'SyncTurnedOff', const {});
@@ -145,8 +153,8 @@ class SyncSetupHandler implements CommandHandler {
   /// Moves every row of [from] into [to], keeping record ids; the profile's
   /// workspace becomes [to] (records' owner ids stay as they were made).
   Future<void> _rehome(AppDatabase db, {required String from, required String to, required String owner}) async {
-    await db.into(db.workspaces).insertOnConflictUpdate(
-        WorkspacesCompanion.insert(id: to, ownerId: owner, createdAt: DateTime.now().toUtc()));
+    await db.into(db.workspaces).insertOnConflictUpdate(WorkspacesCompanion.insert(
+        id: to, kind: const Value('personal'), ownerId: owner, createdAt: DateTime.now().toUtc()));
     for (final k in recordKinds) {
       await db.customStatement('UPDATE ${k.tableName} SET workspace_id = ? WHERE workspace_id = ?', [to, from]);
     }

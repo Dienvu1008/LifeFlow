@@ -22,6 +22,7 @@ Harvest note (Batch 4): 60 invariants were found across the docs and are all cat
 
 ### LF-INV-WA-001 — One active workspace (MVP)
 - Statement: a profile has exactly one active Personal Workspace in the MVP. Rationale: MVP simplicity. Scope: Workspace. Enforcement: profile invariant. Failure: reject. Verification: unit. Severity: medium. Depends: —.
+- **Refined by P04b T8 (ADR-0060, 2026-11-17):** a profile's store holds exactly one personal workspace and any number of shared spaces its account belongs to; one is shown at a time (`profiles.active_workspace_id`). Showing a shared space needs active membership (the `switchSpace` command). Sync, export, restore, reminders and focus stay with the personal workspace whatever is shown. Verification: `spaces_store_test.dart`.
 
 ## 2. Task and Planning
 
@@ -53,7 +54,8 @@ Harvest note (Batch 4): 60 invariants were found across the docs and are all cat
 - Statement: an event is in a list or in none; it never has a parent task and is never a parent (owner decision U-D1). Rationale: an event is not a task (LF-INV-CAL-001). Scope: Event. Enforcement: event create/move refuse a parent; a task move refuses an event id as parent. Failure: reject. Verification: integration + property. Severity: medium. Depends: LF-INV-CAL-001.
 
 ### LF-INV-ORDER-004 — A list leaves and returns with its contents
-- Statement: trashing a list trashes its top-level tasks with all their subtasks and its events at one tombstone time; restoring it brings back exactly that set. Items trashed on their own before stay in the trash. Rationale: recoverable delete without loss. Scope: lists. Enforcement: list 	rash/estore. Failure: —. Verification: integration. Severity: medium. Depends: LF-INV-TASK-011.
+- Statement: trashing a list trashes its top-level tasks with all their subtasks and its events at one tombstone time; restoring it brings back exactly that set. Items trashed on their own before stay in the trash. Rationale: recoverable delete without loss. Scope: lists. Enforcement: list 	rash/
+estore. Failure: —. Verification: integration. Severity: medium. Depends: LF-INV-TASK-011.
 
 ### LF-INV-PLAN-004 — Date-only preserved
 - Statement: a date-only ScheduleSpec is never implicitly converted to an instant. Rationale: avoid timezone drift (ADR-0010). Scope: Time Kernel. Enforcement: type separation. Failure: compile/validation error. Verification: property + unit (GS: DST/date). Severity: high. Depends: —.

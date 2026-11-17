@@ -79,10 +79,21 @@ class RecordSet {
   RecordSet(this.byKind);
   final Map<String, Map<String, Row>> byKind;
 
-  static Future<RecordSet> ofDatabase(AppDatabase db) async => RecordSet({
-        for (final k in recordKinds)
-          k.name: {for (final r in await k.readAll(db)) r['id'] as String: r},
-      });
+  /// The device's side of a restore: the PERSONAL workspace only (P04b T8,
+  /// ADR-0060). A shared space in the store is never compared, overwritten
+  /// or moved to the trash by a restore.
+  static Future<RecordSet> ofDatabase(AppDatabase db) async {
+    final shared = {
+      for (final w in await (db.select(db.workspaces)..where((w) => w.kind.equals('shared'))).get()) w.id
+    };
+    return RecordSet({
+      for (final k in recordKinds)
+        k.name: {
+          for (final r in await k.readAll(db))
+            if (!shared.contains(r['workspaceId'])) r['id'] as String: r
+        },
+    });
+  }
 
   static RecordSet ofExport(ParsedExport p) => RecordSet({
         for (final k in recordKinds)
@@ -318,16 +329,26 @@ class RestorePlanner {
 /// belongs to someone else. A file is this profile's data when it was
 /// exported from this very profile (same id), or from the profile of the SAME
 /// account on another device (same account id and provider; ADR-0025 T7c).
-ParsedExport? alignToProfile(ParsedExport parsed, Profile own) {
+ParsedExport? alignToProfile(ParsedExport parsed, Profile own, {required String personalWorkspaceId}) {
   if (parsed.profileId == own.id) return parsed;
   final account = own.accountId;
   if (account != null &&
       parsed.accountId == account &&
       parsed.accountProvider == own.accountProvider) {
-    return parsed.rebasedOnto(profileId: own.id, workspaceId: own.activeWorkspaceId);
+    // P04b T8: into the personal workspace, even while a shared space is shown.
+    return parsed.rebasedOnto(profileId: own.id, workspaceId: personalWorkspaceId);
   }
   return null;
 }
+
+/// The personal workspace of [own] (P04b T8: not the shown one).
+Future<String> personalWorkspaceOf(AppDatabase db, Profile own) async =>
+    (await (db.select(db.workspaces)
+              ..where((w) => w.ownerId.equals(own.id) & w.kind.equals('personal'))
+              ..limit(1))
+            .getSingleOrNull())
+        ?.id ??
+    own.activeWorkspaceId;
 
 /// Command types handled by [ProfileRestoreHandler].
 const restoreCommandType = 'RestoreProfile';
@@ -383,7 +404,7 @@ class ProfileRestoreHandler implements CommandHandler {
     } on ExportRejected catch (e) {
       throw DomainRejection(e.message);
     }
-    final parsed = alignToProfile(file, profile);
+    final parsed = alignToProfile(file, profile, personalWorkspaceId: await personalWorkspaceOf(db, profile));
     if (parsed == null) {
       throw DomainRejection('the file belongs to another profile');
     }

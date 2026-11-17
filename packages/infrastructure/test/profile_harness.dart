@@ -97,6 +97,18 @@ class Services {
 /// Turns a current profile store back into what a build with schema [version]
 /// wrote (for migration tests). Data in the tables that remain is kept.
 Future<void> rewindProfileStore(AppDatabase db, int version) async {
+  if (version < 13) {
+    // P04b T8 (ADR-0060): no shared spaces, no changed_by, no assignee.
+    await db.customStatement('DROP TABLE space_members');
+    for (final c in ['name', 'leave_rule', 'export_rule', 'invite_default', 'rules_changed_at', 'rules_seen_at']) {
+      await db.customStatement('ALTER TABLE workspaces DROP COLUMN $c');
+    }
+    await db.customStatement('ALTER TABLE tasks DROP COLUMN assignee_id');
+    for (final k in recordKinds) {
+      await db.customStatement('ALTER TABLE ${k.tableName} DROP COLUMN changed_by');
+    }
+    await db.customStatement('ALTER TABLE sync_base DROP COLUMN workspace_id');
+  }
   if (version < 12) {
     // The outbox key without the kind (v1-v11).
     final ddl = (await db.customSelect("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'outbox'").getSingle())

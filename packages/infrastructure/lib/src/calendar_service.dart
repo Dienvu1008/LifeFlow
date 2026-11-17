@@ -28,11 +28,13 @@ class _Runner {
     if (profile == null) {
       return const CommandFailure(CommandFailureKind.notFound, reason: 'no active profile');
     }
+    // P04b T8 (ADR-0060): the workspace and the actor of this command.
+    final ctx = (await store.commandContext())!;
     return gateway.execute(
       Command(
         operationId: _uuid.v7(),
-        actor: ActorRef(ActorKind.owner, profile.profileId.value),
-        workspaceId: profile.activeWorkspaceId.value,
+        actor: ctx.actor,
+        workspaceId: ctx.workspaceId,
         type: type,
         payload: payload,
         expectedVersion: expectedVersion == null ? null : Version(expectedVersion),

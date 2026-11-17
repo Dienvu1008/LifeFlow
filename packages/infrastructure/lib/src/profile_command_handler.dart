@@ -19,6 +19,7 @@ import 'command_gateway.dart';
 ///   bind     : id (profileId), accountId, provider, moveData(bool), hasData(bool)
 ///   signOut  : id (profileId)            — keeps the binding, locks (ADR-0024)
 ///   resume   : id (profileId), accountId — unlock; only the owning account
+///   switchSpace : id (profileId), workspaceId — the space shown (P04b T8)
 ///   (setManualResults moved to WorkspaceSettingsCommandHandler in P04 T1)
 ///
 /// Switching profiles is a device-level registry change (ProfileDirectory),
@@ -59,6 +60,8 @@ class ProfileCommandHandler implements CommandHandler {
         return _signOut(db, row, newVersion);
       case 'resume':
         return _resume(db, cmd, row, newVersion);
+      case 'switchSpace':
+        return _switchSpace(db, cmd, row, newVersion);
       default:
         throw DomainRejection('unknown op: $op');
     }
@@ -133,6 +136,36 @@ class ProfileCommandHandler implements CommandHandler {
       operationType: 'update',
       changeSet: {'id': row.id, 'signedOut': true},
       events: [DomainEvent('SignedOut', {'profileId': row.id})],
+    );
+  }
+
+  /// P04b T8 (ADR-0060, B1): show another space of this store: the personal
+  /// workspace, or a shared space the profile's account is an active member
+  /// of. Only which one is shown changes; no record moves.
+  Future<HandlerOutcome> _switchSpace(AppDatabase db, Command cmd, Profile row, Version newVersion) async {
+    final to = cmd.payload['workspaceId'];
+    if (to is! String) throw DomainRejection('which space?');
+    final ws = await (db.select(db.workspaces)..where((w) => w.id.equals(to))).getSingleOrNull();
+    if (ws == null) throw DomainRejection('no such space on this device');
+    if (ws.kind == 'shared') {
+      final account = row.accountId;
+      final m = account == null
+          ? null
+          : await (db.select(db.spaceMembers)..where((x) => x.workspaceId.equals(to) & x.accountId.equals(account)))
+              .getSingleOrNull();
+      if (m == null || m.status != 'active') throw DomainRejection('not a member of this space');
+      if (row.signedOut) throw DomainRejection('this profile is signed out');
+    } else if (ws.ownerId != row.id) {
+      throw DomainRejection('not this profile\'s workspace');
+    }
+    if (row.activeWorkspaceId == to) throw DomainRejection('this space is already shown');
+    await (db.update(db.profiles)..where((p) => p.id.equals(row.id)))
+        .write(ProfilesCompanion(activeWorkspaceId: Value(to), version: Value(newVersion.value)));
+    return HandlerOutcome(
+      entityId: row.id,
+      operationType: 'update',
+      changeSet: {'id': row.id, 'activeWorkspaceId': to},
+      events: [DomainEvent('SpaceShown', {'profileId': row.id, 'workspaceId': to})],
     );
   }
 
