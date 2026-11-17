@@ -60,6 +60,12 @@ class Workspaces extends Table {
   DateTimeColumn get rulesChangedAt => dateTime().nullable()();
   // When this device last showed the rules to the user (the notice, SHARE-005).
   DateTimeColumn get rulesSeenAt => dateTime().nullable()();
+  // P04b T12 (v14, ADR-0064): when this account left the space or lost it
+  // (removed, or the space deleted). What stays is the leaving rule's (B8):
+  // 'readOnly' (a copy kept, no changes) or 'exportFirst' (hidden, kept
+  // until the person exported it or let it go).
+  DateTimeColumn get leftAt => dateTime().nullable()();
+  TextColumn get leftKeep => text().nullable()(); // readOnly | exportFirst
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -422,6 +428,10 @@ class GoalLinks extends Table with SyncableColumns {
 class WorkspaceSettings extends Table with SyncableColumns {
   // P03 UX U6 (U-D13): 'target' (the target's judgement) or 'tick'.
   TextColumn get manualResults => text().withDefault(const Constant('target'))();
+  // P04b T12 (v14, ADR-0064): a shared space's name, set by its owner. It
+  // syncs sealed with the space, so the server never sees it. Null for the
+  // personal workspace.
+  TextColumn get name => text().nullable()();
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -440,8 +450,27 @@ class SyncBase extends Table {
   // P04b T8 (v13): the workspace the record was synced in, so turning one
   // workspace's sync off or joining leaves the others' copies alone.
   TextColumn get workspaceId => text().withDefault(const Constant(''))();
+  // P04b T12 (v14, ADR-0064): one copy per workspace. A record moved into a
+  // shared space (B3) keeps its id and has a last synced copy in each: its
+  // personal one (to send "moved away" there) and the space's.
   @override
-  Set<Column> get primaryKey => {kind, recordId};
+  Set<Column> get primaryKey => {workspaceId, kind, recordId};
+}
+
+/// P04b T12 (schema v14, ADR-0064): a change of a shared space this device
+/// did not take because the record is still in another workspace here (it
+/// was moved into the space on another device of the account, and that
+/// device's "moved away" has not arrived yet). When it arrives, the space's
+/// cursor goes back to here, so the change is pulled again. Device
+/// bookkeeping.
+@DataClassName('SyncParkedRow')
+class SyncParked extends Table {
+  TextColumn get workspaceId => text()();
+  TextColumn get kind => text()();
+  TextColumn get recordId => text()();
+  IntColumn get seq => integer()();
+  @override
+  Set<Column> get primaryKey => {workspaceId, kind, recordId};
 }
 
 /// Where this device is in the sync of a workspace: the last change number

@@ -268,6 +268,26 @@ class TaskCommandHandler implements CommandHandler {
             TasksCompanion(notes: Value(notes), version: Value(newVersion.value), updatedAt: Value(now)));
         return HandlerOutcome(entityId: id, operationType: 'update', changeSet: {'id': id, 'notes': notes != null}, events: [DomainEvent('TaskUpdated', {'id': id})]);
 
+      case 'assign':
+        // P04b T12 (B9, ADR-0064): a task of a shared space, to one member
+        // who may change it (the owner or an editor), or to nobody.
+        final task = await _liveTask(db, id);
+        final ws = await (db.select(db.workspaces)..where((w) => w.id.equals(task.workspaceId))).getSingleOrNull();
+        if (ws?.kind != 'shared' || task.workspaceId != cmd.workspaceId) throw DomainRejection('only a task of a shared space is assigned');
+        final to = cmd.payload['assigneeId'] as String?;
+        if (to != null) {
+          final m = await (db.select(db.spaceMembers)
+                ..where((x) => x.workspaceId.equals(task.workspaceId) & x.accountId.equals(to)))
+              .getSingleOrNull();
+          if (m == null || m.status != 'active' || (m.role != 'owner' && m.role != 'editor')) {
+            throw DomainRejection('a task is assigned to the owner or an editor of the space');
+          }
+        }
+        if (task.assigneeId == to) throw DomainRejection('already assigned so');
+        await (db.update(db.tasks)..where((t) => t.id.equals(id))).write(
+            TasksCompanion(assigneeId: Value(to), version: Value(newVersion.value), updatedAt: Value(now)));
+        return HandlerOutcome(entityId: id, operationType: 'update', changeSet: {'id': id, 'assigned': to != null}, events: [DomainEvent('TaskAssigned', {'id': id})]);
+
       case 'setColor':
         await _liveTask(db, id);
         final color = colorOf(cmd.payload);

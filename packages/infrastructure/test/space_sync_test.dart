@@ -253,12 +253,15 @@ void main() {
     await minh.syncNow();
     expect(await minh.task(gone), isNull);
 
-    // Vy's device: the space is no longer Vy's; it stops syncing there.
+    // Vy's device: the space is no longer Vy's; it stops syncing there, and
+    // under the default leaving rule (B8 (a)) its data and key go.
+    final vyKey = (await vy.keyring.keyOf(ws))!;
     expect(await vy.sync.refresh(), isNull);
     expect((await vy.syncNow()).outcome, SyncOutcome.notOn);
     expect(await vy.db.select(vy.db.syncState).get(), isEmpty);
     expect([for (final s in await vy.spaces.spaces()) s.shared], [false], reason: 'no longer listed');
-    final vyKey = (await vy.keyring.keyOf(ws))!;
+    expect(await vy.task(t), isNull);
+    expect(await vy.keyring.keyOf(ws), isNull);
     final after = onServer.firstWhere((s) => !s.deleted);
     await expectLater((await RecordSealer.of(vyKey)).open(after.id, after.version, after.sealed!), throwsA(isA<SealBroken>()),
         reason: 'the key Vy had opens nothing sealed after the removal (SHARE-004)');

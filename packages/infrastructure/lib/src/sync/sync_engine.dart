@@ -234,8 +234,11 @@ class SyncEngine {
         .read<int>('n');
   }
 
-  Future<SyncBaseRow?> _base(String kind, String id) =>
-      (db.select(db.syncBase)..where((b) => b.kind.equals(kind) & b.recordId.equals(id))).getSingleOrNull();
+  /// The last synced copy of a record in THIS workspace (P04b T12: a record
+  /// moved between workspaces has one in each, ADR-0064).
+  Future<SyncBaseRow?> _base(String kind, String id) => (db.select(db.syncBase)
+        ..where((b) => b.workspaceId.equals(workspaceId) & b.kind.equals(kind) & b.recordId.equals(id)))
+      .getSingleOrNull();
 
   Future<void> _setOutboxStatus(String kind, String id, String status) => db.customStatement(
       "UPDATE outbox SET status = ? WHERE status = 'pending' AND workspace_id = ? AND entity_type = ? AND entity_id = ?",
@@ -248,6 +251,8 @@ class SyncEngine {
     final kinds = recordKinds.map((k) => "'${k.name}'").join(',');
     await db.customStatement(
         "UPDATE outbox SET status = 'local' WHERE status = 'pending' AND entity_type NOT IN ($kinds)");
+    var conflicts = await _pushMovedAway();
+    if (_keyChanged) return conflicts;
     final touched = await db.customSelect(
         "SELECT DISTINCT entity_type, entity_id FROM outbox WHERE status = 'pending' AND workspace_id = ? "
         "AND entity_type IN ($kinds) ORDER BY entity_type, entity_id",
@@ -294,11 +299,94 @@ class SyncEngine {
       ));
     }
 
-    var conflicts = 0;
     for (var i = 0; i < items.length; i += maxPushBatch) {
       final batch = items.sublist(i, i + maxPushBatch > items.length ? items.length : i + maxPushBatch);
       conflicts += await _pushBatch(batch);
       if (_keyChanged) break;
+    }
+    return conflicts;
+  }
+
+  /// P04b T12 (ADR-0064, B3): records that were synced in this workspace and
+  /// now live in another one of this store (moved into a shared space, or
+  /// out of one) leave this workspace on the server: a tombstone of the last
+  /// synced copy. From the personal workspace it says where the record went
+  /// ("movedTo"), so the account's other devices take it out of their
+  /// personal workspace too; to the other members of a space it is a delete
+  /// (B3: "for the others it is like a delete").
+  Future<int> _pushMovedAway() async {
+    final items = <(RecordPush, String, String, Map<String, dynamic>)>[];
+    for (final kind in recordKinds) {
+      if (space != null && !sharedSpaceKinds.contains(kind.name)) continue;
+      final rows = await db.customSelect(
+          'SELECT b.record_id AS id, b.version AS version, b.data AS data, t.workspace_id AS now_in '
+          'FROM sync_base b JOIN ${kind.tableName} t ON t.id = b.record_id '
+          'WHERE b.workspace_id = ? AND b.kind = ? AND t.workspace_id <> ? '
+          "AND json_extract(b.data, '\$.deletedAt') IS NULL",
+          variables: [Variable<String>(workspaceId), Variable<String>(kind.name), Variable<String>(workspaceId)]).get();
+      for (final r in rows) {
+        final id = r.read<String>('id');
+        final base = r.read<int>('version');
+        final row = (jsonDecode(r.read<String>('data')) as Map).cast<String, dynamic>()
+          ..['deletedAt'] = clock().toUtc().millisecondsSinceEpoch
+          ..['version'] = base + 1;
+        final sid = await sealer.serverId(kind.name, id);
+        items.add((
+          RecordPush(
+            id: sid,
+            base: base,
+            version: base + 1,
+            deleted: true,
+            sealed: await sealer.seal(sid, base + 1, {
+              'kind': kind.name,
+              'id': id,
+              'schemaVersion': AppDatabase.recordSchemaVersion,
+              'row': row,
+              if (space == null) 'movedTo': r.read<String>('now_in'),
+            }),
+            operationId: const Uuid().v5(_opNamespace, '$deviceId:${kind.name}:$id:moved:$base'),
+          ),
+          kind.name,
+          id,
+          row,
+        ));
+      }
+    }
+    if (items.isEmpty) return 0;
+    var conflicts = 0;
+    for (var i = 0; i < items.length; i += maxPushBatch) {
+      final batch = items.sublist(i, i + maxPushBatch > items.length ? items.length : i + maxPushBatch);
+      final PushResult result;
+      try {
+        result = await remote.push(workspaceId, deviceId, [for (final b in batch) b.$1],
+            keyId: space == null ? '' : sealer.keyId);
+      } on RemoteFailure catch (e) {
+        if (e is SpaceFailure && e.reason == SpaceRefusal.staleKey) {
+          _keyChanged = true;
+          return conflicts;
+        }
+        rethrow;
+      }
+      await db.transaction(() async {
+        for (final (push, kind, id, row) in batch) {
+          final taken = result.accepted.containsKey(push.id);
+          // Taken, or someone changed it meanwhile (their change comes in by
+          // the pull): either way it is not sent again.
+          await db.into(db.syncBase).insertOnConflictUpdate(SyncBaseCompanion.insert(
+                kind: kind,
+                recordId: id,
+                version: taken ? push.version : push.version - 1,
+                data: jsonEncode(row),
+                serverId: Value(push.id),
+                workspaceId: Value(workspaceId),
+              ));
+          if (taken) {
+            _pushed++;
+          } else {
+            conflicts++;
+          }
+        }
+      });
     }
     return conflicts;
   }
@@ -378,7 +466,9 @@ class SyncEngine {
   /// (a change this app version cannot read yet).
   Future<bool> _take(SealedRecord s, List<Map<String, Object?>> changes, List<Map<String, Object?>> reviews) async {
     if (s.sealed == null) {
-      final known = await (db.select(db.syncBase)..where((b) => b.serverId.equals(s.id))).getSingleOrNull();
+      final known = await (db.select(db.syncBase)
+            ..where((b) => b.workspaceId.equals(workspaceId) & b.serverId.equals(s.id)))
+          .getSingleOrNull();
       if (known != null) changes.add({'kind': known.kind, 'mode': 'purge', 'id': known.recordId, 'serverId': s.id});
       return true;
     }
@@ -419,21 +509,45 @@ class SyncEngine {
     // P04b T11: what a space does not hold (B2), and a record of this id in
     // another workspace of this store (a member cannot overwrite a personal
     // record, nor one of another space, by naming its id), are not taken.
-    final local = await kind.readOne(db, id);
-    if (space != null &&
-        (!sharedSpaceKinds.contains(kind.name) ||
-            remoteRow['workspaceId'] != workspaceId ||
-            (local != null && local['workspaceId'] != workspaceId))) {
-      _refused++;
-      return true;
+    var local = await kind.readOne(db, id);
+    if (space != null) {
+      if (!sharedSpaceKinds.contains(kind.name) || remoteRow['workspaceId'] != workspaceId) {
+        _refused++;
+        return true;
+      }
+      if (local != null && local['workspaceId'] != workspaceId) {
+        // P04b T12 (ADR-0064): kept aside. If this device's own account
+        // moved the record into the space elsewhere, the personal sync's
+        // "moved away" brings the space's cursor back here.
+        await db.into(db.syncParked).insertOnConflictUpdate(
+            SyncParkedCompanion.insert(workspaceId: workspaceId, kind: kind.name, recordId: id, seq: s.seq));
+        _refused++;
+        return true;
+      }
     }
     final base = await _base(kind.name, id);
+    // P04b T12 (ADR-0064): the account's own personal workspace (trusted,
+    // only its devices write it).
+    if (space == null) {
+      // "Moved away" into a shared space on another device of the account:
+      // the record leaves the personal workspace here too.
+      if (env['movedTo'] case final String to) {
+        if (base != null && base.version == s.version) return true; // this device's own
+        _pulled++;
+        changes.add({'kind': kind.name, 'mode': 'movedAway', 'id': id, 'to': to, 'row': remoteRow, 'serverId': s.id});
+        return true;
+      }
+      // Moved out of a shared space into the personal workspace on another
+      // device: the personal copy wins over the space's copy here.
+      if (local != null && local['workspaceId'] != workspaceId) local = null;
+    }
     if (base != null && base.version == s.version) {
       // This device's own push, or already here. After a rotation the same
       // version comes again under its new server id: remember that id, so a
       // later purge of it is recognised.
       if (base.serverId != s.id) {
-        await (db.update(db.syncBase)..where((b) => b.kind.equals(kind.name) & b.recordId.equals(id)))
+        await (db.update(db.syncBase)
+              ..where((b) => b.workspaceId.equals(workspaceId) & b.kind.equals(kind.name) & b.recordId.equals(id)))
             .write(SyncBaseCompanion(serverId: Value(s.id)));
       }
       return true;
