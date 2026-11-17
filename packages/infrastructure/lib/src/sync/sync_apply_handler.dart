@@ -54,7 +54,7 @@ class SyncApplyHandler implements CommandHandler {
       final serverId = c['serverId'] as String?;
       if (mode == 'purge') {
         final id = c['id'] as String;
-        await db.customStatement('DELETE FROM ${kind.tableName} WHERE id = ?', [id]);
+        await db.customStatement('DELETE FROM ${kind.tableName} WHERE id = ? AND workspace_id = ?', [id, cmd.workspaceId]);
         await (db.delete(db.syncBase)..where((b) => b.kind.equals(kind.name) & b.recordId.equals(id))).go();
         purged++;
         continue;
@@ -88,6 +88,7 @@ class SyncApplyHandler implements CommandHandler {
             version: base['version'] as int,
             data: jsonEncode(base),
             serverId: Value(serverId),
+            workspaceId: Value(cmd.workspaceId),
           ));
       written++;
     }

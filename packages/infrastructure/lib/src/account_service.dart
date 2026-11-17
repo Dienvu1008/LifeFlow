@@ -333,7 +333,8 @@ class DriftAccountService implements AccountService {
       Command(
         operationId: _uuid.v7(),
         actor: ActorRef(ActorKind.owner, profile.profileId.value),
-        workspaceId: profile.activeWorkspaceId.value,
+        // P04b T8: profile commands belong to the personal workspace.
+        workspaceId: (await ProfileStore(store).personalWorkspaceId()) ?? profile.activeWorkspaceId.value,
         type: type,
         payload: payload,
         expectedVersion: Version(row.version),
@@ -346,8 +347,10 @@ class DriftAccountService implements AccountService {
   /// Any task in the profile's workspace, including trashed ones (they are
   /// still the user's data until purge).
   Future<bool> _hasData(LocalProfile p) async {
+    // P04b T8: the personal workspace's data (a guest has no shared space).
+    final ws = (await _store.getPersonalWorkspace(p.profileId.value))?.workspaceId.value ?? p.activeWorkspaceId.value;
     final row = await (db.select(db.tasks)
-          ..where((t) => t.workspaceId.equals(p.activeWorkspaceId.value))
+          ..where((t) => t.workspaceId.equals(ws))
           ..limit(1))
         .getSingleOrNull();
     return row != null;

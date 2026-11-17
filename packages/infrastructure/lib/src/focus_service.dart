@@ -54,11 +54,13 @@ class DriftFocusService implements FocusService {
   Future<CommandResult> _run(String type, Map<String, Object?> payload, {Version? expected}) async {
     final profile = await _store.getActiveProfile();
     if (profile == null) return const CommandFailure(CommandFailureKind.notFound, reason: 'no active profile');
+    // P04b T8 (ADR-0060): the workspace and the actor of this command.
+    final ctx = (await _store.personalContext())!;
     return gateway.execute(
       Command(
         operationId: _uuid.v7(),
-        actor: ActorRef(ActorKind.owner, profile.profileId.value),
-        workspaceId: profile.activeWorkspaceId.value,
+        actor: ctx.actor,
+        workspaceId: ctx.workspaceId,
         type: type,
         payload: payload,
         expectedVersion: expected,
@@ -120,11 +122,12 @@ class DriftFocusService implements FocusService {
 
   @override
   Future<FocusLaunch> recoverOnLaunch() async {
-    final profile = await _store.getActiveProfile();
-    if (profile == null) return const NoActiveFocus();
+    // P04b T8 (B2): focus sessions are personal.
+    final ws = await _store.personalWorkspaceId();
+    if (ws == null) return const NoActiveFocus();
     final active = await (db.select(db.focusSessions)
           ..where((s) =>
-              s.workspaceId.equals(profile.activeWorkspaceId.value) &
+              s.workspaceId.equals(ws) &
               s.state.isIn(activeFocusStates) &
               s.deletedAt.isNull())
           ..orderBy([(s) => OrderingTerm.desc(s.startedAt), (s) => OrderingTerm.desc(s.id)]))
@@ -158,7 +161,9 @@ class DriftFocusQueries implements FocusQueries {
   final AppDatabase db;
   final ProfileStore _store;
 
-  Future<String?> _workspace() async => (await _store.getActiveProfile())?.activeWorkspaceId.value;
+  // P04b T8 (B2): focus sessions are personal: the focus bar shows the
+  // running session in every space.
+  Future<String?> _workspace() => _store.personalWorkspaceId();
 
   @override
   Stream<FocusSessionView?> watchActive() async* {

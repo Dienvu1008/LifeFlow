@@ -7,7 +7,11 @@
 // to review", D9), never dropped.
 
 /// Bookkeeping columns of every record, not content.
-const syncMetaFields = {'id', 'workspaceId', 'ownerId', 'version', 'createdAt', 'updatedAt', 'deletedAt', 'deletedBy'};
+/// P04b (v13): `changedBy`, who changed it last in a shared space, follows the
+/// newer side.
+const syncMetaFields = {
+  'id', 'workspaceId', 'ownerId', 'version', 'createdAt', 'updatedAt', 'deletedAt', 'deletedBy', 'changedBy',
+};
 
 /// A value that gave way in a merge, kept for the user to look at.
 class SyncReview {
@@ -142,6 +146,8 @@ SyncMerge mergeRecord(
   out
     ..['updatedAt'] = updated
     ..['version'] = top + 1;
+  // Who changed it last: the newer side (absent in records before v13).
+  if (local.containsKey('changedBy') || remote.containsKey('changedBy')) out['changedBy'] = newer['changedBy'];
   return SyncMerge(out, reviews);
 }
 

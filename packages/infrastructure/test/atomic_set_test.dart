@@ -145,6 +145,17 @@ void main() {
         'trackedSince': null, 'tags': '[]', 'notes': null, 'colorIndex': null, 'orderKey': 'a5',
       };
 
+  // P04b T8: a shared space of the store, and a command of its member.
+  const sharedWs = '30000000-0000-4000-8000-0000000000aa';
+  Command memberCommand(String type, Map<String, Object?> payload, {String? opId}) => Command(
+        operationId: opId ?? 'op-${n++}',
+        actor: const ActorRef(ActorKind.member, 'acc'),
+        workspaceId: sharedWs,
+        type: type,
+        payload: payload,
+        issuedAt: Instant.now(),
+      );
+
   Command command(String type, Map<String, Object?> payload,
           {String? opId, Version? expected, String? workspace}) =>
       Command(
@@ -325,6 +336,14 @@ void main() {
           (v, op) => command('SignOut', {'op': 'signOut', 'id': profileId}, opId: op, expected: v)),
       ('profile.resume', profileHandler, 'profile', profileId,
           (v, op) => command('ResumeSession', {'op': 'resume', 'id': profileId, 'accountId': 'acc'}, opId: op, expected: v)),
+      // P04b T8 (ADR-0060): showing a shared space of the store, a member's
+      // command there ("changed by" in the same commit), and back.
+      ('profile.switchSpace', profileHandler, 'profile', profileId,
+          (v, op) => command('ShowSpace', {'op': 'switchSpace', 'id': profileId, 'workspaceId': sharedWs}, opId: op, expected: v)),
+      ('task.create(member)', taskHandler, 'task', 'tm1',
+          (v, op) => memberCommand('CreateTask', {'op': 'create', 'id': 'tm1', 'title': 'Ours'}, opId: op)),
+      ('profile.switchSpace(back)', profileHandler, 'profile', profileId,
+          (v, op) => command('ShowSpace', {'op': 'switchSpace', 'id': profileId, 'workspaceId': wsId}, opId: op, expected: v)),
       // P03 UX U6 (U-D13); a setting of the workspace since P04 T1.
       ('workspaceSettings.create', settingsHandler, 'workspaceSettings', wsId,
           (v, op) => command('SetManualResults', {'op': 'setManualResults', 'id': wsId, 'value': 'tick'}, opId: op, expected: v)),
@@ -365,6 +384,14 @@ void main() {
             id: id, workspaceId: wsId, kind: 'workspaceSettings', recordId: wsId, field: '*',
             kept: '{"manualResults":"target"}', other: '{"manualResults":"tick"}',
             reason: 'changedOnBoth', createdAt: DateTime.utc(2026, 11, 16)));
+      }
+      if (label == 'profile.switchSpace') {
+        // A shared space this (bound) profile's account is an editor of.
+        await ProfileStore(db).cacheSpace(const SpaceSnapshot(
+            workspaceId: sharedWs, ownerAccountId: 'acc-owner', name: 'Family', members: [
+          SpaceMemberSnapshot(accountId: 'acc-owner', role: 'owner'),
+          SpaceMemberSnapshot(accountId: 'acc', role: 'editor'),
+        ]));
       }
       if (label == 'focus.markUnrecoverable') {
         // A stored row that cannot be trusted: paused without a pause time.

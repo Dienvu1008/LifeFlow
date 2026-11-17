@@ -224,6 +224,7 @@ class SyncEngine {
               version: push.version,
               data: jsonEncode(row),
               serverId: Value(push.id),
+              workspaceId: Value(workspaceId),
             ));
         await _setOutboxStatus(kind, id, 'acked');
         _pushed++;

@@ -7,7 +7,7 @@ import 'dart:convert';
 
 import 'package:application/application.dart';
 import 'package:cryptography/cryptography.dart' show SecretKey;
-import 'package:drift/drift.dart' show OrderingTerm, TableUpdateQuery, Variable;
+import 'package:drift/drift.dart' show BooleanExpressionOperators, OrderingTerm, TableUpdateQuery, Variable;
 import 'package:foundation/foundation.dart';
 import 'package:uuid/uuid.dart';
 
@@ -53,13 +53,23 @@ class DriftSyncService implements SyncService {
   Future<SyncReport>? _running;
   final _changed = StreamController<void>.broadcast();
 
+  /// The profile and its PERSONAL workspace (P04b T8, ADR-0060): this
+  /// service syncs the personal workspace; shared spaces have their own sync
+  /// (T11), whichever one is shown.
   Future<(String profileId, String ws)> _active() async {
-    final p = await _store.getActiveProfile();
-    if (p == null) throw const SyncSetupException(SyncSetupProblem.failed);
-    return (p.profileId.value, p.activeWorkspaceId.value);
+    final ctx = await _store.personalContext();
+    if (ctx == null) throw const SyncSetupException(SyncSetupProblem.failed);
+    return (ctx.actor.id, ctx.workspaceId);
   }
 
-  Future<SyncStateRow?> _state() async => (await db.select(db.syncState).get()).firstOrNull;
+  /// The sync state of the personal workspace, or of the account's workspace
+  /// it joined (P04a); never a shared space's.
+  Future<SyncStateRow?> _state() async {
+    final shared = {
+      for (final w in await (db.select(db.workspaces)..where((w) => w.kind.equals('shared'))).get()) w.id
+    };
+    return (await db.select(db.syncState).get()).where((s) => !shared.contains(s.workspaceId)).firstOrNull;
+  }
 
   static SyncSetupProblem _problemOf(RemoteFailure e) => switch (e.kind) {
         RemoteFailureKind.unavailable => SyncSetupProblem.offline,
@@ -78,7 +88,10 @@ class DriftSyncService implements SyncService {
             "AND entity_type IN (${recordKinds.map((k) => "'${k.name}'").join(',')})",
             variables: [Variable<String>(s.workspaceId)]).getSingle())
         .read<int>('n');
-    final reviews = (await (db.select(db.syncReviews)..where((r) => r.resolvedAt.isNull())).get()).length;
+    final reviews = (await (db.select(db.syncReviews)
+              ..where((r) => r.resolvedAt.isNull() & r.workspaceId.equals(s.workspaceId)))
+            .get())
+        .length;
     return SyncStatus(
       on: true,
       lastResult: SyncOutcome.values.where((o) => o.name == s.lastResult).firstOrNull,
@@ -120,8 +133,10 @@ class DriftSyncService implements SyncService {
 
   @override
   Future<List<SyncReviewView>> reviews() async {
+    final s = await _state();
+    if (s == null) return const [];
     final rows = await (db.select(db.syncReviews)
-          ..where((r) => r.resolvedAt.isNull())
+          ..where((r) => r.resolvedAt.isNull() & r.workspaceId.equals(s.workspaceId))
           ..orderBy([(r) => OrderingTerm.desc(r.createdAt)]))
         .get();
     return [for (final r in rows) await _reviewView(r)];
@@ -386,12 +401,14 @@ class DriftSyncService implements SyncService {
 
   Future<CommandResult> _command(String type, Map<String, Object?> payload,
       {CommandHandler handler = const SyncSetupHandler()}) async {
-    final p = (await _store.getActiveProfile())!;
+    // P04b T8 (ADR-0060): personal sync acts on the personal workspace,
+    // whichever space is shown.
+    final ctx = (await _store.personalContext())!;
     return gateway.execute(
       Command(
         operationId: const Uuid().v7(),
-        actor: ActorRef(ActorKind.owner, p.profileId.value),
-        workspaceId: p.activeWorkspaceId.value,
+        actor: ctx.actor,
+        workspaceId: ctx.workspaceId,
         type: type,
         payload: payload,
         issuedAt: Instant.now(),

@@ -6,6 +6,7 @@ import 'package:foundation/foundation.dart';
 import 'package:uuid/uuid.dart';
 
 import 'app_database.dart';
+import 'record_kinds.dart' show recordKindByName;
 
 /// Drift-backed transaction context passed to handlers. Exposes the active
 /// transactional database so a handler's repository can read/write the
@@ -110,6 +111,21 @@ class DriftCommandGateway implements CommandGateway {
               payload: jsonEncode(outcome.changeSet),
               createdAt: now,
             ));
+
+        // P04b T8 (ADR-0060, B10): in a shared space every record this
+        // command wrote says who changed it last. Each written record has an
+        // outbox row under this operation (ADR-0053; for the handler's own
+        // record, the row just above), so they are found there; same
+        // transaction.
+        if (cmd.actor.kind == ActorKind.member) {
+          final written = await (db.select(db.outbox)..where((o) => o.operationId.equals(cmd.operationId))).get();
+          for (final o in written) {
+            final kind = recordKindByName[o.entityType];
+            if (kind == null) continue;
+            await db.customStatement('UPDATE ${kind.tableName} SET changed_by = ? WHERE id = ? AND workspace_id = ?',
+                [cmd.actor.id, o.entityId, cmd.workspaceId]);
+          }
+        }
 
         // Event log (LF-INV-OUTBOX-002) — dispatched after commit.
         for (final ev in outcome.events) {
