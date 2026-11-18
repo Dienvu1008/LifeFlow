@@ -1820,6 +1820,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'The code or the lifeflow://join/ link you were given';
 
   @override
+  String get spJoinNameHint => 'How the others in the space will know you';
+
+  @override
+  String get spJoinNameNeeded =>
+      'Type your name: the others in the space will know you by it.';
+
+  @override
   String get spLook => 'Look';
 
   @override

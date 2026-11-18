@@ -160,6 +160,22 @@ void main() {
     expect((await lan.sharing.createSpace('')).problem, SharingProblem.failed);
   });
 
+  test('T14 finding 1: the name typed when joining is the one sent; without one, the profile\'s', () async {
+    final lan = await device('lan');
+    final vy = await device('vy');
+    final minh = await device('minh');
+    await (minh.db.update(minh.db.profiles)).write(const ProfilesCompanion(displayName: Value('Minh')));
+    final ws = (await lan.sharing.createSpace('Family')).spaceId!;
+    Future<String> code() async => (await lan.sharing.invite(ws, SpaceRole.viewer, InviteKind.approve)).invitation!.code;
+    expect((await vy.sharing.join(await code(), name: 'V' * 61)).problem, SharingProblem.failed,
+        reason: 'at most 60 characters, as a member card');
+    okShare(await vy.sharing.join(await code(), name: '  Vy  '));
+    okShare(await minh.sharing.join(await code(), name: '  '));
+    final names = {for (final m in await lan.sharing.members(ws)) m.accountId: m.name};
+    expect(names, {'lan': null, 'vy': 'Vy', 'minh': 'Minh'},
+        reason: 'the profile has no name, so Vy\'s typed one; Minh typed none, so the profile\'s');
+  });
+
   test('T13 names (ADR-0065): who waits is named for the owner only; members\' names are sealed records', () async {
     final lan = await device('lan');
     final minh = await device('minh');

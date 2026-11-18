@@ -19,7 +19,7 @@ Known limits for this run (ADR-0065): the `lifeflow://join/` link and the QR do 
 |---|---|---|---|
 | 1 | A: drawer → "New space…" → a name → "Create" | The space is shown; the space bar says "Owner · 1 person" | |
 | 2 | A: space bar → "Invite someone": Editor, "I approve who joins" → "Make the invitation"; copy the code to Android | Code, link and QR; "For one person, valid for 7 days." | |
-| 3 | B: drawer → "Join with a code…" → paste → "Look" → "Join" | "You are invited as Editor.", the rules, then "You asked to join. The owner lets you in." | |
+| 3 | B: drawer → "Join with a code…" → paste → "Look" → type B's name in "Your name in this space" → "Join" | "You are invited as Editor.", the rules; without a name, "Type your name…"; then "You asked to join. The owner lets you in." | |
 | 4 | A: space page → "Sync now" → B "Asks to join · Editor" → "Let in" | B becomes an editor | |
 | 5 | B: wait, or return to the app | The space appears in B's drawer as Editor (time it) | |
 | 6 | B and A: space page → "Your name in this space" | After a sync each sees the other's name under Members | |
@@ -52,4 +52,4 @@ Expected: sent about 5 s after the change; the other device gets it within 1 min
 
 ## Findings
 
-1. **A member's name is empty at joining.** The name sealed for the owner (ADR-0065) is the profile's display name, and profiles get none in practice (the app passes no name to a guest and has no way to set one). Owners and editors can set "Your name in this space"; a viewer cannot, so a viewer shows as "A member". Found while preparing this run; the fix is the owner's choice.
+1. **A member's name is empty at joining.** The name sealed for the owner (ADR-0065) is the profile's display name, and profiles get none in practice (the app passes no name to a guest and has no way to set one). Owners and editors can set "Your name in this space"; a viewer cannot, so a viewer shows as "A member". Found while preparing this run. **Fixed before the run** (the owner's choice, 2026-11-04): "Join a space" asks "Your name in this space", filled with the profile's name if any ([ADR-0065 amendment](../adr/0065-sharing-ui-and-member-names.md)).

@@ -1407,6 +1407,8 @@ void shareThroughTheUi() {
     await tapAndSettle(find.byKey(const Key('join-space-look')), 12);
     expect(find.text('You are invited as Editor.'), findsOneWidget);
     expect(find.byKey(const Key('join-space-leave-rule')), findsOneWidget);
+    expect(tester.widget<TextField>(find.byKey(const Key('join-space-name'))).controller!.text, 'Minh',
+        reason: 'the profile\'s name, to keep or change (T14 finding 1)');
     await tapAndSettle(find.byKey(const Key('join-space-join')), 16);
     expect(find.text('You asked to join. The owner lets you in.'), findsOneWidget);
     await close();

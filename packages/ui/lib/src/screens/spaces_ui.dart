@@ -78,21 +78,28 @@ Future<void> createSpaceFlow(BuildContext context, WidgetRef ref) async {
 Future<void> joinSpaceFlow(BuildContext context, WidgetRef ref) async {
   final sharing = ref.read(sharingServiceProvider);
   if (sharing == null) return showMessage(context, context.l10n.spNoSpaces);
-  final joined = await showDialog<SharingResult>(context: context, builder: (_) => _JoinDialog(sharing: sharing));
+  final profileName = (await ref.read(activeProfileProvider.future))?.displayName.trim() ?? '';
+  if (!context.mounted) return;
+  final joined = await showDialog<SharingResult>(
+      context: context, builder: (_) => _JoinDialog(sharing: sharing, initialName: profileName));
   if (joined == null || !context.mounted) return;
   refreshSpaces(ref);
   showMessage(context, joined.preview?.kind == InviteKind.joinAtOnce ? context.l10n.spJoined : context.l10n.spAskedToJoin);
 }
 
 class _JoinDialog extends StatefulWidget {
-  const _JoinDialog({required this.sharing});
+  const _JoinDialog({required this.sharing, this.initialName = ''});
   final SharingService sharing;
+
+  /// The profile's name, if it has one.
+  final String initialName;
   @override
   State<_JoinDialog> createState() => _JoinDialogState();
 }
 
 class _JoinDialogState extends State<_JoinDialog> {
   final _code = TextEditingController();
+  late final _name = TextEditingController(text: widget.initialName);
   InvitationPreview? _preview;
   String? _problem;
   bool _busy = false;
@@ -100,6 +107,7 @@ class _JoinDialogState extends State<_JoinDialog> {
   @override
   void dispose() {
     _code.dispose();
+    _name.dispose();
     super.dispose();
   }
 
@@ -115,8 +123,13 @@ class _JoinDialogState extends State<_JoinDialog> {
   }
 
   Future<void> _join() async {
+    // T14 finding 1: the others know this person by this name.
+    if (_name.text.trim().isEmpty) {
+      setState(() => _problem = context.l10n.spJoinNameNeeded);
+      return;
+    }
     setState(() => _busy = true);
-    final r = await widget.sharing.join(_code.text);
+    final r = await widget.sharing.join(_code.text, name: _name.text.trim());
     if (!mounted) return;
     if (r.ok) {
       Navigator.pop(context, r);
@@ -159,6 +172,17 @@ class _JoinDialogState extends State<_JoinDialog> {
             Text(l.spExportRuleText(p.export.name)),
             const SizedBox(height: 8),
             Text(l.spCannotEnforce, style: Theme.of(context).textTheme.bodySmall),
+            const SizedBox(height: 16),
+            TextField(
+              key: const Key('join-space-name'),
+              controller: _name,
+              maxLength: 60,
+              textInputAction: TextInputAction.done,
+              decoration: InputDecoration(labelText: l.spYourName, helperText: l.spJoinNameHint),
+              onChanged: (_) {
+                if (_problem != null) setState(() => _problem = null);
+              },
+            ),
           ],
         ]),
       ),

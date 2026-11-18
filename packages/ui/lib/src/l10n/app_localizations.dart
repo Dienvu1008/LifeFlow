@@ -3118,6 +3118,18 @@ abstract class AppLocalizations {
   /// **'The code or the lifeflow://join/ link you were given'**
   String get spJoinHint;
 
+  /// No description provided for @spJoinNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'How the others in the space will know you'**
+  String get spJoinNameHint;
+
+  /// No description provided for @spJoinNameNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Type your name: the others in the space will know you by it.'**
+  String get spJoinNameNeeded;
+
   /// No description provided for @spLook.
   ///
   /// In en, this message translates to:

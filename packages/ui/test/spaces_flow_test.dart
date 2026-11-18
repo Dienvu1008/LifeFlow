@@ -104,8 +104,16 @@ void main() {
     expect(find.text('You are invited as Editor.'), findsOneWidget);
     expect(find.text('If you leave or are removed, you keep a read-only copy of what was there.'), findsOneWidget);
     expect(find.textContaining('screenshots'), findsOneWidget, reason: 'what the app cannot enforce is said');
+    // T14 finding 1: the profile's name to start with; a name is needed.
+    final nameField = find.byKey(const Key('join-space-name'));
+    expect(tester.widget<TextField>(nameField).controller!.text, isNotEmpty);
+    await tester.enterText(nameField, ' ');
     await tapKey(tester, 'join-space-join');
-    expect(s.calls, containsAllInOrder(['peek:lifeflow://join/ABC', 'join:lifeflow://join/ABC']));
+    expect(find.text('Type your name: the others in the space will know you by it.'), findsOneWidget);
+    expect(s.calls.where((c) => c.startsWith('join:')), isEmpty);
+    await tester.enterText(find.byKey(const Key('join-space-name')), '  Vy  ');
+    await tapKey(tester, 'join-space-join');
+    expect(s.calls, containsAllInOrder(['peek:lifeflow://join/ABC', 'join:lifeflow://join/ABC:Vy']));
     expect(find.text('You asked to join. The owner lets you in.'), findsOneWidget);
   });
 

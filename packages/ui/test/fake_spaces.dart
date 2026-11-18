@@ -114,7 +114,8 @@ class FakeSpaces implements SpaceService, SharingService, SyncRunner {
   }
 
   @override
-  Future<SharingResult> join(String text) async => _done('join:$text', preview: invitation, spaceId: invitation?.workspaceId);
+  Future<SharingResult> join(String text, {String? name}) async =>
+      _done('join:$text:${name ?? ''}', preview: invitation, spaceId: invitation?.workspaceId);
   @override
   Future<List<SpaceMemberView>> members(String spaceId) async => memberLists[spaceId] ?? const [];
   @override

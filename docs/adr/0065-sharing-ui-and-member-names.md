@@ -83,3 +83,11 @@ The owner chose **(b)**, names end to end, over two alternatives. (a) was plain 
   - Suites: pgTAP 195; schema upgrade loop v2…v14; FF-ARCH-06/09 step `memberCard.create`.
 - Mutations: 13 run one at a time; 12 killed, two of them after new tests (the card id check, and the name's binding to space and sender).
   - The one survivor is equivalent: a viewer's device skipping its own card. The write would be refused anyway.
+
+## Amendment: the name is asked when joining (P04b T14 finding 1, 2026-11-04)
+
+- Problem: the name sealed for the owner was the profile's display name. In practice profiles have none: the app gives a guest no name and has no place to set one. Owners and editors could still use "Your name in this space", but a viewer cannot write to the space, so a viewer stayed "A member" for everyone.
+- Decision (the owner chose to fix it before the device run): the "Join a space" dialog asks "Your name in this space" after the role and the rules, filled with the profile's name if it has one. The name is required in the dialog and at most 60 characters, as a member card. `SharingService.join(text, {name})` seals the typed name for the owner; without one, the profile's name, as before. Nothing changes on the server or in the schema.
+- Rejected: a profile-name setting (a larger change outside sharing, and it would still leave old profiles empty); asking for the name at sign-in (not every profile shares).
+- Tests: `sharing_test` "T14 finding 1" (a typed name wins; a blank one falls back to the profile's; 61 characters refused); `spaces_flow_test` (the field starts with the profile's name; a blank name is refused before anything is sent; the trimmed name is sent); `shareThroughTheUi` (the field holds the profile's name).
+- Mutations: 8 run one at a time, all killed.
