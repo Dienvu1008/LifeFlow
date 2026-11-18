@@ -1,6 +1,6 @@
 # P04b exit-gate evidence (sharing with other people)
 
-Maps each line of the P04b exit gate ([p04b-plan.md §1](../roadmap/p04b-plan.md)), the invariants and scenarios it proposed (§7) and the P04 anchors of the definition of done ([definition-of-done.md](definition-of-done.md)) to the tests and checks that prove them. Status: **waiting for the owner's review**.
+Maps each line of the P04b exit gate ([p04b-plan.md §1](../roadmap/p04b-plan.md)), the invariants and scenarios it proposed (§7) and the P04 anchors of the definition of done ([definition-of-done.md](definition-of-done.md)) to the tests and checks that prove them. Status: **signed off by the owner, 2026-11-04**.
 
 How to reproduce:
 - `dart test` in `packages/foundation|time_kernel|domain|application|infrastructure`.
@@ -110,5 +110,5 @@ All 19 steps of [p04b-two-person-run.md](p04b-two-person-run.md) as expected, wi
 
 ## Owner sign-off
 - [x] Device checks above (owner, 2026-11-04).
-- [ ] CI green on the T15 branch head.
-- [ ] Owner approves P04b as done.
+- [x] CI green on the T15 branch head (`53e92b1`).
+- [x] Owner approves P04b as done (2026-11-04).
