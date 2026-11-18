@@ -184,6 +184,11 @@ These IDs are now canonical (they were provisional in Batch 1). The full test ma
 | LF-INV-SYNC-002 | Conflicts are detected by version, not timestamp | Sync (P04) |
 | LF-INV-SYNC-003 | No global Last-Write-Wins; conflict resolution is per data type | Sync (P04), ADR-0015 |
 | LF-INV-SYNC-004 | Tombstones propagate (kept until retention allows purge) | Governance Kernel / sync (P04) |
+| LF-INV-SHARE-001 | An item enters or leaves a shared space only by a confirmed command; Restricted never enters | Sharing (P04b) |
+| LF-INV-SHARE-002 | Only an owner or an editor writes to a shared space, on the device and on the server | Sharing (P04b) |
+| LF-INV-SHARE-003 | Membership, roles and invitations change only on the server; devices cache them | Sharing (P04b) |
+| LF-INV-SHARE-004 | A removed member opens nothing sealed after the removal | Sharing (P04b) |
+| LF-INV-SHARE-005 | A space's rules are shown before joining, changed only by the owner, every change shown | Sharing (P04b) |
 | LF-INV-PRIV-001 | Egress is default-deny (allowed only where the classification matrix permits) | Data classification, ADR-0016 |
 | LF-INV-PRIV-002 | Restricted data never reaches cloud AI and is never shared implicitly | Data classification |
 | LF-INV-PRIV-003 | Classification is enforced at every egress point | AI Context Builder, sync, share |

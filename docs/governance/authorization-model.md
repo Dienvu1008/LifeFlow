@@ -46,7 +46,7 @@ The policy engine hook exists in the pipeline but is trivial in MVP (owner-allow
 - LF-INV-GOV-002 (authorize before domain), LF-INV-ID-002 (profile isolation), LF-INV-AI-001 (AI cannot bypass authorization).
 
 ## 8. Open questions
-- OQ-AUTHZ-1: exact role set and permission matrix for P04. Deferred to the collaboration/data batch.
+- OQ-AUTHZ-1: exact role set and permission matrix for P04. **Resolved in P04b** (2026-11-16, the owner): owner, editor and viewer with the matrix of [p04b-plan.md](../roadmap/p04b-plan.md) B4 and §4; enforced on the server (ADR-0061) and the device (ADR-0060).
 - OQ-AUTHZ-2: how AI usage limits (rate, cost, data classes) are expressed as policy. AI/estimation batches.
 
 ## 9. Self-check
