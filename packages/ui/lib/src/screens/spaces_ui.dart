@@ -21,6 +21,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../l10n.dart';
 import '../providers.dart';
 import '../task_actions.dart' show showMessage;
+import 'sync_screen.dart' show ReviewCard;
 import 'tasks_screen.dart' show showTextDialog;
 
 String spaceNameOf(BuildContext context, SpaceView s) =>
@@ -315,6 +316,8 @@ class SpaceBar extends ConsumerWidget {
     if (s == null) return const SizedBox.shrink();
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
+    // T14 finding 2: a change to review is said where the space is shown.
+    final reviews = ref.watch(spaceSyncStatusProvider).valueOrNull?.reviews ?? 0;
     final details = switch (s.left) {
       SpaceLeft.readOnly => l.spLeftCopy,
       SpaceLeft.exportFirst => l.spLeftExport,
@@ -322,6 +325,7 @@ class SpaceBar extends ConsumerWidget {
           roleName(context, s.role ?? SpaceRole.viewer),
           l.spPeople(s.members),
           if (s.role == SpaceRole.viewer) l.spViewOnly,
+          if (reviews > 0) l.syReviewsWaiting(reviews),
         ].join(' · '),
     };
     final name = spaceNameOf(context, s);
@@ -535,6 +539,7 @@ class SpacePage extends ConsumerWidget {
               ),
             ],
           ),
+        if (s.left == SpaceLeft.no && s.isShown) const _SpaceReviews(),
         if (s.left != SpaceLeft.no)
           ListTile(
             leading: const Icon(Icons.info_outline),
@@ -945,6 +950,38 @@ class _Rules extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Text(l.spCannotEnforce, style: Theme.of(context).textTheme.bodySmall),
       ),
+    ]);
+  }
+}
+
+/// P04b T14 finding 2: the shown space's "Changes to review" (SYNC-003), at
+/// the top of its page.
+class _SpaceReviews extends ConsumerWidget {
+  const _SpaceReviews();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final items = ref.watch(spaceReviewsProvider).valueOrNull ?? const <SyncReviewView>[];
+    if (items.isEmpty) return const SizedBox.shrink();
+    return Column(key: const Key('space-reviews'), crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
+        child: Semantics(
+          header: true,
+          child: Text(context.l10n.syReviewsTitle, style: Theme.of(context).textTheme.titleSmall),
+        ),
+      ),
+      for (final r in items)
+        ReviewCard(
+          item: r,
+          close: (takeOther) async {
+            final sync = ref.read(spaceSyncProvider);
+            if (sync == null) return null;
+            final res = await sync.resolveReview(r.id, takeOther: takeOther);
+            ref.invalidate(spaceReviewsProvider);
+            return res;
+          },
+        ),
     ]);
   }
 }

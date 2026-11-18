@@ -287,27 +287,41 @@ class _Reviews extends ConsumerWidget {
     final l = context.l10n;
     final items = ref.watch(syncReviewsProvider).valueOrNull ?? const <SyncReviewView>[];
     if (items.isEmpty) return ListTile(key: const Key('sync-no-reviews'), title: Text(l.syNoReviews));
-    return Column(children: [for (final r in items) _ReviewCard(item: r)]);
+    return Column(children: [
+      for (final r in items)
+        ReviewCard(
+          item: r,
+          close: (takeOther) async {
+            final sync = ref.read(syncServiceProvider);
+            if (sync == null) return null;
+            final res = await sync.resolveReview(r.id, takeOther: takeOther);
+            ref.invalidate(syncReviewsProvider);
+            return res;
+          },
+        ),
+    ]);
   }
 }
 
-class _ReviewCard extends ConsumerWidget {
-  const _ReviewCard({required this.item});
+/// One "Changes to review" item: the personal sync's, or a shared space's
+/// (P04b T14 finding 2).
+class ReviewCard extends StatelessWidget {
+  const ReviewCard({super.key, required this.item, required this.close});
   final SyncReviewView item;
 
+  /// Closes it: keeps what was kept, or takes the other value back.
+  final Future<SyncSetupResult?> Function(bool takeOther) close;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l = context.l10n;
     final text = Theme.of(context).textTheme;
     final r = item;
     final kind = l.syRecordKind(r.recordKind);
     final title = r.title == null ? kind : l.syRecordOf(kind, r.title!);
     Future<void> resolve(bool takeOther) async {
-      final sync = ref.read(syncServiceProvider);
-      if (sync == null) return;
-      final res = await sync.resolveReview(r.id, takeOther: takeOther);
-      ref.invalidate(syncReviewsProvider);
-      if (!res.ok && context.mounted) _snack(context, syncProblemText(context, res.problem, res.message));
+      final res = await close(takeOther);
+      if (res != null && !res.ok && context.mounted) _snack(context, syncProblemText(context, res.problem, res.message));
     }
 
     Widget value(String label, String v) => Padding(

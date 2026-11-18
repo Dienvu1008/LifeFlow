@@ -76,6 +76,25 @@ void main() {
     expect(find.byKey(const Key('add-menu')), findsNothing);
   });
 
+  testWidgets('T14 finding 2: a change to review in the space: said on its bar, closed on its page (SYNC-003)',
+      (tester) async {
+    final s = FakeSpaces(spaces: [personalHidden, shownAs(family)])
+      ..reviewItems = [
+        SyncReviewView(
+            id: 'rv1', recordKind: 'task', recordId: 't', reason: SyncReviewKind.changedOnBoth, field: 'notes',
+            title: 'Plan the trip', kept: 'By train', other: 'By bus', canTakeOther: true, createdAt: DateTime.utc(2026, 11, 4)),
+      ];
+    await pumpApp(tester, world(), s);
+    expect(find.textContaining('1 change to review'), findsOneWidget);
+    await tapKey(tester, 'space-bar');
+    expect(find.byKey(const Key('space-reviews')), findsOneWidget);
+    expect(find.text('By train'), findsOneWidget);
+    expect(find.text('By bus'), findsOneWidget);
+    await tapKey(tester, 'review-other-rv1');
+    expect(s.calls, contains('resolve:rv1:other'));
+    expect(find.byKey(const Key('space-reviews')), findsNothing);
+  });
+
   testWidgets('a new space is named and shown', (tester) async {
     final s = FakeSpaces();
     await pumpApp(tester, world(), s, size: const Size(400, 800));

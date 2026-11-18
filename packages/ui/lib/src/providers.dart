@@ -306,7 +306,7 @@ final sharingServiceProvider = Provider<SharingService?>((ref) => null);
 
 /// The shown space's sync (every minute, B12); the UI asks for a sync right
 /// after showing a space. Null without a sync server.
-final spaceSyncProvider = Provider<SyncRunner?>((ref) => null);
+final spaceSyncProvider = Provider<SpaceSyncRunner?>((ref) => null);
 
 /// The space sync's status: it changes after each refresh, so the spaces
 /// are read again (a space someone let this account into appears).
@@ -315,6 +315,15 @@ final spaceSyncStatusProvider = StreamProvider.autoDispose<SyncStatus?>((ref) {
   final sync = ref.watch(spaceSyncProvider);
   if (sync == null) return Stream.value(null);
   return sync.watchStatus();
+});
+
+/// The shown space's "Changes to review" (T14 finding 2), read again
+/// whenever the space sync's status changes.
+final spaceReviewsProvider = FutureProvider.autoDispose<List<SyncReviewView>>((ref) async {
+  final status = ref.watch(spaceSyncStatusProvider).valueOrNull;
+  final sync = ref.watch(spaceSyncProvider);
+  if (sync == null || status == null || status.reviews == 0) return const [];
+  return sync.reviews();
 });
 
 /// The spaces of the ACTIVE profile: the personal one first.

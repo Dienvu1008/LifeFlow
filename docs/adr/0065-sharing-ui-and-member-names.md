@@ -91,3 +91,14 @@ The owner chose **(b)**, names end to end, over two alternatives. (a) was plain 
 - Rejected: a profile-name setting (a larger change outside sharing, and it would still leave old profiles empty); asking for the name at sign-in (not every profile shares).
 - Tests: `sharing_test` "T14 finding 1" (a typed name wins; a blank one falls back to the profile's; 61 characters refused); `spaces_flow_test` (the field starts with the profile's name; a blank name is refused before anything is sent; the trimmed name is sent); `shareThroughTheUi` (the field holds the profile's name).
 - Mutations: 8 run one at a time, all killed.
+
+## Amendment 2: a space's "Changes to review" (P04b T14 finding 2, 2026-11-04)
+
+- Problem (found in the owner's two-person run, step 10): notes changed by two people offline merged as SYNC-003 says (the newer change kept, a review item written in the space), but nothing showed the item. The only list was the personal sync's (Settings → Sync), which reads the personal workspace's items, and the space sync (`SyncRunner`) could not list or close its own.
+- Decision:
+  - A new port, `SpaceSyncRunner` (`SyncRunner` with `reviews()` and `resolveReview()`), which `DriftSpaceSyncService` implements. It lists the shown space's open items. It closes one with the same `SyncReviewHandler` the personal sync uses, run as the member: taking the other value back is an edit in the space, so a viewer cannot do it and "changed by" names who did.
+  - The UI says it where the space is: the space bar adds "1 change to review", and the space page shows the items at the top with "Keep this" and "Take the other". The personal sync screen's card is now `ReviewCard`, shared by both.
+  - The review view (`syncReviewViewOf`) moved out of `DriftSyncService` so both syncs build it the same way.
+- Rejected: listing the space's items in Settings → Sync (that screen is the personal sync's, and taking a value back must happen as the member in the space); a list of every space's items at once (the space sync syncs only the shown space, B12).
+- Tests: `space_sync_test` "T14 finding 2" (the second device to sync has the item; "Take the other" puts the other notes back, as the member, and they reach the first device; a closed item cannot be closed again; with the personal workspace shown, no space items); `spaces_flow_test` (the bar says it; the page lists it; "Take the other" closes it).
+- Mutations: 12 run one at a time, all killed.

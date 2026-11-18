@@ -245,6 +245,17 @@ abstract interface class SyncRunner {
   Future<SyncReport> syncNow();
 }
 
+/// P04b T14 (finding 2): the shown shared space's sync, with its own
+/// "Changes to review" (the personal sync's are the personal workspace's).
+abstract interface class SpaceSyncRunner implements SyncRunner {
+  /// The shown space's open review items, newest first; none with the
+  /// personal workspace shown.
+  Future<List<SyncReviewView>> reviews();
+
+  /// Closes one of them, as [SyncService.resolveReview] does.
+  Future<SyncSetupResult> resolveReview(String id, {required bool takeOther});
+}
+
 abstract interface class SyncService implements SyncRunner {
   @override
   Future<SyncStatus> status();

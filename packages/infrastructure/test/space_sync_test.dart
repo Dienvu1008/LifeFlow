@@ -140,6 +140,40 @@ void main() {
     expect((await lan.task(b))!['workspaceId'], ws);
   });
 
+  test('T14 finding 2: notes changed by both people offline: a review in the space, then "Take the other" (SYNC-003)',
+      () async {
+    final [lan, minh] = await space([('lan', SpaceRole.owner), ('minh', SpaceRole.editor)]);
+    final a = ok(await lan.tasks.create('Plan the trip'));
+    await syncAll([lan, minh]);
+    ok(await lan.tasks.setNotes(a, 'By train'));
+    ok(await minh.tasks.setNotes(a, 'By bus'));
+    expect((await lan.syncNow()).outcome, SyncOutcome.upToDate);
+    expect((await minh.syncNow()).outcome, SyncOutcome.upToDate);
+    expect((await minh.sync.status()).reviews, 1, reason: 'the second to sync sees both');
+    final items = await minh.sync.reviews();
+    expect(items, hasLength(1));
+    final r = items.single;
+    expect((r.recordKind, r.recordId, r.field, r.title), ('task', a, 'notes', 'Plan the trip'));
+    expect({r.kept, r.other}, {'By train', 'By bus'});
+    expect(r.canTakeOther, isTrue);
+    expect(await lan.sync.reviews(), isEmpty);
+
+    final kept = (await minh.task(a))!['notes'];
+    final res = await minh.sync.resolveReview(r.id, takeOther: true);
+    expect(res.ok, isTrue, reason: '${res.problem} ${res.message}');
+    expect(await minh.sync.reviews(), isEmpty);
+    final taken = (await minh.task(a))!['notes'];
+    expect(taken, isNot(kept));
+    expect((await minh.task(a))!['changedBy'], 'minh');
+    await syncAll([lan, minh]);
+    expect((await lan.task(a))!['notes'], taken, reason: 'the value taken back syncs like an edit');
+
+    // Nothing else to resolve: an unknown item, or one of another workspace.
+    expect((await minh.sync.resolveReview(r.id, takeOther: false)).ok, isFalse);
+    await minh.show(minh.personal);
+    expect(await minh.sync.reviews(), isEmpty, reason: 'only the shown space\'s items');
+  });
+
   test('a delete reaches everyone; after the retention the purge does too (GS-14)', () async {
     final [lan, minh] = await space([('lan', SpaceRole.owner), ('minh', SpaceRole.editor)]);
     final t = ok(await lan.tasks.create('Temporary'));
