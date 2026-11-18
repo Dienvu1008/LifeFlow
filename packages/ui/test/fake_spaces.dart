@@ -3,7 +3,7 @@
 import 'package:application/application.dart';
 import 'package:foundation/foundation.dart' show Version;
 
-class FakeSpaces implements SpaceService, SharingService, SyncRunner {
+class FakeSpaces implements SpaceService, SharingService, SpaceSyncRunner {
   FakeSpaces({List<SpaceView>? spaces, this.me = 'acc-me'})
       : list = spaces ?? [const SpaceView(id: 'personal', shared: false, isShown: true)];
 
@@ -56,11 +56,21 @@ class FakeSpaces implements SpaceService, SharingService, SyncRunner {
     return CommandOk(spaceId, Version.initial, const []);
   }
 
-  // --- SyncRunner -------------------------------------------------------------
+  // --- SpaceSyncRunner --------------------------------------------------------
+  /// The shown space's "Changes to review".
+  var reviewItems = <SyncReviewView>[];
   @override
-  Future<SyncStatus> status() async => const SyncStatus(on: true);
+  Future<SyncStatus> status() async => SyncStatus(on: true, reviews: reviewItems.length);
   @override
-  Stream<SyncStatus> watchStatus() => Stream.value(const SyncStatus(on: true));
+  Stream<SyncStatus> watchStatus() => Stream.value(SyncStatus(on: true, reviews: reviewItems.length));
+  @override
+  Future<List<SyncReviewView>> reviews() async => reviewItems;
+  @override
+  Future<SyncSetupResult> resolveReview(String id, {required bool takeOther}) async {
+    calls.add('resolve:$id:${takeOther ? 'other' : 'kept'}');
+    reviewItems = [for (final r in reviewItems) if (r.id != id) r];
+    return const SyncSetupResult();
+  }
   @override
   Future<SyncReport> syncNow() async {
     calls.add('spaceSync');
@@ -114,7 +124,8 @@ class FakeSpaces implements SpaceService, SharingService, SyncRunner {
   }
 
   @override
-  Future<SharingResult> join(String text) async => _done('join:$text', preview: invitation, spaceId: invitation?.workspaceId);
+  Future<SharingResult> join(String text, {String? name}) async =>
+      _done('join:$text:${name ?? ''}', preview: invitation, spaceId: invitation?.workspaceId);
   @override
   Future<List<SpaceMemberView>> members(String spaceId) async => memberLists[spaceId] ?? const [];
   @override

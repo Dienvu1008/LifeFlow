@@ -844,6 +844,8 @@
   "spCreated": "The space is ready. Invite someone from its details.",
   "spJoinTitle": "Join a space",
   "spJoinHint": "The code or the lifeflow://join/ link you were given",
+  "spJoinNameHint": "How the others in the space will know you",
+  "spJoinNameNeeded": "Type your name: the others in the space will know you by it.",
   "spLook": "Look",
   "spInvitedAs": "You are invited as {role}.",
   "@spInvitedAs": {"placeholders": {"role": {"type": "String"}}},

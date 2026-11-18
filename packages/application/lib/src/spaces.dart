@@ -190,8 +190,10 @@ abstract interface class SharingService {
   /// shown before joining, SHARE-005); null when it is not a code.
   Future<SharingResult> peek(String text);
 
-  /// Joins with a code; "approve" invitations wait for the owner.
-  Future<SharingResult> join(String text);
+  /// Joins with a code; "approve" invitations wait for the owner. [name] is
+  /// how the others will know this person (sealed for the owner, ADR-0065);
+  /// without one, the profile's name.
+  Future<SharingResult> join(String text, {String? name});
 
   /// The space's members, as the server says (the owner sees who waits),
   /// with their names.

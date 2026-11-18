@@ -248,13 +248,19 @@ class DriftSharingService implements SharingService {
   }
 
   @override
-  Future<SharingResult> join(String text) async {
+  Future<SharingResult> join(String text, {String? name}) async {
     final code = parseInvitation(text);
     if (code == null) return const SharingResult.failed(SharingProblem.noSuchInvitation);
+    final given = name?.trim() ?? '';
+    if (given.length > maxMemberNameLength) {
+      return const SharingResult.failed(SharingProblem.failed, 'a name is at most 60 characters');
+    }
     return _guard((account) async {
-      // The person's name goes with the request, sealed for the owner.
-      final name = (await _store.getActiveProfile())?.displayName;
-      final a = await keys.accept(account, code, name: name);
+      // The person's name goes with the request, sealed for the owner: the
+      // one typed when joining, else the profile's (T14 finding 1).
+      final profileName = (await _store.getActiveProfile())?.displayName.trim() ?? '';
+      final sent = given.isNotEmpty ? given : profileName;
+      final a = await keys.accept(account, code, name: sent.isEmpty ? null : sent);
       await sync.refresh();
       final id = a.preview.workspaceId;
       // The rules were shown before joining (SHARE-005).

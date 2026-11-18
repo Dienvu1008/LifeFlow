@@ -18,7 +18,7 @@
 import 'dart:async';
 
 import 'package:application/application.dart';
-import 'package:drift/drift.dart' show BooleanExpressionOperators, TableUpdateQuery, Value, Variable;
+import 'package:drift/drift.dart' show BooleanExpressionOperators, OrderingTerm, TableUpdateQuery, Value, Variable;
 import 'package:foundation/foundation.dart';
 import 'package:uuid/uuid.dart';
 
@@ -32,6 +32,8 @@ import 'sealing.dart';
 import 'space_key_service.dart';
 import 'space_leaving.dart';
 import 'sync_engine.dart';
+import 'sync_review_handler.dart';
+import 'sync_service.dart' show syncReviewViewOf;
 import 'sync_setup_handler.dart' show newSyncDeviceId;
 import 'workspace_keyring.dart';
 
@@ -39,7 +41,7 @@ import 'workspace_keyring.dart';
 /// personal workspace keeps SyncScheduler's 5 minutes).
 const spaceSyncEvery = Duration(minutes: 1);
 
-class DriftSpaceSyncService implements SyncRunner {
+class DriftSpaceSyncService implements SpaceSyncRunner {
   DriftSpaceSyncService({
     required this.db,
     required this.gateway,
@@ -329,6 +331,42 @@ class DriftSpaceSyncService implements SyncRunner {
       reviews: reviews,
       syncing: _running != null,
     );
+  }
+
+  /// P04b T14 finding 2: the shown space's "Changes to review". The merge
+  /// writes them in the space (SYNC-003); until T14 nothing showed them.
+  @override
+  Future<List<SyncReviewView>> reviews() async {
+    final ws = await _shownSpace();
+    if (ws == null) return const [];
+    final rows = await (db.select(db.syncReviews)
+          ..where((r) => r.resolvedAt.isNull() & r.workspaceId.equals(ws))
+          ..orderBy([(r) => OrderingTerm.desc(r.createdAt)]))
+        .get();
+    return [for (final r in rows) await syncReviewViewOf(db, r)];
+  }
+
+  /// Closes one, as the member: taking the other value back is an edit in
+  /// the space (an editor's or the owner's; "changed by" says who).
+  @override
+  Future<SyncSetupResult> resolveReview(String id, {required bool takeOther}) async {
+    final account = await _account();
+    final ws = await _shownSpace();
+    if (account == null || ws == null) return const SyncSetupResult.failed(SyncSetupProblem.reviewGone);
+    final r = await gateway.execute(
+      Command(
+        operationId: const Uuid().v7(),
+        actor: ActorRef(ActorKind.member, account),
+        workspaceId: ws,
+        type: resolveSyncReviewAction,
+        payload: {'op': 'resolve', 'id': id, 'take': takeOther ? 'other' : 'kept'},
+        issuedAt: Instant.now(),
+      ),
+      const SyncReviewHandler(),
+    );
+    _changed.add(null);
+    if (r is CommandOk) return const SyncSetupResult();
+    return SyncSetupResult.failed(SyncSetupProblem.reviewGone, '$r');
   }
 
   @override

@@ -139,45 +139,7 @@ class DriftSyncService implements SyncService {
           ..where((r) => r.resolvedAt.isNull() & r.workspaceId.equals(s.workspaceId))
           ..orderBy([(r) => OrderingTerm.desc(r.createdAt)]))
         .get();
-    return [for (final r in rows) await _reviewView(r)];
-  }
-
-  Future<SyncReviewView> _reviewView(SyncReviewRow r) async {
-    final kind = recordKindByName[r.kind];
-    final row = kind == null ? null : await kind.readOne(db, r.recordId);
-    final reason = SyncReviewKind.values.where((k) => k.name == r.reason).firstOrNull ?? SyncReviewKind.unreadable;
-    Object? kept, other;
-    try {
-      kept = jsonDecode(r.kept);
-      other = jsonDecode(r.other);
-    } on FormatException {
-      kept = other = null;
-    }
-    return SyncReviewView(
-      id: r.id,
-      recordKind: r.kind,
-      recordId: r.recordId,
-      reason: reason,
-      field: r.field,
-      title: await _titleOf(row),
-      kept: reason == SyncReviewKind.changedOnBoth ? describeReviewValue(kept, against: other) : '',
-      other: reason == SyncReviewKind.changedOnBoth ? describeReviewValue(other, against: kept) : '',
-      canTakeOther: reason == SyncReviewKind.changedOnBoth && row != null && row['deletedAt'] == null,
-      createdAt: r.createdAt,
-    );
-  }
-
-  /// The record's title, or its task's or event's (a schedule, a reminder).
-  Future<String?> _titleOf(Map<String, dynamic>? row) async {
-    if (row == null) return null;
-    final title = row['title'];
-    if (title is String && title.isNotEmpty) return title;
-    final type = row['subjectType'] ?? (row['taskId'] != null ? 'task' : null);
-    final subject = row['subjectId'] ?? row['taskId'];
-    if (type is! String || subject is! String) return null;
-    final owner = await recordKindByName[type]?.readOne(db, subject);
-    final t = owner?['title'];
-    return t is String && t.isNotEmpty ? t : null;
+    return [for (final r in rows) await syncReviewViewOf(db, r)];
   }
 
   @override
@@ -416,4 +378,43 @@ class DriftSyncService implements SyncService {
       handler,
     );
   }
+}
+
+/// A review item as the UI shows it (the personal sync's and a space's).
+Future<SyncReviewView> syncReviewViewOf(AppDatabase db, SyncReviewRow r) async {
+  final kind = recordKindByName[r.kind];
+  final row = kind == null ? null : await kind.readOne(db, r.recordId);
+  final reason = SyncReviewKind.values.where((k) => k.name == r.reason).firstOrNull ?? SyncReviewKind.unreadable;
+  Object? kept, other;
+  try {
+    kept = jsonDecode(r.kept);
+    other = jsonDecode(r.other);
+  } on FormatException {
+    kept = other = null;
+  }
+  return SyncReviewView(
+    id: r.id,
+    recordKind: r.kind,
+    recordId: r.recordId,
+    reason: reason,
+    field: r.field,
+    title: await _titleOf(db, row),
+    kept: reason == SyncReviewKind.changedOnBoth ? describeReviewValue(kept, against: other) : '',
+    other: reason == SyncReviewKind.changedOnBoth ? describeReviewValue(other, against: kept) : '',
+    canTakeOther: reason == SyncReviewKind.changedOnBoth && row != null && row['deletedAt'] == null,
+    createdAt: r.createdAt,
+  );
+}
+
+/// The record's title, or its task's or event's (a schedule, a reminder).
+Future<String?> _titleOf(AppDatabase db, Map<String, dynamic>? row) async {
+  if (row == null) return null;
+  final title = row['title'];
+  if (title is String && title.isNotEmpty) return title;
+  final type = row['subjectType'] ?? (row['taskId'] != null ? 'task' : null);
+  final subject = row['subjectId'] ?? row['taskId'];
+  if (type is! String || subject is! String) return null;
+  final owner = await recordKindByName[type]?.readOne(db, subject);
+  final t = owner?['title'];
+  return t is String && t.isNotEmpty ? t : null;
 }

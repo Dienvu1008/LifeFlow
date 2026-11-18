@@ -1236,7 +1236,7 @@ ProfileView profile(String id, String name,
 
 /// The full app with the ports overridden by [world].
 Widget appWith(FakeWorld world,
-        {StorageNotice? notice, SyncService? sync, SpaceService? spaces, SharingService? sharing, SyncRunner? spaceSync}) =>
+        {StorageNotice? notice, SyncService? sync, SpaceService? spaces, SharingService? sharing, SpaceSyncRunner? spaceSync}) =>
     ProviderScope(
       overrides: [
         syncServiceProvider.overrideWithValue(sync),

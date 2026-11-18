@@ -135,6 +135,37 @@ void main() {
     expect((await lan.personalSync.syncNow()).outcome, SyncOutcome.upToDate);
   });
 
+  test('T14 step 10: notes changed by both, one offline: the later device has a review; "Take the other" syncs',
+      () async {
+    final lan = await person('lan');
+    final minh = await person('minh');
+    final ws = const Uuid().v4();
+    await lan.keys.createSpace(lan.account, ws);
+    final inv = await lan.keys.invite(ws, SpaceRole.editor, InviteKind.joinAtOnce);
+    await minh.keys.accept(minh.account, inv.code);
+    for (final p in [lan, minh]) {
+      expect(await p.spaceSync.refresh(), isNull);
+      ok(await p.spaces.show(ws));
+    }
+    final t = ok(await lan.tasks.create('Plan the trip'));
+    await lan.now();
+    await minh.now();
+    ok(await lan.tasks.setNotes(t, 'By train'));
+    ok(await minh.tasks.setNotes(t, 'By bus'));
+    ok(await minh.tasks.setNotes(t, 'By bus, at 7'));
+    await lan.now();
+    await minh.now();
+    final items = await minh.spaceSync.reviews();
+    expect(items, hasLength(1), reason: 'the second to sync sees both');
+    expect({items.single.kept, items.single.other}, {'By train', 'By bus, at 7'});
+    expect((await minh.spaceSync.resolveReview(items.single.id, takeOther: true)).ok, isTrue);
+    final taken = (await minh.task(t))!['notes'];
+    await minh.now();
+    await lan.now();
+    expect((await lan.task(t))!['notes'], taken);
+    expect(await lan.spaceSync.reviews(), isEmpty);
+  });
+
   test('T12: a named space; a personal task moved in after confirming; the member sees both', () async {
     final lan = await person('lan');
     final minh = await person('minh');

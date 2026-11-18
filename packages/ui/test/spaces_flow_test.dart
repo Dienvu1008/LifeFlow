@@ -76,6 +76,25 @@ void main() {
     expect(find.byKey(const Key('add-menu')), findsNothing);
   });
 
+  testWidgets('T14 finding 2: a change to review in the space: said on its bar, closed on its page (SYNC-003)',
+      (tester) async {
+    final s = FakeSpaces(spaces: [personalHidden, shownAs(family)])
+      ..reviewItems = [
+        SyncReviewView(
+            id: 'rv1', recordKind: 'task', recordId: 't', reason: SyncReviewKind.changedOnBoth, field: 'notes',
+            title: 'Plan the trip', kept: 'By train', other: 'By bus', canTakeOther: true, createdAt: DateTime.utc(2026, 11, 4)),
+      ];
+    await pumpApp(tester, world(), s);
+    expect(find.textContaining('1 change to review'), findsOneWidget);
+    await tapKey(tester, 'space-bar');
+    expect(find.byKey(const Key('space-reviews')), findsOneWidget);
+    expect(find.text('By train'), findsOneWidget);
+    expect(find.text('By bus'), findsOneWidget);
+    await tapKey(tester, 'review-other-rv1');
+    expect(s.calls, contains('resolve:rv1:other'));
+    expect(find.byKey(const Key('space-reviews')), findsNothing);
+  });
+
   testWidgets('a new space is named and shown', (tester) async {
     final s = FakeSpaces();
     await pumpApp(tester, world(), s, size: const Size(400, 800));
@@ -104,8 +123,16 @@ void main() {
     expect(find.text('You are invited as Editor.'), findsOneWidget);
     expect(find.text('If you leave or are removed, you keep a read-only copy of what was there.'), findsOneWidget);
     expect(find.textContaining('screenshots'), findsOneWidget, reason: 'what the app cannot enforce is said');
+    // T14 finding 1: the profile's name to start with; a name is needed.
+    final nameField = find.byKey(const Key('join-space-name'));
+    expect(tester.widget<TextField>(nameField).controller!.text, isNotEmpty);
+    await tester.enterText(nameField, ' ');
     await tapKey(tester, 'join-space-join');
-    expect(s.calls, containsAllInOrder(['peek:lifeflow://join/ABC', 'join:lifeflow://join/ABC']));
+    expect(find.text('Type your name: the others in the space will know you by it.'), findsOneWidget);
+    expect(s.calls.where((c) => c.startsWith('join:')), isEmpty);
+    await tester.enterText(find.byKey(const Key('join-space-name')), '  Vy  ');
+    await tapKey(tester, 'join-space-join');
+    expect(s.calls, containsAllInOrder(['peek:lifeflow://join/ABC', 'join:lifeflow://join/ABC:Vy']));
     expect(find.text('You asked to join. The owner lets you in.'), findsOneWidget);
   });
 

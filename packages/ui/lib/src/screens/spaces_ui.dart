@@ -21,6 +21,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../l10n.dart';
 import '../providers.dart';
 import '../task_actions.dart' show showMessage;
+import 'sync_screen.dart' show ReviewCard;
 import 'tasks_screen.dart' show showTextDialog;
 
 String spaceNameOf(BuildContext context, SpaceView s) =>
@@ -78,21 +79,28 @@ Future<void> createSpaceFlow(BuildContext context, WidgetRef ref) async {
 Future<void> joinSpaceFlow(BuildContext context, WidgetRef ref) async {
   final sharing = ref.read(sharingServiceProvider);
   if (sharing == null) return showMessage(context, context.l10n.spNoSpaces);
-  final joined = await showDialog<SharingResult>(context: context, builder: (_) => _JoinDialog(sharing: sharing));
+  final profileName = (await ref.read(activeProfileProvider.future))?.displayName.trim() ?? '';
+  if (!context.mounted) return;
+  final joined = await showDialog<SharingResult>(
+      context: context, builder: (_) => _JoinDialog(sharing: sharing, initialName: profileName));
   if (joined == null || !context.mounted) return;
   refreshSpaces(ref);
   showMessage(context, joined.preview?.kind == InviteKind.joinAtOnce ? context.l10n.spJoined : context.l10n.spAskedToJoin);
 }
 
 class _JoinDialog extends StatefulWidget {
-  const _JoinDialog({required this.sharing});
+  const _JoinDialog({required this.sharing, this.initialName = ''});
   final SharingService sharing;
+
+  /// The profile's name, if it has one.
+  final String initialName;
   @override
   State<_JoinDialog> createState() => _JoinDialogState();
 }
 
 class _JoinDialogState extends State<_JoinDialog> {
   final _code = TextEditingController();
+  late final _name = TextEditingController(text: widget.initialName);
   InvitationPreview? _preview;
   String? _problem;
   bool _busy = false;
@@ -100,6 +108,7 @@ class _JoinDialogState extends State<_JoinDialog> {
   @override
   void dispose() {
     _code.dispose();
+    _name.dispose();
     super.dispose();
   }
 
@@ -115,8 +124,13 @@ class _JoinDialogState extends State<_JoinDialog> {
   }
 
   Future<void> _join() async {
+    // T14 finding 1: the others know this person by this name.
+    if (_name.text.trim().isEmpty) {
+      setState(() => _problem = context.l10n.spJoinNameNeeded);
+      return;
+    }
     setState(() => _busy = true);
-    final r = await widget.sharing.join(_code.text);
+    final r = await widget.sharing.join(_code.text, name: _name.text.trim());
     if (!mounted) return;
     if (r.ok) {
       Navigator.pop(context, r);
@@ -159,6 +173,17 @@ class _JoinDialogState extends State<_JoinDialog> {
             Text(l.spExportRuleText(p.export.name)),
             const SizedBox(height: 8),
             Text(l.spCannotEnforce, style: Theme.of(context).textTheme.bodySmall),
+            const SizedBox(height: 16),
+            TextField(
+              key: const Key('join-space-name'),
+              controller: _name,
+              maxLength: 60,
+              textInputAction: TextInputAction.done,
+              decoration: InputDecoration(labelText: l.spYourName, helperText: l.spJoinNameHint),
+              onChanged: (_) {
+                if (_problem != null) setState(() => _problem = null);
+              },
+            ),
           ],
         ]),
       ),
@@ -291,6 +316,8 @@ class SpaceBar extends ConsumerWidget {
     if (s == null) return const SizedBox.shrink();
     final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
+    // T14 finding 2: a change to review is said where the space is shown.
+    final reviews = ref.watch(spaceSyncStatusProvider).valueOrNull?.reviews ?? 0;
     final details = switch (s.left) {
       SpaceLeft.readOnly => l.spLeftCopy,
       SpaceLeft.exportFirst => l.spLeftExport,
@@ -298,6 +325,7 @@ class SpaceBar extends ConsumerWidget {
           roleName(context, s.role ?? SpaceRole.viewer),
           l.spPeople(s.members),
           if (s.role == SpaceRole.viewer) l.spViewOnly,
+          if (reviews > 0) l.syReviewsWaiting(reviews),
         ].join(' · '),
     };
     final name = spaceNameOf(context, s);
@@ -511,6 +539,7 @@ class SpacePage extends ConsumerWidget {
               ),
             ],
           ),
+        if (s.left == SpaceLeft.no && s.isShown) const _SpaceReviews(),
         if (s.left != SpaceLeft.no)
           ListTile(
             leading: const Icon(Icons.info_outline),
@@ -921,6 +950,38 @@ class _Rules extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Text(l.spCannotEnforce, style: Theme.of(context).textTheme.bodySmall),
       ),
+    ]);
+  }
+}
+
+/// P04b T14 finding 2: the shown space's "Changes to review" (SYNC-003), at
+/// the top of its page.
+class _SpaceReviews extends ConsumerWidget {
+  const _SpaceReviews();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final items = ref.watch(spaceReviewsProvider).valueOrNull ?? const <SyncReviewView>[];
+    if (items.isEmpty) return const SizedBox.shrink();
+    return Column(key: const Key('space-reviews'), crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
+        child: Semantics(
+          header: true,
+          child: Text(context.l10n.syReviewsTitle, style: Theme.of(context).textTheme.titleSmall),
+        ),
+      ),
+      for (final r in items)
+        ReviewCard(
+          item: r,
+          close: (takeOther) async {
+            final sync = ref.read(spaceSyncProvider);
+            if (sync == null) return null;
+            final res = await sync.resolveReview(r.id, takeOther: takeOther);
+            ref.invalidate(spaceReviewsProvider);
+            return res;
+          },
+        ),
     ]);
   }
 }
