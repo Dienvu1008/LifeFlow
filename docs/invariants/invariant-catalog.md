@@ -185,6 +185,21 @@ estore. Failure: —. Verification: integration. Severity: medium. Depends: LF-I
 ### LF-INV-SYNC-004 — Tombstone propagation
 - Scope: Governance/Sync. Enforcement: deletes are tombstones in the outbox. Verification: sync test (GS-14). Severity: critical. Depends: LF-INV-GOV-003.
 
+## 10a. Sharing (P04b)
+
+Added at the P04b exit (2026-11-04) from [p04b-plan.md §7](../roadmap/p04b-plan.md); proofs in [p04b-exit-gate.md](../testing/p04b-exit-gate.md).
+
+### LF-INV-SHARE-001 — Nothing enters or leaves a shared space implicitly
+- Statement: an item enters or leaves a shared space only by an explicit command the user confirmed, after being shown what becomes visible; Restricted data never enters. Rationale: privacy (PRIV-002/003, B3). Scope: sharing. Enforcement: `MoveIntoSpace` / `MoveOutOfSpace` with the preview's fingerprint; the move set's classification check (ADR-0059, ADR-0064). Failure: nothing moves. Verification: integration + UI (GS-25). Severity: critical. Depends: LF-INV-PRIV-002, LF-INV-ID-001.
+### LF-INV-SHARE-002 — Only an owner or an editor writes to a space
+- Statement: a write to a shared space is accepted only from its owner or an editor, on the device and on the server. Rationale: roles (B4, R-PERMISSION). Scope: sharing. Enforcement: the role policy in `WorkspaceOwnerAuthorization`; RLS and role-checked server functions (ADR-0060, ADR-0061). Failure: refused. Verification: pgTAP allow/deny per role, contract, sync tests (GS-23, GS-24). Severity: critical. Depends: LF-INV-GOV-002.
+### LF-INV-SHARE-003 — Membership is the server's
+- Statement: membership, roles and invitations change only on the server, through owner-checked functions; devices only cache them. Rationale: server-authoritative membership (sync-protocol §9). Scope: sharing. Enforcement: security-definer functions; the device cache is written only by the space sync's refresh (ADR-0061, ADR-0063). Failure: refused. Verification: pgTAP (crafted direct writes), contract. Severity: critical. Depends: —.
+### LF-INV-SHARE-004 — A removed member reads nothing new
+- Statement: after a member is removed, nothing sealed afterwards can be opened with a key that member had. Rationale: end-to-end encryption (D12, B8). Scope: sharing keys. Enforcement: a key rotation on every removal; pushes with the old key refused; old rows dropped at the end (ADR-0062). Failure: —. Verification: key and sync tests with the removed member's old key, pgTAP, e2e. Severity: critical. Depends: —.
+### LF-INV-SHARE-005 — A space's rules are known
+- Statement: a space's rules (B7, B8, B14) are shown to a person before they join, change only by the owner, and every change is shown to every member. Rationale: informed consent to what the app offers. Scope: sharing. Enforcement: the invitation preview; the owner-checked `set_space_rules`; the rules notice (ADR-0064). Failure: refused / notice. Verification: contract, integration, UI. Severity: high. Depends: LF-INV-SHARE-003.
+
 ## 11. Security and Privacy
 
 ### LF-INV-SEC-001 — Secrets only in secure storage
@@ -217,3 +232,4 @@ estore. Failure: —. Verification: integration. Severity: medium. Depends: LF-I
 - [x] All 60 harvested invariants are cataloged; 2 new named invariants (LF-INV-DOC-005, LF-INV-SEC-011) are marked and will be added to the domain-model index.
 - [x] Every entry has enforcement, verification and severity.
 - [x] No invariant statement was changed during consolidation.
+- [x] P04b exit (2026-11-04): five sharing invariants added (LF-INV-SHARE-001…005, §10a), each with enforcement, verification and severity.

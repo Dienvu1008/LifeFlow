@@ -65,6 +65,11 @@ Maps every invariant to its verification method, golden scenario(s) and/or fitne
 | LF-INV-SYNC-002 | Sync | GS-12(analogue) | — | no |
 | LF-INV-SYNC-003 | Sync | GS-08 | — | no |
 | LF-INV-SYNC-004 | Sync | GS-14 | — | no |
+| LF-INV-SHARE-001 | I, U(UI) | GS-25 | FF-ARCH-06 | no |
+| LF-INV-SHARE-002 | Sec, C, Sync | GS-23, GS-24 | FF-ARCH-09 | no |
+| LF-INV-SHARE-003 | Sec, C | GS-23 | — | no |
+| LF-INV-SHARE-004 | Sec, Sync, C | GS-23 | — | no |
+| LF-INV-SHARE-005 | C, I, U(UI) | — | — | no |
 | LF-INV-SEC-001 | Sec | GS-19, GS-22 | — | no |
 | LF-INV-SEC-002 | I | GS-22 | — | no |
 | LF-INV-SEC-010 | I | GS-20 | — | no |
@@ -83,9 +88,11 @@ EXEC-001/002/003/004, HEALTH-002/004 (manual path), TASK-010, GOAL-001/002/003 a
 
 ## P04a status (2026-11-16)
 SYNC-001/002/003/004 are enforced and tested on the sync harness (two and three devices, property runs), against the in-memory server and local Supabase. GS-17 and GS-14 pass. GS-08's rule (per type, never a global last-writer-wins) is proved on P04a's own types; GS-08 proper (documents) stays with P05. PRIV-001/003 are enforced at the **sync** egress (ADR-0059); the AI egress, GS-16 and FF-ARCH-08 proper stay with P06. OUTBOX-001, GOV-001 and ID-001 also hold for the sync commands (apply, setup, review). The test files are listed in [p04a-exit-gate.md](../testing/p04a-exit-gate.md).
+## P04b status (2026-11-04)
+SHARE-001…005 are new and enforced: on the server (RLS, role-checked functions: 158 pgTAP assertions for P04b, one contract on the in-memory server and local Supabase) and on the device (the role policy, the move's confirmation and classification check, the rotation). GS-23…26 pass. SYNC-002/003/004 and GS-14/17 hold in a shared space with two people (sync harness and e2e on local Supabase); SYNC-001 holds by the same engine and operation ids, its replay test being P04a's. PRIV-002/003 hold for the share action: no move without confirmation; Restricted is refused by the move set, though no movable kind is Restricted today. WA-001 as refined by ADR-0060. The test files are listed in [p04b-exit-gate.md](../testing/p04b-exit-gate.md).
 
 ## Coverage summary
-- 62 invariants (60 harvested + LF-INV-DOC-005 + LF-INV-SEC-011). Every one has at least one verification method. **0 critical gaps.**
+- 67 invariants (60 harvested + LF-INV-DOC-005 + LF-INV-SEC-011 + LF-INV-SHARE-001…005 at P04b). Every one has at least one verification method. **0 critical gaps.**
 - Invariants with only unit coverage and no golden scenario (for example several Dictionary/Document detail invariants) are lower severity; a golden scenario can be added in their phase if needed.
 
 ## Self-check

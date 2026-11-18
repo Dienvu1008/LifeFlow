@@ -161,11 +161,11 @@ Every non-trivial statement carries one of these labels.
 
 | Document | Purpose |
 |---|---|
-| [invariants/invariant-catalog.md](invariants/invariant-catalog.md) | Single source of truth for all 62 `LF-INV-*` |
+| [invariants/invariant-catalog.md](invariants/invariant-catalog.md) | Single source of truth for all 67 `LF-INV-*` |
 | [invariants/policy-catalog.md](invariants/policy-catalog.md) | Named policies (completion, conflict, egress, retention, AI approval, license...) |
 | [invariants/invariant-test-matrix.md](invariants/invariant-test-matrix.md) | Invariant × verification × golden scenario / fitness fn (0 gaps) |
 | [testing/test-strategy.md](testing/test-strategy.md) | Layers, tooling, performance targets, crash/sync approach |
-| [testing/golden-scenarios.md](testing/golden-scenarios.md) | GS-01..22 incl. crash-window/concurrency |
+| [testing/golden-scenarios.md](testing/golden-scenarios.md) | GS-01..26 incl. crash-window/concurrency and sharing (GS-23..26, P04b) |
 | [testing/architecture-fitness-functions.md](testing/architecture-fitness-functions.md) | FF-ARCH-01..09, provisional-name reconciliation |
 | [testing/definition-of-done.md](testing/definition-of-done.md) | Per-phase DoD + template |
 
@@ -205,7 +205,7 @@ Resolved in Batch 2: OQ-B1 (Time Kernel package, ADR-0013), OQ-R1 (subtask depth
 
 Resolved 2026-11-04 (pre-spike): OQ-S7 (sign-out → profile chooser, data stays on device), OQ-DATA-1 (random 256-bit key in secure storage, no passphrase). New non-blocking: OQ-DATA-3 (key/data backup).
 
-Resolved in P01: OQ-R4 (encryption at rest on Android and Windows, ADR-0021/0022), OQ-DATA-3 option (a) (user export as the backup, ADR-0025). **P01 done 2026-11-07** ([testing/p01-exit-gate.md](testing/p01-exit-gate.md)). P02 plan: [roadmap/p02-plan.md](roadmap/p02-plan.md). **P02 done 2026-11-10** ([testing/p02-exit-gate.md](testing/p02-exit-gate.md); license decision L-1: ADR-0035). P03 plan (accepted 2026-11-10): [roadmap/p03-plan.md](roadmap/p03-plan.md). P03 UX plan (accepted 2026-11-11): [roadmap/p03-ux-plan.md](roadmap/p03-ux-plan.md). Dogfooding fixes: [roadmap/p03-dogfood-1.md](roadmap/p03-dogfood-1.md). **P03 done 2026-11-14: the MVP is complete** ([testing/p03-exit-gate.md](testing/p03-exit-gate.md)). P04 plan (accepted 2026-11-14): [roadmap/p04-plan.md](roadmap/p04-plan.md). **P04a done 2026-11-16: sync of one account's devices** ([testing/p04a-exit-gate.md](testing/p04a-exit-gate.md)). P04b plan (accepted 2026-11-16): [roadmap/p04b-plan.md](roadmap/p04b-plan.md). P04b T14, two people on real devices: [testing/p04b-two-person-run.md](testing/p04b-two-person-run.md).
+Resolved in P01: OQ-R4 (encryption at rest on Android and Windows, ADR-0021/0022), OQ-DATA-3 option (a) (user export as the backup, ADR-0025). **P01 done 2026-11-07** ([testing/p01-exit-gate.md](testing/p01-exit-gate.md)). P02 plan: [roadmap/p02-plan.md](roadmap/p02-plan.md). **P02 done 2026-11-10** ([testing/p02-exit-gate.md](testing/p02-exit-gate.md); license decision L-1: ADR-0035). P03 plan (accepted 2026-11-10): [roadmap/p03-plan.md](roadmap/p03-plan.md). P03 UX plan (accepted 2026-11-11): [roadmap/p03-ux-plan.md](roadmap/p03-ux-plan.md). Dogfooding fixes: [roadmap/p03-dogfood-1.md](roadmap/p03-dogfood-1.md). **P03 done 2026-11-14: the MVP is complete** ([testing/p03-exit-gate.md](testing/p03-exit-gate.md)). P04 plan (accepted 2026-11-14): [roadmap/p04-plan.md](roadmap/p04-plan.md). **P04a done 2026-11-16: sync of one account's devices** ([testing/p04a-exit-gate.md](testing/p04a-exit-gate.md)). P04b plan (accepted 2026-11-16): [roadmap/p04b-plan.md](roadmap/p04b-plan.md). P04b T14, two people on real devices: [testing/p04b-two-person-run.md](testing/p04b-two-person-run.md). **P04b done 2026-11-04: sharing with other people** ([testing/p04b-exit-gate.md](testing/p04b-exit-gate.md)); resolved in P04b: OQ-AUTHZ-1 (roles, B4), OQ-V5 (membership RLS, spike S-16).
 
 ## Unresolved decisions (summary)
 
@@ -218,7 +218,7 @@ Resolved in P01: OQ-R4 (encryption at rest on Android and Windows, ADR-0021/0022
 | OQ-GOV-2/3 | Dedupe/event-log retention; one table or two for outbox+event log | governance-kernel/data batch |
 | OQ-PLAN-2 (rest) | "This and following" series split (deferred to after P03, as recorded at the P02 exit; OQ-PLAN-1 resolved by D1, ADR-0028) | planning-scheduling |
 | OQ-EXEC-1/2 | `no data` storage; health idempotency key | execution-measurement |
-| OQ-AUTHZ-1/2 | P04 roles; AI usage limits as policy | authorization-model |
+| OQ-AUTHZ-2 | AI usage limits as policy (OQ-AUTHZ-1, the roles, resolved in P04b: p04b-plan B4) | authorization-model |
 | OQ-AI-1/2 | Multi-command approval; offline cloud-only model | ai-action-governance |
 | OQ-DICT-1..3 | Dictionary/translation sources+licenses (spike S-10), language detection, audio | dictionary-translation |
 | OQ-VOCAB-1/2 | Spaced-repetition algorithm; TTS/ASR ports | vocabulary-learning |

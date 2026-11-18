@@ -50,7 +50,7 @@ For each later phase record:
 - Exit gate (the specific behavioral proofs).
 
 Known later anchors (filled in the roadmap batch):
-- P04 (Collaboration & Sync): SYNC-001/002/003, per-type conflict; GS-08, GS-14, GS-17; FF-ARCH-08 preparation; auth/data backend decided (ADR-0003).
+- P04 (Collaboration & Sync): SYNC-001/002/003, per-type conflict; GS-08, GS-14, GS-17; FF-ARCH-08 preparation; auth/data backend decided (ADR-0003). P04a: [p04a-exit-gate.md](p04a-exit-gate.md). P04b adds SHARE-001…005 and GS-23…26: [p04b-exit-gate.md](p04b-exit-gate.md).
 - P05 (Documents): DOC-001..005; GS-08; editor spike S-07 done.
 - P06 (AI): AI-001/002, PRIV-001/002/003; GS-15, GS-16; FF-ARCH-08 green.
 - P07 (Dictionary/Vocabulary): DICT-*, VOCAB-*; GS-09; spike S-10 (sources/licenses) done.
