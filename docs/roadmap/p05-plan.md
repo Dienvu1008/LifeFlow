@@ -1,6 +1,6 @@
 # P05 plan: Documents and knowledge
 
-- Status: **Decisions taken by the owner 2026-11-04** (C1–C12, below; C4 and C12 changed after the FTS5 check of §2). Waiting for the owner's acceptance of the plan.
+- Status: **Decisions taken by the owner 2026-11-04** (C1–C12, below; C4 and C12 changed after the FTS5 check of §2). **Accepted by the owner 2026-11-04.**
 - Date: 2026-11-04
 - Inputs: [phase-breakdown.md](phase-breakdown.md) (P05), [document-knowledge.md](../domains/document-knowledge.md), [ADR-0017](../adr/0017-document-collaboration-maturity.md) (single-user editing, revisions, no CRDT), [ADR-0020](../adr/0020-editor-decision-or-spike.md) (MIT/BSD editor, final pick by S-07), [ADR-0018](../adr/0018-dependency-license-policy.md), [spike-plan.md](../spikes/spike-plan.md) (S-07, S-08, S-09, S-12), [data-classification.md](../data/data-classification.md) (documents are Confidential), [local-storage.md](../data/local-storage.md) (OQ-LS-1), [data-architecture.md](../data/data-architecture.md) (attachments as files, OQ-DATA-2), [p04b-exit-gate.md](../testing/p04b-exit-gate.md); invariants DOC-001…005; GS-08; use cases UC-09, UC-10, UC-14; open questions OQ-DOC-1…3
 - Estimate: P05a about 21–28 person-days, plus a 30 % risk buffer (the phase breakdown guessed 20–45 for all of P05). P05b is estimated at its start.
