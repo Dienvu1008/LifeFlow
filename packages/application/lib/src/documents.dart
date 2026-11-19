@@ -2,10 +2,11 @@
 // The body's value types are the domain's (ADR-0066): they are the published
 // language of this port, re-exported here so the UI never imports `domain`
 // (FF-ARCH-04) and never sees the editor library's format.
-import 'package:domain/domain.dart' show DocumentBody, RevisionReason;
+import 'package:domain/domain.dart' show DocumentBody, LinkState, RevisionReason;
 import 'package:foundation/foundation.dart';
 
 import 'command.dart';
+import 'goals.dart' show LinkedItemState;
 
 export 'package:domain/domain.dart'
     show
@@ -89,10 +90,36 @@ class DocumentRevisionView {
   final String? deviceId;
 }
 
+/// A task, an event or a goal a document is linked to, read from its own
+/// context (P05a T6): its title, or missing when it is gone.
 class DocumentItemLinkView {
-  const DocumentItemLinkView({required this.itemType, required this.itemId});
+  const DocumentItemLinkView({required this.itemType, required this.itemId, this.title, this.state = LinkedItemState.open});
   final DocumentItemType itemType;
   final String itemId;
+
+  /// Null when [state] is missing.
+  final String? title;
+  final LinkedItemState state;
+}
+
+/// P05a T6: what a `[[…]]` link shows (DOC-003): its target's current
+/// title, or a broken link (in the trash, or not in this workspace).
+class DocumentLinkTarget {
+  const DocumentLinkTarget({required this.id, required this.state, this.title});
+  final String id;
+  final LinkState state;
+
+  /// The current title; null when [state] is missing.
+  final String? title;
+}
+
+/// P05a T6 (C6): a document whose text links to the one shown, with the
+/// sentence around each link.
+class BacklinkView {
+  const BacklinkView({required this.id, required this.title, required this.snippets});
+  final String id;
+  final String title;
+  final List<String> snippets;
 }
 
 /// Document commands; failures are returned, never thrown.
@@ -143,4 +170,22 @@ abstract interface class DocumentQueries {
   Future<List<DocumentItemLinkView>> linksOf(String id);
 
   Future<List<DocumentNodeView>> trashed();
+
+  /// P05a T6: the live documents of the shown workspace linked to a task,
+  /// an event or a goal (shown on the item's page), by title.
+  Future<List<DocumentNodeView>> documentsOf(DocumentItemType type, String itemId);
+
+  /// P05a T6 (DOC-003): what each `[[…]]` link to [ids] shows. A link
+  /// resolves only inside the shown workspace: a document elsewhere is
+  /// missing, its title never shown.
+  Future<Map<String, DocumentLinkTarget>> linkTargets(Iterable<String> ids);
+
+  /// P05a T6 (C6): the live documents of the shown workspace whose text links
+  /// to [id], by title, each with its sentences.
+  Future<List<BacklinkView>> backlinks(String id);
+
+  /// P05a T6 (§4): what typing `[[` offers: the live documents of the shown
+  /// workspace whose title matches [typed] (as search does, C4), best
+  /// first; with nothing typed, the latest changed. Never [excludeId].
+  Future<List<DocumentNodeView>> linkCandidates(String typed, {String? excludeId});
 }

@@ -1,6 +1,6 @@
 # ADR-0066: Documents as records with a block body of our own
 
-- Status: Accepted (P05a task T1, 2026-11-04)
+- Status: Accepted (P05a task T1, 2026-11-04); amended by [ADR-0071](0071-document-links-and-search.md) (a link's current title is written back by the document service at a save, not by the editor adapter)
 - Date: 2026-11-04
 - Deciders: implementation within the owner's decisions C1–C12 of [p05-plan.md](../roadmap/p05-plan.md) and the S-07 pick (ADR-0020 amendment: flutter_quill)
 - Related: [document-knowledge.md](../domains/document-knowledge.md) (amends §4), [ADR-0015](0015-per-type-conflict-resolution.md), [ADR-0017](0017-document-collaboration-maturity.md), [ADR-0020](0020-editor-decision-or-spike.md), [ADR-0059](0059-sync-egress-classification.md)

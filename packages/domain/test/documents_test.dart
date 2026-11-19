@@ -233,6 +233,41 @@ void main() {
     });
   });
 
+  group('link titles (T6, ADR-0071)', () {
+    final titles = {'a': 'Ghi chú họp', 'b': 'Sách'};
+    String? titleOf(String id) => titles[id];
+
+    test('a link shows its target\'s current title; marks kept; a broken link keeps its text', () {
+      final b = DocumentBody([
+        DocBlock('x', BlockType.bullet, indent: 2, runs: [
+          TextRun('Xem '),
+          TextRun('Họp cũ', doc: 'a', marks: {TextMark.bold}),
+          TextRun(' và '),
+          TextRun('Đã xoá', doc: 'gone'),
+        ]),
+        DocBlock('y', BlockType.todo, checked: true, runs: [TextRun('Sách', doc: 'b'), TextRun(' web', url: 'https://x.vn')]),
+      ]);
+      final out = withLinkTitles(b, titleOf);
+      expect(out.blocks[0].runs.map((r) => (r.text, r.doc, r.marks.map((m) => m.name).join())).toList(), [
+        ('Xem ', null, ''),
+        ('Ghi chú họp', 'a', 'bold'),
+        (' và ', null, ''),
+        ('Đã xoá', 'gone', ''),
+      ]);
+      expect((out.blocks[0].type, out.blocks[0].indent, out.blocks[1].checked), (BlockType.bullet, 2, true));
+      expect(identical(withLinkTitles(out, titleOf), out), isTrue, reason: 'nothing to change: the same body');
+      expect(out.blocks[1].runs.last.url, 'https://x.vn');
+    });
+
+    test('a title that would make the body too long leaves it as it was', () {
+      final long = 'x' * (maxDocumentTextLength - 1);
+      final b = DocumentBody([
+        DocBlock('x', BlockType.paragraph, runs: [TextRun(long), TextRun('a', doc: 'a')]),
+      ]);
+      expect(identical(withLinkTitles(b, titleOf), b), isTrue);
+    });
+  });
+
   group('search query (C4)', () {
     test('words must all be there; the last may be the start of a word', () {
       expect(searchQueryOf('ghi chú'), '"ghi" "chú"*');

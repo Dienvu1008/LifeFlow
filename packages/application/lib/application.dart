@@ -17,5 +17,6 @@ export 'src/ports.dart';
 export 'src/remote.dart';
 export 'src/remote_spaces.dart';
 export 'src/reminders.dart';
+export 'src/search.dart';
 export 'src/spaces.dart';
 export 'src/sync.dart';

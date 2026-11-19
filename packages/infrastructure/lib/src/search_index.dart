@@ -130,6 +130,67 @@ Future<List<String>> searchDocumentIdsIn(AppDatabase db, String workspaceId, Str
   return [for (final r in rows) r.read<String>('id')];
 }
 
+/// P05a T6: marks FTS5 puts around each matched word of a passage (Unicode
+/// private use, never typed); taken out again by [passageOf].
+const _matchStart = '\uE000', _matchEnd = '\uE001';
+
+/// A passage as FTS5's `snippet` gave it: the text without the marks, and
+/// where the marks were.
+(String, List<({int start, int end})>) passageOf(String marked) {
+  final out = StringBuffer();
+  final matches = <({int start, int end})>[];
+  int? from;
+  for (final ch in marked.split('')) {
+    if (ch == _matchStart) {
+      from = out.length;
+    } else if (ch == _matchEnd) {
+      if (from != null && out.length > from) matches.add((start: from, end: out.length));
+      from = null;
+    } else {
+      out.write(ch);
+    }
+  }
+  return (out.toString(), matches);
+}
+
+/// P05a T6 (ADR-0071): the live documents of [workspaceId] matching what was
+/// typed, best first, each with a passage of its text around the matches
+/// (marked as [passageOf] reads them).
+Future<List<(String, String)>> searchDocumentPassagesIn(AppDatabase db, String workspaceId, String typed, {int limit = 50}) async {
+  final q = searchQueryOf(searchForm(typed));
+  if (q == null) return const [];
+  await catchUpSearch(db);
+  final rows = await db.customSelect(
+    "SELECT d.id AS id, snippet(documents_fts, 1, ?, ?, '…', 24) AS passage "
+    'FROM documents_fts f JOIN documents d ON d.rowid = f.rowid '
+    'WHERE documents_fts MATCH ? AND d.workspace_id = ? AND d.deleted_at IS NULL ORDER BY rank LIMIT ?',
+    variables: [
+      Variable<String>(_matchStart),
+      Variable<String>(_matchEnd),
+      Variable<String>(q),
+      Variable<String>(workspaceId),
+      Variable<int>(limit),
+    ],
+    readsFrom: {db.documents},
+  ).get();
+  return [for (final r in rows) (r.read<String>('id'), r.read<String>('passage'))];
+}
+
+/// P05a T6 (§4, `[[`): the live documents of [workspaceId] whose TITLE
+/// matches what was typed, best first.
+Future<List<String>> searchDocumentTitleIdsIn(AppDatabase db, String workspaceId, String typed, {int limit = 20}) async {
+  final q = searchQueryOf(searchForm(typed));
+  if (q == null) return const [];
+  await catchUpSearch(db);
+  final rows = await db.customSelect(
+    'SELECT d.id AS id FROM documents_fts f JOIN documents d ON d.rowid = f.rowid '
+    'WHERE documents_fts MATCH ? AND d.workspace_id = ? AND d.deleted_at IS NULL ORDER BY rank LIMIT ?',
+    variables: [Variable<String>('title : ($q)'), Variable<String>(workspaceId), Variable<int>(limit)],
+    readsFrom: {db.documents},
+  ).get();
+  return [for (final r in rows) r.read<String>('id')];
+}
+
 /// The live documents of [workspaceId] whose text links to [documentId]
 /// (backlinks, C6), by title. Links stay inside one workspace.
 Future<List<String>> backlinkIdsIn(AppDatabase db, String workspaceId, String documentId) async {
