@@ -83,7 +83,13 @@ class DriftDocumentService implements DocumentService {
   Future<CommandResult> rename(String id, String title) async {
     final d = await _row(id);
     if (d == null) return const CommandFailure(CommandFailureKind.notFound, reason: 'document not found');
-    return save(id, title: title, body: DocumentBody.decode(d.body));
+    final DocumentBody body;
+    try {
+      body = DocumentBody.decode(d.body);
+    } on FormatException {
+      return const CommandFailure(CommandFailureKind.validationFailed, reason: 'the document cannot be read here');
+    }
+    return save(id, title: title, body: body);
   }
 
   @override
@@ -138,7 +144,30 @@ class DriftDocumentQueries implements DocumentQueries {
       }
     }
 
+    void walkFrom(String parent, Set<String> seen) {
+      for (final d in byParent[parent] ?? const <DocumentRow>[]) {
+        if (!seen.add(d.id)) continue;
+        out.add(_node(d));
+        walkFrom(d.id, seen);
+      }
+    }
+
     walk(null);
+    // P05a T4 (ADR-0069): two moves on two devices can merge into a loop (A
+    // under B here, B under A there). Nothing in it is reachable from the
+    // top, so each loop is shown from its smallest id, the same on every
+    // device; nothing disappears from the tree.
+    final shown = {for (final n in out) n.id};
+    final rest = [for (final d in rows) if (!shown.contains(d.id)) d]..sort((a, b) => a.id.compareTo(b.id));
+    for (final d in rest) {
+      if (shown.contains(d.id)) continue;
+      final start = out.length;
+      out.add(_node(d));
+      walkFrom(d.id, shown..add(d.id));
+      for (final n in out.skip(start)) {
+        shown.add(n.id);
+      }
+    }
     return out;
   }
 
@@ -160,10 +189,17 @@ class DriftDocumentQueries implements DocumentQueries {
     final ws = await _workspace();
     final d = await (db.select(db.documents)..where((x) => x.id.equals(id))).getSingleOrNull();
     if (d == null || d.workspaceId != ws) return null;
+    DocumentBody? body;
+    try {
+      body = DocumentBody.decode(d.body);
+    } on FormatException {
+      body = null;
+    }
     return DocumentView(
       id: d.id,
       title: d.title,
-      body: DocumentBody.decode(d.body),
+      body: body ?? DocumentBody([]),
+      isUnreadable: body == null,
       version: d.version,
       updatedAt: Instant(d.updatedAt.toUtc()),
       parentId: d.parentId,
@@ -199,7 +235,11 @@ class DriftDocumentQueries implements DocumentQueries {
     final ws = await _workspace();
     final r = await (db.select(db.documentRevisions)..where((x) => x.id.equals(revisionId))).getSingleOrNull();
     if (r == null || r.workspaceId != ws) return null;
-    return (r.title, DocumentBody.decode(r.body));
+    try {
+      return (r.title, DocumentBody.decode(r.body));
+    } on FormatException {
+      return null;
+    }
   }
 
   @override

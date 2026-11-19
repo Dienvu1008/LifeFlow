@@ -48,10 +48,14 @@ const _wholeValueKinds = {'schedule', 'reminder', 'exception', 'periodResult', '
 
 /// Kinds that are never changed after they are made (append-only, EXEC-001):
 /// the same id on both sides is the same fact, so either copy will do.
-const _appendOnlyKinds = {'measurement', 'executionRecord'};
+/// P05a T4 (ADR-0069): a document's revisions are written once (DOC-006).
+const _appendOnlyKinds = {'measurement', 'executionRecord', 'documentRevision'};
 
 /// Fields that are one value with a review when both sides changed them.
-const _reviewedFields = {'task': {'notes'}};
+/// P05a T4 (ADR-0069): a document's body changed on both sides: the newer
+/// stays and the other is a review item. Nothing is lost either way: each
+/// side's save is a revision of its own, and revisions sync append-only.
+const _reviewedFields = {'task': {'notes'}, 'document': {'body'}};
 
 SyncMerge mergeRecord(
   String kind,

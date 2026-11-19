@@ -392,6 +392,20 @@ Future<SyncReviewView> syncReviewViewOf(AppDatabase db, SyncReviewRow r) async {
   } on FormatException {
     kept = other = null;
   }
+  // P05a T4 (ADR-0069): a document's body, as its text.
+  if (r.kind == 'document' && r.field == 'body') {
+    String? text(Object? v) {
+      if (v is! String) return null;
+      try {
+        return DocumentBody.decode(v).plainText();
+      } on FormatException {
+        return null;
+      }
+    }
+
+    kept = text(kept);
+    other = text(other);
+  }
   return SyncReviewView(
     id: r.id,
     recordKind: r.kind,

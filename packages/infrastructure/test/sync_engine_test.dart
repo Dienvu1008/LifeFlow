@@ -421,4 +421,86 @@ void main() {
       dir = Directory.systemTemp.createTempSync('lifeflow_sync_engine_');
     }
   }, timeout: const Timeout(Duration(minutes: 5)));
+
+  group('P05a T4: documents (ADR-0069)', () {
+    DriftDocumentService docsOf(Device d) => DriftDocumentService(d.db, d.gw, deviceId: d.name);
+    DocumentBody body(String s) => DocumentBody([DocBlock('b1', BlockType.paragraph, runs: [TextRun(s)])]);
+    Future<List<String>> revisionTexts(Device d, String id) async => [
+          for (final r in await DriftDocumentQueries(d.db).revisions(id))
+            (await DriftDocumentQueries(d.db).revisionContent(r.id))!.$2.plainText(),
+        ];
+    Future<String> bodyOf(Device d, String id) async => (await DriftDocumentQueries(d.db).document(id))!.body.plainText();
+
+    test('GS-08 / DOC-005: changed on both offline: both saves are revisions everywhere, one review; "Take the other" syncs',
+        () async {
+      late String id;
+      final [a, b] = await devices(2, seed: (d) async {
+        id = ok(await docsOf(d).create('Kế hoạch'));
+        ok(await docsOf(d).save(id, title: 'Kế hoạch', body: body('Bản đầu')));
+      });
+      ok(await docsOf(a).save(id, title: 'Kế hoạch', body: body('Của máy A')));
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+      ok(await docsOf(b).save(id, title: 'Kế hoạch', body: body('Của máy B')));
+      await syncAll([a, b]);
+      for (final d in [a, b]) {
+        expect(await bodyOf(d, id), 'Của máy B', reason: '${d.name}: the newer save');
+        expect(await revisionTexts(d, id), containsAll(['Bản đầu', 'Của máy A', 'Của máy B', '']),
+            reason: '${d.name}: no content lost (DOC-005)');
+      }
+      final items = await b.db.select(b.db.syncReviews).get();
+      expect([for (final i in items) (i.kind, i.recordId, i.field)], [('document', id, 'body')]);
+      expect(await a.db.select(a.db.syncReviews).get(), isEmpty);
+      final view = await syncReviewViewOf(b.db, items.single);
+      expect({view.kept, view.other}, {'Của máy A', 'Của máy B'}, reason: 'shown as text, not as the stored form');
+
+      final take = await b.gw.execute(
+          Command(
+              operationId: 'op-take',
+              actor: ActorRef(ActorKind.owner, (await ProfileStore(b.db).getActiveProfile())!.profileId.value),
+              workspaceId: b.ws,
+              type: resolveSyncReviewAction,
+              payload: {'op': 'resolve', 'id': items.single.id, 'take': 'other'},
+              issuedAt: Instant.now()),
+          const SyncReviewHandler());
+      expect(take, isA<CommandOk>(), reason: '$take');
+      await syncAll([a, b]);
+      for (final d in [a, b]) {
+        expect(await bodyOf(d, id), 'Của máy A', reason: '${d.name}: taken back everywhere');
+        final h = await DriftDocumentQueries(d.db).revisions(id);
+        expect(h.first.reason, RevisionReason.conflict, reason: '${d.name}: the change taken back is a revision too');
+      }
+      // Revisions are the same facts on both devices, byte for byte.
+      Future<List<String>> rows(Device d) async =>
+          [for (final r in await recordKindByName['documentRevision']!.readAll(d.db)) jsonEncode({...r}..remove('updatedAt'))]
+            ..sort();
+      expect(await rows(a), await rows(b));
+    });
+
+    test('a title changed on one device and the body on the other: both kept, nothing to review', () async {
+      late String id;
+      final [a, b] = await devices(2, seed: (d) async => id = ok(await docsOf(d).create('Cũ')));
+      ok(await docsOf(a).rename(id, 'Mới'));
+      ok(await docsOf(b).save(id, title: 'Cũ', body: body('Nội dung')));
+      await syncAll([a, b]);
+      for (final d in [a, b]) {
+        final v = (await DriftDocumentQueries(d.db).document(id))!;
+        expect((v.title, v.body.plainText()), ('Mới', 'Nội dung'), reason: d.name);
+        expect(await d.db.select(d.db.syncReviews).get(), isEmpty);
+      }
+    });
+
+    test('two moves that merge into a loop: both documents still shown, in the same order on every device', () async {
+      late String x, y;
+      final [a, b] = await devices(2, seed: (d) async {
+        x = ok(await docsOf(d).create('X'));
+        y = ok(await docsOf(d).create('Y'));
+      });
+      ok(await docsOf(a).move(x, parentId: y));
+      ok(await docsOf(b).move(y, parentId: x));
+      await syncAll([a, b]);
+      final trees = [for (final d in [a, b]) [for (final n in await DriftDocumentQueries(d.db).watchTree().first) n.id]];
+      expect(trees[0], unorderedEquals([x, y]));
+      expect(trees[1], trees[0]);
+    });
+  });
 }

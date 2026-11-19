@@ -133,4 +133,48 @@ void main() {
       if (l['status'] == 'done' || r['status'] == 'done') expect(onA['status'], 'done');
     }
   });
+
+  group('P05a T4: documents (ADR-0069)', () {
+    Map<String, dynamic> doc({int version = 1, int updatedAt = 1, String title = 'Plan', String body = 'B0', String? parentId}) =>
+        {
+          'id': 'd',
+          'workspaceId': 'w',
+          'ownerId': 'o',
+          'version': version,
+          'createdAt': 0,
+          'updatedAt': updatedAt,
+          'deletedAt': null,
+          'deletedBy': null,
+          'parentId': parentId,
+          'title': title,
+          'body': body,
+          'orderKey': 'a0',
+        };
+
+    test('a body changed on both: the newer stays, the other is a review item (GS-08)', () {
+      final m = merge('document', doc(), doc(version: 2, updatedAt: 5, body: 'mine'), doc(version: 2, updatedAt: 9, body: 'theirs'));
+      expect(m.row['body'], 'theirs');
+      expect([for (final r in m.reviews) (r.field, r.kept, r.other, r.reason)],
+          [('body', 'theirs', 'mine', SyncReviewReason.changedOnBoth)]);
+    });
+
+    test('a title on one side and a body on the other: both kept, nothing to review', () {
+      final m = merge('document', doc(), doc(version: 2, title: 'New title'), doc(version: 2, updatedAt: 3, body: 'new body'));
+      expect((m.row['title'], m.row['body']), ('New title', 'new body'));
+      expect(m.reviews, isEmpty);
+    });
+
+    test('a revision is the same fact on both sides: either copy, never mixed', () {
+      final rev = {'id': 'r', 'version': 1, 'updatedAt': 1, 'deletedAt': null, 'documentId': 'd', 'body': 'B'};
+      final m = merge('documentRevision', null, rev, {...rev});
+      expect(m.row['body'], 'B');
+      expect(m.reviews, isEmpty);
+    });
+
+    test('a revision changed on both sides (damaged, or a hostile copy) is kept whole, never a mix of the two', () {
+      final base = {'id': 'r', 'version': 1, 'updatedAt': 1, 'deletedAt': null, 'documentId': 'd', 'title': 'T', 'body': 'B'};
+      final m = merge('documentRevision', base, {...base, 'title': 'T2'}, {...base, 'body': 'B2'});
+      expect([m.row['title'], m.row['body']], anyOf(equals(['T2', 'B']), equals(['T', 'B2'])));
+    });
+  });
 }
