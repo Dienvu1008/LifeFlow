@@ -13,7 +13,7 @@ Local-first: the device holds a usable, authoritative copy of the active profile
 - [Decision] **Drift on a `NativeDatabase` (dart:ffi)** on Windows and Android (VS-02). With Drift 2.32.0+ and `sqlite3` 3.x, SQLite is bundled via build hooks; `sqlite3_flutter_libs`/`sqlcipher_flutter_libs` are not needed (VS-03, VS-22).
 - [Decision] **Transactions**: the Governance Kernel runs each command in one Drift transaction holding the aggregate change, audit, outbox, event-log and dedupe writes (ADR-0014, LF-INV-GOV-003). Drift exposes `transaction()`; isolate use is recommended for the native database (VS-02).
 - [Decision] **Full-text search via FTS5** (VS-23) for task titles, note/document text (P05) and vocabulary. FTS5 tables are declared in `.drift` files. [Open] OQ-V10: confirm FTS5 is compiled into the SQLite3MultipleCiphers build (encryption below) via `PRAGMA compile_options` in spike S-02; if absent, fall back to a non-encrypted search index over non-sensitive fields or a LIKE-based search for MVP.
-- [Decision] **File/attachment storage**: binary attachments are stored as files in an app-private directory, referenced by path/hash in the database, not as BLOBs, to keep the DB small and backup incremental. [Proposal] Attachment encryption follows the same key as the DB where the platform does not already encrypt app-private storage; detailed in security-requirements.
+- [Decision] **File/attachment storage**: binary attachments are stored as files in an app-private directory, referenced by path/hash in the database, not as BLOBs, to keep the DB small and backup incremental. [Decision] (P05a T7, [ADR-0072](../adr/0072-encrypted-attachments.md), answers OQ-DATA-2) attachments are always encrypted, on every platform: AES-256-GCM with a key of their own per profile in secure storage, one file per content in `profiles/<id>.files/`, named by an HMAC of the hash; they stay on the device (p05-plan C3).
 
 ## 3. Source-of-truth map (per entity)
 [Decision] Authority is explicit per entity. "Local-authoritative" means the device's value wins and the server stores a copy; "Server-authoritative" means the server's value wins on conflict (relevant from P04); "Hybrid" means field-dependent. In the MVP (no sync) everything is local; this map is the contract the sync protocol (P04) implements.
@@ -56,7 +56,7 @@ Local-first: the device holds a usable, authoritative copy of the active profile
 - OQ-DATA-1: **resolved** (section 4) — random 256-bit key in secure storage, no passphrase.
 - OQ-DATA-3: option (a) **resolved** (section 4, ADR-0025); (b) passphrase-wrapped key and (c) escrow remain open for P04.
 - OQ-V10: FTS5 under the encrypted build (verified-sources; spike S-02).
-- OQ-DATA-2: attachment encryption approach (section 2); security batch.
+- OQ-DATA-2: attachment encryption approach (section 2): **resolved** for P05a by ADR-0072 (files on the device only); syncing files is a later, paid feature with its own plan (C3).
 
 ## 8. Self-check
 - [x] Source-of-truth map lists every MVP entity with an authority and a reason.

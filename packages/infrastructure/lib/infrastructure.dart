@@ -21,6 +21,7 @@ export 'src/profile_restore.dart';
 export 'src/record_kinds.dart';
 export 'src/search_index.dart';
 export 'src/search_service.dart';
+export 'src/attachment_store.dart';
 export 'src/document_command_handler.dart';
 export 'src/document_service.dart';
 export 'src/schedule_mapping.dart';

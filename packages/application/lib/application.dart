@@ -4,6 +4,7 @@
 library application;
 
 export 'src/app_services.dart';
+export 'src/attachments.dart';
 export 'src/auth.dart';
 export 'src/calendar.dart';
 export 'src/command.dart';
