@@ -106,6 +106,44 @@ Fixed entry format: **Question / Hypothesis / What was done / Measured result / 
 - **Decision:** feeds the P04b ADRs of T9 and T10.
 - **Human gate:** owner review.
 
+## S-07 — Block editor for documents (P05)
+**PASS with flutter_quill (2026-11-04, the owner on Windows and Android; branch `spike/s07-editor`, `0b4e623`). super_editor fails on Android speed. The owner confirms the pick (human gate).**
+- **Question:** Which MIT/BSD editor fits P05a's documents (ADR-0020): our block format in and out exactly, the block types of p05-plan.md, the `[[` link, a custom attachment block, undo/redo, Vietnamese typing, a 50-page document, on Windows and Android?
+- **Hypothesis:** super_editor (ADR-0020's lead candidate, a block model) fits best; flutter_quill (a Delta model) is the fallback.
+- **What was done:**
+  - `spikes/s07_common`: LifeFlow's own block format (paragraph, heading 1–2, bullet, numbered, to-do, image; runs with bold, italic and a `[[…]]` link; one JSON body, deterministic: fixed key order, sorted marks, merged runs), a Vietnamese sample and a 50-page document (550 blocks, 184 000 characters).
+  - Two probe apps, one per editor (they cannot share one app: super_editor 0.3.0-dev.52 needs `dart_quill_delta` ^9.4.1, flutter_quill 11.6.0 needs ^10.0.0), each with an adapter to and from the format, a toolbar, undo/redo, the `[[` picker, an "attachment on another device" block, autosave after 10 s, and a round-trip check.
+  - Headless: the format and both adapters round-trip exactly (sample and 50 pages), two adjacent links stay two; 50 pages through each adapter in 30 ms (super_editor) and 37–47 ms (flutter_quill).
+  - The owner ran both on Windows and Android, 12 steps each, twice (debug, then profile after the probes were fixed).
+  - Round 2 fixed the probes, not the libraries: super_editor's to-do builder is not in its default builders (it needs the editor), which caused the "not a DocumentComponent" error; its default spacing (18 px text, 24 px above each paragraph) was tightened. flutter_quill's B and I buttons set the mark instead of toggling it; links were styled (blue, semi-bold, no underline); a page width of 680 px was set; a text line is added after an inserted image.
+- **Measured result (owner, profile builds):**
+
+| | super_editor 0.3.0-dev.52 | flutter_quill 11.6.0 |
+|---|---|---|
+| 50 pages, first frame | Windows 293 ms (debug); Android 421 ms | Windows 136 ms (debug); Android 458 ms |
+| Scrolling and typing on Android | still lagging, "uncomfortable for daily use" | smooth, "usable every day" |
+| Scrolling on Windows | text shakes while scrolling, dizzying | smooth |
+| To-do on Android | ticks, but the box and the text are misaligned | correct |
+| Links | blue, Wikipedia-like (default) | the same after styling |
+| B / I twice | removes the mark | removes it (after the probe fix) |
+| Cursor after an image | shown | shown only after Enter or an arrow key |
+| Page width on a wide screen | 640 px by default | 680 px after setting it |
+| Block ids | kept by the library | none: the adapter keeps them by line position, so a line inserted above shifts the ids below |
+| Releases | only developer releases since 0.2.7 (2024); Windows "unverified" in its README | 11.6.0, September 2026, regular releases |
+| Android build | needs a workaround (super_keyboard compiles against API 34; compileSdk 36 forced) | builds as is |
+| New packages against the app | 46, including test and code-generation packages (`mockito`, `analyzer`, `golden_toolkit`) | 28 |
+| Licenses of everything it brings | MIT, BSD-3-Clause, Apache-2.0 | MIT, BSD-3-Clause, Apache-2.0 |
+
+- **Success or failure:** flutter_quill meets every criterion of ADR-0020 that matters for daily use. super_editor fails the "Windows + Android, acceptable performance" criterion on Android, and shows two display faults (scrolling shake on Windows, the to-do misaligned on Android).
+- **Decision:** **flutter_quill 11.6.0**, pinned, behind LifeFlow's editor port. Consequences for P05a:
+  - The stored format stays ours (`s07_common`'s shape becomes T1's), never the Delta, so a later switch does not touch stored documents.
+  - Block ids: kept by the adapter by line position since the last load. P05a needs no block-level links, so a shifted id loses nothing; they are not promised to be stable (ADR at T1).
+  - Cursor after an image: an image is always followed by a text line (the adapter adds one), so there is always a place to type.
+  - The link style, the page width and B/I toggling are set in our wrapper (as in round 2).
+  - The 28 new packages get their inventory lines and a verified-sources row before T8's merge (FF-ARCH-07).
+- **ADR update:** ADR-0020 amended: flutter_quill instead of the lead candidate super_editor, with the measurements above.
+- **Human gate:** the owner ran both editors (2026-11-04, two rounds) and judged flutter_quill fit for daily use; pick confirmed on review of this entry.
+
 ## S-01 — Flutter + Drift
 **PASS on Windows (2026-11-04):** CRUD + transaction + persistence across restart + rollback, proven on-device; headless 2/2. Finding → **OQ-STACK-2**: resolved stack is sqlite3 2.9.4 + sqlite3_flutter_libs 0.5.42 (CMake bundling), not sqlite3 3.x build hooks (3.x path not smooth on Flutter yet). Android a follow-up.
 
