@@ -158,7 +158,7 @@ class _ProbeState extends State<Probe> {
           child: OutlinedButton(onPressed: f, style: OutlinedButton.styleFrom(visualDensity: VisualDensity.compact), child: Text(label)),
         );
     return Scaffold(
-      appBar: AppBar(title: const Text('S-07 · super_editor 0.3.0-dev.52')),
+      appBar: AppBar(title: const Text('S-07 · super_editor 0.3.0-dev.52 · round 2')),
       body: Column(children: [
         Wrap(children: [
           b('P', () => _setType(BlockType.paragraph)),
@@ -188,9 +188,31 @@ class _ProbeState extends State<Probe> {
           child: SuperEditor(
             key: ValueKey(_generation),
             editor: _editor,
-            stylesheet: defaultStylesheet.copyWith(documentPadding: const EdgeInsets.all(24)),
+            stylesheet: defaultStylesheet.copyWith(
+              documentPadding: const EdgeInsets.all(24),
+              addRulesAfter: [
+                // S-07 round 2: the default spacing (24 px above each
+                // paragraph, 18 px text) is too loose.
+                StyleRule(BlockSelector.all, (doc, node) => {
+                      Styles.textStyle: const TextStyle(fontSize: 16, height: 1.45),
+                    }),
+                for (final b in ['paragraph', 'listItem', 'task'])
+                  StyleRule(BlockSelector(b), (doc, node) => {Styles.padding: const CascadingPadding.only(top: 8)}),
+                StyleRule(const BlockSelector('header1'), (doc, node) => {
+                      Styles.padding: const CascadingPadding.only(top: 24),
+                      Styles.textStyle: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                    }),
+                StyleRule(const BlockSelector('header2'), (doc, node) => {
+                      Styles.padding: const CascadingPadding.only(top: 20),
+                      Styles.textStyle: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    }),
+              ],
+            ),
             componentBuilders: [
               _AttachmentBuilder(),
+              // S-07 round 2: not in defaultComponentBuilders (it needs the
+              // editor to tick); its absence was the "not a DocumentComponent" error.
+              TaskComponentBuilder(_editor),
               ...defaultComponentBuilders,
             ],
           ),

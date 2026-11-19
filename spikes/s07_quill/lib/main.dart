@@ -97,6 +97,12 @@ class _ProbeState extends State<Probe> {
 
   void _block(Attribute a) => _c.formatSelection(a);
 
+  /// S-07 round 2: B and I switch off when they are on (the probe set them always).
+  void _toggle(Attribute a) {
+    final on = _c.getSelectionStyle().attributes.containsKey(a.key);
+    _c.formatSelection(on ? Attribute.clone(a, null) : a);
+  }
+
   void _paragraph() {
     _c.formatSelection(Attribute.clone(Attribute.header, null));
     _c.formatSelection(Attribute.clone(Attribute.list, null));
@@ -104,7 +110,10 @@ class _ProbeState extends State<Probe> {
 
   void _insertImage() {
     final i = _c.selection.baseOffset;
+    // S-07 round 2: a text line after the image, so the cursor has a place
+    // to go below it.
     _c.replaceText(i, 0, BlockEmbed.image('sha256-photo-${_saves + 1}'), null);
+    _c.replaceText(i + 1, 0, '\n', TextSelection.collapsed(offset: i + 2));
   }
 
   void _roundTrip() {
@@ -140,7 +149,7 @@ class _ProbeState extends State<Probe> {
           child: OutlinedButton(onPressed: f, style: OutlinedButton.styleFrom(visualDensity: VisualDensity.compact), child: Text(label)),
         );
     return Scaffold(
-      appBar: AppBar(title: const Text('S-07 · flutter_quill 11.6.0')),
+      appBar: AppBar(title: const Text('S-07 · flutter_quill 11.6.0 · round 2')),
       body: Column(children: [
         Wrap(children: [
           b('P', _paragraph),
@@ -149,8 +158,8 @@ class _ProbeState extends State<Probe> {
           b('•', () => _block(Attribute.ul)),
           b('1.', () => _block(Attribute.ol)),
           b('☐', () => _block(Attribute.unchecked)),
-          b('B', () => _block(Attribute.bold)),
-          b('I', () => _block(Attribute.italic)),
+          b('B', () => _toggle(Attribute.bold)),
+          b('I', () => _toggle(Attribute.italic)),
           b('Undo', _c.undo),
           b('Redo', _c.redo),
           b('Image', _insertImage),
@@ -170,7 +179,14 @@ class _ProbeState extends State<Probe> {
           child: QuillEditor.basic(
             key: ValueKey(_generation),
             controller: _c,
-            config: const QuillEditorConfig(padding: EdgeInsets.all(24), embedBuilders: [_AttachmentEmbed()]),
+            config: QuillEditorConfig(
+              padding: const EdgeInsets.all(24),
+              maxContentWidth: 680, // S-07 round 2: a page width, as super_editor
+              embedBuilders: const [_AttachmentEmbed()],
+              customStyles: DefaultStyles(
+                link: TextStyle(color: Colors.blue.shade700, fontWeight: FontWeight.w600, decoration: TextDecoration.none),
+              ),
+            ),
           ),
         ),
       ]),
