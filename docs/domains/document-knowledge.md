@@ -28,7 +28,8 @@ A block-based document engine that is independent of other contexts but linkable
 | LF-INV-DOC-004 | Hierarchy, hyperlinks, semantic references, attachments and cross-context links are distinct relations | separate value objects |
 
 ## 4. Storage and revision model
-- [Decision] Blocks are stored as typed rows/children of the document (not one opaque JSON blob where structure matters), consistent with local-storage.md; a block's inline content may be a structured value. Revisions may be stored as periodic snapshots plus deltas; exact snapshot/delta cadence is a P05 detail (OQ-DOC-1).
+- **Amended by [ADR-0066](../adr/0066-document-record-model.md) (P05a T1):** a document is one record and its body one value in LifeFlow's own block format, serialized deterministically; not block rows. A revision is a full copy (p05-plan C5, C7).
+- [Superseded] Blocks are stored as typed rows/children of the document (not one opaque JSON blob where structure matters), consistent with local-storage.md; a block's inline content may be a structured value. Revisions may be stored as periodic snapshots plus deltas; exact snapshot/delta cadence is a P05 detail (OQ-DOC-1).
 - [Decision] Search uses the FTS5 seam (local-storage.md, VS-23), honoring the OQ-V10 caveat (FTS5 under the encrypted build). Document text is Confidential; the search index is on-device and encrypted with the DB.
 - [Decision] Attachments are files referenced by path/hash (data-architecture.md §2), not DB blobs.
 

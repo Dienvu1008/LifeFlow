@@ -4,6 +4,7 @@
 library domain;
 
 export 'src/data_classification.dart';
+export 'src/documents.dart';
 export 'src/focus.dart';
 export 'src/goals.dart';
 export 'src/item_color.dart';
