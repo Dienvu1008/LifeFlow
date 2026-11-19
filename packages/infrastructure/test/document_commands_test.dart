@@ -325,6 +325,50 @@ void main() {
     });
   });
 
+  test('P05a T4: a body this app cannot read is shown as such and never written over; a readable revision brings it back',
+      () async {
+    final id = await newDoc('Hỏng');
+    ok(await docs.save(id, title: 'Hỏng', body: text('Bản tốt')));
+    final good = (await queries.revisions(id)).first.id;
+    // As a damaged or hostile pull could leave it.
+    await (db.update(db.documents)..where((d) => d.id.equals(id))).write(const DocumentsCompanion(body: Value('{"v":1,"blocks":[{]')));
+    final v = (await queries.document(id))!;
+    expect(v.isUnreadable, isTrue);
+    expect(v.body.blocks, isEmpty);
+    refused(await docs.save(id, title: 'Hỏng', body: text('đè lên')), 'cannot be read');
+    refused(await docs.rename(id, 'Tên mới'), 'cannot be read');
+    ok(await docs.restoreRevision(id, good));
+    final back = (await queries.document(id))!;
+    expect((back.isUnreadable, back.body.plainText()), (false, 'Bản tốt'));
+  });
+
+  test('P05a T4: "Take the other" with a body this app cannot read is refused; the document stays', () async {
+    final id = await newDoc('Hai bản');
+    ok(await docs.save(id, title: 'Hai bản', body: text('Bản giữ')));
+    final before = (await (db.select(db.documents)..where((d) => d.id.equals(id))).getSingle()).body;
+    await db.into(db.syncReviews).insert(SyncReviewsCompanion.insert(
+        id: 'rv-doc',
+        workspaceId: personal,
+        kind: 'document',
+        recordId: id,
+        field: 'body',
+        kept: jsonEncode(before),
+        other: jsonEncode('{"v":1,"blocks":[{]'),
+        reason: 'changedOnBoth',
+        createdAt: DateTime.utc(2026, 11, 4)));
+    final r = await gw.execute(
+        Command(
+            operationId: 'op-take-bad',
+            actor: ActorRef(ActorKind.owner, (await store.getActiveProfile())!.profileId.value),
+            workspaceId: personal,
+            type: resolveSyncReviewAction,
+            payload: {'op': 'resolve', 'id': 'rv-doc', 'take': 'other'},
+            issuedAt: clock.now()),
+        const SyncReviewHandler());
+    refused(r, 'cannot be read');
+    expect((await (db.select(db.documents)..where((d) => d.id.equals(id))).getSingle()).body, before);
+  });
+
   group('from a file', () {
     test('an export with documents reads back; a file with what no command writes is refused', () async {
       final a = await newDoc('A');

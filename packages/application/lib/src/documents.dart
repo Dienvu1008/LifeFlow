@@ -47,9 +47,12 @@ class DocumentView {
     this.parentId,
     this.isTrashed = false,
     this.changedBy,
+    this.isUnreadable = false,
   });
   final String id;
   final String title;
+
+  /// Empty when [isUnreadable].
   final DocumentBody body;
   final int version;
   final Instant updatedAt;
@@ -58,6 +61,10 @@ class DocumentView {
 
   /// In a shared space: who changed it last (an account id).
   final String? changedBy;
+
+  /// P05a T4: a body this app cannot read (written by a newer app, or
+  /// damaged): shown as such, never edited over.
+  final bool isUnreadable;
 }
 
 /// One entry of a document's history, newest first (C5, C9).
@@ -128,7 +135,8 @@ abstract interface class DocumentQueries {
   /// Its history, newest first.
   Future<List<DocumentRevisionView>> revisions(String id);
 
-  /// One revision's title and body.
+  /// One revision's title and body; null when there is none, or its body
+  /// cannot be read.
   Future<(String, DocumentBody)?> revisionContent(String revisionId);
 
   /// The tasks, events and goals it is linked to (live links).

@@ -219,6 +219,13 @@ class DocumentCommandHandler implements CommandHandler {
 
     switch (op) {
       case 'save':
+        // P05a T4 (ADR-0069): a body this app cannot read is never written
+        // over; restoring a readable revision is the way back.
+        try {
+          DocumentBody.decode(doc.body);
+        } on FormatException {
+          throw DomainRejection('the document cannot be read here');
+        }
         final title = _title(cmd);
         final body = _body(cmd.payload['body']);
         if (title == doc.title && body == doc.body) throw DomainRejection('nothing changed');

@@ -179,4 +179,44 @@ void main() {
     final items = [...await w.sync.reviews(), ...await a.sync.reviews()];
     expect(items.single.reason, SyncReviewKind.deletedAndEdited);
   });
+
+  test('GS-08 (P05a T4): a document changed on both offline: both saves kept, one review; "Take the other" reaches the other device',
+      () async {
+    final (w, a) = await pair();
+    DriftDocumentService docs(Device d) => DriftDocumentService(d.db, DriftCommandGateway(d.db, WorkspaceOwnerAuthorization(d.db)));
+    DocumentBody body(String s) => DocumentBody([DocBlock('b1', BlockType.paragraph, runs: [TextRun(s)])]);
+    Future<String> text(Device d, String id) async => (await DriftDocumentQueries(d.db).document(id))!.body.plainText();
+    final id = ok(await docs(w).create('Kế hoạch năm'));
+    ok(await docs(w).save(id, title: 'Kế hoạch năm', body: body(longNotes)));
+    await w.now();
+    await a.now();
+    expect(await text(a, id), longNotes, reason: 'a real-size body arrives');
+    ok(await docs(w).save(id, title: 'Kế hoạch năm', body: body('Windows: đi Đà Nẵng')));
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    ok(await docs(a).save(id, title: 'Kế hoạch năm', body: body('Android: đi Huế')));
+    await w.now();
+    await a.now();
+    await w.now();
+    expect(await text(w, id), await text(a, id));
+    for (final d in [w, a]) {
+      final texts = [
+        for (final r in await DriftDocumentQueries(d.db).revisions(id))
+          (await DriftDocumentQueries(d.db).revisionContent(r.id))!.$2.plainText(),
+      ];
+      expect(texts, containsAll(['Windows: đi Đà Nẵng', 'Android: đi Huế', longNotes]), reason: 'no content lost (DOC-005)');
+    }
+    final items = [...await w.sync.reviews(), ...await a.sync.reviews()];
+    expect([for (final i in items) (i.recordKind, i.field)], [('document', 'body')]);
+    final reviewer = (await w.sync.reviews()).isNotEmpty ? w : a;
+    final other = identical(reviewer, w) ? a : w;
+    final shown = await text(reviewer, id);
+    final item = (await reviewer.sync.reviews()).single;
+    expect((await reviewer.sync.resolveReview(item.id, takeOther: true)).problem, isNull);
+    final taken = await text(reviewer, id);
+    expect(taken, isNot(shown));
+    await reviewer.now();
+    await other.now();
+    expect(await text(other, id), taken);
+    expect((await DriftDocumentQueries(other.db).revisions(id)).first.reason, RevisionReason.conflict);
+  });
 }

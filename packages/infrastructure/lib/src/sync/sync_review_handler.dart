@@ -11,9 +11,10 @@
 import 'dart:convert';
 
 import 'package:application/application.dart';
-import 'package:domain/domain.dart' show syncMetaFields;
+import 'package:domain/domain.dart' show DocumentBody, syncMetaFields;
 import 'package:drift/drift.dart';
 import 'package:foundation/foundation.dart';
+import 'package:uuid/uuid.dart';
 
 import '../app_database.dart';
 import '../command_gateway.dart';
@@ -70,6 +71,8 @@ class SyncReviewHandler implements CommandHandler {
         ..['updatedAt'] = now.millisecondsSinceEpoch;
       try {
         kind.checkRows([next]);
+        // P05a T4: a document's body taken back must be one this app reads.
+        if (kind.name == 'document') DocumentBody.decode(next['body'] as String);
       } catch (_) {
         throw DomainRejection('the other value cannot be read');
       }
@@ -85,6 +88,34 @@ class SyncReviewHandler implements CommandHandler {
             payload: jsonEncode(next),
             createdAt: now,
           ));
+      if (kind.name == 'document') {
+        // P05a T4 (ADR-0069): a document's every change of content is a
+        // revision (DOC-006); this one is the side of a conflict taken back.
+        final rid = const Uuid().v7();
+        await db.into(db.documentRevisions).insert(DocumentRevisionsCompanion.insert(
+              id: rid,
+              workspaceId: cmd.workspaceId,
+              ownerId: next['ownerId'] as String,
+              createdAt: now,
+              updatedAt: now,
+              documentId: review.recordId,
+              documentVersion: base + 1,
+              title: next['title'] as String,
+              body: next['body'] as String,
+              reason: const Value('conflict'),
+            ));
+        final rev = await (db.select(db.documentRevisions)..where((r) => r.id.equals(rid))).getSingle();
+        await db.into(db.outbox).insert(OutboxCompanion.insert(
+              operationId: cmd.operationId,
+              entityId: rid,
+              entityType: 'documentRevision',
+              workspaceId: cmd.workspaceId,
+              actorId: cmd.actor.toString(),
+              operationType: 'create',
+              payload: jsonEncode(rev.toJson()),
+              createdAt: now,
+            ));
+      }
       changed = true;
     }
     await (db.update(db.syncReviews)..where((r) => r.id.equals(id))).write(SyncReviewsCompanion(resolvedAt: Value(now)));
