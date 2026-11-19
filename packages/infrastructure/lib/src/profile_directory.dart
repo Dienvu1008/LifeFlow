@@ -131,6 +131,13 @@ class ProfileDirectory {
   File profileFile(String profileId) =>
       File(_join(baseDir.path, 'profiles', '$profileId.sqlite'));
 
+  /// P05a T7 (ADR-0072): the folder of the profile's attachment files, and
+  /// the secure-storage slot of their key. Both go with the profile.
+  Directory attachmentsDir(String profileId) =>
+      Directory(_join(baseDir.path, 'profiles', '$profileId.files'));
+  static String attachmentKeyName(String profileId) => 'lifeflow.attach.key.$profileId';
+  DatabaseKeyStore attachmentKeys(String profileId) => _keysFor(attachmentKeyName(profileId));
+
   File get legacyFile => File(_join(baseDir.path, legacyFileName));
   File get legacyBackupFile =>
       File(_join(baseDir.path, '$legacyFileName$legacyBackupSuffix'));
@@ -290,7 +297,10 @@ class ProfileDirectory {
       final f = File('${file.path}$suffix');
       if (f.existsSync()) f.deleteSync();
     }
+    final files = attachmentsDir(profileId);
+    if (files.existsSync()) files.deleteSync(recursive: true);
     await _keysFor(profileKeyName(profileId)).delete();
+    await attachmentKeys(profileId).delete();
     if (await _getMeta(_metaPending) == profileId) await _clearMeta(_metaPending);
     await _clearMeta(_metaPendingDelete);
   }
