@@ -59,8 +59,8 @@ void main() {
       final drawer = find.byKey(const Key('nav-drawer'));
       expect(drawer, findsOneWidget);
       // Profiles is the header; the rest are destinations, in order.
-      // P03 UX U6: six destinations.
-      for (final label in ['Overview', 'Timeline', 'Calendar', 'Habits', 'Goals', 'Settings']) {
+      // P03 UX U6: six destinations; P05a T8 (C10): Documents after Calendar.
+      for (final label in ['Overview', 'Timeline', 'Calendar', 'Documents', 'Habits', 'Goals', 'Settings']) {
         expect(find.descendant(of: drawer, matching: find.text(label)), findsOneWidget, reason: label);
       }
       expect(find.descendant(of: drawer, matching: find.text('Profiles')), findsNothing);
@@ -92,7 +92,7 @@ void main() {
         (tester) async {
       int? picked;
       await pumpShell(tester, width: 400, onSelected: (i) => picked = i);
-      for (final (label, index) in [('Timeline', 1), ('Calendar', 2), ('Habits', 3), ('Goals', 4), ('Settings', 5), ('Overview', 0)]) {
+      for (final (label, index) in [('Timeline', 1), ('Calendar', 2), ('Documents', 3), ('Habits', 4), ('Goals', 5), ('Settings', 6), ('Overview', 0)]) {
         await tester.tap(find.byKey(const Key('nav-menu')));
         await tester.pumpAndSettle();
         await tester.tap(find.descendant(of: find.byKey(const Key('nav-drawer')), matching: find.text(label)));
@@ -155,12 +155,15 @@ void main() {
       await tester.tap(find.byIcon(Icons.calendar_month_outlined));
       await tester.pump();
       expect(picked, 2);
+      await tester.tap(find.byIcon(Icons.description_outlined));
+      await tester.pump();
+      expect(picked, 3, reason: 'P05a C10: Documents after Calendar');
       await tester.tap(find.byIcon(Icons.track_changes_outlined));
       await tester.pump();
-      expect(picked, 3, reason: 'U-D2: Habits is a destination');
+      expect(picked, 4, reason: 'U-D2: Habits is a destination');
       await tester.tap(find.byIcon(Icons.flag_outlined));
       await tester.pump();
-      expect(picked, 4);
+      expect(picked, 5);
       // The profile at the top of the rail opens Profiles.
       await tester.tap(find.byKey(const Key('rail-profile')));
       await tester.pump();

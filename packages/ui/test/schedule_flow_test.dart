@@ -361,7 +361,7 @@ void main() {
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     await pumpApp(tester, world([]), width: 400);
     await openDrawer(tester);
-    for (final name in ['Overview', 'Timeline', 'Calendar', 'Habits', 'Goals', 'Settings']) {
+    for (final name in ['Overview', 'Timeline', 'Calendar', 'Documents', 'Habits', 'Goals', 'Settings']) {
       final label = find.descendant(of: find.byKey(const Key('nav-drawer')), matching: find.text(name));
       expect(tester.renderObject<RenderParagraph>(label).didExceedMaxLines, isFalse, reason: name);
       expect(tester.getSize(label).height, lessThan(30), reason: name); // one line

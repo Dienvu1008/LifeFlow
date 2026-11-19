@@ -15,6 +15,7 @@ import '../schedule_text.dart';
 import '../task_actions.dart';
 import '../task_tree.dart';
 import '../theme/lifeflow_theme.dart';
+import '../documents/document_page.dart' show ItemDocumentsSection;
 import 'focus_page.dart';
 import 'goals_screen.dart';
 import 'habit_page.dart';
@@ -304,6 +305,8 @@ class _TaskPageState extends ConsumerState<TaskPage> {
             title: Text(l.ovGoals),
             onTap: () => showGoalsOfTask(context, ref, taskId: t.id, title: t.title),
           ),
+          // P05a T8: the documents linked to it.
+          ItemDocumentsSection(type: DocumentItemType.task, itemId: t.id),
           section(l.tpSubtasks),
           for (final s in subtasks)
             ListTile(

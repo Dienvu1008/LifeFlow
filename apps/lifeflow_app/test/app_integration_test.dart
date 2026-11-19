@@ -7,6 +7,7 @@
 //                     one profile never shows in another
 //   ADR-0011          a task added in the UI is committed with its audit row
 //   LF-INV-SEC-002    opening and reading never call the identity provider
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -18,6 +19,7 @@ import 'package:foundation/foundation.dart';
 import 'package:infrastructure/infrastructure.dart';
 import 'package:lifeflow_app/bootstrap.dart';
 import 'package:lifeflow_app/root.dart';
+import 'package:ui/src/documents/document_page.dart' show DocumentPage, DocumentPageState;
 
 /// Drift does real async I/O, which the widget tester's fake clock never
 /// advances. Give real time to the stores, then pump the UI.
@@ -87,6 +89,20 @@ class MemoryFiles implements FileGateway {
 
   @override
   Future<String?> pickText() async => pickOverride ?? saved;
+
+  /// What the next "attach a file" dialog returns.
+  PickedFile? nextFile;
+  Uint8List? savedBytes;
+
+  @override
+  Future<PickedFile?> pickFile({required int maxBytes}) async => nextFile;
+
+  @override
+  Future<bool> saveBytes(String suggestedName, Uint8List bytes, {String mime = 'application/octet-stream'}) async {
+    savedName = suggestedName;
+    savedBytes = bytes;
+    return true;
+  }
 }
 
 class MemoryKeys {
@@ -544,6 +560,64 @@ void main() {
     expect(rows.milestones.single.isCompleted, isTrue);
     final t = rows.tasks.single;
     expect((t.title, t.deletedAt, t.status), ('Buy shoes', null, 'inbox'), reason: 'LF-INV-GOAL-001/002');
+    await finish(tester, w);
+  });
+
+  testWidgets('P05a T8: a document made in Documents is stored with its revisions; found by search; a file kept encrypted',
+      (tester) async {
+    final w = await pumpApp(tester, StoragePlatform.android);
+    w.files.nextFile = PickedFile(name: 'bảng.txt', mime: 'text/plain', bytes: Uint8List.fromList(utf8.encode('bí mật')));
+    await tester.tap(find.text('Documents'));
+    await settle(tester);
+    await tester.tap(find.byTooltip('New document'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'Ghi chú họp');
+    await tester.tap(find.widgetWithText(FilledButton, 'Add'));
+    await tester.pump();
+    await settle(tester);
+    await tester.pumpAndSettle();
+    final page = tester.state<DocumentPageState>(find.byType(DocumentPage));
+    final c = page.controller!;
+    c.replaceText(0, 0, 'Thứ Hai lúc 9 giờ', const TextSelection.collapsed(offset: 17));
+    await tester.tap(find.byKey(const Key('doc-tool-attach')));
+    await tester.pump();
+    await settle(tester);
+    await tester.pumpAndSettle();
+    await tester.pageBack();
+    await tester.pump();
+    await settle(tester);
+    await tester.pumpAndSettle();
+    expect(find.text('Ghi chú họp'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('doc-search')), 'ghi chú');
+    await tester.pump(const Duration(milliseconds: 300));
+    await settle(tester);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('doc-results')), findsOneWidget);
+    expect(find.descendant(of: find.byKey(const Key('doc-results')), matching: find.text('Ghi chú họp')), findsOneWidget);
+
+    final id = (await tester.runAsync(() => w.directory.active()))!.id;
+    final rows = await tester.runAsync(() async {
+      final s = await w.directory.openProfile(id);
+      final docs = await s.db.select(s.db.documents).get();
+      final revisions = await s.db.select(s.db.documentRevisions).get();
+      final audit = await s.db.select(s.db.auditLog).get();
+      await s.db.close();
+      final files = w.directory.attachmentsDir(id).listSync().whereType<File>().toList();
+      return (docs: docs, revisions: revisions, audit: audit, files: files);
+    });
+    final d = rows!.docs.single;
+    expect(d.title, 'Ghi chú họp');
+    expect(d.body, contains('Thứ Hai lúc 9 giờ'));
+    expect(d.body, contains('bảng.txt'), reason: 'the reference is in the body');
+    // The first revision, then one per save (C5): 10 s idle may have saved
+    // already while the editor animated; leaving saved the rest (C7).
+    expect(rows.revisions.length, greaterThanOrEqualTo(2));
+    final newest = rows.revisions.reduce((a, b) => a.documentVersion > b.documentVersion ? a : b);
+    expect((newest.body, newest.documentVersion), (d.body, d.version), reason: 'the stored text is its newest revision');
+    expect(rows.audit.where((a) => a.resourceType == 'document'), hasLength(rows.revisions.length));
+    final stored = rows.files.single.readAsBytesSync();
+    expect(utf8.decode(stored, allowMalformed: true), isNot(contains('bí mật')), reason: 'kept encrypted (ADR-0072)');
     await finish(tester, w);
   });
 

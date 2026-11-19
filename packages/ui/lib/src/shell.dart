@@ -11,8 +11,8 @@ class _Destination {
   final IconData selectedIcon;
 }
 
-/// P03 UX U6 (ADR-0050): Overview, Timeline, Calendar, Habits, Goals,
-/// Settings. Profiles is a branch too, but it is reached from the profile at
+/// P03 UX U6 (ADR-0050): Overview, Timeline, Calendar, (P05a T8, C10)
+/// Documents, Habits, Goals, Settings. Profiles is a branch too, but it is reached from the profile at
 /// the top of the drawer or the rail, not from a destination.
 List<_Destination> _destinationsOf(BuildContext context) {
   final l = context.l10n;
@@ -20,14 +20,15 @@ List<_Destination> _destinationsOf(BuildContext context) {
     _Destination(l.navOverview, Icons.checklist_outlined, Icons.checklist),
     _Destination(l.navTimeline, Icons.view_timeline_outlined, Icons.view_timeline),
     _Destination(l.navCalendar, Icons.calendar_month_outlined, Icons.calendar_month),
+    _Destination(l.navDocuments, Icons.description_outlined, Icons.description),
     _Destination(l.navHabits, Icons.track_changes_outlined, Icons.track_changes),
     _Destination(l.navGoals, Icons.flag_outlined, Icons.flag),
     _Destination(l.navSettings, Icons.settings_outlined, Icons.settings),
   ];
 }
 
-/// The branch index of Profiles (after the six destinations).
-const profilesIndex = 6;
+/// The branch index of Profiles (after the seven destinations).
+const profilesIndex = 7;
 /// Lets a tab's app bar open the shell's navigation drawer. [open] is null
 /// when the layout has no drawer (rail layouts).
 class ShellMenuScope extends InheritedWidget {

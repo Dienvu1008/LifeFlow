@@ -193,6 +193,34 @@ final trashedGoalsProvider = FutureProvider.autoDispose<List<GoalView>>((ref) {
   return ref.watch(goalQueriesProvider).trashed();
 });
 
+// --- P05a T8: documents (ADR-0073; p05-plan.md C4–C11) ----------------------
+
+final documentServiceProvider = Provider<DocumentService>((ref) => _notWired('documentServiceProvider'));
+final documentQueriesProvider = Provider<DocumentQueries>((ref) => _notWired('documentQueriesProvider'));
+final searchQueriesProvider = Provider<SearchQueries>((ref) => _notWired('searchQueriesProvider'));
+final attachmentServiceProvider = Provider<AttachmentService>((ref) => _notWired('attachmentServiceProvider'));
+
+/// The documents of the shown workspace, in tree order.
+final documentTreeProvider = StreamProvider.autoDispose<List<DocumentNodeView>>((ref) {
+  ref.watch(activeProfileProvider);
+  ref.watch(spacesProvider);
+  return ref.watch(documentQueriesProvider).watchTree();
+});
+
+/// Documents in the trash. Invalidate after a trash or a restore.
+final trashedDocumentsProvider = FutureProvider.autoDispose<List<DocumentNodeView>>((ref) {
+  ref.watch(activeProfileProvider);
+  ref.watch(documentTreeProvider);
+  return ref.watch(documentQueriesProvider).trashed();
+});
+
+/// The documents linked to a task, an event or a goal (its page).
+final itemDocumentsProvider =
+    FutureProvider.autoDispose.family<List<DocumentNodeView>, ({DocumentItemType type, String id})>((ref, item) {
+  ref.watch(documentTreeProvider);
+  return ref.watch(documentQueriesProvider).documentsOf(item.type, item.id);
+});
+
 // --- P03 UX U1: appearance (ADR-0045) ---------------------------------------
 
 /// Light, dark or as the system (device setting). Invalidate after a change.

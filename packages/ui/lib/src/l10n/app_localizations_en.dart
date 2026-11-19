@@ -1568,6 +1568,9 @@ class AppLocalizationsEn extends AppLocalizations {
         'focusSession': 'Focus session',
         'periodResult': 'Habit result',
         'workspaceSettings': 'Settings',
+        'document': 'Document',
+        'documentRevision': 'Document version',
+        'documentLink': 'Document link',
         'other': 'Item',
       },
     );
@@ -2181,4 +2184,326 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get spSyncNow => 'Sync now';
+
+  @override
+  String get navDocuments => 'Documents';
+
+  @override
+  String get docNew => 'New document';
+
+  @override
+  String get docNewSub => 'New subdocument';
+
+  @override
+  String get docTitleLabel => 'Title';
+
+  @override
+  String get docUntitled => 'Untitled';
+
+  @override
+  String get docSearchHint => 'Search documents and tasks';
+
+  @override
+  String get docEmpty =>
+      'No documents yet. Add one with +, then type [[ in it to link another.';
+
+  @override
+  String get docTrash => 'Trash';
+
+  @override
+  String get docTrashEmpty => 'The trash is empty.';
+
+  @override
+  String get docLoading => 'Loading documents';
+
+  @override
+  String get docCouldNotLoad => 'Could not load the documents.';
+
+  @override
+  String docNoResults(String query) {
+    return 'Nothing found for “$query”.';
+  }
+
+  @override
+  String get docResultsDocuments => 'Documents';
+
+  @override
+  String get docResultsTasks => 'Tasks';
+
+  @override
+  String get docMoveUnder => 'Move under…';
+
+  @override
+  String get docPickParent => 'Move under';
+
+  @override
+  String get docTopLevel => 'At the top';
+
+  @override
+  String get docHistory => 'History';
+
+  @override
+  String get docLinkItem => 'Link to a task or goal…';
+
+  @override
+  String get docSaved => 'Saved';
+
+  @override
+  String get docSaving => 'Saving…';
+
+  @override
+  String get docUnsaved => 'Not saved yet';
+
+  @override
+  String get docViewOnly => 'View only';
+
+  @override
+  String get docInTrash =>
+      'This document is in the trash. Restore it to change it.';
+
+  @override
+  String get docUnreadable =>
+      'This document cannot be shown: it was written by a newer version of LifeFlow, or it is damaged. Its history may hold a version that opens.';
+
+  @override
+  String get docGone => 'This document is not here any more.';
+
+  @override
+  String get docBacklinks => 'Backlinks';
+
+  @override
+  String get docNoBacklinks => 'No document links here yet.';
+
+  @override
+  String get docLinked => 'Linked';
+
+  @override
+  String get docNoLinked => 'Not linked to a task, an event or a goal.';
+
+  @override
+  String docLinksSummary(int backlinks, int linked) {
+    String _temp0 = intl.Intl.pluralLogic(
+      backlinks,
+      locale: localeName,
+      other: '$backlinks backlinks',
+      one: '1 backlink',
+      zero: 'No backlinks',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      linked,
+      locale: localeName,
+      other: '$linked linked',
+      one: '1 linked',
+      zero: 'nothing linked',
+    );
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String get docUnlink => 'Unlink';
+
+  @override
+  String docRevision(int version) {
+    return 'Version $version';
+  }
+
+  @override
+  String get docReasonSave => 'Saved';
+
+  @override
+  String get docReasonConflict => 'Kept from a change on two devices';
+
+  @override
+  String get docReasonRestore => 'An earlier version restored';
+
+  @override
+  String docRevisionMeta(String reason, String when, String who) {
+    return '$reason · $when · $who';
+  }
+
+  @override
+  String get docByYou => 'you';
+
+  @override
+  String docOnDevice(String who, String device) {
+    return '$who, on $device';
+  }
+
+  @override
+  String get docRestoreVersion => 'Restore this version';
+
+  @override
+  String get docRestored => 'Restored as a new version.';
+
+  @override
+  String get docVersionUnreadable => 'This version cannot be shown.';
+
+  @override
+  String get docLinkPickerTitle => 'Link to a document';
+
+  @override
+  String get docLinkPickerHint => 'Find a document';
+
+  @override
+  String docCreateNamed(String title) {
+    return 'Create “$title”';
+  }
+
+  @override
+  String docLinkInTrash(String title) {
+    return '“$title” is in the trash. Restore it to open it.';
+  }
+
+  @override
+  String get docLinkMissing =>
+      'This link points to a document that is not here.';
+
+  @override
+  String docLinkCopied(String url) {
+    return 'Copied the address $url';
+  }
+
+  @override
+  String get docAttach => 'Attach a file';
+
+  @override
+  String docFileTooLarge(String size) {
+    return 'This file is larger than $size.';
+  }
+
+  @override
+  String get docFileNotKept => 'The file could not be kept.';
+
+  @override
+  String docFileElsewhere(String name, String size) {
+    return 'On another device · $name · $size';
+  }
+
+  @override
+  String docFileUnreadable(String name) {
+    return 'Cannot be read · $name';
+  }
+
+  @override
+  String docFileHere(String name, String size) {
+    return '$name · $size';
+  }
+
+  @override
+  String get docFileSaveCopy => 'Save a copy';
+
+  @override
+  String docFileSaved(String name) {
+    return 'Saved a copy of $name.';
+  }
+
+  @override
+  String docTrashed(String title) {
+    return '“$title” and its subdocuments are in the trash.';
+  }
+
+  @override
+  String get docItemDocuments => 'Documents';
+
+  @override
+  String get docPickItemTitle => 'Link to a task or goal';
+
+  @override
+  String get docPickItemHint => 'Find a task';
+
+  @override
+  String get docGoalsHeader => 'Goals';
+
+  @override
+  String docItemType(String type) {
+    String _temp0 = intl.Intl.selectLogic(
+      type,
+      {
+        'task': 'Task',
+        'event': 'Event',
+        'goal': 'Goal',
+        'other': 'Item',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get docItemMissing => 'Not here any more';
+
+  @override
+  String get docItemTrashed => 'In the trash';
+
+  @override
+  String get docItemDone => 'Done';
+
+  @override
+  String get docItemCancelled => 'Cancelled';
+
+  @override
+  String get docPlaceholder => 'Write here. Type [[ to link a document.';
+
+  @override
+  String get docToolParagraph => 'Text';
+
+  @override
+  String get docToolHeading1 => 'Heading 1';
+
+  @override
+  String get docToolHeading2 => 'Heading 2';
+
+  @override
+  String get docToolHeading3 => 'Heading 3';
+
+  @override
+  String get docToolBullet => 'Bulleted list';
+
+  @override
+  String get docToolNumbered => 'Numbered list';
+
+  @override
+  String get docToolTodo => 'To-do';
+
+  @override
+  String get docToolQuote => 'Quote';
+
+  @override
+  String get docToolCode => 'Code block';
+
+  @override
+  String get docToolBold => 'Bold';
+
+  @override
+  String get docToolItalic => 'Italic';
+
+  @override
+  String get docToolUnderline => 'Underline';
+
+  @override
+  String get docToolStrike => 'Strikethrough';
+
+  @override
+  String get docToolInlineCode => 'Code';
+
+  @override
+  String get docToolLink => 'Link to a document';
+
+  @override
+  String get docToolIndent => 'Indent';
+
+  @override
+  String get docToolOutdent => 'Outdent';
+
+  @override
+  String get docToolUndo => 'Undo';
+
+  @override
+  String get docToolRedo => 'Redo';
+
+  @override
+  String get docChangedElsewhere =>
+      'This document also changed on another device while you were writing. Both versions are in its history.';
+
+  @override
+  String get docOpenAgain => 'Open again';
 }

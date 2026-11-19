@@ -2761,7 +2761,7 @@ abstract class AppLocalizations {
   /// No description provided for @syRecordKind.
   ///
   /// In en, this message translates to:
-  /// **'{kind, select, task{Task} event{Event} taskList{List} calendar{Calendar} schedule{Schedule} reminder{Reminder} exception{Change to one occurrence} goal{Goal} milestone{Milestone} goalLink{Goal link} focusSession{Focus session} periodResult{Habit result} workspaceSettings{Settings} other{Item}}'**
+  /// **'{kind, select, task{Task} event{Event} taskList{List} calendar{Calendar} schedule{Schedule} reminder{Reminder} exception{Change to one occurrence} goal{Goal} milestone{Milestone} goalLink{Goal link} focusSession{Focus session} periodResult{Habit result} workspaceSettings{Settings} document{Document} documentRevision{Document version} documentLink{Document link} other{Item}}'**
   String syRecordKind(String kind);
 
   /// No description provided for @syRecordOf.
@@ -3615,6 +3615,534 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sync now'**
   String get spSyncNow;
+
+  /// No description provided for @navDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'Documents'**
+  String get navDocuments;
+
+  /// No description provided for @docNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New document'**
+  String get docNew;
+
+  /// No description provided for @docNewSub.
+  ///
+  /// In en, this message translates to:
+  /// **'New subdocument'**
+  String get docNewSub;
+
+  /// No description provided for @docTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get docTitleLabel;
+
+  /// No description provided for @docUntitled.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled'**
+  String get docUntitled;
+
+  /// No description provided for @docSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search documents and tasks'**
+  String get docSearchHint;
+
+  /// No description provided for @docEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No documents yet. Add one with +, then type [[ in it to link another.'**
+  String get docEmpty;
+
+  /// No description provided for @docTrash.
+  ///
+  /// In en, this message translates to:
+  /// **'Trash'**
+  String get docTrash;
+
+  /// No description provided for @docTrashEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'The trash is empty.'**
+  String get docTrashEmpty;
+
+  /// No description provided for @docLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading documents'**
+  String get docLoading;
+
+  /// No description provided for @docCouldNotLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the documents.'**
+  String get docCouldNotLoad;
+
+  /// No description provided for @docNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing found for “{query}”.'**
+  String docNoResults(String query);
+
+  /// No description provided for @docResultsDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'Documents'**
+  String get docResultsDocuments;
+
+  /// No description provided for @docResultsTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks'**
+  String get docResultsTasks;
+
+  /// No description provided for @docMoveUnder.
+  ///
+  /// In en, this message translates to:
+  /// **'Move under…'**
+  String get docMoveUnder;
+
+  /// No description provided for @docPickParent.
+  ///
+  /// In en, this message translates to:
+  /// **'Move under'**
+  String get docPickParent;
+
+  /// No description provided for @docTopLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'At the top'**
+  String get docTopLevel;
+
+  /// No description provided for @docHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get docHistory;
+
+  /// No description provided for @docLinkItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Link to a task or goal…'**
+  String get docLinkItem;
+
+  /// No description provided for @docSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get docSaved;
+
+  /// No description provided for @docSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving…'**
+  String get docSaving;
+
+  /// No description provided for @docUnsaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Not saved yet'**
+  String get docUnsaved;
+
+  /// No description provided for @docViewOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'View only'**
+  String get docViewOnly;
+
+  /// No description provided for @docInTrash.
+  ///
+  /// In en, this message translates to:
+  /// **'This document is in the trash. Restore it to change it.'**
+  String get docInTrash;
+
+  /// No description provided for @docUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'This document cannot be shown: it was written by a newer version of LifeFlow, or it is damaged. Its history may hold a version that opens.'**
+  String get docUnreadable;
+
+  /// No description provided for @docGone.
+  ///
+  /// In en, this message translates to:
+  /// **'This document is not here any more.'**
+  String get docGone;
+
+  /// No description provided for @docBacklinks.
+  ///
+  /// In en, this message translates to:
+  /// **'Backlinks'**
+  String get docBacklinks;
+
+  /// No description provided for @docNoBacklinks.
+  ///
+  /// In en, this message translates to:
+  /// **'No document links here yet.'**
+  String get docNoBacklinks;
+
+  /// No description provided for @docLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked'**
+  String get docLinked;
+
+  /// No description provided for @docNoLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'Not linked to a task, an event or a goal.'**
+  String get docNoLinked;
+
+  /// No description provided for @docLinksSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{backlinks, plural, =0{No backlinks} =1{1 backlink} other{{backlinks} backlinks}} · {linked, plural, =0{nothing linked} =1{1 linked} other{{linked} linked}}'**
+  String docLinksSummary(int backlinks, int linked);
+
+  /// No description provided for @docUnlink.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlink'**
+  String get docUnlink;
+
+  /// No description provided for @docRevision.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version}'**
+  String docRevision(int version);
+
+  /// No description provided for @docReasonSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get docReasonSave;
+
+  /// No description provided for @docReasonConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Kept from a change on two devices'**
+  String get docReasonConflict;
+
+  /// No description provided for @docReasonRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'An earlier version restored'**
+  String get docReasonRestore;
+
+  /// No description provided for @docRevisionMeta.
+  ///
+  /// In en, this message translates to:
+  /// **'{reason} · {when} · {who}'**
+  String docRevisionMeta(String reason, String when, String who);
+
+  /// No description provided for @docByYou.
+  ///
+  /// In en, this message translates to:
+  /// **'you'**
+  String get docByYou;
+
+  /// No description provided for @docOnDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'{who}, on {device}'**
+  String docOnDevice(String who, String device);
+
+  /// No description provided for @docRestoreVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore this version'**
+  String get docRestoreVersion;
+
+  /// No description provided for @docRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Restored as a new version.'**
+  String get docRestored;
+
+  /// No description provided for @docVersionUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'This version cannot be shown.'**
+  String get docVersionUnreadable;
+
+  /// No description provided for @docLinkPickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Link to a document'**
+  String get docLinkPickerTitle;
+
+  /// No description provided for @docLinkPickerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Find a document'**
+  String get docLinkPickerHint;
+
+  /// No description provided for @docCreateNamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Create “{title}”'**
+  String docCreateNamed(String title);
+
+  /// No description provided for @docLinkInTrash.
+  ///
+  /// In en, this message translates to:
+  /// **'“{title}” is in the trash. Restore it to open it.'**
+  String docLinkInTrash(String title);
+
+  /// No description provided for @docLinkMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'This link points to a document that is not here.'**
+  String get docLinkMissing;
+
+  /// No description provided for @docLinkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied the address {url}'**
+  String docLinkCopied(String url);
+
+  /// No description provided for @docAttach.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach a file'**
+  String get docAttach;
+
+  /// No description provided for @docFileTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'This file is larger than {size}.'**
+  String docFileTooLarge(String size);
+
+  /// No description provided for @docFileNotKept.
+  ///
+  /// In en, this message translates to:
+  /// **'The file could not be kept.'**
+  String get docFileNotKept;
+
+  /// No description provided for @docFileElsewhere.
+  ///
+  /// In en, this message translates to:
+  /// **'On another device · {name} · {size}'**
+  String docFileElsewhere(String name, String size);
+
+  /// No description provided for @docFileUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot be read · {name}'**
+  String docFileUnreadable(String name);
+
+  /// No description provided for @docFileHere.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} · {size}'**
+  String docFileHere(String name, String size);
+
+  /// No description provided for @docFileSaveCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Save a copy'**
+  String get docFileSaveCopy;
+
+  /// No description provided for @docFileSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved a copy of {name}.'**
+  String docFileSaved(String name);
+
+  /// No description provided for @docTrashed.
+  ///
+  /// In en, this message translates to:
+  /// **'“{title}” and its subdocuments are in the trash.'**
+  String docTrashed(String title);
+
+  /// No description provided for @docItemDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'Documents'**
+  String get docItemDocuments;
+
+  /// No description provided for @docPickItemTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Link to a task or goal'**
+  String get docPickItemTitle;
+
+  /// No description provided for @docPickItemHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Find a task'**
+  String get docPickItemHint;
+
+  /// No description provided for @docGoalsHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Goals'**
+  String get docGoalsHeader;
+
+  /// No description provided for @docItemType.
+  ///
+  /// In en, this message translates to:
+  /// **'{type, select, task{Task} event{Event} goal{Goal} other{Item}}'**
+  String docItemType(String type);
+
+  /// No description provided for @docItemMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Not here any more'**
+  String get docItemMissing;
+
+  /// No description provided for @docItemTrashed.
+  ///
+  /// In en, this message translates to:
+  /// **'In the trash'**
+  String get docItemTrashed;
+
+  /// No description provided for @docItemDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get docItemDone;
+
+  /// No description provided for @docItemCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get docItemCancelled;
+
+  /// No description provided for @docPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Write here. Type [[ to link a document.'**
+  String get docPlaceholder;
+
+  /// No description provided for @docToolParagraph.
+  ///
+  /// In en, this message translates to:
+  /// **'Text'**
+  String get docToolParagraph;
+
+  /// No description provided for @docToolHeading1.
+  ///
+  /// In en, this message translates to:
+  /// **'Heading 1'**
+  String get docToolHeading1;
+
+  /// No description provided for @docToolHeading2.
+  ///
+  /// In en, this message translates to:
+  /// **'Heading 2'**
+  String get docToolHeading2;
+
+  /// No description provided for @docToolHeading3.
+  ///
+  /// In en, this message translates to:
+  /// **'Heading 3'**
+  String get docToolHeading3;
+
+  /// No description provided for @docToolBullet.
+  ///
+  /// In en, this message translates to:
+  /// **'Bulleted list'**
+  String get docToolBullet;
+
+  /// No description provided for @docToolNumbered.
+  ///
+  /// In en, this message translates to:
+  /// **'Numbered list'**
+  String get docToolNumbered;
+
+  /// No description provided for @docToolTodo.
+  ///
+  /// In en, this message translates to:
+  /// **'To-do'**
+  String get docToolTodo;
+
+  /// No description provided for @docToolQuote.
+  ///
+  /// In en, this message translates to:
+  /// **'Quote'**
+  String get docToolQuote;
+
+  /// No description provided for @docToolCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Code block'**
+  String get docToolCode;
+
+  /// No description provided for @docToolBold.
+  ///
+  /// In en, this message translates to:
+  /// **'Bold'**
+  String get docToolBold;
+
+  /// No description provided for @docToolItalic.
+  ///
+  /// In en, this message translates to:
+  /// **'Italic'**
+  String get docToolItalic;
+
+  /// No description provided for @docToolUnderline.
+  ///
+  /// In en, this message translates to:
+  /// **'Underline'**
+  String get docToolUnderline;
+
+  /// No description provided for @docToolStrike.
+  ///
+  /// In en, this message translates to:
+  /// **'Strikethrough'**
+  String get docToolStrike;
+
+  /// No description provided for @docToolInlineCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Code'**
+  String get docToolInlineCode;
+
+  /// No description provided for @docToolLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Link to a document'**
+  String get docToolLink;
+
+  /// No description provided for @docToolIndent.
+  ///
+  /// In en, this message translates to:
+  /// **'Indent'**
+  String get docToolIndent;
+
+  /// No description provided for @docToolOutdent.
+  ///
+  /// In en, this message translates to:
+  /// **'Outdent'**
+  String get docToolOutdent;
+
+  /// No description provided for @docToolUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get docToolUndo;
+
+  /// No description provided for @docToolRedo.
+  ///
+  /// In en, this message translates to:
+  /// **'Redo'**
+  String get docToolRedo;
+
+  /// No description provided for @docChangedElsewhere.
+  ///
+  /// In en, this message translates to:
+  /// **'This document also changed on another device while you were writing. Both versions are in its history.'**
+  String get docChangedElsewhere;
+
+  /// No description provided for @docOpenAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Open again'**
+  String get docOpenAgain;
 }
 
 class _AppLocalizationsDelegate
