@@ -269,6 +269,11 @@ class DocumentCommandHandler implements CommandHandler {
         if (!documentItemTypes.contains(type) || itemId == null) throw DomainRejection('a task, an event or a goal is needed');
         final lid = documentLinkIdOf(id, type as String, itemId);
         final existing = await (db.select(db.documentLinks)..where((l) => l.id.equals(lid))).getSingleOrNull();
+        // P05a T5 (ADR-0070): a link left behind in another workspace by a
+        // move is not this workspace's to change (as a goal link).
+        if (existing != null && existing.workspaceId != ws) {
+          throw DomainRejection(op == 'link' ? 'linked in another workspace' : 'not linked');
+        }
         final live = existing != null && existing.deletedAt == null;
         final DocumentLinkRow next;
         if (op == 'link') {

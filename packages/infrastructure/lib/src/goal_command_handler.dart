@@ -233,6 +233,11 @@ class GoalCommandHandler implements CommandHandler {
         if ((type != 'task' && type != 'event') || itemId == null) throw DomainRejection('a task or an event is needed');
         final lid = goalLinkIdOf(id, type as String, itemId);
         final existing = await (db.select(db.goalLinks)..where((l) => l.id.equals(lid))).getSingleOrNull();
+        // P05a T5 (ADR-0070): a link left behind in another workspace by a
+        // move into or out of a space is not this workspace's to change.
+        if (existing != null && existing.workspaceId != cmd.workspaceId) {
+          throw DomainRejection(op == 'link' ? 'linked in another workspace' : 'not linked');
+        }
         final live = existing != null && existing.deletedAt == null;
         final GoalLinkRow next;
         if (op == 'link') {

@@ -153,8 +153,11 @@ class DriftSharingService implements SharingService {
       final r = set.rows[i];
       counts[k] = (counts[k] ?? 0) + 1;
       final t = r['title'] ?? r['name'];
-      if (t is String && t.isNotEmpty && titles.length < 50) titles.add(t);
+      // A revision's title is its document's at the time: counted, not listed.
+      if (k != 'documentRevision' && t is String && t.isNotEmpty && titles.length < 50) titles.add(t);
       if (r['notes'] is String && (r['notes'] as String).isNotEmpty) notes = true;
+      // P05a T5: a document's text is what its notes are to a task.
+      if (k == 'document' && _hasText(r['body'])) notes = true;
       if (k == 'schedule' || k == 'exception' || k == 'event') dates = true;
     }
     String? blocker = set.blocker;
@@ -174,6 +177,15 @@ class DriftSharingService implements SharingService {
       confirmation: set.fingerprint,
       blocker: blocker,
     );
+  }
+
+  static bool _hasText(Object? body) {
+    if (body is! String) return false;
+    try {
+      return DocumentBody.decode(body).plainText().trim().isNotEmpty;
+    } on FormatException {
+      return true; // unreadable here: it may well have text
+    }
   }
 
   @override

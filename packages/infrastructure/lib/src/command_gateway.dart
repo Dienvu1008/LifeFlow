@@ -122,7 +122,11 @@ class DriftCommandGateway implements CommandGateway {
           for (final o in written) {
             final kind = recordKindByName[o.entityType];
             if (kind == null) continue;
-            await db.customStatement('UPDATE ${kind.tableName} SET changed_by = ? WHERE id = ? AND workspace_id = ?',
+            // P05a T5 (ADR-0070): a revision names who wrote it, once. A
+            // move into a space keeps the authors it has; one written in the
+            // personal workspace (no author) was the mover's.
+            final once = kind.name == 'documentRevision' ? ' AND changed_by IS NULL' : '';
+            await db.customStatement('UPDATE ${kind.tableName} SET changed_by = ? WHERE id = ? AND workspace_id = ?$once',
                 [cmd.actor.id, o.entityId, cmd.workspaceId]);
           }
         }

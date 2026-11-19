@@ -158,6 +158,8 @@ final Map<String, RecordKind> recordKindByName = {for (final k in recordKinds) k
 const sharedSpaceKinds = {
   'taskList', 'task', 'calendar', 'event', 'schedule', 'exception', 'completion', 'goal', 'milestone', 'goalLink',
   'workspaceSettings', 'memberCard',
+  // P05a T5 (ADR-0070, owner's C2): documents, their history and their links.
+  'document', 'documentRevision', 'documentLink',
 };
 
 /// Kinds whose rows belong to another record (a task or an event).

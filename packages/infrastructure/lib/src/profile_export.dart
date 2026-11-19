@@ -56,6 +56,11 @@ final List<String> exportedTables = [
 /// spaces, which are not in a personal export either (ADR-0060).
 const notExportedTables = ['restoreSnapshots', 'syncBase', 'syncState', 'syncReviews', 'spaceMembers', 'syncParked', 'searchPending', 'documentLinkIndex'];
 
+/// P05a T5 (ADR-0070): payload key of the ids, by kind, that exported rows
+/// point to and that are in a shared space, so not in the file. Absent when
+/// there are none (files stay as they were).
+const inSpacesKey = 'inSpaces';
+
 /// A file that must not be restored. [message] is safe to show to the user and
 /// never echoes file contents.
 class ExportRejected implements Exception {
@@ -169,17 +174,45 @@ class ProfileExport {
     // A profile whose active workspace is a shared space exports as showing
     // its personal one.
     final home = personal.where((w) => profiles.any((p) => p.id == w.ownerId)).firstOrNull;
+    final kept = <String, List<Row>>{}, sharedIds = <String, Set<String>>{};
+    for (final k in recordKinds) {
+      final list = kept[k.name] = [];
+      final there = sharedIds[k.name] = {};
+      for (final r in await k.readAll(db)) {
+        if (shared.contains(r['workspaceId'])) {
+          there.add(r['id'] as String);
+        } else {
+          list.add(r);
+        }
+      }
+    }
+    // P05a T5 (ADR-0070): what a personal row points to that was moved into
+    // a shared space (a goal link's goal, a reminder's task, the parent of a
+    // deleted subtask). Only the ids, which the pointing rows hold already;
+    // the reader accepts these as outside the file, restore drops or clears
+    // what points to them (as for any record that will not exist).
+    final exported = {for (final e in kept.entries) e.key: {for (final r in e.value) r['id'] as String}};
+    final inSpaces = <String, Set<String>>{};
+    for (final e in kept.entries) {
+      for (final r in e.value) {
+        for (final (kind, id) in pointersOf(e.key, r)) {
+          if (!(exported[kind]?.contains(id) ?? false) && (sharedIds[kind]?.contains(id) ?? false)) {
+            (inSpaces[kind] ??= {}).add(id);
+          }
+        }
+      }
+    }
     return <String, Object?>{
       'profiles': [
         for (final r in profiles)
           (home != null && shared.contains(r.activeWorkspaceId) ? r.copyWith(activeWorkspaceId: home.id) : r).toJson()
       ],
       'workspaces': [for (final r in personal) r.toJson()],
-      for (final k in recordKinds)
-        k.exportKey: [
-          for (final r in await k.readAll(db))
-            if (!shared.contains(r['workspaceId'])) r
-        ],
+      for (final k in recordKinds) k.exportKey: kept[k.name],
+      if (inSpaces.isNotEmpty)
+        inSpacesKey: {
+          for (final kind in inSpaces.keys.toList()..sort()) kind: inSpaces[kind]!.toList()..sort()
+        },
       'auditLog': [
         for (final r in await db.select(db.auditLog).get())
           if (!sharedOps.contains(r.operationId)) r.toJson()
@@ -465,14 +498,31 @@ class ProfileExport {
       bad('a row points to an unknown workspace');
     }
 
-    // References resolve inside the file.
+    // P05a T5 (ADR-0070): the ids the file says are in a shared space.
+    final inSpaces = <String, Set<String>>{};
+    final rawInSpaces = map[inSpacesKey];
+    if (rawInSpaces != null) {
+      if (rawInSpaces is! Map) bad('unreadable $inSpacesKey');
+      for (final e in rawInSpaces.entries) {
+        final list = e.value;
+        if (!(referableKinds.contains(e.key) || e.key == 'schedule') || list is! List || list.any((x) => x is! String)) {
+          bad('unreadable $inSpacesKey');
+        }
+        final set = inSpaces[e.key as String] = {for (final x in list) x as String};
+        if (set.any((x) => ids[e.key]?.contains(x) ?? false)) bad('a record is both in the file and in a space');
+      }
+    }
+
+    // References resolve inside the file, or to a record in a shared space.
+    bool known(String kind, Object? id) =>
+        (ids[kind]?.contains(id) ?? false) || (inSpaces[kind]?.contains(id) ?? false);
     final tasks = [for (final r in records['task']!) Task.fromJson(r)];
-    if (tasks.any((t) => t.taskListId != null && !ids['taskList']!.contains(t.taskListId))) {
+    if (tasks.any((t) => t.taskListId != null && !known('taskList', t.taskListId))) {
       bad('a task points to an unknown list');
     }
     final parent = <String, String?>{};
     for (final t in tasks) {
-      if (t.parentTaskId != null && !ids['task']!.contains(t.parentTaskId)) {
+      if (t.parentTaskId != null && !known('task', t.parentTaskId)) {
         bad('a task points to an unknown parent');
       }
       parent[t.id] = t.parentTaskId;
@@ -489,7 +539,7 @@ class ProfileExport {
     }
     for (final e in records['event']!) {
       final c = e['calendarId'];
-      if (c != null && !ids['calendar']!.contains(c)) bad('an event points to an unknown calendar');
+      if (c != null && !known('calendar', c)) bad('an event points to an unknown calendar');
     }
     // Dependent rows point to existing records (a task or an event; a goal;
     // both ends of a goal link).
@@ -505,7 +555,7 @@ class ProfileExport {
             'documentLink' => type == 'document' || type == 'task' || type == 'event' || type == 'goal',
             _ => type == 'task' || type == 'event',
           };
-          if (!allowed || !(ids[type]?.contains(id) ?? false)) bad('a ${k.name} points to an unknown item');
+          if (!allowed || !known(type, id)) bad('a ${k.name} points to an unknown item');
         }
       }
     }
@@ -513,7 +563,7 @@ class ProfileExport {
     for (final (kind, field, target) in optionalRefs) {
       for (final r in records[kind]!) {
         final v = r[field];
-        if (v != null && !ids[target]!.contains(v)) bad('a $kind points to an unknown $target');
+        if (v != null && !known(target, v)) bad('a $kind points to an unknown $target');
       }
     }
     // P03 rows are well-formed (values, states, keyed ids).
@@ -534,7 +584,8 @@ class ProfileExport {
       }
       for (final r in records['exception']!) {
         exceptionOf(OccurrenceException.fromJson(r));
-        if (!scheduled.contains(scheduleIdOf(r['subjectType'] as String, r['subjectId'] as String))) {
+        final sid = scheduleIdOf(r['subjectType'] as String, r['subjectId'] as String);
+        if (!scheduled.contains(sid) && !(inSpaces['schedule']?.contains(sid) ?? false)) {
           bad('an exception belongs to an item without a schedule');
         }
       }
@@ -577,8 +628,9 @@ class ProfileExport {
           )
         ]);
         b.insertAll(db.workspaces, data.workspaces);
+        final records = withinFile(data.records);
         for (final k in recordKinds) {
-          k.insertAll(b, db, data.records[k.name]!); // FTS triggers index titles
+          k.insertAll(b, db, records[k.name]!); // FTS triggers index titles
         }
         b.insertAll(db.opDedupe, data.opDedupe);
         b.insertAll(db.auditLog, data.auditLog);
@@ -587,4 +639,56 @@ class ProfileExport {
       });
     });
   }
+}
+
+/// P05a T5 (ADR-0070): every record (kind, id) a row of [kind] points to, as
+/// the reader checks them: its required references, its optional ones, a
+/// task's list and parent, an exception's schedule.
+List<(String, String)> pointersOf(String kind, Row r) => [
+      ...requiredRefsOf(kind, r),
+      for (final (k, field, target) in optionalRefs)
+        if (k == kind && r[field] is String) (target, r[field] as String),
+      if (kind == 'task' && r['taskListId'] is String) ('taskList', r['taskListId'] as String),
+      if (kind == 'task' && r['parentTaskId'] is String) ('task', r['parentTaskId'] as String),
+      if (kind == 'exception') ('schedule', scheduleIdOf(r['subjectType'] as String, r['subjectId'] as String)),
+    ];
+
+/// P05a T5 (ADR-0070): [records] without what points outside them (to a
+/// record in a shared space, see [inSpacesKey]), as a restore treats any
+/// record that will not exist: a row that needs it is left out, an optional
+/// reference to it, a task's list or parent, is cleared. A file whose
+/// references all resolve is returned unchanged.
+Map<String, List<Row>> withinFile(Map<String, List<Row>> records) {
+  final out = {for (final e in records.entries) e.key: [...e.value]};
+  Map<String, Set<String>> idsOf() => {
+        for (final e in out.entries) e.key: {for (final r in e.value) r['id'] as String}
+      };
+  // Repeat: leaving a row out can leave another without its record.
+  for (var dropped = true; dropped;) {
+    dropped = false;
+    final ids = idsOf();
+    for (final e in out.entries) {
+      final before = e.value.length;
+      e.value.removeWhere((r) => requiredRefsOf(e.key, r).any((p) => !(ids[p.$1]?.contains(p.$2) ?? false)));
+      if (e.value.length != before) dropped = true;
+    }
+  }
+  final ids = idsOf();
+  final cleared = <(String, String, String)>[
+    ...optionalRefs,
+    ('task', 'taskListId', 'taskList'),
+    ('task', 'parentTaskId', 'task'),
+  ];
+  for (final e in out.entries) {
+    for (var i = 0; i < e.value.length; i++) {
+      final r = e.value[i];
+      for (final (kind, field, target) in cleared) {
+        final v = r[field];
+        if (kind == e.key && v != null && !(ids[target]?.contains(v) ?? false)) {
+          e.value[i] = Row.of(e.value[i])..[field] = null;
+        }
+      }
+    }
+  }
+  return out;
 }

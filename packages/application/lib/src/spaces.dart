@@ -136,7 +136,9 @@ class MovePreview {
     this.blocker,
   });
 
-  /// The item: 'taskList', 'task', 'event', 'calendar' or 'goal'.
+  /// The item: 'taskList', 'task', 'event', 'calendar', 'goal' or (P05a)
+  /// 'document'. A document moves with its subdocuments and its whole
+  /// history: `counts['documentRevision']` earlier versions (C8).
   final String kind;
   final String id;
 

@@ -1,6 +1,6 @@
 # ADR-0060: Shared spaces in one profile store (schema v13)
 
-- Status: Accepted (P04b task T8, 2026-11-17)
+- Status: Accepted (P04b task T8, 2026-11-17); the personal export amended by [ADR-0070](0070-documents-in-shared-spaces.md) (it lists the ids it points to in a space, so it can be restored after a move)
 - Date: 2026-11-17
 - Deciders: Implementation, within the owner's decisions B1, B2, B5, B10, B14 of [p04b-plan.md](../roadmap/p04b-plan.md)
 - Related: [ADR-0023](0023-per-profile-stores-and-registry.md) (one store per profile), [ADR-0053](0053-sync-storage-contract-schema-v10.md) (outbox contract), [ADR-0057](0057-joining-and-leaving-sync.md), [ADR-0059](0059-sync-egress-classification.md), spike S-16

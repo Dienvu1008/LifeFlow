@@ -3,11 +3,12 @@
 // through the gateway (FF-ARCH-06). The ids are kept (ID-001).
 //   what moves  a list (with its tasks, their subtasks and its events), a
 //               top-level task (with its subtasks), an event, a calendar
-//               (with its events), or a goal (with its milestones); with
-//               each task and event its schedule, its occurrence changes and
-//               its done ticks. Reminders, focus sessions, measurements and
-//               results stay personal (B2, B3); goal links stay where they
-//               are.
+//               (with its events), a goal (with its milestones), or (P05a
+//               T5) a document (with its live subdocuments and every
+//               revision of each); with each task and event its schedule,
+//               its occurrence changes and its done ticks. Reminders, focus
+//               sessions, measurements and results stay personal (B2, B3);
+//               goal links and document links stay where they are.
 //   asked first the command carries what the person was shown (each moved
 //               record and its version, from [moveSetOf]); if anything
 //               changed since, nothing moves (PRIV-002: nothing moves
@@ -35,7 +36,7 @@ import 'command_gateway.dart';
 import 'record_kinds.dart';
 
 /// The kinds an item to move can be (B3).
-const movableKinds = {'taskList', 'task', 'event', 'calendar', 'goal'};
+const movableKinds = {'taskList', 'task', 'event', 'calendar', 'goal', 'document'};
 
 class SpaceMoveHandler implements CommandHandler {
   const SpaceMoveHandler(this.kind);
@@ -105,6 +106,13 @@ class SpaceMoveHandler implements CommandHandler {
         if (k == 'task') 'assigneeId': null,
         if (k == 'event' && !(kind == 'calendar')) 'calendarId': null,
         if (k == 'event' && !(kind == 'taskList')) 'listId': null,
+        // P05a T5 (ADR-0070): the moved document leaves its parent behind;
+        // its subdocuments keep theirs. A revision keeps who wrote it: only
+        // its place and version change with the move, never its content.
+        // One without an author (written in the personal workspace) is
+        // named for the mover by the gateway, into a space (B10).
+        if (k == 'document' && rid == id) 'parentId': null,
+        if (k == 'documentRevision') 'changedBy': row['changedBy'],
       };
       await db.batch((b) => rk.upsert(b, db, [moved]));
       if (!(k == kind && rid == id)) {
@@ -217,6 +225,24 @@ Future<MoveSet> moveSetOf(AppDatabase db, String kind, String id) async {
       for (final e in await ids(
           'SELECT id FROM events WHERE calendar_id = ? AND workspace_id = ? AND deleted_at IS NULL ORDER BY rowid', [id, ws])) {
         await add('event', e);
+      }
+    case 'document':
+      // P05a T5 (ADR-0070, owner's C8): the document, its live subdocuments
+      // at any depth, and the whole history of each. Links to tasks, events
+      // and goals stay where they are (as goal links do).
+      final docs = [id];
+      for (var i = 0; i < docs.length; i++) {
+        await add('document', docs[i]);
+        docs.addAll(await ids(
+            'SELECT id FROM documents WHERE parent_id = ? AND workspace_id = ? AND deleted_at IS NULL ORDER BY order_key, id',
+            [docs[i], ws]));
+      }
+      for (final d in docs) {
+        for (final r in await ids(
+            'SELECT id FROM document_revisions WHERE document_id = ? AND workspace_id = ? ORDER BY document_version, id',
+            [d, ws])) {
+          await add('documentRevision', r);
+        }
       }
     case 'goal':
       await add('goal', id);
