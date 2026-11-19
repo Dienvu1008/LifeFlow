@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import 'order_backfill.dart';
 import 'schema.dart';
+import 'search_index.dart';
 
 part 'app_database.g.dart';
 
@@ -31,6 +32,9 @@ part 'app_database.g.dart';
 ///   v14 (P04b T12) workspace_settings.name, sync_base keyed by workspace,
 ///                sync_parked, workspaces.left_at/left_keep (ADR-0064)
 ///   v15 (P04b T13) member_cards: members' names in a space (ADR-0065)
+///   v16 (P05a T2) documents, document_revisions, document_links; search by
+///                the exact spelling (tasks_fts rebuilt, documents_fts, NFC by
+///                search_pending), document_link_index (ADR-0067)
 @DriftDatabase(
   tables: [
     Profiles, Workspaces, TaskLists, Tasks, AuditLog, Outbox, EventLog,
@@ -41,21 +45,23 @@ part 'app_database.g.dart';
     Milestones, GoalLinks,
     WorkspaceSettings, SyncBase, SyncState, SyncReviews,
     SpaceMembers, SyncParked, MemberCards,
+    Documents, DocumentRevisions, DocumentLinks, SearchPending, DocumentLinkIndex,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   /// The schema this build writes (and the newest export it accepts).
-  static const currentSchemaVersion = 15;
+  static const currentSchemaVersion = 16;
 
   /// The last schema that changed a synced record's shape: what a sealed
   /// record says it is (ADR-0056). v12 changed only the local outbox. v13
   /// (ADR-0060) adds `changedBy` to every record and `assigneeId` to tasks;
   /// a pulled record of v11 or v12 is read with both null. v14 (ADR-0064)
   /// adds a space's `name` to its settings and "moved away" changes. v15
-  /// (ADR-0065) adds the member card kind.
-  static const recordSchemaVersion = 15;
+  /// (ADR-0065) adds the member card kind. v16 (ADR-0067) adds documents,
+  /// their revisions and their links.
+  static const recordSchemaVersion = 16;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -64,7 +70,8 @@ class AppDatabase extends _$AppDatabase {
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async {
           await m.createAll();
-          await _createTaskTitleFts();
+          await createSearchIndex(this);
+          await _createDocumentIndexes();
           await _createPlanningIndexes();
           await _createExecutionIndexes();
           await _createSyncIndexes();
@@ -166,6 +173,19 @@ class AppDatabase extends _$AppDatabase {
           }
           // P04b T13 (ADR-0065): members' names, a record of each space.
           if (from < 15) await m.createTable(memberCards);
+          if (from < 16) {
+            // P05a T2 (ADR-0067): documents; search by the exact spelling.
+            for (final TableInfo t in [documents, documentRevisions, documentLinks, searchPending, documentLinkIndex]) {
+              await m.createTable(t);
+            }
+            await _createDocumentIndexes();
+            for (final t in ['tasks_ai', 'tasks_ad', 'tasks_au']) {
+              await customStatement('DROP TRIGGER IF EXISTS $t');
+            }
+            await customStatement('DROP TABLE IF EXISTS tasks_fts');
+            await createSearchIndex(this);
+            await markAllForSearch(this);
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
@@ -246,37 +266,21 @@ class AppDatabase extends _$AppDatabase {
     await customStatement('CREATE INDEX goal_links_item ON goal_links (item_type, item_id)');
   }
 
-  /// FTS5 index over task titles (external-content). Kept in sync by triggers.
-  Future<void> _createTaskTitleFts() async {
-    await customStatement(
-      "CREATE VIRTUAL TABLE tasks_fts USING fts5"
-      "(title, content='tasks', content_rowid='rowid')",
-    );
-    await customStatement(
-      "CREATE TRIGGER tasks_ai AFTER INSERT ON tasks BEGIN "
-      "INSERT INTO tasks_fts(rowid, title) VALUES (new.rowid, new.title); END",
-    );
-    await customStatement(
-      "CREATE TRIGGER tasks_ad AFTER DELETE ON tasks BEGIN "
-      "INSERT INTO tasks_fts(tasks_fts, rowid, title) VALUES('delete', old.rowid, old.title); END",
-    );
-    await customStatement(
-      "CREATE TRIGGER tasks_au AFTER UPDATE ON tasks BEGIN "
-      "INSERT INTO tasks_fts(tasks_fts, rowid, title) VALUES('delete', old.rowid, old.title); "
-      "INSERT INTO tasks_fts(rowid, title) VALUES (new.rowid, new.title); END",
-    );
+  /// P05a T2: the tree, the revisions of a document and its links.
+  Future<void> _createDocumentIndexes() async {
+    await customStatement('CREATE INDEX documents_parent ON documents (workspace_id, parent_id)');
+    await customStatement('CREATE INDEX document_revisions_document ON document_revisions (document_id, document_version)');
+    await customStatement('CREATE INDEX document_links_document ON document_links (document_id)');
+    await customStatement('CREATE INDEX document_link_index_to ON document_link_index (to_document_id)');
   }
 
-  /// Full-text search over task titles (active, non-deleted) in a workspace.
-  Future<List<String>> searchTaskIds(String workspaceId, String query) async {
-    final rows = await customSelect(
-      "SELECT t.id AS id FROM tasks_fts f "
-      "JOIN tasks t ON t.rowid = f.rowid "
-      "WHERE f.title MATCH ? AND t.workspace_id = ? AND t.deleted_at IS NULL "
-      "ORDER BY rank",
-      variables: [Variable(query), Variable(workspaceId)],
-      readsFrom: {tasks},
-    ).get();
-    return rows.map((r) => r.data['id'] as String).toList();
-  }
+  /// Search over task titles (live ones) in a workspace, by the exact
+  /// spelling (P05a C12, ADR-0067): what a person typed, not FTS5 syntax.
+  Future<List<String>> searchTaskIds(String workspaceId, String typed) => searchTaskIdsIn(this, workspaceId, typed);
+
+  /// The live documents of a workspace matching what was typed (title or text).
+  Future<List<String>> searchDocumentIds(String workspaceId, String typed) => searchDocumentIdsIn(this, workspaceId, typed);
+
+  /// The live documents of a workspace whose text links to [documentId] (C6).
+  Future<List<String>> backlinkIds(String workspaceId, String documentId) => backlinkIdsIn(this, workspaceId, documentId);
 }

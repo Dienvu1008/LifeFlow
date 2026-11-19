@@ -516,3 +516,67 @@ class SyncReviews extends Table {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+// --- P05a T2 (schema v16, ADR-0067): documents ---------------------------------
+
+/// A document (ADR-0066): one record, its body one value in LifeFlow's own
+/// block format (`DocumentBody.encode`). Confidential (data-classification).
+@DataClassName('DocumentRow')
+class Documents extends Table with SyncableColumns {
+  /// The document it sits under in the tree, or null at the top (DOC-001).
+  TextColumn get parentId => text().nullable()();
+  TextColumn get title => text()();
+  TextColumn get body => text()();
+  TextColumn get orderKey => text().withDefault(const Constant('a0'))();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// A revision of a document (p05-plan C5, C7, C9): the whole title and body
+/// as saved, written once and never changed (DOC-002, DOC-006).
+@DataClassName('DocumentRevisionRow')
+class DocumentRevisions extends Table with SyncableColumns {
+  TextColumn get documentId => text()();
+
+  /// The document's version this revision recorded.
+  IntColumn get documentVersion => integer()();
+  TextColumn get title => text()();
+  TextColumn get body => text()();
+  TextColumn get reason => text().withDefault(const Constant('save'))(); // save | conflict | restore
+  TextColumn get deviceId => text().nullable()();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// A link from a document to a task, an event or a goal (LinkedResource,
+/// DOC-004), as goal links. id = '<documentId>|<itemType>:<itemId>'.
+@DataClassName('DocumentLinkRow')
+class DocumentLinks extends Table with SyncableColumns {
+  TextColumn get documentId => text()();
+  TextColumn get itemType => text()(); // task | event | goal
+  TextColumn get itemId => text()();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Rows whose search text or `[[…]]` links changed since the index last
+/// caught up (written by SQL triggers, read by `catchUpSearch`). Device
+/// bookkeeping: not exported, not synced.
+@DataClassName('SearchPendingRow')
+class SearchPending extends Table {
+  TextColumn get kind => text()(); // task | document
+  IntColumn get rowRef => integer()(); // the row's rowid when it changed
+  TextColumn get recordId => text()();
+  @override
+  Set<Column> get primaryKey => {kind, rowRef, recordId};
+}
+
+/// The `[[…]]` links of each document's body, for backlinks (C6), rebuilt
+/// from the body by `catchUpSearch`. Device bookkeeping.
+@DataClassName('DocumentLinkIndexRow')
+class DocumentLinkIndex extends Table {
+  TextColumn get fromDocumentId => text()();
+  TextColumn get toDocumentId => text()();
+  @override
+  Set<Column> get primaryKey => {fromDocumentId, toDocumentId};
+}

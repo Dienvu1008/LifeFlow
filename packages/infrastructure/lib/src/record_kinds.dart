@@ -73,6 +73,9 @@ class RecordKind {
     'goalLink': GoalLinkRow.fromJson,
     'workspaceSettings': WorkspaceSetting.fromJson,
     'memberCard': MemberCard.fromJson,
+    'document': DocumentRow.fromJson,
+    'documentRevision': DocumentRevisionRow.fromJson,
+    'documentLink': DocumentLinkRow.fromJson,
   };
   Object _parse(Row r) => _parsers[name]!(r);
 }
@@ -131,6 +134,13 @@ final List<RecordKind> recordKinds = [
   _kind('milestone', 'milestones', (db) => db.milestones, MilestoneRow.fromJson,
       (d) => d.toCompanion(false)),
   _kind('goalLink', 'goalLinks', (db) => db.goalLinks, GoalLinkRow.fromJson, (d) => d.toCompanion(false)),
+  // P05a T2 (schema v16, ADR-0067): documents, written before what points to
+  // them (their revisions, their links).
+  _kind('document', 'documents', (db) => db.documents, DocumentRow.fromJson, (d) => d.toCompanion(false)),
+  _kind('documentRevision', 'documentRevisions', (db) => db.documentRevisions, DocumentRevisionRow.fromJson,
+      (d) => d.toCompanion(false)),
+  _kind('documentLink', 'documentLinks', (db) => db.documentLinks, DocumentLinkRow.fromJson,
+      (d) => d.toCompanion(false)),
   // P04 T1 (schema v10, ADR-0053): settings that sync with the workspace.
   _kind('workspaceSettings', 'workspaceSettings', (db) => db.workspaceSettings, WorkspaceSetting.fromJson,
       (d) => d.toCompanion(false)),
@@ -155,7 +165,7 @@ const subjectKinds = {'schedule', 'exception', 'reminder'};
 
 /// Kinds a row can point to, for reference checks.
 const referableKinds = {
-  'taskList', 'task', 'event', 'calendar', 'goal', 'focusSession', 'executionRecord', 'measurement',
+  'taskList', 'task', 'event', 'calendar', 'goal', 'focusSession', 'executionRecord', 'measurement', 'document',
 };
 
 /// The record a dependent row belongs to, as (kind, id), or null.
@@ -163,6 +173,7 @@ const referableKinds = {
       'schedule' || 'exception' || 'reminder' => (r['subjectType'] as String, r['subjectId'] as String),
       'completion' || 'measurement' || 'periodResult' => ('task', r['taskId'] as String),
       'milestone' => ('goal', r['goalId'] as String),
+      'documentRevision' => ('document', r['documentId'] as String),
       _ => null,
     };
 
@@ -171,6 +182,10 @@ const referableKinds = {
 List<(String, String)> requiredRefsOf(String kind, Row r) => [
       if (subjectOf(kind, r) case final s?) s,
       if (kind == 'goalLink') ...[('goal', r['goalId'] as String), (r['itemType'] as String, r['itemId'] as String)],
+      if (kind == 'documentLink') ...[
+        ('document', r['documentId'] as String),
+        (r['itemType'] as String, r['itemId'] as String),
+      ],
     ];
 
 /// Optional references (kind, row field, target kind): kept when the target
@@ -183,6 +198,7 @@ const optionalRefs = <(String, String, String)>[
   ('executionRecord', 'taskId', 'task'),
   ('executionRecord', 'sessionId', 'focusSession'),
   ('measurement', 'recordId', 'executionRecord'),
+  ('document', 'parentId', 'document'), // P05a: a missing parent puts it at the top
 ];
 
 /// P04 T7 (ADR-0059; data-classification.md §1, §3): the class of each kind's
@@ -207,6 +223,10 @@ const kindClasses = <String, DataClassification>{
   'goalLink': DataClassification.personal,
   'workspaceSettings': DataClassification.personal,
   'memberCard': DataClassification.personal,
+  // P05a (ADR-0067; data-classification.md: document bodies are Confidential).
+  'document': DataClassification.confidential,
+  'documentRevision': DataClassification.confidential,
+  'documentLink': DataClassification.personal,
 };
 
 /// The class of one record: its kind's, raised to Restricted for a

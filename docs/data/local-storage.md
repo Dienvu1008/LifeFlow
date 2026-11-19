@@ -50,7 +50,7 @@ FTS5 virtual tables (VS-23) accompany the owning table (for example `tasks_fts` 
 Every mutation's atomic set (aggregate + audit + outbox + event-log + dedupe) is one Drift transaction (ADR-0014). Repositories expose reads publicly but writes only through command handlers (ADR-0011; fitness function FF-GOV-01 in Batch 4).
 
 ## 7. Open questions
-- OQ-LS-1: FTS5 rebuild strategy (triggers vs handler) and tokenizer choice (for CJK/Vietnamese search). Proposal: `unicode61` with diacritics handling; confirm when search is built (P01/P05).
+- OQ-LS-1: FTS5 rebuild strategy (triggers vs handler) and tokenizer choice (for CJK/Vietnamese search). **Resolved in P05a T2 ([ADR-0067](../adr/0067-document-store-and-exact-search.md)):** `unicode61 remove_diacritics 0` (search by the exact spelling, owner's C4/C12), text and queries in NFC computed in Dart; triggers note changed rows and the index catches up before each query. CJK is not in scope.
 - OQ-V10: FTS5 under encryption (verified-sources).
 
 ## 8. Self-check

@@ -144,6 +144,8 @@ void main() {
         'space_members', // P04b T8 (schema v13), a server cache, not exported
         'sync_parked', // P04b T12 (schema v14), sync bookkeeping, not exported
         'member_cards', // P04b T13 (schema v15): a record kind of shared spaces
+        // P05a T2 (schema v16): documents (record kinds); search bookkeeping (not exported)
+        ...['documents', 'document_revisions', 'document_links', 'search_pending', 'document_link_index'],
       });
       expect(host.db.allTables.length,
           exportedTables.length + notExportedTables.length);

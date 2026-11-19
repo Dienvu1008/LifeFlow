@@ -97,6 +97,26 @@ class Services {
 /// Turns a current profile store back into what a build with schema [version]
 /// wrote (for migration tests). Data in the tables that remain is kept.
 Future<void> rewindProfileStore(AppDatabase db, int version) async {
+  if (version < 16) {
+    // P05a T2 (ADR-0067): no documents; task search as v1-v15 built it
+    // (external content, marks removed by the default tokenizer).
+    for (final t in ['documents', 'document_revisions', 'document_links', 'search_pending', 'document_link_index',
+        'documents_fts', 'tasks_fts']) {
+      await db.customStatement('DROP TABLE $t'); // drops its indexes and triggers too
+    }
+    for (final t in ['tasks_search_ai', 'tasks_search_au', 'tasks_search_ad']) {
+      await db.customStatement('DROP TRIGGER $t');
+    }
+    await db.customStatement("CREATE VIRTUAL TABLE tasks_fts USING fts5(title, content='tasks', content_rowid='rowid')");
+    await db.customStatement('CREATE TRIGGER tasks_ai AFTER INSERT ON tasks BEGIN '
+        'INSERT INTO tasks_fts(rowid, title) VALUES (new.rowid, new.title); END');
+    await db.customStatement('CREATE TRIGGER tasks_ad AFTER DELETE ON tasks BEGIN '
+        "INSERT INTO tasks_fts(tasks_fts, rowid, title) VALUES('delete', old.rowid, old.title); END");
+    await db.customStatement('CREATE TRIGGER tasks_au AFTER UPDATE ON tasks BEGIN '
+        "INSERT INTO tasks_fts(tasks_fts, rowid, title) VALUES('delete', old.rowid, old.title); "
+        'INSERT INTO tasks_fts(rowid, title) VALUES (new.rowid, new.title); END');
+    await db.customStatement("INSERT INTO tasks_fts(tasks_fts) VALUES('rebuild')");
+  }
   if (version < 15) {
     // P04b T13 (ADR-0065): no members' names.
     await db.customStatement('DROP TABLE member_cards');
@@ -127,7 +147,7 @@ Future<void> rewindProfileStore(AppDatabase db, int version) async {
     }
     await db.customStatement('ALTER TABLE tasks DROP COLUMN assignee_id');
     for (final k in recordKinds) {
-      if (k.name == 'memberCard') continue; // v15, already gone
+      if (const {'memberCard', 'document', 'documentRevision', 'documentLink'}.contains(k.name)) continue; // v15-v16, gone
       await db.customStatement('ALTER TABLE ${k.tableName} DROP COLUMN changed_by');
     }
     await db.customStatement('ALTER TABLE sync_base DROP COLUMN workspace_id');
