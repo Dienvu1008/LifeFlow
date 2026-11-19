@@ -1,6 +1,6 @@
 # ADR-0020: Block editor — MIT/BSD-licensed, final pick via a short P05 spike
 
-- Status: Accepted (direction decided; final library confirmed by a dated P05 spike)
+- Status: Accepted (direction decided; final library confirmed by a dated P05 spike). **Amended 2026-11-04 by S-07: flutter_quill 11.6.0** (below).
 - Date: 2026-11-04
 - Deciders: Architecture team (owner to confirm)
 - Resolves: OQ-DOC-2 (no longer vague)
@@ -36,3 +36,9 @@ This is not left Open-ended: the acceptable set is fixed (MIT/BSD only), the lea
 
 ## Follow-ups
 - Spike S-07 at P05 start; record the result and finalize the dependency with its license in verified-sources.
+
+## Amendment: the S-07 result (P05, 2026-11-04)
+- Status: the final library is **flutter_quill 11.6.0 (MIT, VS-29)**, pinned. The leading candidate super_editor was not chosen.
+- Why: in the owner's test on both platforms ([spike-results.md](../spikes/spike-results.md) S-07), super_editor (0.3.0-dev.52, the only current release) still lagged when scrolling and typing on Android in a profile build, shook while scrolling on Windows, and misaligned its to-do boxes on Android; it also needs an Android build workaround and has had no stable release since 2024. flutter_quill was smooth on both and the owner judged it fit for daily use.
+- What the Delta model changes: nothing in storage. The documents are stored in LifeFlow's own block format (deterministic serialization, the criterion above), and the editor is reached only through an adapter. Block ids are kept by the adapter by line position and are not promised stable across edits; P05a has no block-level links. An image block is always followed by a text line so the cursor has a place after it.
+- The criteria above stay as written; super_editor (or a custom editor) remains the fallback behind the same adapter if flutter_quill stops being maintained.
