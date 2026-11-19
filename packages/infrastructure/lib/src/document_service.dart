@@ -244,8 +244,11 @@ class DriftDocumentQueries implements DocumentQueries {
 
   @override
   Future<List<DocumentItemLinkView>> linksOf(String id) async {
+    // P05a T5 (ADR-0070): a link shows where its document is: one left
+    // behind by a move into or out of a space does not.
+    final ws = await _workspace();
     final rows = await (db.select(db.documentLinks)
-          ..where((l) => l.documentId.equals(id) & l.deletedAt.isNull())
+          ..where((l) => l.documentId.equals(id) & l.deletedAt.isNull() & l.workspaceId.equals(ws ?? ''))
           ..orderBy([(l) => OrderingTerm(expression: l.createdAt), (l) => OrderingTerm(expression: l.id)]))
         .get();
     return [

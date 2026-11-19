@@ -126,6 +126,7 @@ void main() {
   /// One handler operation: how to build its command.
   final taskHandler = TaskCommandHandler();
   const moveTaskHandler = SpaceMoveHandler('task');
+  const moveDocHandler = SpaceMoveHandler('document');
   const cardHandler = MemberCardHandler();
   const profileHandler = ProfileCommandHandler();
   const restoreHandler = ProfileRestoreHandler();
@@ -396,6 +397,17 @@ void main() {
       ('space.moveOut', moveTaskHandler, 'task', 'tmv',
           (v, op) => command('MoveOutOfSpace',
               {'op': 'move', 'id': 'tmv', 'from': sharedWs, 'expect': ['task:tmv:2', 'task:tmv2:2']}, opId: op, expected: v)),
+      // P05a T5 (ADR-0070): a document moves in and out with its history.
+      ('document(movable).create', docHandler, 'document', 'dmv',
+          (v, op) => command('CreateDocument',
+              {'op': 'create', 'id': 'dmv', 'title': 'Move me', 'revisionId': 'drmv', 'firstBlockId': 'b1'}, opId: op, expected: v)),
+      ('space.moveIn(document)', moveDocHandler, 'document', 'dmv',
+          (v, op) => memberCommand('MoveIntoSpace',
+              {'op': 'move', 'id': 'dmv', 'from': wsId, 'expect': ['document:dmv:1', 'documentRevision:drmv:1']}, opId: op)),
+      ('space.moveOut(document)', moveDocHandler, 'document', 'dmv',
+          (v, op) => command('MoveOutOfSpace',
+              {'op': 'move', 'id': 'dmv', 'from': sharedWs, 'expect': ['document:dmv:2', 'documentRevision:drmv:2']},
+              opId: op, expected: v)),
       ('profile.switchSpace(back)', profileHandler, 'profile', profileId,
           (v, op) => command('ShowSpace', {'op': 'switchSpace', 'id': profileId, 'workspaceId': wsId}, opId: op, expected: v)),
       // P03 UX U6 (U-D13); a setting of the workspace since P04 T1.

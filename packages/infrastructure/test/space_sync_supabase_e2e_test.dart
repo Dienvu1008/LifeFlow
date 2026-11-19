@@ -193,6 +193,46 @@ void main() {
     expect((await minh.spaces.spaces()).singleWhere((s) => s.shared).name, 'Family');
   });
 
+  test('P05a T5: a personal document moved in with its history; the member sees who wrote what and adds to it', () async {
+    final lan = await person('lan');
+    final minh = await person('minh');
+    final lanShare = DriftSharingService(
+        db: lan.db, gateway: lan.gw, server: lan.remote, keys: lan.keys, keyring: lan.keyring, sync: lan.spaceSync);
+    final minhShare = DriftSharingService(
+        db: minh.db, gateway: minh.gw, server: minh.remote, keys: minh.keys, keyring: minh.keyring, sync: minh.spaceSync);
+    final made = await lanShare.createSpace('Family');
+    expect(made.problem, isNull, reason: made.detail);
+    final ws = made.spaceId!;
+    final inv = await lanShare.invite(ws, SpaceRole.editor, InviteKind.joinAtOnce);
+    expect((await minhShare.join(inv.invitation!.link)).problem, isNull);
+    ok(await minh.spaces.show(ws));
+
+    DocumentBody text(String s) => DocumentBody([DocBlock('b1', BlockType.paragraph, runs: [TextRun(s)])]);
+    final lanDocs = DriftDocumentService(lan.db, lan.gw, deviceId: 'lan-pc');
+    final minhDocs = DriftDocumentService(minh.db, minh.gw, deviceId: 'minh-phone');
+    ok(await lan.spaces.show((await ProfileStore(lan.db).personalWorkspaceId())!));
+    final d = ok(await lanDocs.create('Ghi chú họp'));
+    ok(await lanDocs.save(d, title: 'Ghi chú họp', body: text('Thứ Bảy lúc 7 giờ')));
+    final preview = await lanShare.previewMove('document', d, ws);
+    expect(preview.counts, {'document': 1, 'documentRevision': 2});
+    expect((await lanShare.move(preview)).problem, isNull);
+    expect((await lan.personalSync.syncNow()).outcome, SyncOutcome.upToDate);
+    ok(await lan.spaces.show(ws));
+    await lan.now();
+    await minh.now();
+    final seen = DriftDocumentQueries(minh.db);
+    expect((await seen.document(d))!.body.blocks.single.text, 'Thứ Bảy lúc 7 giờ');
+    expect([for (final r in await seen.revisions(d)) r.author], [lan.account, lan.account]);
+    expect(await minh.db.searchDocumentIds(ws, 'ghi chú'), [d], reason: 'found in the space by the member');
+
+    ok(await minhDocs.save(d, title: 'Ghi chú họp', body: text('Thứ Bảy lúc 8 giờ')));
+    await minh.now();
+    await lan.now();
+    final history = await DriftDocumentQueries(lan.db).revisions(d);
+    expect([for (final r in history) r.author], [minh.account, lan.account, lan.account]);
+    expect(history.first.deviceId, 'minh-phone');
+  });
+
   test('rotate: a member removed; the owner seals everything again; the others catch up; the removed one stops', () async {
     final lan = await person('lan');
     final minh = await person('minh');

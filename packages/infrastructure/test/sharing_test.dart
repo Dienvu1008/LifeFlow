@@ -6,7 +6,8 @@
 //   move       asked first: what becomes visible; nothing moves if it
 //              changed (PRIV-002); a tracked task or a subtask alone never;
 //              reminders stay personal (B2, B3); back out is a delete for
-//              the others
+//              the others; (P05a T5) a document with its subdocuments and
+//              history, its authors kept, its links left behind
 //   devices    a move on one device of the account reaches its other device,
 //              whichever sync comes first ("moved away", kept aside)
 //   assign     to an owner or editor only (B9)
@@ -43,6 +44,8 @@ class Device {
     tasks = DriftTaskService(db, gw);
     scheduling = DriftTaskScheduling(db, gw);
     spaces = DriftSpaceService(db, gw);
+    docs = DriftDocumentService(db, gw, deviceId: '$account-device');
+    docQueries = DriftDocumentQueries(db);
   }
   final String account;
   final MemoryRemoteServer server;
@@ -58,6 +61,8 @@ class Device {
   late final DriftTaskService tasks;
   late final DriftTaskScheduling scheduling;
   late final DriftSpaceService spaces;
+  late final DriftDocumentService docs;
+  late final DriftDocumentQueries docQueries;
 
   static Future<Device> open(String account, MemoryRemoteServer server) async {
     final d = Device._(account, server, AppDatabase(NativeDatabase.memory()));
@@ -346,6 +351,126 @@ void main() {
     expect((await lan.row('task', trip))!['workspaceId'], await lan.personal());
   });
 
+  test('P05a T5 (C2, C8): a document moves with its subdocuments and its whole history; its links stay; '
+      'the members see who wrote what; a viewer saves nothing; and back out', () async {
+    final lan = await device('lan');
+    final minh = await device('minh');
+    final vy = await device('vy');
+    final ws = await family(lan, [(minh, SpaceRole.editor), (vy, SpaceRole.viewer)]);
+    await lan.show(await lan.personal());
+    final d = ok(await lan.docs.create('Recipes'));
+    ok(await lan.docs.save(d, title: 'Recipes', body: _text('Rice first')));
+    final child = ok(await lan.docs.create('Phở', parentId: d));
+    final old = ok(await lan.docs.create('Old notes', parentId: d));
+    ok(await lan.docs.trash(old));
+    final t = ok(await lan.tasks.create('Buy rice'));
+    ok(await lan.docs.link(d, DocumentItemType.task, t));
+
+    final preview = await lan.sharing.previewMove('document', d, ws);
+    expect(preview.blocker, isNull);
+    expect(preview.counts, {'document': 2, 'documentRevision': 3}, reason: '"…and 3 earlier versions" (C8)');
+    expect(preview.titles, ['Recipes', 'Phở'], reason: 'a revision is counted, not listed; the trashed one stays');
+    expect((preview.hasNotes, preview.hasDates), (true, false), reason: 'a document\'s text is shown as notes');
+    final alone = await lan.sharing.previewMove('document', child, ws);
+    expect(alone.counts, {'document': 1, 'documentRevision': 1});
+    expect(alone.hasNotes, isFalse, reason: 'an empty document');
+
+    // Changed after it was shown: nothing moves (PRIV-002).
+    ok(await lan.docs.save(child, title: 'Phở', body: _text('Broth for 6 hours')));
+    expect((await lan.sharing.move(preview)).problem, SharingProblem.changedSinceShown);
+    expect((await lan.row('document', d))!['workspaceId'], await lan.personal());
+
+    okShare(await lan.sharing.move(await lan.sharing.previewMove('document', d, ws)));
+    final revisions = await lan.db.select(lan.db.documentRevisions).get();
+    for (final r in revisions.where((r) => r.documentId != old)) {
+      expect((r.workspaceId, r.ownerId, r.changedBy), (ws, 'lan', 'lan'), reason: 'the mover wrote them');
+    }
+    expect((await lan.row('document', d))!['parentId'], isNull);
+    expect((await lan.row('document', child))!['parentId'], d);
+    final left = (await lan.row('document', old))!;
+    expect((left['workspaceId'], left['deletedAt'] != null), (await lan.personal(), true));
+    final link = (await lan.db.select(lan.db.documentLinks).get()).single;
+    expect(link.workspaceId, await lan.personal(), reason: 'links stay where they are, as goal links');
+
+    await lan.syncPersonal();
+    await lan.show(ws);
+    expect(await lan.docQueries.linksOf(d), isEmpty, reason: 'a link shows where its document is');
+    expect(await lan.docs.link(d, DocumentItemType.task, t), isA<CommandFailure>(), reason: 'the task is personal');
+    expect(await lan.docs.unlink(d, DocumentItemType.task, t), isA<CommandFailure>(),
+        reason: 'the link left behind is not the space\'s to change');
+    await lan.syncSpace();
+    await minh.syncSpace();
+    await vy.syncSpace();
+    final seen = (await minh.docQueries.document(d))!;
+    expect((seen.title, seen.body.blocks.single.text), ('Recipes', 'Rice first'));
+    expect([for (final r in await minh.docQueries.revisions(d)) (r.documentVersion, r.author)], [(2, 'lan'), (1, 'lan')]);
+    expect(await minh.docQueries.revisions(child), hasLength(2));
+    expect(await minh.row('document', old), isNull);
+    expect(await minh.db.select(minh.db.documentLinks).get(), isEmpty);
+
+    ok(await minh.docs.save(d, title: 'Recipes', body: _text('Rice first, then water')));
+    expect(await vy.docs.save(d, title: 'Recipes', body: _text('Mine now')), isA<CommandFailure>(), reason: 'a viewer');
+    await minh.syncSpace();
+    await lan.syncSpace();
+    expect([for (final r in await lan.docQueries.revisions(d)) r.author], ['minh', 'lan', 'lan']);
+
+    // And back out, with what Minh wrote: for the others it is a delete.
+    final out = await lan.sharing.previewMove('document', d, await lan.personal());
+    expect(out.counts, {'document': 2, 'documentRevision': 5});
+    okShare(await lan.sharing.move(out));
+    await lan.syncSpace();
+    await lan.syncPersonal();
+    await minh.syncSpace();
+    expect((await minh.row('document', d))!['deletedAt'], isNotNull);
+    await lan.show(await lan.personal());
+    expect([for (final r in await lan.docQueries.revisions(d)) r.author], ['minh', 'lan', 'lan'], reason: 'who wrote what is kept');
+    expect((await lan.row('document', d))!['changedBy'], isNull);
+    expect([for (final l in await lan.docQueries.linksOf(d)) l.itemId], [t], reason: 'back with its link');
+
+    // In again: a revision names who wrote it once; the authors stay.
+    okShare(await lan.sharing.move(await lan.sharing.previewMove('document', d, ws)));
+    await lan.show(ws);
+    expect([for (final r in await lan.docQueries.revisions(d)) r.author], ['minh', 'lan', 'lan']);
+    expect((await lan.row('document', d))!['changedBy'], 'lan', reason: 'the document itself: moved by Lan');
+  });
+
+  test('P05a T5: a document moved reaches the account\'s other device, whichever sync comes first', () async {
+    for (final personalFirst in [true, false]) {
+      server = newServer();
+      words.clear();
+      final pc = await device('lan');
+      final phone = await device('lan');
+      final ws = await family(pc, []);
+      await pc.show(await pc.personal());
+      final d = ok(await pc.docs.create('Packing list'));
+      ok(await pc.docs.save(d, title: 'Packing list', body: _text('Passports')));
+      await pc.syncPersonal();
+      await phone.syncPersonal();
+      expect(await phone.spaceSync.refresh(), isNull);
+
+      okShare(await pc.sharing.move(await pc.sharing.previewMove('document', d, ws)));
+      await pc.syncPersonal();
+      await pc.show(ws);
+      await pc.syncSpace();
+
+      await phone.show(ws);
+      if (personalFirst) {
+        await phone.syncPersonal();
+        expect(await phone.row('document', d), isNull, reason: 'gone from personal');
+        await phone.syncSpace();
+      } else {
+        final r = await phone.syncSpace();
+        expect(r.notTaken, greaterThan(0), reason: 'kept aside while it is still personal here');
+        await phone.syncPersonal();
+        await phone.syncSpace();
+      }
+      final there = (await phone.row('document', d))!;
+      expect((there['workspaceId'], there['deletedAt']), (ws, null), reason: 'personal first: $personalFirst');
+      expect([for (final r in await phone.docQueries.revisions(d)) (r.documentVersion, r.author)], [(2, 'lan'), (1, 'lan')],
+          reason: 'personal first: $personalFirst');
+    }
+  });
+
   test('what never moves: a tracked task, a subtask alone, into a space one is not in', () async {
     final lan = await device('lan');
     final ws = await family(lan, []);
@@ -552,6 +677,8 @@ void main() {
     expect((await minh.spaces.spaces()).where((s) => s.shared), isEmpty);
   });
 }
+
+DocumentBody _text(String s) => DocumentBody([DocBlock('b1', BlockType.paragraph, runs: [TextRun(s)])]);
 
 class _Utc implements DeviceTime {
   const _Utc();
