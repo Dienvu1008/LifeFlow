@@ -16,6 +16,7 @@ import 'package:foundation/foundation.dart' show LocalDate;
 
 import 'app_database.dart';
 import 'execution_rows.dart';
+import 'document_rows.dart';
 import 'order_backfill.dart';
 import 'organize_rows.dart';
 import 'record_kinds.dart';
@@ -495,9 +496,15 @@ class ProfileExport {
     for (final k in recordKinds) {
       for (final r in records[k.name]!) {
         for (final (type, id) in requiredRefsOf(k.name, r)) {
-          final allowed = k.name == 'milestone' || (k.name == 'goalLink' && type == 'goal')
-              ? type == 'goal'
-              : type == 'task' || type == 'event';
+          final allowed = switch (k.name) {
+            'milestone' => type == 'goal',
+            'goalLink' => type == 'goal' || type == 'task' || type == 'event',
+            // P05a T3: a revision needs its document; a document link its
+            // document and a task, an event or a goal.
+            'documentRevision' => type == 'document',
+            'documentLink' => type == 'document' || type == 'task' || type == 'event' || type == 'goal',
+            _ => type == 'task' || type == 'event',
+          };
           if (!allowed || !(ids[type]?.contains(id) ?? false)) bad('a ${k.name} points to an unknown item');
         }
       }
@@ -512,6 +519,9 @@ class ProfileExport {
     // P03 rows are well-formed (values, states, keyed ids).
     final p03 = executionRowsError(records);
     if (p03 != null) bad(p03);
+    // P05a T3: documents as a command would have written them.
+    final p05 = documentRowsError(records);
+    if (p05 != null) bad(p05);
     // P03 UX U2: colours from the palette, well-formed order keys.
     final organized = organizeRowsError(records);
     if (organized != null) bad(organized);
