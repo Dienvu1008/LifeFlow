@@ -171,6 +171,12 @@ Future<AppWiring> openSession({
     }
     final transfer = DriftDataTransferService(db, directory, gateway: gateway);
 
+    // P05a T7/T8 (ADR-0072): this profile's files; the ones no document
+    // names any more go, never blocking the opening.
+    final attachments = DriftAttachmentService(db,
+        folder: directory.attachmentsDir(profileId), keys: directory.attachmentKeys(profileId));
+    unawaited(attachments.sweep().then((_) {}, onError: (Object e) => onWarning?.call('[attachments] $e')));
+
     // P04 T5 (D4, D8): sync of this profile, if the build has a server. The
     // first automatic sync is not awaited: opening never waits for the
     // network (LF-INV-SEC-002).
@@ -238,6 +244,11 @@ Future<AppWiring> openSession({
         focusServiceProvider.overrideWithValue(DriftFocusService(db, gateway)),
         focusQueriesProvider.overrideWithValue(DriftFocusQueries(db)),
         focusLaunchProvider.overrideWithValue(focusLaunch),
+        // P05a T8 (ADR-0073): documents, one search, files on this device.
+        documentServiceProvider.overrideWithValue(DriftDocumentService(db, gateway, deviceId: platform.name)),
+        documentQueriesProvider.overrideWithValue(DriftDocumentQueries(db)),
+        searchQueriesProvider.overrideWithValue(DriftSearchQueries(db)),
+        attachmentServiceProvider.overrideWithValue(attachments),
         goalServiceProvider.overrideWithValue(DriftGoalService(db, gateway)),
         overviewServiceProvider.overrideWithValue(DriftOverviewService(db, gateway)),
         overviewQueriesProvider.overrideWithValue(DriftOverviewQueries(db)),

@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:foundation/foundation.dart';
 
+import '../documents/document_page.dart' show ItemDocumentsSection;
 import '../habit_text.dart' show formatRate;
 import '../messages.dart';
 import '../shell.dart' show shellMenuButton;
@@ -362,6 +363,8 @@ class _GoalBody extends ConsumerWidget {
               ),
             ),
           ),
+        // P05a T8: the documents linked to it.
+        ItemDocumentsSection(type: DocumentItemType.goal, itemId: g.id),
         const EditorSection('Linked tasks, habits and events'),
         if (g.links.isEmpty) ListTile(title: Text(context.l10n.nothingLinkedYet)),
         for (final l in g.links)

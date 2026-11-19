@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:application/application.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:foundation/foundation.dart';
 import 'package:ui/ui.dart';
+
+import 'fake_documents.dart';
 
 /// In-memory stand-in for the application ports. Like the real implementation
 /// the task stream is bound to the profile that is active when it subscribes
@@ -415,6 +418,25 @@ class FakeWorld
     return pickResult;
   }
 
+  /// P05a T8: what "Attach a file" picks (null = cancelled), and what was
+  /// saved out.
+  PickedFile? pickFileResult;
+  final savedFiles = <String, Uint8List>{};
+
+  @override
+  Future<PickedFile?> pickFile({required int maxBytes}) async {
+    calls.add('pickFile');
+    if (pickTooLarge) throw const FileTooLarge();
+    return pickFileResult;
+  }
+
+  @override
+  Future<bool> saveBytes(String suggestedName, Uint8List bytes, {String mime = 'application/octet-stream'}) async {
+    calls.add('saveBytes:$suggestedName');
+    savedFiles[suggestedName] = bytes;
+    return saveResult;
+  }
+
   // --- AccountService (mirrors DriftAccountService's rules) -----------------
 
   @override
@@ -578,12 +600,16 @@ class FakeWorld
   /// Goals and projects (P03 T6c).
   late final FakeGoals goals = FakeGoals(calls);
 
+  /// P05a T8: documents, search and attachments.
+  late final FakeDocuments documents = FakeDocuments(calls, tasks: () => _mine());
+
   void dispose() {
     _changes.close();
     calendar.dispose();
     habits.dispose();
     focus.dispose();
     goals.dispose();
+    documents.dispose();
     overview.dispose();
     ticks.close();
   }
@@ -1270,6 +1296,10 @@ Widget appWith(FakeWorld world,
         focusLaunchProvider.overrideWithValue(world.launch),
         goalServiceProvider.overrideWithValue(world.goals),
         goalQueriesProvider.overrideWithValue(world.goals),
+        documentServiceProvider.overrideWithValue(world.documents),
+        documentQueriesProvider.overrideWithValue(world.documents),
+        searchQueriesProvider.overrideWithValue(world.documents),
+        attachmentServiceProvider.overrideWithValue(world.documents),
         overviewServiceProvider.overrideWithValue(world.overview),
         overviewQueriesProvider.overrideWithValue(world.overview),
         storageNoticeProvider.overrideWithValue(notice),

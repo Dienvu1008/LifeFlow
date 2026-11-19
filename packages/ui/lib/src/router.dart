@@ -4,6 +4,9 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_quill/flutter_quill.dart' show FlutterQuillLocalizations;
+
+import 'documents/documents_screen.dart';
 
 import 'l10n.dart';
 import 'theme/lifeflow_theme.dart';
@@ -27,7 +30,7 @@ import 'shell.dart';
 /// callback) goes to the Overview, so the app never replaces itself with a
 /// "Page Not Found" screen. The old "/tasks" (P01–P03 links and the shell's
 /// first location until U6) is the Overview.
-const _knownRoots = ['/overview', '/timeline', '/calendar', '/habits', '/goals', '/settings', '/profiles'];
+const _knownRoots = ['/overview', '/timeline', '/calendar', '/documents', '/habits', '/goals', '/settings', '/profiles'];
 
 String? _redirectUnknown(GoRouterState state) {
   final path = state.uri.path;
@@ -63,6 +66,7 @@ GoRouter createRouter({String initialLocation = '/overview'}) => GoRouter(
               ('/overview', OverviewScreen()),
               ('/timeline', TimelineScreen()),
               ('/calendar', CalendarScreen()),
+              ('/documents', DocumentsScreen()),
               ('/habits', HabitsScreen()),
               ('/goals', GoalsScreen()),
               ('/settings', SettingsScreen()),
@@ -104,7 +108,8 @@ class LifeFlowApp extends ConsumerWidget {
       title: 'LifeFlow',
       routerConfig: ref.watch(routerProvider),
       // U-D11: English only for now; a new ARB file adds a language.
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      // P05a T8: the editor's own strings (flutter_quill).
+      localizationsDelegates: [...AppLocalizations.localizationsDelegates, FlutterQuillLocalizations.delegate],
       supportedLocales: AppLocalizations.supportedLocales,
       theme: lifeFlowTheme(Brightness.light, font: look.font),
       darkTheme: lifeFlowTheme(Brightness.dark, font: look.font),

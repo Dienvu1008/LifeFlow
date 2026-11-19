@@ -2,6 +2,8 @@
 // `ui` depends on these read models and service ports only — never on
 // infrastructure, Drift or domain internals. Implementations live in
 // infrastructure and are wired in the app composition root.
+import 'dart:typed_data';
+
 import 'package:foundation/foundation.dart';
 
 import 'command.dart';
@@ -502,6 +504,23 @@ abstract interface class FileGateway {
   /// Lets the user choose a LifeFlow export and returns its text, or null if
   /// cancelled. Throws [FileTooLarge] instead of reading a huge file.
   Future<String?> pickText();
+
+  /// P05a T8: lets the user choose a file to attach to a document; null if
+  /// cancelled. Throws [FileTooLarge] above [maxBytes], before reading it.
+  Future<PickedFile?> pickFile({required int maxBytes});
+
+  /// P05a T8: lets the user choose where to save a copy of an attachment.
+  /// Returns false if cancelled.
+  Future<bool> saveBytes(String suggestedName, Uint8List bytes, {String mime = 'application/octet-stream'});
+}
+
+/// A file the user picked: its name, its type as far as it is known, and
+/// its bytes.
+class PickedFile {
+  const PickedFile({required this.name, required this.mime, required this.bytes});
+  final String name;
+  final String mime;
+  final Uint8List bytes;
 }
 
 class FileTooLarge implements Exception {

@@ -25,7 +25,8 @@ export 'package:domain/domain.dart'
         maxBlockIndent,
         maxDocumentBlocks,
         maxDocumentTextLength,
-        maxDocumentTitleLength;
+        maxDocumentTitleLength,
+        withLinkTitles;
 
 enum DocumentItemType { task, event, goal }
 

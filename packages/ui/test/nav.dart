@@ -10,7 +10,7 @@ Future<void> openDrawer(WidgetTester tester) async {
 }
 
 /// Goes to the destination [label] ("Overview", "Timeline", "Calendar",
-/// "Habits", "Goals", "Settings", or "Profiles": the profile at the top of
+/// "Documents", "Habits", "Goals", "Settings", or "Profiles": the profile at the top of
 /// the drawer or the rail).
 Future<void> goToTab(WidgetTester tester, String label) async {
   if (find.byKey(const Key('nav-menu')).evaluate().isNotEmpty) {
