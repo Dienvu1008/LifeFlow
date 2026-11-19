@@ -53,7 +53,7 @@ final List<String> exportedTables = [
 /// sync bookkeeping (P04 T1): another device or a restore starts its own.
 /// `spaceMembers` (P04b T8) is a cache of the server's members of shared
 /// spaces, which are not in a personal export either (ADR-0060).
-const notExportedTables = ['restoreSnapshots', 'syncBase', 'syncState', 'syncReviews', 'spaceMembers', 'syncParked'];
+const notExportedTables = ['restoreSnapshots', 'syncBase', 'syncState', 'syncReviews', 'spaceMembers', 'syncParked', 'searchPending', 'documentLinkIndex'];
 
 /// A file that must not be restored. [message] is safe to show to the user and
 /// never echoes file contents.
