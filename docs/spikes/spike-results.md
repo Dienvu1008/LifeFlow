@@ -142,7 +142,7 @@ Fixed entry format: **Question / Hypothesis / What was done / Measured result / 
   - The link style, the page width and B/I toggling are set in our wrapper (as in round 2).
   - The 28 new packages get their inventory lines and a verified-sources row before T8's merge (FF-ARCH-07).
 - **ADR update:** ADR-0020 amended: flutter_quill instead of the lead candidate super_editor, with the measurements above.
-- **Human gate:** the owner ran both editors (2026-11-04, two rounds) and judged flutter_quill fit for daily use; pick confirmed on review of this entry.
+- **Human gate:** the owner ran both editors (2026-11-04, two rounds) and judged flutter_quill fit for daily use; pick confirmed by the owner on review of this entry (2026-11-04).
 
 ## S-01 — Flutter + Drift
 **PASS on Windows (2026-11-04):** CRUD + transaction + persistence across restart + rollback, proven on-device; headless 2/2. Finding → **OQ-STACK-2**: resolved stack is sqlite3 2.9.4 + sqlite3_flutter_libs 0.5.42 (CMake bundling), not sqlite3 3.x build hooks (3.x path not smooth on Flutter yet). Android a follow-up.
