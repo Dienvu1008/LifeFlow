@@ -16,7 +16,8 @@ library;
 //                     GoalCommandHandler, ListCommandHandler,
 //                     WorkspaceSettingsCommandHandler, SyncApplyHandler,
 //                     SyncSetupHandler, SyncReviewHandler,
-//                     SpaceMoveHandler, MemberCardHandler
+//                     SpaceMoveHandler, MemberCardHandler,
+//                     DocumentCommandHandler
 import 'package:application/application.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -116,6 +117,7 @@ void main() {
         'calendar' => (await (db.select(db.calendars)..where((t) => t.id.equals(id))).getSingle()).version,
         'focusSession' => (await (db.select(db.focusSessions)..where((t) => t.id.equals(id))).getSingle()).version,
         'goal' => (await (db.select(db.goals)..where((t) => t.id.equals(id))).getSingle()).version,
+        'document' => (await (db.select(db.documents)..where((t) => t.id.equals(id))).getSingle()).version,
         'taskList' => (await (db.select(db.taskLists)..where((t) => t.id.equals(id))).getSingle()).version,
         'workspaceSettings' => (await (db.select(db.workspaceSettings)..where((t) => t.id.equals(id))).getSingle()).version,
         _ => (await (db.select(db.profiles)..where((t) => t.id.equals(id))).getSingle()).version,
@@ -134,6 +136,8 @@ void main() {
   const measurementHandler = MeasurementCommandHandler();
   const closeHandler = PeriodCloseHandler();
   const goalHandler = GoalCommandHandler();
+  const docHandler = DocumentCommandHandler();
+  final docBody = DocumentBody([DocBlock('b1', BlockType.paragraph, runs: [TextRun('Hello')])]).encode();
   const settingsHandler = WorkspaceSettingsCommandHandler();
   const syncHandler = SyncApplyHandler();
   const setupHandler = SyncSetupHandler();
@@ -274,6 +278,33 @@ void main() {
           (v, op) => command('TrashGoal', {'op': 'trash', 'id': 'g1'}, opId: op, expected: v)),
       ('goal.restore', goalHandler, 'goal', 'g1',
           (v, op) => command('RestoreGoal', {'op': 'restore', 'id': 'g1'}, opId: op, expected: v)),
+      // P05a T3 (ADR-0068): documents, their revisions and links (t1 live).
+      ('document.create', docHandler, 'document', 'd1',
+          (v, op) => command('CreateDocument',
+              {'op': 'create', 'id': 'd1', 'title': 'Notes', 'revisionId': 'dr1', 'firstBlockId': 'b1'}, opId: op, expected: v)),
+      ('documentSub.create', docHandler, 'document', 'd2',
+          (v, op) => command('CreateDocument',
+              {'op': 'create', 'id': 'd2', 'title': 'Sub', 'parentId': 'd1', 'revisionId': 'dr2', 'firstBlockId': 'b1'},
+              opId: op, expected: v)),
+      ('document.save', docHandler, 'document', 'd1',
+          (v, op) => command('SaveDocument',
+              {'op': 'save', 'id': 'd1', 'revisionId': 'dr3', 'title': 'Notes', 'body': docBody, 'deviceId': 'dev'},
+              opId: op, expected: v)),
+      ('document.restoreRevision', docHandler, 'document', 'd1',
+          (v, op) => command('RestoreDocumentRevision',
+              {'op': 'restoreRevision', 'id': 'd1', 'revisionId': 'dr4', 'fromRevisionId': 'dr1'}, opId: op, expected: v)),
+      ('document.move', docHandler, 'document', 'd2',
+          (v, op) => command('MoveDocument', {'op': 'move', 'id': 'd2', 'parentId': null, 'afterId': null}, opId: op, expected: v)),
+      ('document.link', docHandler, 'document', 'd1',
+          (v, op) => command('LinkDocument', {'op': 'link', 'id': 'd1', 'itemType': 'task', 'itemId': 't1'}, opId: op, expected: v)),
+      ('document.unlink', docHandler, 'document', 'd1',
+          (v, op) => command('UnlinkDocument', {'op': 'unlink', 'id': 'd1', 'itemType': 'task', 'itemId': 't1'}, opId: op, expected: v)),
+      ('document.move(under)', docHandler, 'document', 'd2',
+          (v, op) => command('MoveDocument', {'op': 'move', 'id': 'd2', 'parentId': 'd1'}, opId: op, expected: v)),
+      ('document.trash', docHandler, 'document', 'd1',
+          (v, op) => command('TrashDocument', {'op': 'trash', 'id': 'd1'}, opId: op, expected: v)),
+      ('document.restore', docHandler, 'document', 'd1',
+          (v, op) => command('RestoreDocument', {'op': 'restore', 'id': 'd1'}, opId: op, expected: v)),
       // P03 T3: focus sessions (s3 is made untrustworthy before it is marked).
       ('focus.start', focusHandler, 'focusSession', 's1',
           (v, op) => command('StartFocusSession', {'op': 'start', 'id': 's1', 'mode': 'stopwatch'}, opId: op, expected: v)),

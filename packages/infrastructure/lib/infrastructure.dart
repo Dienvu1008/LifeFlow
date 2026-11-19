@@ -20,6 +20,8 @@ export 'src/profile_export.dart';
 export 'src/profile_restore.dart';
 export 'src/record_kinds.dart';
 export 'src/search_index.dart';
+export 'src/document_command_handler.dart';
+export 'src/document_service.dart';
 export 'src/schedule_mapping.dart';
 export 'src/schedule_inputs.dart';
 export 'src/agenda_service.dart';

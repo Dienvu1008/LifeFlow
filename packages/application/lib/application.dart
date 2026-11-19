@@ -7,6 +7,7 @@ export 'src/app_services.dart';
 export 'src/auth.dart';
 export 'src/calendar.dart';
 export 'src/command.dart';
+export 'src/documents.dart';
 export 'src/focus.dart';
 export 'src/goals.dart';
 export 'src/habits.dart';
