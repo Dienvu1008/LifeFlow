@@ -1,6 +1,7 @@
 // P05a T3 (ADR-0068): document commands and reads for the shown workspace
 // (personal or a shared space, P04b), through the gateway.
 import 'package:application/application.dart';
+import 'package:domain/domain.dart' show relationsOf, resolveLink, withLinkTitles;
 import 'package:drift/drift.dart';
 import 'package:foundation/foundation.dart';
 import 'package:uuid/uuid.dart';
@@ -8,6 +9,7 @@ import 'package:uuid/uuid.dart';
 import 'app_database.dart';
 import 'document_command_handler.dart';
 import 'profile_store.dart';
+import 'search_index.dart';
 
 class DriftDocumentService implements DocumentService {
   DriftDocumentService(this.db, this.gateway, {this.clock = const SystemClock(), this.deviceId})
@@ -64,9 +66,13 @@ class DriftDocumentService implements DocumentService {
   Future<CommandResult> save(String id, {required String title, required DocumentBody body}) async {
     final d = await _row(id);
     if (d == null) return const CommandFailure(CommandFailureKind.notFound, reason: 'document not found');
+    // P05a T6 (ADR-0071): each `[[…]]` link is stored with its target's
+    // current title (live, in the same workspace), so search finds what is
+    // shown; a broken link keeps its text (DOC-003).
+    final stored = await _withCurrentTitles(body, d.workspaceId);
     // Saving what is stored writes nothing: leaving or idling (C7) on an
     // unchanged document is no revision.
-    if (d.deletedAt == null && title.trim() == d.title && body.encode() == d.body) {
+    if (d.deletedAt == null && title.trim() == d.title && stored.encode() == d.body) {
       return CommandOk(id, Version(d.version), const []);
     }
     return _run('SaveDocument', {
@@ -74,9 +80,21 @@ class DriftDocumentService implements DocumentService {
       'id': id,
       'revisionId': _uuid.v7(),
       'title': title,
-      'body': body.encode(),
+      'body': stored.encode(),
       'deviceId': deviceId,
     }, expected: Version(d.version));
+  }
+
+  Future<DocumentBody> _withCurrentTitles(DocumentBody body, String workspaceId) async {
+    final targets = relationsOf(parentId: null, body: body).docLinks;
+    if (targets.isEmpty) return body;
+    final live = {
+      for (final t in await (db.select(db.documents)
+            ..where((x) => x.id.isIn(targets) & x.workspaceId.equals(workspaceId) & x.deletedAt.isNull()))
+          .get())
+        t.id: t.title
+    };
+    return withLinkTitles(body, (id) => live[id]);
   }
 
   @override
@@ -251,9 +269,116 @@ class DriftDocumentQueries implements DocumentQueries {
           ..where((l) => l.documentId.equals(id) & l.deletedAt.isNull() & l.workspaceId.equals(ws ?? ''))
           ..orderBy([(l) => OrderingTerm(expression: l.createdAt), (l) => OrderingTerm(expression: l.id)]))
         .get();
-    return [
-      for (final l in rows) DocumentItemLinkView(itemType: DocumentItemType.values.byName(l.itemType), itemId: l.itemId),
+    return [for (final l in rows) await _item(DocumentItemType.values.byName(l.itemType), l.itemId)];
+  }
+
+  /// P05a T6: a linked item read from its own table (as goal links are).
+  Future<DocumentItemLinkView> _item(DocumentItemType type, String id) async {
+    DocumentItemLinkView view(String? title, LinkedItemState state) =>
+        DocumentItemLinkView(itemType: type, itemId: id, title: title, state: title == null ? LinkedItemState.missing : state);
+    switch (type) {
+      case DocumentItemType.task:
+        final t = await (db.select(db.tasks)..where((x) => x.id.equals(id))).getSingleOrNull();
+        return view(
+            t?.title,
+            t?.deletedAt != null
+                ? LinkedItemState.trashed
+                : switch (t?.status) { 'done' => LinkedItemState.done, 'cancelled' => LinkedItemState.cancelled, _ => LinkedItemState.open });
+      case DocumentItemType.event:
+        final e = await (db.select(db.events)..where((x) => x.id.equals(id))).getSingleOrNull();
+        return view(
+            e?.title,
+            e?.deletedAt != null
+                ? LinkedItemState.trashed
+                : e?.status == 'cancelled'
+                    ? LinkedItemState.cancelled
+                    : LinkedItemState.open);
+      case DocumentItemType.goal:
+        final g = await (db.select(db.goals)..where((x) => x.id.equals(id))).getSingleOrNull();
+        return view(g?.title, g?.deletedAt != null ? LinkedItemState.trashed : g?.status == 'done' ? LinkedItemState.done : LinkedItemState.open);
+    }
+  }
+
+  @override
+  Future<List<DocumentNodeView>> documentsOf(DocumentItemType type, String itemId) async {
+    final ws = await _workspace();
+    if (ws == null) return const [];
+    final links = await (db.select(db.documentLinks)
+          ..where((l) => l.itemType.equals(type.name) & l.itemId.equals(itemId) & l.deletedAt.isNull() & l.workspaceId.equals(ws)))
+        .get();
+    final docs = await (db.select(db.documents)
+          ..where((d) => d.id.isIn([for (final l in links) l.documentId]) & d.workspaceId.equals(ws) & d.deletedAt.isNull()))
+        .get();
+    return [for (final d in docs..sort(_byTitle)) _node(d)];
+  }
+
+  static int _byTitle(DocumentRow a, DocumentRow b) {
+    final t = a.title.toLowerCase().compareTo(b.title.toLowerCase());
+    return t != 0 ? t : a.id.compareTo(b.id);
+  }
+
+  @override
+  Future<Map<String, DocumentLinkTarget>> linkTargets(Iterable<String> ids) async {
+    final ws = await _workspace();
+    final wanted = ids.toSet();
+    final rows = ws == null || wanted.isEmpty
+        ? const <DocumentRow>[]
+        : await (db.select(db.documents)..where((d) => d.id.isIn(wanted) & d.workspaceId.equals(ws))).get();
+    final here = {for (final d in rows) d.id: d};
+    return {
+      for (final id in wanted)
+        id: switch (resolveLink(id, (x) => here[x] == null ? null : here[x]!.deletedAt != null)) {
+          LinkState.missing => DocumentLinkTarget(id: id, state: LinkState.missing),
+          final s => DocumentLinkTarget(id: id, state: s, title: here[id]!.title),
+        },
+    };
+  }
+
+  @override
+  Future<List<BacklinkView>> backlinks(String id) async {
+    final ws = await _workspace();
+    if (ws == null) return const [];
+    final out = <BacklinkView>[];
+    for (final from in await backlinkIdsIn(db, ws, id)) {
+      final d = (await _row(from))!;
+      DocumentBody body;
+      try {
+        body = DocumentBody.decode(d.body);
+      } on FormatException {
+        continue; // the index holds no link of a body it cannot read
+      }
+      out.add(BacklinkView(id: d.id, title: d.title, snippets: backlinkSnippets(body, id)));
+    }
+    // By title, letter case aside (as an item's documents).
+    int key(BacklinkView a, BacklinkView b) {
+      final t = a.title.toLowerCase().compareTo(b.title.toLowerCase());
+      return t != 0 ? t : a.id.compareTo(b.id);
+    }
+
+    return out..sort(key);
+  }
+
+  Future<DocumentRow?> _row(String id) => (db.select(db.documents)..where((d) => d.id.equals(id))).getSingleOrNull();
+
+  @override
+  Future<List<DocumentNodeView>> linkCandidates(String typed, {String? excludeId}) async {
+    final ws = await _workspace();
+    if (ws == null) return const [];
+    const most = 20;
+    if (typed.trim().isEmpty) {
+      final rows = await (db.select(db.documents)
+            ..where((d) => d.workspaceId.equals(ws) & d.deletedAt.isNull() & d.id.equals(excludeId ?? '').not())
+            ..orderBy([(d) => OrderingTerm.desc(d.updatedAt), (d) => OrderingTerm(expression: d.id)])
+            ..limit(most))
+          .get();
+      return [for (final d in rows) _node(d)];
+    }
+    final ids = [
+      for (final x in await searchDocumentTitleIdsIn(db, ws, typed, limit: most + 1))
+        if (x != excludeId) x
     ];
+    final rows = {for (final d in await (db.select(db.documents)..where((d) => d.id.isIn(ids))).get()) d.id: d};
+    return [for (final x in ids.take(most)) _node(rows[x]!)];
   }
 
   @override

@@ -272,6 +272,29 @@ LinkState resolveLink(String target, bool? Function(String id) lookup) => switch
       false => LinkState.ok,
     };
 
+/// P05a T6 (ADR-0071): [body] with the text of each `[[…]]` link set to its
+/// target's current title, so the stored text (and search) follows a rename.
+/// [titleOf] gives the title of a live target in the link's workspace, or
+/// null: a broken link keeps the text it had (DOC-003). [body] itself when
+/// nothing changes, or when the result would not be a valid body.
+DocumentBody withLinkTitles(DocumentBody body, String? Function(String id) titleOf) {
+  TextRun current(TextRun r) {
+    final d = r.doc;
+    final title = d == null ? null : titleOf(d);
+    return title == null || title == r.text ? r : TextRun(title, marks: r.marks, doc: d);
+  }
+
+  final blocks = [
+    for (final b in body.blocks)
+      DocBlock(b.id, b.type, checked: b.checked, indent: b.indent, attachment: b.attachment, runs: [
+        for (final r in b.runs) current(r),
+      ]),
+  ];
+  final out = DocumentBody(blocks);
+  if (out.encode() == body.encode()) return body;
+  return out.validate() == null ? out : body;
+}
+
 /// The longest sentence a backlink shows; a longer one is cut around the link.
 const maxBacklinkSnippet = 200;
 
