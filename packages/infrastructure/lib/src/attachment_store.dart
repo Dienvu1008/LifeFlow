@@ -35,7 +35,9 @@ String attachmentHashOf(List<int> bytes) => 'sha256:${crypto.sha256.convert(byte
 class DriftAttachmentService implements AttachmentService {
   DriftAttachmentService(this.db, {required this.folder, required this.keys, DateTime Function()? now})
       : _now = now ?? DateTime.now;
-  final AppDatabase db;
+  /// The profile's store, for [sweep] (null: keeping and reading files only,
+  /// as a restore into a profile that is not open does).
+  final AppDatabase? db;
   final Directory folder;
   final DatabaseKeyStore keys;
   final DateTime Function() _now;
@@ -124,7 +126,8 @@ class DriftAttachmentService implements AttachmentService {
   @override
   Future<int> sweep({Duration grace = const Duration(days: 1)}) async {
     final k = await _keysOf();
-    if (k == null || !folder.existsSync()) return 0;
+    final db = this.db;
+    if (db == null || k == null || !folder.existsSync()) return 0;
     // Every file named by a document or a revision, in every workspace of
     // the store. A body this app cannot read may name files too: then
     // nothing is removed.

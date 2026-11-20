@@ -1,10 +1,16 @@
 // P01 T7/T7b: export / restore for the UI (UC-20a, ADR-0025).
+import 'dart:typed_data';
+
 import 'package:application/application.dart';
+import 'package:domain/domain.dart' show relationsOf;
+import 'package:drift/drift.dart' show Variable;
 import 'package:foundation/foundation.dart';
 import 'package:uuid/uuid.dart';
 
 import 'account_service.dart' show profileViewOf;
 import 'app_database.dart';
+import 'attachment_store.dart';
+import 'export_archive.dart';
 import 'app_service_impl.dart' show WorkspaceOwnerAuthorization;
 import 'command_gateway.dart';
 import 'local_store.dart' show StoreUnavailable;
@@ -35,11 +41,80 @@ class DriftDataTransferService implements DataTransferService {
     // P04b T8: the export holds the personal workspace only.
     final personal = await ProfileStore(db).personalWorkspaceId();
     final taskCount = (await (db.select(db.tasks)..where((t) => t.workspaceId.equals(personal ?? ''))).get()).length;
+    final name = 'lifeflow-${_slug(profile?.displayName ?? '')}-${_date(now)}.lifeflow';
+    // P05a T9 (C11, ADR-0074): the files its documents name, when they are
+    // on this device, go beside it in a .zip; without any, plain JSON.
+    final files = profile == null ? const <String, Uint8List>{} : await _filesNamedIn(personal, profile.profileId.value);
+    if (files.isEmpty) return ExportFile(suggestedName: '$name.json', contents: text, taskCount: taskCount);
     return ExportFile(
-      suggestedName: 'lifeflow-${_slug(profile?.displayName ?? '')}-${_date(now)}.lifeflow.json',
+      suggestedName: '$name.zip',
       contents: text,
       taskCount: taskCount,
+      archive: buildExportArchive(text, files),
+      fileCount: files.length,
     );
+  }
+
+  DriftAttachmentService _attachmentsOf(String profileId, {AppDatabase? store}) =>
+      DriftAttachmentService(store, folder: directory.attachmentsDir(profileId), keys: directory.attachmentKeys(profileId));
+
+  /// The readable files of this device that the documents and revisions of
+  /// [workspaceId] name, by hash.
+  Future<Map<String, Uint8List>> _filesNamedIn(String? workspaceId, String profileId) async {
+    if (workspaceId == null) return const {};
+    final named = <String>{};
+    for (final table in const ['documents', 'document_revisions']) {
+      for (final r in await db
+          .customSelect('SELECT body FROM $table WHERE workspace_id = ?', variables: [Variable<String>(workspaceId)])
+          .get()) {
+        try {
+          named.addAll(relationsOf(parentId: null, body: DocumentBody.decode(r.read<String>('body'))).attachments);
+        } on FormatException {
+          // a body this app cannot read: its files cannot be found either
+        }
+      }
+    }
+    final files = _attachmentsOf(profileId);
+    final out = <String, Uint8List>{};
+    for (final h in named) {
+      final c = await files.open(h);
+      if (c.bytes != null) out[h] = c.bytes!;
+    }
+    return out;
+  }
+
+  @override
+  Future<RestorePreview> inspectFile(Uint8List file) async {
+    try {
+      return await inspect(readExportFile(file).text);
+    } on ExportRejected catch (e) {
+      return RestoreRejected(e.kind, e.message);
+    }
+  }
+
+  @override
+  Future<RestoreOutcome> restoreFile(Uint8List file, {RestoreChoice? choice}) async {
+    final ({String text, Map<String, Uint8List> files}) read;
+    try {
+      read = readExportFile(file);
+    } on ExportRejected catch (e) {
+      return RestoreRejected(e.kind, e.message);
+    }
+    final outcome = await restore(read.text, choice: choice);
+    if (read.files.isEmpty) return outcome;
+    // The files go to the profile the data went to, encrypted with its key.
+    final String? target = switch (outcome) {
+      Restored(:final profile) => profile.id,
+      RestoredInto() => (await ProfileStore(db).getActiveProfile())?.profileId.value,
+      _ => null,
+    };
+    if (target == null) return outcome;
+    final files = _attachmentsOf(target);
+    for (final e in read.files.entries) {
+      // Kept under its hash; the name and type stay in the documents.
+      await files.add(e.value, name: e.key.substring('sha256:'.length), mime: 'application/octet-stream');
+    }
+    return outcome;
   }
 
   /// Where a validated file belongs. The active profile when the file is its

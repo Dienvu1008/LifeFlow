@@ -1,8 +1,11 @@
+import 'dart:typed_data';
+
 import 'package:application/application.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../providers.dart';
+import '../providers.dart';
+
 import '../l10n.dart';
 
 /// Backup of the ACTIVE profile (UC-20a, OQ-DATA-3 option a). If the device or
@@ -69,6 +72,7 @@ Future<void> startExport(BuildContext context, WidgetRef ref) async {
       title: Text(context.l10n.exportThisProfile2),
       content: const Text(
         'The file is an UNENCRYPTED copy of this profile: tasks, subtasks, '
+        'documents with all their versions and the files kept on this device, '
         'trash and history. It contains no password, key or sign-in token. '
         'Anyone who gets the file can read your tasks, so keep it somewhere '
         'safe.',
@@ -87,9 +91,7 @@ Future<void> startExport(BuildContext context, WidgetRef ref) async {
 
   try {
     final file = await ref.read(dataTransferServiceProvider).exportActiveProfile();
-    final saved = await ref
-        .read(fileGatewayProvider)
-        .saveText(file.suggestedName, file.contents);
+    final saved = await saveExportFile(ref, file);
     if (!context.mounted) return;
     _snack(
         context,
@@ -102,11 +104,20 @@ Future<void> startExport(BuildContext context, WidgetRef ref) async {
     }
   }
 }
+/// Saves an export as the person chooses: the `.zip` when it has files
+/// (P05a T9, C11), else the JSON text. False when cancelled.
+Future<bool> saveExportFile(WidgetRef ref, ExportFile file) {
+  final files = ref.read(fileGatewayProvider);
+  final zip = file.archive;
+  return zip == null
+      ? files.saveText(file.suggestedName, file.contents)
+      : files.saveBytes(file.suggestedName, zip, mime: 'application/zip');
+}
 
 Future<void> startRestore(BuildContext context, WidgetRef ref) async {
-  final String? text;
+  final Uint8List? text;
   try {
-    text = await ref.read(fileGatewayProvider).pickText();
+    text = await ref.read(fileGatewayProvider).pickExport(maxBytes: maxExportFileBytes);
   } on FileTooLarge {
     if (context.mounted) {
       await _result(context, 'Cannot restore',
@@ -122,7 +133,7 @@ Future<void> startRestore(BuildContext context, WidgetRef ref) async {
   if (text == null || !context.mounted) return; // cancelled
 
   final service = ref.read(dataTransferServiceProvider);
-  final preview = await service.inspect(text);
+  final preview = await service.inspectFile(text);
   if (!context.mounted) return;
 
   switch (preview) {
@@ -166,10 +177,10 @@ Future<void> startRestore(BuildContext context, WidgetRef ref) async {
   }
 }
 
-Future<void> _apply(BuildContext context, WidgetRef ref, String text,
+Future<void> _apply(BuildContext context, WidgetRef ref, Uint8List text,
     RestoreChoice? choice) async {
   final service = ref.read(dataTransferServiceProvider);
-  var outcome = await service.restore(text, choice: choice);
+  var outcome = await service.restoreFile(text, choice: choice);
   if (!context.mounted) return;
 
   if (outcome case RestoreHierarchyConflict(:final taskTitles)) {
@@ -180,7 +191,7 @@ Future<void> _apply(BuildContext context, WidgetRef ref, String text,
       }
       return;
     }
-    outcome = await service.restore(text, choice: choice!.withDeviceParents());
+    outcome = await service.restoreFile(text, choice: choice!.withDeviceParents());
     if (!context.mounted) return;
   }
 

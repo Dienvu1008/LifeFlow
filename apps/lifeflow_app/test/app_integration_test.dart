@@ -88,7 +88,14 @@ class MemoryFiles implements FileGateway {
   }
 
   @override
-  Future<String?> pickText() async => pickOverride ?? saved;
+  Future<Uint8List?> pickExport({required int maxBytes}) async {
+    if (pickBytes != null) return pickBytes;
+    final t = pickOverride ?? saved;
+    return t == null ? null : Uint8List.fromList(utf8.encode(t));
+  }
+
+  /// What the next "choose an export" returns as bytes (a .zip).
+  Uint8List? pickBytes;
 
   /// What the next "attach a file" dialog returns.
   PickedFile? nextFile;
@@ -618,6 +625,20 @@ void main() {
     expect(rows.audit.where((a) => a.resourceType == 'document'), hasLength(rows.revisions.length));
     final stored = rows.files.single.readAsBytesSync();
     expect(utf8.decode(stored, allowMalformed: true), isNot(contains('bí mật')), reason: 'kept encrypted (ADR-0072)');
+
+    // P05a T9 (C11): the export is a .zip with the file beside the JSON.
+    await tester.tap(find.byKey(const Key('rail-profile')));
+    await settle(tester);
+    await tester.tap(find.text('Export this profile'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Export'));
+    await tester.pump();
+    await settle(tester);
+    await tester.pumpAndSettle();
+    expect(w.files.savedName, endsWith('.lifeflow.zip'));
+    final zip = readExportFile(w.files.savedBytes!);
+    expect(zip.files.values.single, utf8.encode('bí mật'), reason: 'decrypted in the file the person chose to make');
+    expect(zip.text, contains('Ghi chú họp'));
     await finish(tester, w);
   });
 

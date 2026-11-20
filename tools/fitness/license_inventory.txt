@@ -9,6 +9,7 @@
 #   unorm_dart 0.3.3: MIT, NFC of sync passphrases (P04, VS-45, ADR-0054).
 #   qr_flutter 4.1.0 and qr 3.0.3: BSD-3-Clause, the recovery key shown as a QR code (P04 T5, VS-46, ADR-0058).
 #   flutter_quill 11.6.0 and 26 packages it brings (dart_quill_delta, quill_native_bridge*, flutter_keyboard_visibility*, file_selector_*, html, markdown, csslib, charcode, quiver, diff_match_patch, flutter_colorpicker, flutter_quill_delta_from_html, is_ios_simulator): MIT, BSD-3-Clause or Apache-2.0, LICENSE files read 2026-11-04; the document editor (P05a T8, S-07, VS-29, VS-47, ADR-0073).
+#   archive 4.0.9 and posix 6.5.4: MIT, the .zip export with the documents' files (P05a T9, VS-48, ADR-0074).
 #   Native SQLite3MultipleCiphers (via the sqlite3 build hook) is not a pub package, so this scan does not see it.
 # Android (Gradle)
 # Dart / Flutter packages
@@ -18,6 +19,7 @@ pub:app_links 7.2.2 Apache-2.0
 pub:app_links_linux 1.0.4 Apache-2.0
 pub:app_links_platform_interface 2.0.4 Apache-2.0
 pub:app_links_web 1.0.5 Apache-2.0
+pub:archive 4.0.9 MIT
 pub:args 2.7.0 BSD-3-Clause
 pub:async 2.13.1 BSD-3-Clause
 pub:boolean_selector 2.1.2 BSD-3-Clause
@@ -112,6 +114,7 @@ pub:petitparser 7.0.2 MIT
 pub:platform 3.2.0 BSD-3-Clause
 pub:plugin_platform_interface 2.1.8 BSD-3-Clause
 pub:pointycastle 4.0.0 MIT
+pub:posix 6.5.4 MIT
 pub:postgrest 2.9.1 MIT
 pub:pub_semver 2.2.1 BSD-3-Clause
 pub:qr 3.0.3 BSD-3-Clause
