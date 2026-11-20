@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:application/application.dart';
@@ -349,6 +350,9 @@ class FakeWorld
   bool pickTooLarge = false;
   bool pickThrows = false;
 
+  /// P05a T9: when set, the export is a .zip with these bytes.
+  Uint8List? exportArchive;
+
   /// What inspect returns; default: a profile not on this device.
   RestorePreview? nextPreview;
 
@@ -360,11 +364,28 @@ class FakeWorld
   @override
   Future<ExportFile> exportActiveProfile() async {
     calls.add('export');
+    // P05a T9: an export with files is a .zip.
+    if (exportArchive case final zip?) {
+      return ExportFile(
+          suggestedName: 'lifeflow-test-2026-11-07.lifeflow.zip',
+          contents: '{"fake":"export"}',
+          taskCount: _mine().length,
+          archive: zip,
+          fileCount: 1);
+    }
     return ExportFile(
         suggestedName: 'lifeflow-test-2026-11-07.lifeflow.json',
         contents: '{"fake":"export"}',
         taskCount: _mine().length);
   }
+
+  // P05a T9: a picked file; the fake's files are JSON text.
+  @override
+  Future<RestorePreview> inspectFile(Uint8List file) => inspect(utf8.decode(file));
+
+  @override
+  Future<RestoreOutcome> restoreFile(Uint8List file, {RestoreChoice? choice}) =>
+      restore(utf8.decode(file), choice: choice);
 
   @override
   Future<RestorePreview> inspect(String text) async {
@@ -411,11 +432,11 @@ class FakeWorld
   }
 
   @override
-  Future<String?> pickText() async {
+  Future<Uint8List?> pickExport({required int maxBytes}) async {
     calls.add('pick');
     if (pickTooLarge) throw const FileTooLarge();
     if (pickThrows) throw StateError('disk error');
-    return pickResult;
+    return pickResult == null ? null : Uint8List.fromList(utf8.encode(pickResult!));
   }
 
   /// P05a T8: what "Attach a file" picks (null = cancelled), and what was

@@ -1,4 +1,6 @@
 // Export / restore in the UI (UC-20a, OQ-DATA-3 option a, GS-20).
+import 'dart:typed_data';
+
 import 'package:application/application.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -49,6 +51,18 @@ void main() {
       await tester.pumpAndSettle();
       expect(w.calls, ['export', 'save:lifeflow-test-2026-11-07.lifeflow.json']);
       expect(find.text('Exported 2 tasks.'), findsOneWidget);
+    });
+
+    testWidgets('P05a T9 (C11): an export with files is saved as its .zip', (tester) async {
+      final w = world()..exportArchive = Uint8List.fromList([0x50, 0x4b, 0x03, 0x04]);
+      await openProfiles(tester, w);
+      await tester.tap(find.text('Export this profile'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('documents with all their versions'), findsOneWidget);
+      await tester.tap(find.widgetWithText(FilledButton, 'Export'));
+      await tester.pumpAndSettle();
+      expect(w.calls, ['export', 'saveBytes:lifeflow-test-2026-11-07.lifeflow.zip']);
+      expect(w.savedFiles['lifeflow-test-2026-11-07.lifeflow.zip'], [0x50, 0x4b, 0x03, 0x04]);
     });
 
     testWidgets('Cancel on the warning exports nothing', (tester) async {

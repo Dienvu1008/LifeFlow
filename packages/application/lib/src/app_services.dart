@@ -292,15 +292,26 @@ class ExportFile {
     required this.suggestedName,
     required this.contents,
     required this.taskCount,
+    this.archive,
+    this.fileCount = 0,
   });
 
-  /// e.g. `lifeflow-guest-2026-11-07.lifeflow.json`
+  /// e.g. `lifeflow-guest-2026-11-07.lifeflow.json`, or `….lifeflow.zip`
+  /// when the export has files.
   final String suggestedName;
 
   /// The decrypted export text (UTF-8 JSON). Handle with care: it holds the
   /// profile's data in the clear.
   final String contents;
   final int taskCount;
+
+  /// P05a T9 (C11, ADR-0074): when documents have files on this device, the
+  /// export is a `.zip` with [contents] and the files beside it (decrypted);
+  /// what is saved is then these bytes. Null: a plain JSON file, as before.
+  final Uint8List? archive;
+
+  /// How many files [archive] holds.
+  final int fileCount;
 }
 
 enum RestoreRejection {
@@ -483,6 +494,14 @@ abstract interface class DataTransferService {
   /// what a restore would do. Writes nothing.
   Future<RestorePreview> inspect(String text);
 
+  /// P05a T9 (C11): [inspect] for a file as picked: a `.zip` export (the
+  /// JSON and its files) or a plain JSON export.
+  Future<RestorePreview> inspectFile(Uint8List file);
+
+  /// P05a T9 (C11): [restore] for a file as picked. The files of a `.zip`
+  /// are kept, encrypted, in the restored profile; each must match its hash.
+  Future<RestoreOutcome> restoreFile(Uint8List file, {RestoreChoice? choice});
+
   /// Restores [text]. A profile that is not on this device is created with its
   /// original ids ([choice] is ignored). The active profile needs a [choice];
   /// the change is one atomic command, audited, and can be undone.
@@ -501,9 +520,10 @@ abstract interface class FileGateway {
   /// Lets the user choose where to save [text]. Returns false if cancelled.
   Future<bool> saveText(String suggestedName, String text);
 
-  /// Lets the user choose a LifeFlow export and returns its text, or null if
-  /// cancelled. Throws [FileTooLarge] instead of reading a huge file.
-  Future<String?> pickText();
+  /// Lets the user choose a LifeFlow export (`.json` or, P05a T9, `.zip`)
+  /// and returns its bytes, or null if cancelled. Throws [FileTooLarge]
+  /// above [maxBytes] instead of reading a huge file.
+  Future<Uint8List?> pickExport({required int maxBytes});
 
   /// P05a T8: lets the user choose a file to attach to a document; null if
   /// cancelled. Throws [FileTooLarge] above [maxBytes], before reading it.
@@ -522,6 +542,10 @@ class PickedFile {
   final String mime;
   final Uint8List bytes;
 }
+
+/// P05a T9 (ADR-0074): the largest export file picked for a restore: a
+/// `.zip` with its files (the JSON inside stays under its own 64 MB cap).
+const maxExportFileBytes = 256 * 1024 * 1024;
 
 class FileTooLarge implements Exception {
   const FileTooLarge();

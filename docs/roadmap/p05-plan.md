@@ -87,7 +87,7 @@ One branch per task; merge after the headless tests, and after the owner's check
 | **T6** Links and search (**done**: [ADR-0071](../adr/0071-document-links-and-search.md)) | `[[…]]` resolution and broken links, backlinks with their sentence, search across titles and bodies (and task titles, C12) | DOC-003/004 tests; search tests | no | 2 |
 | **T7** Attachments (**done**: [ADR-0072](../adr/0072-encrypted-attachments.md)) | encrypted files, references, "on another device"; ADR for OQ-DATA-2 | a file at rest is not readable; a missing file never breaks the document | no | 1–2 |
 | **T8** UI (**done**, your check in T10: [ADR-0073](../adr/0073-documents-ui-and-editor-adapter.md)) | the Documents destination (C10), the tree, the editor page, the `[[` picker, backlinks and links, history and restore, the conflict item, search | widget tests; app integration test | **yes** | 4–5 |
-| **T9** Export and restore | documents and revisions in the export; `.zip` with attachments (C11) | GS-20 round trip with documents | no | 1 |
+| **T9** Export and restore (**done**: [ADR-0074](../adr/0074-export-with-documents-and-files.md)) | documents and revisions in the export; `.zip` with attachments (C11) | GS-20 round trip with documents | no | 1 |
 | **T10** On the devices | your Windows and Android, alone and with a second account in a space: write, link, search in Vietnamese, conflict, history, move into a space | your check | **yes** | 1 |
 | **T11** P05a exit gate | p05a-exit-gate.md, ADRs, invariants, risks; your review | all suites, CI | yes | 1 |
 

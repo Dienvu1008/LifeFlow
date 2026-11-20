@@ -20,6 +20,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import '../l10n.dart';
 import '../providers.dart';
+import 'data_card.dart' show saveExportFile;
 
 /// The sync line under the profile (D9), or null when sync is off or not in
 /// this build.
@@ -451,7 +452,7 @@ class _SyncSetupPageState extends ConsumerState<SyncSetupPage> {
     var message = done(r);
     final export = r.export;
     if (export != null) {
-      final saved = await ref.read(fileGatewayProvider).saveText(export.suggestedName, export.contents);
+      final saved = await saveExportFile(ref, export);
       if (!mounted) return;
       message = '$message ${saved ? context.l10n.syExportSaved : context.l10n.syExportNotSaved}';
     }
