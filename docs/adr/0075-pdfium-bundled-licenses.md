@@ -4,7 +4,7 @@
 - Date: 2026-11-04
 - Deciders: Project owner
 - Amends: [ADR-0018](0018-dependency-license-policy.md) (adds rule 8)
-- Related: [ADR-0035](0035-gpl-classpath-desugar-only.md) (the same kind of decision, L-1), [p05b-plan.md](../roadmap/p05b-plan.md) D10, [spike-results.md](../spikes/spike-results.md) S-08, risks R-VIEWER-LICENSE and R-LICENSE-SCAN
+- Related: [ADR-0035](0035-gpl-classpath-exception-for-android-desugaring.md) (the same kind of decision, L-1), [p05b-plan.md](../roadmap/p05b-plan.md) D10, [spike-results.md](../spikes/spike-results.md) S-08, risks R-VIEWER-LICENSE and R-LICENSE-SCAN
 
 ## Context
 P05b shows PDFs with `pdfrx` (MIT). pdfrx uses PDFium, which its build hook (`pdfium_dart`) downloads as a prebuilt binary: `bblanchon/pdfium-binaries`, release `chromium/8125`, checked against pinned SHA-256 hashes. PDFium itself is BSD-3-Clause. The binary also contains third-party libraries, whose licenses ship in the archive's `licenses/` folder. S-08 read them all (2026-11-04). None is copyleft. Many are already accepted by ADR-0018 rule 2:
