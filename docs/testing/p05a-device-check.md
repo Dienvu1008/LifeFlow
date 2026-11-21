@@ -4,7 +4,7 @@ The owner's check of P05a on real devices:
 - alone on Windows and on Android, with the same account A;
 - with a second account B in a shared space, A on Windows and B on Android, as in [p04b-two-person-run.md](p04b-two-person-run.md).
 
-The build is the branch `p05a/t10-devices`, with `main` at `c433c86` (T1–T9 merged). Plan row: [p05-plan.md](../roadmap/p05-plan.md) T10. Status: **waiting for the owner's run**.
+The build is the branch `p05a/t10-devices`, with `main` at `c433c86` (T1–T9 merged). Plan row: [p05-plan.md](../roadmap/p05-plan.md) T10. Status: **steps 1–13 run on Windows (the owner, 2026-11-04): as expected except step 6 (finding 1)**; steps 14–30 to come.
 
 The server needs nothing new for P05a. Documents, revisions and document links are sealed records like every other (ADR-0069, ADR-0070), so there is no migration to push.
 
@@ -63,4 +63,4 @@ Known limits (ADR-0073):
 
 ## Findings
 
-(none yet)
+1. **Step 6: the links panel looked empty** (the owner, 2026-11-04, Windows). The owner opened the document that holds the `[[…]]` link and saw "No backlinks · nothing linked" / "No document links here yet.". The panel works as designed, but the design is unclear: "Backlinks" lists only the documents that link **to** the open one, and "Linked" lists only tasks, events and goals. The links **from** the open document appear nowhere under it, and "No document links here yet." reads as "this document has no links". Reproduced on the real app and store (`app_integration_test` "T10 step 6": the link made with `[[` shows as a backlink on its target, also after renaming the target). Not a data bug. Proposed fix: a "Links in this document" list (each target with its state) and clearer empty texts. Waiting for the owner's choice.

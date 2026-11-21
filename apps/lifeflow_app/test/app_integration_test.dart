@@ -642,6 +642,70 @@ void main() {
     await finish(tester, w);
   });
 
+  testWidgets('P05a T10 step 6: a [[…]] link made in the editor shows as a backlink on its target', (tester) async {
+    final w = await pumpApp(tester, StoragePlatform.windows);
+    await tester.tap(find.text('Documents'));
+    await settle(tester);
+    Future<void> newDoc(String title) async {
+      await tester.tap(find.byTooltip('New document'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, title);
+      await tester.tap(find.widgetWithText(FilledButton, 'Add'));
+      await tester.pump();
+      await settle(tester);
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> back() async {
+      await tester.pageBack();
+      await tester.pump();
+      await settle(tester);
+      await tester.pumpAndSettle();
+    }
+
+    await newDoc('Kế hoạch');
+    await back();
+    await newDoc('Nhật ký');
+    final c = tester.state<DocumentPageState>(find.byType(DocumentPage)).controller!;
+    c.replaceText(0, 0, 'Đọc [[', const TextSelection.collapsed(offset: 6));
+    await tester.pump();
+    await settle(tester);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('doc-link-picker')), findsOneWidget);
+    await tester.tap(find.descendant(of: find.byKey(const Key('doc-link-picker')), matching: find.text('Kế hoạch')));
+    await tester.pump();
+    await settle(tester);
+    await tester.pumpAndSettle();
+    expect(c.document.toPlainText(), contains('Đọc Kế hoạch'));
+    await back();
+
+    // Step 5: rename the target on its page, then open the first again.
+    await tester.tap(find.text('Kế hoạch'));
+    await tester.pump();
+    await settle(tester);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('doc-title')), 'Kế hoạch mới');
+    await back();
+    await tester.tap(find.text('Nhật ký'));
+    await tester.pump();
+    await settle(tester);
+    await tester.pumpAndSettle();
+    expect(tester.state<DocumentPageState>(find.byType(DocumentPage)).controller!.document.toPlainText(),
+        contains('Đọc Kế hoạch mới'));
+    await back();
+
+    await tester.tap(find.text('Kế hoạch mới'));
+    await tester.pump();
+    await settle(tester);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('doc-links')));
+    await tester.pump();
+    await settle(tester);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Đọc Kế hoạch'), findsOneWidget, reason: 'the sentence of the backlink');
+    await finish(tester, w);
+  });
+
   testWidgets('P02 T6b: an event made in the Calendar tab is stored, shown, and overlaps a task',
       (tester) async {
     final w = await pumpApp(tester, StoragePlatform.android, width: 1200);
