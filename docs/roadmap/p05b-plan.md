@@ -1,6 +1,6 @@
 # P05b plan: viewers and reading aloud
 
-- Status: **Proposed (2026-11-04); waiting for the owner's decisions (D1–D10, §3)**
+- Status: **Decisions taken by the owner 2026-11-04: D1–D10 as proposed** (§3). D10 is answered after S-08.
 - Date: 2026-11-04
 - Inputs: [p05-plan.md](p05-plan.md) (P05b split off at P05a's start), [p05a-exit-gate.md](../testing/p05a-exit-gate.md), [document-knowledge.md](../domains/document-knowledge.md) §6 (`FileViewer`, `TtsPort`, `SelectionAdapter`; OQ-DOC-3), [spike-plan.md](../spikes/spike-plan.md) (S-08, S-09, S-12), [technical-stack.md](../architecture/technical-stack.md) (viewers and TTS not chosen yet), [ADR-0018](../adr/0018-dependency-license-policy.md), [ADR-0072](../adr/0072-encrypted-attachments.md) (files encrypted, on the device only), [ADR-0074](../adr/0074-export-with-documents-and-files.md); use cases UC-10 (look up a word in a PDF: the lookup itself is P07)
 - Estimate: about 12–18 person-days, plus a 30 % risk buffer. The spikes come first and may change the tasks.
@@ -34,7 +34,7 @@ Out of scope: looking up or translating a selected word (P07, through `Selection
 
 ## 3. Owner decisions (D1–D10)
 
-| # | Question | Proposal |
+| # | Question | Decision (owner, 2026-11-04: as proposed) |
 |---|---|---|
 | D1 | **DOCX** | **(b)**: a DOCX attached to a document opens read-only in LifeFlow's own view (converted to our block format in memory), with **"Make a LifeFlow document from it"**, which creates an editable copy, with a revision as usual. Other choices: (a) only "open in another app" (D2), or (c) import only, without a view. |
 | D2 | **"Open in another app"** for files LifeFlow does not show (PPTX, XLSX, others) | **Not in P05b.** It needs a decrypted copy written to a temporary folder for the other app, which ADR-0072 avoids. "Save a copy" already lets you choose where. If you want it: the copy goes to the app's own temporary folder and is deleted when LifeFlow next starts. |
