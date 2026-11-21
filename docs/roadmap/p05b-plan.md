@@ -1,9 +1,9 @@
 # P05b plan: viewers and reading aloud
 
-- Status: **Decisions taken by the owner 2026-11-04: D1–D10 as proposed** (§3). D10 is answered after S-08.
+- Status: **Decisions taken by the owner 2026-11-04** (§3): D1–D10 as proposed, then, after the spikes, **D1 changed (no DOCX view in P05b)** and **D10 answered (PDFium's permissive licenses accepted, [ADR-0075](../adr/0075-pdfium-bundled-licenses.md))**. Spikes: S-08 pass, S-09 (b) fails on a real form, S-12 English pass ([spike-results.md](../spikes/spike-results.md)).
 - Date: 2026-11-04
 - Inputs: [p05-plan.md](p05-plan.md) (P05b split off at P05a's start), [p05a-exit-gate.md](../testing/p05a-exit-gate.md), [document-knowledge.md](../domains/document-knowledge.md) §6 (`FileViewer`, `TtsPort`, `SelectionAdapter`; OQ-DOC-3), [spike-plan.md](../spikes/spike-plan.md) (S-08, S-09, S-12), [technical-stack.md](../architecture/technical-stack.md) (viewers and TTS not chosen yet), [ADR-0018](../adr/0018-dependency-license-policy.md), [ADR-0072](../adr/0072-encrypted-attachments.md) (files encrypted, on the device only), [ADR-0074](../adr/0074-export-with-documents-and-files.md); use cases UC-10 (look up a word in a PDF: the lookup itself is P07)
-- Estimate: about 12–18 person-days, plus a 30 % risk buffer. The spikes come first and may change the tasks.
+- Estimate: about 10–14 person-days after the spikes (DOCX removed), plus a 30 % risk buffer.
 
 ## 1. Goal and exit gate
 
@@ -11,7 +11,7 @@ Goal: the files kept in documents can be read inside LifeFlow, and a document ca
 
 Exit gate (P05b):
 - **A PDF attached to a document opens inside the app**: pages, zoom, page by page and scrolling, find in the PDF, text selection and copy; on both platforms.
-- **DOCX** is handled as the owner decides in D1 (read inside the app, import as a LifeFlow document, or open in another app).
+- **DOCX** stays a file with "Save a copy", as in P05a (D1 after S-09).
 - **A document can be read aloud** with the device's voices, Vietnamese included, with play, pause or stop, speed, and the sentence being read shown.
 - **Nothing leaves the device and nothing is written in the clear** that the person did not ask for: a file is decrypted in memory to be shown or read (ADR-0072). Every new library is in the license inventory (FF-ARCH-07).
 - P05a's properties still hold (no change to how documents are stored, synced or shared).
@@ -36,16 +36,16 @@ Out of scope: looking up or translating a selected word (P07, through `Selection
 
 | # | Question | Decision (owner, 2026-11-04: as proposed) |
 |---|---|---|
-| D1 | **DOCX** | **(b)**: a DOCX attached to a document opens read-only in LifeFlow's own view (converted to our block format in memory), with **"Make a LifeFlow document from it"**, which creates an editable copy, with a revision as usual. Other choices: (a) only "open in another app" (D2), or (c) import only, without a view. |
+| D1 | **DOCX** | First (b), a read-only view in LifeFlow's block format. **Changed after S-09 (owner, 2026-11-04): no DOCX view in P05b.** The owner's real file, a Vietnamese tax form of tables, merged cells, alignment and sizes, lost all of its layout; LifeFlow's blocks have none of these by design (ADR-0066). A DOCX stays a file with "Save a copy". A faithful view (docx-preview in a WebView) was found but not chosen. |
 | D2 | **"Open in another app"** for files LifeFlow does not show (PPTX, XLSX, others) | **Not in P05b.** It needs a decrypted copy written to a temporary folder for the other app, which ADR-0072 avoids. "Save a copy" already lets you choose where. If you want it: the copy goes to the app's own temporary folder and is deleted when LifeFlow next starts. |
 | D3 | **Search inside PDFs** | **Yes**: the text of PDFs that are on this device goes into the one search (local, in the encrypted store, by the exact spelling, C4), shown as "in file.pdf, page 3". A scanned PDF has no text and is not found (no OCR). |
-| D4 | **What can be read aloud** | **LifeFlow documents and PDFs** (a PDF's text, from the page shown). A DOCX is read once it is shown in LifeFlow's view (D1). |
+| D4 | **What can be read aloud** | **LifeFlow documents and PDFs** (a PDF's text, from the page shown). |
 | D5 | **Which voices** | **The device's voices only**: offline, free, private. Vietnamese works when the device has a Vietnamese voice; otherwise the app says which language it lacks and how to add it (Windows: Settings → Time & language → Speech; Android: Google TTS). No cloud voices. |
 | D6 | **Reading with the app in the background, or the screen off (Android)** | **Not in P05b**: reading stops when you leave the page or the app goes to the background. Background reading needs a foreground service, a media notification and its permission; it can come later. |
 | D7 | **While reading** | The sentence being read is highlighted and the page follows it; play / pause / stop, back and forward a sentence; speed 0.5×–2×; the speed and voice are remembered on this device. |
 | D8 | **Where viewers open** | **From the file in a document** (tap it). No separate "Files" list in P05b. |
 | D9 | **Last page of a PDF** | **Remembered on this device** (a device setting, not synced): a PDF opens where you left it. |
-| D10 | **PDFium's bundled licenses** (if S-08 finds ones outside ADR-0018) | **Decide after S-08** with the list in front of you, as for L-1 in P02. If refused: `pdfx` with the same binary has the same question; the fallback is no in-app PDF in P05b. |
+| D10 | **PDFium's bundled licenses** | **Accepted (owner, 2026-11-04, after S-08)**: the permissive licenses of the libraries inside the PDFium binary (FreeType FTL, IJG, libpng, zlib, Unicode v3, Anti-Grain Geometry, with the ones already accepted), shown with their full texts on the licenses page ([ADR-0075](../adr/0075-pdfium-bundled-licenses.md)). |
 
 ## 4. Technical design (no owner input needed; ADRs during the tasks)
 
@@ -55,7 +55,7 @@ Out of scope: looking up or translating a selected word (P07, through `Selection
   - The UI never sees PDFium or the TTS plugin directly; both sit behind adapters in the app or `ui`, as the editor does (ADR-0073).
 - **Files stay encrypted.** A viewer gets the bytes from `AttachmentService.open` in memory, never a path. pdfrx opens from bytes. Nothing is written to a temporary folder.
 - **PDF text for search (D3)**: extracted when a PDF is added on this device, or when the app finds one not indexed yet; kept in a device-only table (like the link index, not synced, not exported), by hash and page; NFC as all search text.
-- **DOCX (D1)**: `docx_reader` in `infrastructure` turns `word/document.xml` (with `numbering.xml` and `styles.xml`) into a `DocumentBody`. Pictures become attachments of the new document only when it is imported. The reader is untrusted-input code: size limits, no external entities, never a path from the file.
+- **Build needs found by the spikes**: `archive` moves from 4.0.9 to 4.7.1 (pdfrx brings `image`, which needs it); PDFium is downloaded by `pdfium_dart`'s build hook from bblanchon/pdfium-binaries `chromium/8125`, checked against pinned SHA-256 (CI needs the download, or a cache); the Windows build of flutter_tts needs `nuget.exe` (CI too) and fetches Microsoft.Windows.CppWinRT (MIT) from NuGet. Windows sends no word progress events, so reading follows sentence by sentence.
 - **Reading aloud**: the text to read is built from the blocks (domain, pure): sentences with their block and offsets, so the editor can highlight the one being read; lists and headings read as text; a file is skipped (or its name read).
 - **Device settings**: speed, voice and the last page of each PDF, in the registry (as other device settings), never exported or synced.
 
@@ -68,13 +68,13 @@ Out of scope: looking up or translating a selected word (P07, through `Selection
 | **S-12** Voices | flutter_tts 4.2.5 on Windows and Android: Vietnamese and English voices, speed, pause or stop, progress events, the Windows thread issue | a probe app; results | **yes**: listen on your devices | 1 |
 | **T1** Viewer port and PDF | `FileViewer`, the PDF page (from a document's file), find, selection and copy, last page (D9) | widget tests with a fake viewer; an integration test with a real PDF | no | 2–3 |
 | **T2** PDF in search | text extracted and indexed per page (D3) | search tests (Vietnamese PDF text, the exact spelling); a file elsewhere is not indexed | no | 1–2 |
-| **T3** DOCX | read-only view and "Make a LifeFlow document from it" (D1) | reader tests on the S-09 samples; forged files refused | no | 2 |
+| ~~T3 DOCX~~ | removed by D1 after S-09 | — | — | — |
 | **T4** Reading aloud | `TtsPort`, the sentence model, the reader controls on a document (D7), the language check (D5) | domain tests; widget tests with a fake voice | no | 2–3 |
 | **T5** PDFs read aloud | from the page shown (D4) | widget tests | no | 1 |
 | **T6** On the devices | your Windows and Android: PDFs, DOCX, search, reading in Vietnamese and English | your check | **yes** | 1 |
 | **T7** P05b exit gate | p05b-exit-gate.md, ADRs, invariants, risks; your review | all suites, CI | yes | 1 |
 
-Order: S-08, S-09, S-12 (they can run together; S-08 decides D10) → T1 → T2 → T3 → T4 → T5 → T6 → T7.
+Order: S-08, S-09, S-12 (done, except S-12 in Vietnamese: the owner listens during T4) → T1 → T2 → T4 → T5 → T6 → T7.
 
 ## 6. Invariants and scenarios
 
@@ -87,4 +87,4 @@ Order: S-08, S-09, S-12 (they can run together; S-08 decides D10) → T1 → T2 
 - **R-FLUTTER-PLUGIN**: pdfrx's newest version already needs a newer Flutter; flutter_tts has an open Windows issue. Mitigation: pin versions (pdfrx 3.0.0), S-08 and S-12 on the owner's devices. Contingency: upgrade Flutter as its own task, or a smaller Windows TTS adapter.
 - **R-BUILD-DOWNLOAD** (new): pdfrx fetches PDFium during the build. Mitigation: S-08 checks CI and an offline build; pin the binary's version and checksum if possible.
 - **R-PRIVACY**: a viewer that wrote temporary files would leave clear copies. Mitigation: bytes in memory only (LF-INV-FILE-001), checked in GS-29.
-- **R-SCOPE**: PPTX, XLSX, OCR, background reading and cloud voices stay outside P05b (D2, D3, D5, D6).
+- **R-SCOPE**: DOCX, PPTX, XLSX, OCR, background reading and cloud voices stay outside P05b (D1, D2, D3, D5, D6).

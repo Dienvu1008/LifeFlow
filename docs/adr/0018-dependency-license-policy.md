@@ -1,6 +1,6 @@
 # ADR-0018: Dependency license policy
 
-- Status: Accepted (owner decision); amended by ADR-0035 (rule 7, 2026-11-10)
+- Status: Accepted (owner decision); amended by ADR-0035 (rule 7, 2026-11-10) and ADR-0075 (rule 8, PDFium's bundled permissive licenses, 2026-11-04)
 - Date: 2026-11-04
 - Deciders: Project owner
 - Evidence: [../security/security-requirements.md](../security/security-requirements.md) SR-16/SR-17; [../research/verified-sources.md](../research/verified-sources.md); brief section 22 (license claims must be verified)
