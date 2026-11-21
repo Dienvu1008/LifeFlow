@@ -213,3 +213,50 @@ With `sqlite3` 3.5.2 (resolved by the T6a app), the build hook's `source: sqlite
   - Windows had no notification-settings entry for the app id (`HKCU\...\Notifications\Settings\LifeFlow.App`), where the probe's id had one.
   - After one shown toast, the entry exists and a toast scheduled with no LifeFlow process running was delivered at the minute (log: source "Scheduled", "delivered").
   - Fix (ADR-0034): the Windows adapter registers the app id by showing one "Reminders are on" notification when reminders are first turned on or first scheduled, and reports "turned off in Windows settings" when the user did that. Verified end to end: entry removed, real app run once, window closed, reminder delivered at 15:34:00.
+
+## S-08 — PDF viewing (P05b)
+**PASS on the owner's Windows and Android (2026-11-04): opening, scrolling, zoom, find, selection and extracted text as expected. D10 (licenses) still to answer.**
+- **Question:** Can pdfrx show a PDF kept in a document on Windows and Android, from memory (the file stays encrypted, ADR-0072), with zoom, find, selection and Vietnamese text, under licenses ADR-0018 accepts?
+- **What was done:** one probe app, `spikes/p05b_probe` (tabs PDF, DOCX, Voices), with pdfrx 3.0.0 (the newest for Flutter 3.47.2; 3.1.0 needs 3.50). The PDF tab opens a file **from bytes**, and has find with highlights, next and previous, zoom, selection with the selected text shown, and "Extract all text". A headless test makes a 300-page Vietnamese PDF (Be Vietnam Pro) and reads it back.
+- **Measured so far:**
+  - **Vietnamese text comes back right and in NFC** ("chú" is `c h ú`, U+00FA), so it fits the search as is (LF-INV-SEARCH-001). 300 pages (533 KB): opened in 0.17 s, all text in 0.6 s (428 592 characters).
+  - **Builds:** Windows release built: `pdfium.dll` 7.2 MB. The Android APK built: `libpdfium.so` 6.3 MB (arm64), 4.1 MB (armv7), 6.6 MB (x86_64); about 17 MB for a fat APK, about 6 MB per device with split APKs or an app bundle.
+  - **The PDFium binary is downloaded at build time** by `pdfium_dart`'s build hook, from `github.com/bblanchon/pdfium-binaries`, release `chromium/8125`, **checked against pinned SHA-256 hashes**. A CI or offline build needs that download (or a cache).
+  - **pdfrx brings `image` 4.11.0**, which needs `archive` newer than LifeFlow's pin (4.0.9 fails to compile: `ZLibDecoder.decodeLazy`). LifeFlow moves to archive 4.7.1 (MIT, same package).
+- **Licenses in the PDFium binary** (its `licenses/` folder, read 2026-11-04). PDFium itself is BSD-3-Clause. Bundled, all permissive, none copyleft:
+  - Apache-2.0: abseil, highway;
+  - Apache-2.0 WITH LLVM-exception: llvm-libc;
+  - dragonbox: Apache-2.0 WITH LLVM-exception or BSL-1.0, the choice is ours;
+  - MIT: fast_float, simdutf, Little CMS;
+  - "Old MIT": HarfBuzz;
+  - BSD-2-Clause: OpenJPEG;
+  - **outside ADR-0018's list**:
+    - FreeType Project License (FTL; FreeType is FTL or GPL-2.0, the choice is ours);
+    - IJG and BSD-3-Clause for libjpeg-turbo;
+    - libpng License v2;
+    - zlib License;
+    - Unicode License v3 (ICU);
+    - Anti-Grain Geometry 2.3 (a short permissive notice).
+
+  FTL and IJG ask for a credit line in the documentation. **D10 asks the owner** to accept these permissive licenses, shown on the licenses page with their texts, as P02's L-1 did.
+
+## S-09 — DOCX (P05b)
+**FAIL for approach (b) (the owner, 2026-11-04): only the text came through; formatting, tables and alignment were all lost.**
+- **Question:** Can a DOCX be turned into LifeFlow's block format well enough to read it in LifeFlow's view (D1)?
+- **What was done:** the probe's DOCX tab and `readDocx` (archive and `xml`, MIT). It reads headings by style id ("Heading1") or by outline level (localized names, such as the Vietnamese "Tiêu đề 2"), list items with their level, tables as rows, pictures as placeholders, and the accepted text of tracked changes (deleted text is not read). It counts what is not kept: comments, tracked changes, text colour. A headless test builds a file shaped as Word writes it.
+- **The owner's sample** (a Vietnamese tax form, 29 KB): 152 paragraphs; **6 tables** (19 rows, 103 cells; 13 cells spanning columns, 2 merged down), including the two-column national heading and an 11-column table of amounts; 106 alignments (90 centered, 13 justified, 3 right); 261 font sizes (9–14 pt); 111 bold runs; tab stops for dotted fill lines; a drawn line; one section with its margins.
+- **Why (b) cannot work for such files:** LifeFlow's block format has no tables, no alignment, no font sizes and no page layout, by design (ADR-0066). A form like this *is* its layout, so turning it into blocks loses what matters, however good the reader. (b) suits text-like DOCX files, not forms.
+- **Faithful candidates found (2026-11-04), for an S-09b:**
+  - `docx-preview` 0.4.1 (Apache-2.0; with `jszip`, MIT or GPL-3.0, so MIT is our choice) renders a DOCX into HTML in the page layout (tables, merged cells, alignment, fonts, sizes, margins). It would run in a WebView: `flutter_inappwebview` 6.1.5 (Apache-2.0; Android, and Windows through WebView2, which Windows 10 and 11 ship). The scripts would be bundled; the file passed in memory; no network.
+  - `mammoth` (BSD-2) gives plain semantic HTML, so it loses the layout too (not a fit).
+  - LibreOffice (MPL-2.0) converts faithfully, but it is far too large and not on Android.
+
+## S-12 — Reading aloud (P05b)
+**English voices PASS on the owner's Windows and Android (2026-11-04).** Vietnamese not tried yet: this Windows PC has no Vietnamese voice installed.
+- **Question:** Can flutter_tts read Vietnamese and English with the device's voices on both platforms, with speed, stop and the sentence followed?
+- **What was done:** the probe's Voices tab. It lists the voices (Vietnamese picked first), sets the speed, and has read, pause and stop. It reads **one sentence at a time** and starts the next when one ends, so the sentence read is highlighted on both platforms. A log shows every event.
+- **Found in the plugin's source (4.2.5):**
+  - **The Windows build needs `nuget.exe`**, and downloads Microsoft.Windows.CppWinRT 2.0.210503.1 (MIT) from NuGet at build time. The first build failed without it; the agent fetched nuget.exe from dist.nuget.org into a temporary folder. CI will need it too.
+  - **Windows sends no word progress events** (start, end, pause, continue and cancel only), so the highlight follows sentence by sentence, as built. Android has word progress.
+  - Windows uses WinRT (OneCore voices).
+- **This Windows PC has no Vietnamese voice:** only David, Zira and Mark (English). To install one: Settings → Time & language → Speech → Add voices → Vietnamese ("Microsoft An").
