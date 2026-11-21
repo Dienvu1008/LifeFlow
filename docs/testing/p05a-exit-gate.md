@@ -1,6 +1,6 @@
 # P05a exit-gate evidence (documents)
 
-This page maps each line of the P05a exit gate ([p05-plan.md §1](../roadmap/p05-plan.md)) to the tests and checks that prove it. It does the same for the invariants and scenarios the plan proposed (§7), the fitness functions and the definition of done ([definition-of-done.md](definition-of-done.md)). Status: **waiting for the owner's sign-off**.
+This page maps each line of the P05a exit gate ([p05-plan.md §1](../roadmap/p05-plan.md)) to the tests and checks that prove it. It does the same for the invariants and scenarios the plan proposed (§7), the fitness functions and the definition of done ([definition-of-done.md](definition-of-done.md)). Status: **signed off by the owner, 2026-11-04**.
 
 How to reproduce:
 - `dart test` in `packages/foundation|time_kernel|domain|application|infrastructure`.
@@ -114,4 +114,4 @@ Finding 1 (step 6, the links panel lists only the documents that link to the ope
 ## Owner sign-off
 - [x] Device checks above (owner, 2026-11-04).
 - [x] CI green on the T11 branch head (`6b66014`).
-- [ ] Owner approves P05a as done.
+- [x] Owner approves P05a as done (2026-11-04).
