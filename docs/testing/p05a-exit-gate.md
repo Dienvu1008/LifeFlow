@@ -113,5 +113,5 @@ Finding 1 (step 6, the links panel lists only the documents that link to the ope
 
 ## Owner sign-off
 - [x] Device checks above (owner, 2026-11-04).
-- [ ] CI green on the T11 branch head.
+- [x] CI green on the T11 branch head (`6b66014`).
 - [ ] Owner approves P05a as done.
