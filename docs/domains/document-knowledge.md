@@ -69,9 +69,9 @@ DocumentRepository:
 ```
 
 ## 11. Open questions
-- OQ-DOC-1: revision snapshot/delta cadence and retention. P05.
-- OQ-DOC-2: editor library (section 7) — spike / 3c.
-- OQ-DOC-3: viewer library feasibility (PDF/DOCX/PPTX) — spikes S-08/S-09.
+- OQ-DOC-1: revision snapshot/delta cadence and retention. **Resolved in P05a** (owner's C5, C7, C9; ADR-0066, ADR-0068): a full copy at every save, all kept.
+- OQ-DOC-2: editor library (section 7) — spike / 3c. **Resolved in P05a** (S-07): flutter_quill 11.6.0 behind an adapter (ADR-0073).
+- OQ-DOC-3: viewer library feasibility (PDF/DOCX/PPTX) — spikes S-08/S-09. Open: P05b.
 - OQ-V10: FTS5 under encryption (verified-sources).
 
 ## 12. Self-check

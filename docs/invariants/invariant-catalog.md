@@ -122,6 +122,12 @@ estore. Failure: —. Verification: integration. Severity: medium. Depends: LF-I
 ### LF-INV-DOC-005 — No silent content loss on concurrent edit (introduced in Batch 4)
 - Statement: two concurrent edits to one document never silently discard content; both become revisions with a surfaced conflict. Rationale: the brief's "no silent content loss" was implied by LF-INV-DOC-002 + ADR-0015 but not a named invariant; named here for the test matrix. Scope: Document + Sync. Enforcement: per-type keep-both (ADR-0015). Failure: keep both, surface conflict. Verification: sync conflict test (GS-08). Severity: critical. Depends: LF-INV-DOC-002, LF-INV-SYNC-003.
 
+### LF-INV-DOC-006 — A revision is written once; every save writes exactly one (introduced at the P05a exit)
+- Statement: a document revision is written once and never changed or deleted by a command; every save that changes a document's title or body writes exactly one revision, and a save that changes nothing writes none. Rationale: the history is the safety net of autosave (p05-plan C5, C7, C9) and of conflicts (DOC-005). Scope: Document. Enforcement: `DocumentCommandHandler` only inserts revisions and refuses a reused id; sync merges revisions append-only (ADR-0068, ADR-0069); a move changes only a revision's place and version (ADR-0070). Failure: refused. Verification: integration, sync, atomic set. Severity: critical. Depends: LF-INV-DOC-002.
+
+### LF-INV-SEARCH-001 — Search by the exact spelling (introduced at the P05a exit)
+- Statement: a search matches the words as spelled, marks included, ignoring letter case and how the marks were encoded (text and query both in Unicode NFC); a word without its marks does not match the word with them. Rationale: the owner's C4 and C12. Scope: Documents and tasks search. Enforcement: FTS5 `unicode61 remove_diacritics 0`; NFC in Dart on both sides (ADR-0067). Failure: — . Verification: integration on the real (encrypted) store, device check on both platforms. Severity: high. Depends: —.
+
 ## 7. Dictionary and Vocabulary
 
 ### LF-INV-DICT-001 — Lexical identity separate from contextual meaning
