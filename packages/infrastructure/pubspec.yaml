@@ -27,7 +27,7 @@ dependencies:
   # End-to-end encryption of synced records (Apache-2.0, VS-42; ADR-0052).
   cryptography: 2.9.0
   # P05a T9 (C11, ADR-0074): the .zip export with the documents' files (MIT, VS-48).
-  archive: 4.0.9
+  archive: 4.7.1 # P05b T1: pdfrx brings image 4.11, which needs it
   # NFC for sync passphrases, so accents typed either way unlock (MIT, VS-45; ADR-0054).
   unorm_dart: 0.3.3
   # The sync server's REST API (BSD-3, Dart team; already shipped via supabase; ADR-0055).

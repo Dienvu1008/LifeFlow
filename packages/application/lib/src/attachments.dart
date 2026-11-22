@@ -49,6 +49,31 @@ class AttachmentContent {
   final Uint8List? bytes;
 }
 
+/// P05b (ADR-0076; document-knowledge.md §6, `FileViewer`): how LifeFlow
+/// shows a file of a document. Anything else stays a file with "Save a copy"
+/// (a DOCX too, D1).
+enum FileView {
+  /// Shown as the picture itself.
+  picture,
+
+  /// Opens in the PDF page.
+  pdf,
+
+  /// Not shown inside the app.
+  none,
+}
+
+/// How [file] is shown: by its media type, or by its name when the type is
+/// a generic one (some pickers give `application/octet-stream`).
+FileView fileViewOf(AttachmentRef file) {
+  if (file.isImage) return FileView.picture;
+  final mime = file.mime.toLowerCase();
+  if (mime == 'application/pdf') return FileView.pdf;
+  final generic = mime.isEmpty || mime == 'application/octet-stream';
+  if (generic && file.name.toLowerCase().endsWith('.pdf')) return FileView.pdf;
+  return FileView.none;
+}
+
 abstract interface class AttachmentService {
   /// Keeps [bytes] in this profile, encrypted, and gives the reference for
   /// the body. The same file twice is kept once.

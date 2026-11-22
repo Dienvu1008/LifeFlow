@@ -45,6 +45,23 @@ void main() {
   expect('the exception with its notices passes',
       check(shipped: {desugar: '2.1.4'}, inventory: [Entry(desugar, '2.1.4', 'GPL-2.0-only WITH Classpath-exception-2.0')], exists: all),
       pass: true);
+  const pdfiumSource = 'pdfium_dart 0.4.3\nrelease chromium/8125\n'
+      'notice pdfium.txt aa\nnotice freetype.txt bb\nnotice libjpeg_turbo.ijg cc\nnotice libpng.txt dd\n'
+      'notice zlib.txt ee\nnotice icu.txt ff\nnotice agg23.txt 11\nnotice abseil.txt 22\n';
+  bool any(String p) => true;
+  expect('no pdfium_dart, no PDFium notices needed', pdfiumNoticeProblems(locked: null, source: null, exists: none), pass: true);
+  expect('the PDFium notices of the locked version pass',
+      pdfiumNoticeProblems(locked: '0.4.3', source: pdfiumSource, exists: any), pass: true);
+  expect('pdfium_dart without the PDFium notices fails',
+      pdfiumNoticeProblems(locked: '0.4.3', source: null, exists: any), pass: false, mentions: 'SOURCE is missing');
+  expect('PDFium notices of another pdfium_dart fail',
+      pdfiumNoticeProblems(locked: '0.5.0', source: pdfiumSource, exists: any), pass: false, mentions: 'read the licenses');
+  expect('a listed PDFium notice file missing fails',
+      pdfiumNoticeProblems(locked: '0.4.3', source: pdfiumSource, exists: (p) => !p.endsWith('abseil.txt')),
+      pass: false, mentions: 'abseil.txt');
+  expect('SOURCE without the FreeType notice fails',
+      pdfiumNoticeProblems(locked: '0.4.3', source: pdfiumSource.replaceAll('notice freetype.txt bb\n', ''), exists: any),
+      pass: false, mentions: 'freetype.txt');
   expect('lock parsing skips path and sdk packages', [
     if (lockedPackages('''
 packages:

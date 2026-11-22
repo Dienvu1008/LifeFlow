@@ -10,6 +10,8 @@
 #   qr_flutter 4.1.0 and qr 3.0.3: BSD-3-Clause, the recovery key shown as a QR code (P04 T5, VS-46, ADR-0058).
 #   flutter_quill 11.6.0 and 26 packages it brings (dart_quill_delta, quill_native_bridge*, flutter_keyboard_visibility*, file_selector_*, html, markdown, csslib, charcode, quiver, diff_match_patch, flutter_colorpicker, flutter_quill_delta_from_html, is_ios_simulator): MIT, BSD-3-Clause or Apache-2.0, LICENSE files read 2026-11-04; the document editor (P05a T8, S-07, VS-29, VS-47, ADR-0073).
 #   archive 4.0.9 and posix 6.5.4: MIT, the .zip export with the documents' files (P05a T9, VS-48, ADR-0074).
+#   pdfrx 3.0.0, pdfrx_engine 0.9.3, pdfium_dart 0.4.3, pdfium_flutter 0.4.3 (MIT) and what they bring: image 4.13.1 and synchronized 3.6.1+1 (MIT), rxdart 0.28.0 (Apache-2.0), material_ui 1.11.1 and cupertino_ui 1.1.7 (BSD-3-Clause, the Flutter authors); archive moves to 4.7.1 (MIT) for image. The build-hook toolchain moves too (native_toolchain_c 0.19.6, code_assets 2.2.0, hooks 2.2.0, objective_c 9.6.4, record_use 1.1.1, meta 1.19.0, and process 5.0.6 new; all BSD-3-Clause, the Dart and Flutter authors): with native_toolchain_c 0.19.2 the hook could not compile pdfium_dart's small C helper on this Windows machine ("'C:\Program' is not recognized"). LICENSE files read 2026-11-04; the PDF viewer (P05b T1, S-08, VS-49, ADR-0076).
+#   The PDFium binary that pdfium_dart's build hook downloads is not a pub package: its bundled notices are checked separately (assets/licenses/pdfium/SOURCE, ADR-0075).
 #   Native SQLite3MultipleCiphers (via the sqlite3 build hook) is not a pub package, so this scan does not see it.
 # Android (Gradle)
 # Dart / Flutter packages
@@ -19,20 +21,21 @@ pub:app_links 7.2.2 Apache-2.0
 pub:app_links_linux 1.0.4 Apache-2.0
 pub:app_links_platform_interface 2.0.4 Apache-2.0
 pub:app_links_web 1.0.5 Apache-2.0
-pub:archive 4.0.9 MIT
+pub:archive 4.7.1 MIT
 pub:args 2.7.0 BSD-3-Clause
 pub:async 2.13.1 BSD-3-Clause
 pub:boolean_selector 2.1.2 BSD-3-Clause
 pub:characters 1.4.1 BSD-3-Clause
 pub:charcode 1.4.0 BSD-3-Clause
 pub:clock 1.1.3 Apache-2.0
-pub:code_assets 1.2.1 BSD-3-Clause
+pub:code_assets 2.2.0 BSD-3-Clause
 pub:collection 1.19.1 BSD-3-Clause
 pub:convert 3.1.2 BSD-3-Clause
 pub:cross_file 0.3.5+5 BSD-3-Clause
 pub:crypto 3.0.8 BSD-3-Clause
 pub:cryptography 2.9.0 Apache-2.0
 pub:csslib 1.0.2 BSD-3-Clause
+pub:cupertino_ui 1.1.7 BSD-3-Clause
 pub:dart_jsonwebtoken 3.4.1 MIT
 pub:dart_quill_delta 10.8.3 MIT
 pub:dbus 0.8.0 MPL-2.0
@@ -79,10 +82,11 @@ pub:functions_client 2.7.1 MIT
 pub:glob 2.2.0 BSD-3-Clause
 pub:go_router 14.8.1 BSD-3-Clause
 pub:gotrue 2.27.3 MIT
-pub:hooks 2.0.2 BSD-3-Clause
+pub:hooks 2.2.0 BSD-3-Clause
 pub:html 0.15.7 MIT
 pub:http 1.6.0 BSD-3-Clause
 pub:http_parser 4.1.2 BSD-3-Clause
+pub:image 4.13.1 MIT
 pub:intl 0.20.3 BSD-3-Clause
 pub:is_ios_simulator 1.0.1 MIT
 pub:jni 1.1.2 BSD-3-Clause
@@ -97,10 +101,11 @@ pub:logging 1.3.0 BSD-3-Clause
 pub:markdown 7.3.1 BSD-3-Clause
 pub:matcher 0.12.20 BSD-3-Clause
 pub:material_color_utilities 0.13.0 Apache-2.0
-pub:meta 1.18.3 BSD-3-Clause
+pub:material_ui 1.11.1 BSD-3-Clause
+pub:meta 1.19.0 BSD-3-Clause
 pub:mime 2.1.0 BSD-3-Clause
-pub:native_toolchain_c 0.19.2 BSD-3-Clause
-pub:objective_c 9.5.0 BSD-3-Clause
+pub:native_toolchain_c 0.19.6 BSD-3-Clause
+pub:objective_c 9.6.4 BSD-3-Clause
 pub:package_config 3.0.0 BSD-3-Clause
 pub:passkeys_platform_interface 2.11.0 BSD-3-Clause
 pub:path 1.9.1 BSD-3-Clause
@@ -110,12 +115,17 @@ pub:path_provider_foundation 2.6.0 BSD-3-Clause
 pub:path_provider_linux 2.2.2 BSD-3-Clause
 pub:path_provider_platform_interface 2.1.3 BSD-3-Clause
 pub:path_provider_windows 2.3.0 BSD-3-Clause
+pub:pdfium_dart 0.4.3 MIT
+pub:pdfium_flutter 0.4.3 MIT
+pub:pdfrx 3.0.0 MIT
+pub:pdfrx_engine 0.9.3 MIT
 pub:petitparser 7.0.2 MIT
 pub:platform 3.2.0 BSD-3-Clause
 pub:plugin_platform_interface 2.1.8 BSD-3-Clause
 pub:pointycastle 4.0.0 MIT
 pub:posix 6.5.4 MIT
 pub:postgrest 2.9.1 MIT
+pub:process 5.0.6 BSD-3-Clause
 pub:pub_semver 2.2.1 BSD-3-Clause
 pub:qr 3.0.3 BSD-3-Clause
 pub:qr_flutter 4.1.0 BSD-3-Clause
@@ -129,8 +139,9 @@ pub:quill_native_bridge_web 0.0.2 MIT
 pub:quill_native_bridge_windows 0.1.1 MIT
 pub:quiver 3.2.2 Apache-2.0
 pub:realtime_client 2.13.2 MIT
-pub:record_use 0.6.0 BSD-3-Clause
+pub:record_use 1.1.1 BSD-3-Clause
 pub:riverpod 2.6.1 MIT
+pub:rxdart 0.28.0 Apache-2.0
 pub:shared_preferences 2.5.6 BSD-3-Clause
 pub:shared_preferences_android 2.5.4 BSD-3-Clause
 pub:shared_preferences_foundation 2.5.7 BSD-3-Clause
@@ -149,6 +160,7 @@ pub:string_scanner 1.4.1 BSD-3-Clause
 pub:supabase 2.16.5 MIT
 pub:supabase_common 0.1.2 MIT
 pub:supabase_flutter 2.18.3 MIT
+pub:synchronized 3.6.1+1 MIT
 pub:table_calendar 3.3.0 Apache-2.0
 pub:term_glyph 1.2.2 BSD-3-Clause
 pub:test_api 0.7.12 BSD-3-Clause

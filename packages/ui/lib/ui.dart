@@ -4,6 +4,7 @@
 /// domain internals (FF-ARCH-04). Business logic never lives here (AP-12).
 library ui;
 
+export 'src/documents/pdf_view.dart' show initPdfViewer, pdfViewBuilderProvider, PdfViewBuilder, PdfViewSetup, PdfViewControls, PdfOpenFailure;
 export 'src/layout.dart';
 export 'src/messages.dart';
 export 'src/providers.dart';
