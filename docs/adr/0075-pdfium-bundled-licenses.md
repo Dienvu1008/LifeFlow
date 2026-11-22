@@ -13,6 +13,7 @@ P05b shows PDFs with `pdfrx` (MIT). pdfrx uses PDFium, which its build hook (`pd
 - "Old MIT": HarfBuzz;
 - BSD-2-Clause: OpenJPEG;
 - dragonbox: Apache-2.0 WITH LLVM-exception or BSL-1.0, the choice is ours.
+- Found in T1, in the Android archives only (S-08 read the Windows one): catapult (BSD-3-Clause), cpu_features (Apache-2.0), libunwind (Apache-2.0 WITH LLVM-exception, as llvm-libc). All are already accepted, so this decision does not change.
 
 Six licenses are not in rule 2's list:
 - **FTL** (FreeType Project License; FreeType is FTL or GPL-2.0, the choice is ours): permissive, with a credit in the documentation.

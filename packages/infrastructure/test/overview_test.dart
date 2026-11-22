@@ -321,4 +321,21 @@ void main() {
     await dir.writeSetting('ui.overview.collapsed', 'not json');
     expect(await s.collapsedItems(), isEmpty);
   });
+
+  test('P05b D9: the last page of a PDF is a device setting, by its hash; bad values fall back', () async {
+    final s = DirectorySettingsService(dir);
+    final a = 'sha256:${'a' * 64}';
+    final b = 'sha256:${'b' * 64}';
+    expect(await s.lastPdfPage(a), isNull);
+    await s.setLastPdfPage(a, 7);
+    await s.setLastPdfPage(b, 2);
+    expect(await DirectorySettingsService(dir).lastPdfPage(a), 7);
+    expect(await s.lastPdfPage(b), 2);
+    await s.setLastPdfPage(a, 0);
+    expect(await s.lastPdfPage(a), 7, reason: 'below 1 is ignored');
+    await dir.writeSetting('pdf.page.$a', 'seven');
+    expect(await s.lastPdfPage(a), isNull);
+    await dir.writeSetting('pdf.page.$a', '-3');
+    expect(await s.lastPdfPage(a), isNull);
+  });
 }

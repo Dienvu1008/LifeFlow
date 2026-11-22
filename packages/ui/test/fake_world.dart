@@ -10,6 +10,7 @@ import 'package:foundation/foundation.dart';
 import 'package:ui/ui.dart';
 
 import 'fake_documents.dart';
+import 'fake_pdf.dart';
 
 /// In-memory stand-in for the application ports. Like the real implementation
 /// the task stream is bound to the profile that is active when it subscribes
@@ -184,6 +185,18 @@ class FakeWorld
   Future<void> setSyncWhen(SyncWhen when) async {
     calls.add('syncWhen:${when.name}');
     syncWhenSetting = when;
+  }
+
+  /// P05b D9: the last page of each PDF on this device, by hash.
+  final pdfPages = <String, int>{};
+
+  @override
+  Future<int?> lastPdfPage(String hash) async => pdfPages[hash];
+
+  @override
+  Future<void> setLastPdfPage(String hash, int page) async {
+    calls.add('pdfPage:$page');
+    if (page >= 1) pdfPages[hash] = page;
   }
 
   @override
@@ -623,6 +636,9 @@ class FakeWorld
 
   /// P05a T8: documents, search and attachments.
   late final FakeDocuments documents = FakeDocuments(calls, tasks: () => _mine());
+
+  /// P05b T1: the PDF view (pdfrx is not loaded in widget tests).
+  late final FakePdf pdf = FakePdf(calls);
 
   void dispose() {
     _changes.close();
@@ -1321,6 +1337,7 @@ Widget appWith(FakeWorld world,
         documentQueriesProvider.overrideWithValue(world.documents),
         searchQueriesProvider.overrideWithValue(world.documents),
         attachmentServiceProvider.overrideWithValue(world.documents),
+        pdfViewBuilderProvider.overrideWithValue(world.pdf.build),
         overviewServiceProvider.overrideWithValue(world.overview),
         overviewQueriesProvider.overrideWithValue(world.overview),
         storageNoticeProvider.overrideWithValue(notice),

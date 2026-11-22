@@ -240,6 +240,13 @@ abstract interface class SettingsService {
   /// P04 D8: when this device syncs (automatic by default).
   Future<SyncWhen> syncWhen();
   Future<void> setSyncWhen(SyncWhen when);
+
+  /// P05b D9: the page the PDF of [hash] was last shown at on this device
+  /// (1 or more), or null when it was never opened here.
+  Future<int?> lastPdfPage(String hash);
+
+  /// Remembers [page] for the PDF of [hash]; below 1 is ignored.
+  Future<void> setLastPdfPage(String hash, int page);
 }
 
 /// The IANA time zones this build knows, for a zone picker.

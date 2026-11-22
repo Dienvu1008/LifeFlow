@@ -9,7 +9,8 @@
 //              shown space by title, or "Create …"; a link shows its target's
 //              current title; a broken one says so when tapped (DOC-003)
 //   files      "Attach a file": kept on this device, encrypted (ADR-0072);
-//              shown as a picture or a file, or "on another device"
+//              shown as a picture or a file, or "on another device"; a PDF
+//              opens in the PDF page (pdf_page.dart, ADR-0076)
 //   under it   backlinks with their sentences, and the linked tasks, events
 //              and goals; the history in the menu, with restore
 //   view only  a viewer, a document in the trash, a body this app cannot
@@ -31,6 +32,7 @@ import '../screens/spaces_ui.dart' show moveItemFlow, moveLabel;
 import '../screens/task_page.dart' show openTaskPage;
 import '../task_actions.dart' show reportResult, showMessage;
 import 'documents_screen.dart' show moveUnderFlow, trashDocumentFlow;
+import 'pdf_page.dart' show openPdfPage;
 import 'quill_adapter.dart';
 
 Future<void> openDocumentPage(BuildContext context, String id) => Navigator.of(context, rootNavigator: true)
@@ -817,7 +819,8 @@ class AttachmentEmbedBuilder extends q.EmbedBuilder {
 }
 
 /// A file of a document: the picture itself, or the file with "Save a
-/// copy"; "On another device" or "Cannot be read" otherwise (ADR-0072).
+/// copy" (a PDF also opens, ADR-0076); "On another device" or "Cannot be
+/// read" otherwise (ADR-0072).
 class AttachmentTile extends ConsumerStatefulWidget {
   const AttachmentTile({super.key, required this.file, required this.files});
   final AttachmentRef file;
@@ -872,14 +875,25 @@ class _AttachmentTileState extends ConsumerState<AttachmentTile> {
               ),
             ]));
           case AttachmentAvailability.here:
+            // P05b D8: a PDF opens in the app from here (ADR-0076).
+            final pdf = fileViewOf(f) == FileView.pdf;
             return card(ListTile(
-              leading: const Icon(Icons.insert_drive_file_outlined),
+              key: pdf ? ValueKey('doc-file-open-${f.hash}') : null,
+              leading: Icon(pdf ? Icons.picture_as_pdf_outlined : Icons.insert_drive_file_outlined),
               title: Text(l.docFileHere(f.name, formatBytes(f.size))),
-              trailing: IconButton(
-                  key: ValueKey('doc-file-save-${f.hash}'),
-                  tooltip: l.docFileSaveCopy,
-                  icon: const Icon(Icons.download_outlined),
-                  onPressed: _saveCopy),
+              onTap: pdf ? () => openPdfPage(context, f, widget.files) : null,
+              trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                if (pdf)
+                  IconButton(
+                      tooltip: l.pdfOpen(f.name),
+                      icon: const Icon(Icons.chrome_reader_mode_outlined),
+                      onPressed: () => openPdfPage(context, f, widget.files)),
+                IconButton(
+                    key: ValueKey('doc-file-save-${f.hash}'),
+                    tooltip: l.docFileSaveCopy,
+                    icon: const Icon(Icons.download_outlined),
+                    onPressed: _saveCopy),
+              ]),
             ));
           case AttachmentAvailability.elsewhere:
             return card(ListTile(

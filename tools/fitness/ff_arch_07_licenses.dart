@@ -8,7 +8,10 @@
 //     version (an upgrade must be reviewed);
 //   - a listed license is not accepted by ADR-0018;
 //   - a recorded exception (ADR-0035) is used by another package, or its
-//     notice files are missing from the app.
+//     notice files are missing from the app;
+//   - pdfium_dart is shipped and the notices of the PDFium binary it
+//     downloads are missing, or are from another pdfium_dart version
+//     (ADR-0075).
 //
 // Run: dart run tools/fitness/ff_arch_07_licenses.dart
 //      dart run tools/fitness/ff_arch_07_licenses.dart --detect
@@ -35,6 +38,53 @@ const exceptions = {
     ],
   ),
 };
+
+/// ADR-0075: the notices of the PDFium binary that pdfium_dart's build hook
+/// downloads (tools/licenses/fetch_pdfium_notices.ps1 writes them, with SOURCE).
+const pdfiumNoticeDir = 'apps/lifeflow_app/assets/licenses/pdfium';
+
+/// The notices ADR-0075 names, which SOURCE must list (more may follow a
+/// release; fewer means the script or the release changed).
+const pdfiumRequiredNotices = {
+  'pdfium.txt',
+  'freetype.txt',
+  'libjpeg_turbo.ijg',
+  'libpng.txt',
+  'zlib.txt',
+  'icu.txt',
+  'agg23.txt',
+};
+
+/// Problems with the PDFium notices when pdfium_dart [locked] is shipped
+/// (null: not shipped, nothing to check). [source] is SOURCE's text or null.
+List<String> pdfiumNoticeProblems({
+  required String? locked,
+  required String? source,
+  required bool Function(String path) exists,
+}) {
+  if (locked == null) return const [];
+  if (source == null) {
+    return ['pub:pdfium_dart: $pdfiumNoticeDir/SOURCE is missing (run tools/licenses/fetch_pdfium_notices.ps1, ADR-0075)'];
+  }
+  final problems = <String>[];
+  final lines = source.split('\n').map((l) => l.trim()).toList();
+  final version = lines.where((l) => l.startsWith('pdfium_dart ')).map((l) => l.substring(12).trim()).firstOrNull;
+  if (version != locked) {
+    problems.add('pub:pdfium_dart is $locked but the PDFium notices are from pdfium_dart $version '
+        '(read the licenses of its release again and re-run the script, ADR-0075)');
+  }
+  final notices = [
+    for (final l in lines)
+      if (l.startsWith('notice ')) l.split(RegExp(r'\s+'))[1],
+  ];
+  for (final n in pdfiumRequiredNotices) {
+    if (!notices.contains(n)) problems.add('pub:pdfium_dart: SOURCE does not list the notice $n (ADR-0075)');
+  }
+  for (final n in notices) {
+    if (!exists('$pdfiumNoticeDir/$n')) problems.add('pub:pdfium_dart: notice file missing: $pdfiumNoticeDir/$n (ADR-0075)');
+  }
+  return problems;
+}
 
 class Entry {
   Entry(this.key, this.version, this.license);
@@ -172,7 +222,15 @@ void main(List<String> args) {
     return;
   }
 
-  final problems = check(shipped: shipped, inventory: inventory, exists: (p) => File(p).existsSync());
+  final sourceFile = File('$pdfiumNoticeDir/SOURCE');
+  final problems = [
+    ...check(shipped: shipped, inventory: inventory, exists: (p) => File(p).existsSync()),
+    ...pdfiumNoticeProblems(
+      locked: shipped['pub:pdfium_dart'],
+      source: sourceFile.existsSync() ? sourceFile.readAsStringSync() : null,
+      exists: (p) => File(p).existsSync(),
+    ),
+  ];
   if (problems.isNotEmpty) {
     stderr.writeln('FF-ARCH-07 FAILED:');
     for (final p in problems) {

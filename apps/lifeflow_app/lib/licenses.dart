@@ -1,7 +1,10 @@
-// ADR-0035: licenses of shipped code that Flutter does not list by itself.
-// Dart packages register their own LICENSE files; Android libraries pulled in
-// by Gradle do not, so their notices are bundled as assets and added here.
+// ADR-0035, ADR-0075: licenses of shipped code that Flutter does not list by
+// itself. Dart packages register their own LICENSE files; Android libraries
+// pulled in by Gradle, and the PDFium binary that pdfrx's build hook
+// downloads, do not, so their notices are bundled as assets and added here.
 // They appear in Settings > Open-source licenses (showLicensePage).
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:infrastructure/infrastructure.dart' show syncDataLicenses;
@@ -9,10 +12,36 @@ import 'package:infrastructure/infrastructure.dart' show syncDataLicenses;
 /// Shown as the package name on the license page.
 const desugarPackageName = 'desugar_jdk_libs (Android)';
 
-const _dir = 'assets/licenses/desugar_jdk_libs';
+/// Shown as the package name of the PDFium notices (ADR-0075).
+const pdfiumPackageName = 'PDFium (used by pdfrx)';
 
-/// Adds the desugar_jdk_libs notices (GPL-2.0 with the Classpath Exception)
-/// to the app's license list. Call once at startup.
+/// The credit lines FreeType's FTL and the IJG license ask for (ADR-0075).
+const pdfiumCredits = [
+  'Portions of this software are copyright © The FreeType Project (www.freetype.org). All rights reserved.',
+  'This software is based in part on the work of the Independent JPEG Group.',
+];
+
+const _dir = 'assets/licenses/desugar_jdk_libs';
+const _pdfiumDir = 'assets/licenses/pdfium';
+
+/// The notice files SOURCE lists (`notice <file> <sha256>`), in order.
+List<String> pdfiumNoticeFiles(String source) => [
+      for (final l in source.split('\n'))
+        if (l.trim().startsWith('notice ')) l.trim().split(RegExp(r'\s+'))[1],
+    ];
+
+/// A notice file's text: UTF-8, or Latin-1 when it is not UTF-8 (FreeType's
+/// FTL is Latin-1, its "©" one byte).
+String noticeText(List<int> bytes) {
+  try {
+    return utf8.decode(bytes);
+  } on FormatException {
+    return latin1.decode(bytes);
+  }
+}
+
+/// Adds the notices Flutter does not list by itself to the app's license
+/// list. Call once at startup.
 void registerBundledLicenses() {
   LicenseRegistry.addLicense(() async* {
     final source = await rootBundle.loadString('$_dir/SOURCE');
@@ -25,6 +54,21 @@ void registerBundledLicenses() {
       'Android core library desugaring, used unmodified by the Android build.\n'
       '${source.trim()}\n\n${parts.join('\n\n')}',
     );
+  });
+  // P05b T1 (ADR-0075): the PDFium binary, used as published, and the
+  // libraries inside it: the credits first, then each notice unchanged.
+  LicenseRegistry.addLicense(() async* {
+    final source = await rootBundle.loadString('$_pdfiumDir/SOURCE');
+    final release = source.split('\n').where((l) => l.startsWith('http')).firstOrNull?.trim() ?? '';
+    yield LicenseEntryWithLineBreaks(
+      const [pdfiumPackageName],
+      'The PDF engine of the PDF viewer, used unmodified as published at $release.\n\n'
+      '${pdfiumCredits.join('\n')}',
+    );
+    for (final f in pdfiumNoticeFiles(source)) {
+      final bytes = await rootBundle.load('$_pdfiumDir/$f');
+      yield LicenseEntryWithLineBreaks(const [pdfiumPackageName], noticeText(bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes)));
+    }
   });
   // P04 T1b: the word lists of sync (recovery keys, the passphrase check).
   LicenseRegistry.addLicense(() async* {

@@ -105,6 +105,22 @@ class DirectorySettingsService implements SettingsService {
   @override
   Future<void> setSyncWhen(SyncWhen when) => directory.writeSetting(_syncWhen, when.name);
 
+  // P05b D9 (ADR-0076): by the file's content hash, so the same PDF opens at
+  // its page wherever it is attached. In the encrypted registry like the rest.
+  static String _pdfPage(String hash) => 'pdf.page.$hash';
+
+  @override
+  Future<int?> lastPdfPage(String hash) async {
+    final v = int.tryParse(await directory.readSetting(_pdfPage(hash)) ?? '');
+    return v != null && v >= 1 ? v : null;
+  }
+
+  @override
+  Future<void> setLastPdfPage(String hash, int page) async {
+    if (page < 1) return;
+    await directory.writeSetting(_pdfPage(hash), '$page');
+  }
+
   static const _collapsed = 'ui.overview.collapsed';
 
   @override

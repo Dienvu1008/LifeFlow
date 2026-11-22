@@ -4143,6 +4143,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open again'**
   String get docOpenAgain;
+
+  /// No description provided for @pdfOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open {name}'**
+  String pdfOpen(String name);
+
+  /// No description provided for @pdfFind.
+  ///
+  /// In en, this message translates to:
+  /// **'Find in the PDF'**
+  String get pdfFind;
+
+  /// No description provided for @pdfFindHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Find'**
+  String get pdfFindHint;
+
+  /// No description provided for @pdfMatchOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{index} of {count}'**
+  String pdfMatchOf(int index, int count);
+
+  /// No description provided for @pdfNoMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'No matches'**
+  String get pdfNoMatches;
+
+  /// No description provided for @pdfFinding.
+  ///
+  /// In en, this message translates to:
+  /// **'Finding…'**
+  String get pdfFinding;
+
+  /// No description provided for @pdfPreviousMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous match'**
+  String get pdfPreviousMatch;
+
+  /// No description provided for @pdfNextMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Next match'**
+  String get pdfNextMatch;
+
+  /// No description provided for @pdfCloseFind.
+  ///
+  /// In en, this message translates to:
+  /// **'Close find'**
+  String get pdfCloseFind;
+
+  /// No description provided for @pdfZoomIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom in'**
+  String get pdfZoomIn;
+
+  /// No description provided for @pdfZoomOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Zoom out'**
+  String get pdfZoomOut;
+
+  /// No description provided for @pdfPreviousPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous page'**
+  String get pdfPreviousPage;
+
+  /// No description provided for @pdfNextPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Next page'**
+  String get pdfNextPage;
+
+  /// No description provided for @pdfPageOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {page} of {count}'**
+  String pdfPageOf(int page, int count);
+
+  /// No description provided for @pdfCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy the selected text'**
+  String get pdfCopy;
+
+  /// No description provided for @pdfCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied the selected text.'**
+  String get pdfCopied;
+
+  /// No description provided for @pdfCopyNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'This PDF does not allow copying its text.'**
+  String get pdfCopyNotAllowed;
+
+  /// No description provided for @pdfPasswordTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get pdfPasswordTitle;
+
+  /// No description provided for @pdfPasswordPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'“{name}” is protected by a password.'**
+  String pdfPasswordPrompt(String name);
+
+  /// No description provided for @pdfPasswordWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'That password is not right. Try again.'**
+  String get pdfPasswordWrong;
+
+  /// No description provided for @pdfPasswordOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get pdfPasswordOpen;
+
+  /// No description provided for @pdfNeedsPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'This PDF opens only with its password.'**
+  String get pdfNeedsPassword;
+
+  /// No description provided for @pdfCannotOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'This PDF cannot be opened. It may be damaged.'**
+  String get pdfCannotOpen;
+
+  /// No description provided for @pdfTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get pdfTryAgain;
 }
 
 class _AppLocalizationsDelegate

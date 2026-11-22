@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:infrastructure/infrastructure.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:ui/ui.dart' show initPdfViewer;
 
 import 'auth/auth_config.dart';
 import 'auth/supabase_auth_gateway.dart';
@@ -23,7 +24,14 @@ const windowsPlainFallback = bool.fromEnvironment('LIFEFLOW_WINDOWS_PLAIN_DB');
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  registerBundledLicenses(); // ADR-0035
+  registerBundledLicenses(); // ADR-0035, ADR-0075
+  // P05b T1 (ADR-0076): the PDF engine, before a PDF is shown. A failure
+  // only means PDFs do not open (they say so); the app still starts.
+  try {
+    await initPdfViewer();
+  } catch (e) {
+    debugPrint('[pdf] engine unavailable: $e');
+  }
 
   final platform = storagePlatformFor(defaultTargetPlatform);
   // App-private support directory, not the user's Documents (privacy-model §2).

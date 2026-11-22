@@ -2506,4 +2506,84 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get docOpenAgain => 'Open again';
+
+  @override
+  String pdfOpen(String name) {
+    return 'Open $name';
+  }
+
+  @override
+  String get pdfFind => 'Find in the PDF';
+
+  @override
+  String get pdfFindHint => 'Find';
+
+  @override
+  String pdfMatchOf(int index, int count) {
+    return '$index of $count';
+  }
+
+  @override
+  String get pdfNoMatches => 'No matches';
+
+  @override
+  String get pdfFinding => 'Finding…';
+
+  @override
+  String get pdfPreviousMatch => 'Previous match';
+
+  @override
+  String get pdfNextMatch => 'Next match';
+
+  @override
+  String get pdfCloseFind => 'Close find';
+
+  @override
+  String get pdfZoomIn => 'Zoom in';
+
+  @override
+  String get pdfZoomOut => 'Zoom out';
+
+  @override
+  String get pdfPreviousPage => 'Previous page';
+
+  @override
+  String get pdfNextPage => 'Next page';
+
+  @override
+  String pdfPageOf(int page, int count) {
+    return 'Page $page of $count';
+  }
+
+  @override
+  String get pdfCopy => 'Copy the selected text';
+
+  @override
+  String get pdfCopied => 'Copied the selected text.';
+
+  @override
+  String get pdfCopyNotAllowed => 'This PDF does not allow copying its text.';
+
+  @override
+  String get pdfPasswordTitle => 'Password';
+
+  @override
+  String pdfPasswordPrompt(String name) {
+    return '“$name” is protected by a password.';
+  }
+
+  @override
+  String get pdfPasswordWrong => 'That password is not right. Try again.';
+
+  @override
+  String get pdfPasswordOpen => 'Open';
+
+  @override
+  String get pdfNeedsPassword => 'This PDF opens only with its password.';
+
+  @override
+  String get pdfCannotOpen => 'This PDF cannot be opened. It may be damaged.';
+
+  @override
+  String get pdfTryAgain => 'Try again';
 }
