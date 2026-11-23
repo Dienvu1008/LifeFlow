@@ -1058,6 +1058,8 @@
   "pdfMatchOf": "{index} of {count}",
   "@pdfMatchOf": {"placeholders": {"index": {"type": "int"}, "count": {"type": "int"}}},
   "pdfNoMatches": "No matches",
+  "pdfMatchCount": "{count, plural, =1{1 match} other{{count} matches}}",
+  "@pdfMatchCount": {"placeholders": {"count": {"type": "int"}}},
   "pdfFinding": "Finding…",
   "pdfPreviousMatch": "Previous match",
   "pdfNextMatch": "Next match",
@@ -1078,5 +1080,10 @@
   "pdfPasswordOpen": "Open",
   "pdfNeedsPassword": "This PDF opens only with its password.",
   "pdfCannotOpen": "This PDF cannot be opened. It may be damaged.",
-  "pdfTryAgain": "Try again"
+  "pdfTryAgain": "Try again",
+  "docResultsFiles": "In PDF files",
+  "docFileHitTitle": "{name}, page {page}",
+  "@docFileHitTitle": {"placeholders": {"name": {"type": "String"}, "page": {"type": "int"}}},
+  "docFileHitIn": "In “{title}”",
+  "@docFileHitIn": {"placeholders": {"title": {"type": "String"}}}
 }

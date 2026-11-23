@@ -24,7 +24,12 @@ class AppWiring {
     this.focusLaunch = const NoActiveFocus(),
     this.sync,
     this.spaceSync,
+    this.background,
   });
+
+  /// P05b T2: work this session started that uses the store (the sweep, the
+  /// reading of PDFs); [close] waits for it before closing the store.
+  final Future<void> Function()? background;
 
   final String profileId;
   final AppDatabase db;
@@ -67,6 +72,7 @@ class AppWiring {
   Future<void> close() async {
     await stopReminders();
     await stopSync();
+    await background?.call();
     await db.close();
   }
 
@@ -173,9 +179,14 @@ Future<AppWiring> openSession({
 
     // P05a T7/T8 (ADR-0072): this profile's files; the ones no document
     // names any more go, never blocking the opening.
-    final attachments = DriftAttachmentService(db,
+    final store = DriftAttachmentService(db,
         folder: directory.attachmentsDir(profileId), keys: directory.attachmentKeys(profileId));
-    unawaited(attachments.sweep().then((_) {}, onError: (Object e) => onWarning?.call('[attachments] $e')));
+    // P05b T2 (ADR-0077): each PDF kept is read for search; after the sweep,
+    // the PDFs not read yet are, and the text of files gone is dropped.
+    final pdfs = PdfTextIndex(db, store);
+    final attachments = PdfIndexingAttachments(store, pdfs);
+    // No folder yet: no file was ever kept in this profile, nothing to read.
+    final fileWork = store.sweep().then((_) => store.folder.existsSync() ? pdfs.catchUp() : 0).then((_) {}, onError: (Object e) => onWarning?.call('[attachments] $e'));
 
     // P04 T5 (D4, D8): sync of this profile, if the build has a server. The
     // first automatic sync is not awaited: opening never waits for the
@@ -230,6 +241,10 @@ Future<AppWiring> openSession({
     }
     return AppWiring(
       profileId: profileId,
+      background: () async {
+        await fileWork;
+        await pdfs.idle;
+      },
       sync: scheduler,
       spaceSync: spaceScheduler,
       db: db,
@@ -247,7 +262,7 @@ Future<AppWiring> openSession({
         // P05a T8 (ADR-0073): documents, one search, files on this device.
         documentServiceProvider.overrideWithValue(DriftDocumentService(db, gateway, deviceId: platform.name)),
         documentQueriesProvider.overrideWithValue(DriftDocumentQueries(db)),
-        searchQueriesProvider.overrideWithValue(DriftSearchQueries(db)),
+        searchQueriesProvider.overrideWithValue(DriftSearchQueries(db, pdfs: pdfs)),
         attachmentServiceProvider.overrideWithValue(attachments),
         goalServiceProvider.overrideWithValue(DriftGoalService(db, gateway)),
         overviewServiceProvider.overrideWithValue(DriftOverviewService(db, gateway)),

@@ -32,12 +32,17 @@ dependencies:
   unorm_dart: 0.3.3
   # The sync server's REST API (BSD-3, Dart team; already shipped via supabase; ADR-0055).
   http: 1.6.0
+  # P05b T2 (ADR-0077): the text of PDFs for search, with PDFium (MIT, VS-49;
+  # the same engine and pin as ui's pdfrx 3.0.0, ADR-0075).
+  pdfrx_engine: 0.9.3
 
 dev_dependencies:
   test: ^1.25.0
   lints: ^5.0.0
   drift_dev: ^2.28.0
   build_runner: ^2.4.13
+  # Tests only: real PDFs with Vietnamese text in an embedded font (Apache-2.0; not shipped).
+  pdf: 3.13.1
 hooks:
   user_defines:
     sqlite3:

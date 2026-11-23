@@ -3,6 +3,10 @@
 // title. Marks are kept and letter case is ignored; whichever way a keyboard
 // typed the marks, the same word is found. Every word typed must be there;
 // the last may be the start of a word; "double quotes" make a phrase.
+// P05b T2 (ADR-0077, D3): the pages of the PDFs on this device, too.
+
+import 'package:domain/domain.dart' show AttachmentRef;
+
 
 /// A part of [text] that matched: [start] to [end] (end not included).
 typedef SearchMatch = ({int start, int end});
@@ -22,6 +26,27 @@ class DocumentHitView {
   final List<SearchMatch> matches;
 }
 
+/// A page of a PDF on this device that matched, with the document that
+/// names the file ("in file.pdf, page 3").
+class FileHitView {
+  const FileHitView({
+    required this.documentId,
+    required this.documentTitle,
+    required this.file,
+    required this.page,
+    required this.passage,
+    this.matches = const [],
+  });
+  final String documentId;
+  final String documentTitle;
+  final AttachmentRef file;
+
+  /// The page (1 or more).
+  final int page;
+  final String passage;
+  final List<SearchMatch> matches;
+}
+
 /// A task found by its title.
 class TaskHitView {
   const TaskHitView({required this.id, required this.title, required this.isDone});
@@ -31,15 +56,19 @@ class TaskHitView {
 }
 
 class SearchResults {
-  const SearchResults({this.documents = const [], this.tasks = const []});
+  const SearchResults({this.documents = const [], this.tasks = const [], this.files = const []});
   static const empty = SearchResults();
   final List<DocumentHitView> documents;
   final List<TaskHitView> tasks;
-  bool get isEmpty => documents.isEmpty && tasks.isEmpty;
+
+  /// PDF pages, best first (one per document, file and page).
+  final List<FileHitView> files;
+  bool get isEmpty => documents.isEmpty && tasks.isEmpty && files.isEmpty;
 }
 
 abstract interface class SearchQueries {
   /// The live documents and tasks of the shown workspace matching [typed],
+  /// and the pages of the PDFs on this device that its live documents name,
   /// best first, at most [limit] of each. Nothing typed: nothing found.
   Future<SearchResults> search(String typed, {int limit = 50});
 }

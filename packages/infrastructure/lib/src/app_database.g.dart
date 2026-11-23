@@ -20211,6 +20211,548 @@ class DocumentLinkIndexCompanion extends UpdateCompanion<DocumentLinkIndexRow> {
   }
 }
 
+class $DocumentFileIndexTable extends DocumentFileIndex
+    with TableInfo<$DocumentFileIndexTable, DocumentFileIndexRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DocumentFileIndexTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _documentIdMeta =
+      const VerificationMeta('documentId');
+  @override
+  late final GeneratedColumn<String> documentId = GeneratedColumn<String>(
+      'document_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _hashMeta = const VerificationMeta('hash');
+  @override
+  late final GeneratedColumn<String> hash = GeneratedColumn<String>(
+      'hash', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _sizeMeta = const VerificationMeta('size');
+  @override
+  late final GeneratedColumn<int> size = GeneratedColumn<int>(
+      'size', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _mimeMeta = const VerificationMeta('mime');
+  @override
+  late final GeneratedColumn<String> mime = GeneratedColumn<String>(
+      'mime', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [documentId, hash, name, size, mime];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'document_file_index';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<DocumentFileIndexRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('document_id')) {
+      context.handle(
+          _documentIdMeta,
+          documentId.isAcceptableOrUnknown(
+              data['document_id']!, _documentIdMeta));
+    } else if (isInserting) {
+      context.missing(_documentIdMeta);
+    }
+    if (data.containsKey('hash')) {
+      context.handle(
+          _hashMeta, hash.isAcceptableOrUnknown(data['hash']!, _hashMeta));
+    } else if (isInserting) {
+      context.missing(_hashMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('size')) {
+      context.handle(
+          _sizeMeta, size.isAcceptableOrUnknown(data['size']!, _sizeMeta));
+    } else if (isInserting) {
+      context.missing(_sizeMeta);
+    }
+    if (data.containsKey('mime')) {
+      context.handle(
+          _mimeMeta, mime.isAcceptableOrUnknown(data['mime']!, _mimeMeta));
+    } else if (isInserting) {
+      context.missing(_mimeMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {documentId, hash};
+  @override
+  DocumentFileIndexRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DocumentFileIndexRow(
+      documentId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}document_id'])!,
+      hash: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}hash'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      size: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}size'])!,
+      mime: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}mime'])!,
+    );
+  }
+
+  @override
+  $DocumentFileIndexTable createAlias(String alias) {
+    return $DocumentFileIndexTable(attachedDatabase, alias);
+  }
+}
+
+class DocumentFileIndexRow extends DataClass
+    implements Insertable<DocumentFileIndexRow> {
+  final String documentId;
+  final String hash;
+  final String name;
+  final int size;
+  final String mime;
+  const DocumentFileIndexRow(
+      {required this.documentId,
+      required this.hash,
+      required this.name,
+      required this.size,
+      required this.mime});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['document_id'] = Variable<String>(documentId);
+    map['hash'] = Variable<String>(hash);
+    map['name'] = Variable<String>(name);
+    map['size'] = Variable<int>(size);
+    map['mime'] = Variable<String>(mime);
+    return map;
+  }
+
+  DocumentFileIndexCompanion toCompanion(bool nullToAbsent) {
+    return DocumentFileIndexCompanion(
+      documentId: Value(documentId),
+      hash: Value(hash),
+      name: Value(name),
+      size: Value(size),
+      mime: Value(mime),
+    );
+  }
+
+  factory DocumentFileIndexRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DocumentFileIndexRow(
+      documentId: serializer.fromJson<String>(json['documentId']),
+      hash: serializer.fromJson<String>(json['hash']),
+      name: serializer.fromJson<String>(json['name']),
+      size: serializer.fromJson<int>(json['size']),
+      mime: serializer.fromJson<String>(json['mime']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'documentId': serializer.toJson<String>(documentId),
+      'hash': serializer.toJson<String>(hash),
+      'name': serializer.toJson<String>(name),
+      'size': serializer.toJson<int>(size),
+      'mime': serializer.toJson<String>(mime),
+    };
+  }
+
+  DocumentFileIndexRow copyWith(
+          {String? documentId,
+          String? hash,
+          String? name,
+          int? size,
+          String? mime}) =>
+      DocumentFileIndexRow(
+        documentId: documentId ?? this.documentId,
+        hash: hash ?? this.hash,
+        name: name ?? this.name,
+        size: size ?? this.size,
+        mime: mime ?? this.mime,
+      );
+  DocumentFileIndexRow copyWithCompanion(DocumentFileIndexCompanion data) {
+    return DocumentFileIndexRow(
+      documentId:
+          data.documentId.present ? data.documentId.value : this.documentId,
+      hash: data.hash.present ? data.hash.value : this.hash,
+      name: data.name.present ? data.name.value : this.name,
+      size: data.size.present ? data.size.value : this.size,
+      mime: data.mime.present ? data.mime.value : this.mime,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DocumentFileIndexRow(')
+          ..write('documentId: $documentId, ')
+          ..write('hash: $hash, ')
+          ..write('name: $name, ')
+          ..write('size: $size, ')
+          ..write('mime: $mime')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(documentId, hash, name, size, mime);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DocumentFileIndexRow &&
+          other.documentId == this.documentId &&
+          other.hash == this.hash &&
+          other.name == this.name &&
+          other.size == this.size &&
+          other.mime == this.mime);
+}
+
+class DocumentFileIndexCompanion extends UpdateCompanion<DocumentFileIndexRow> {
+  final Value<String> documentId;
+  final Value<String> hash;
+  final Value<String> name;
+  final Value<int> size;
+  final Value<String> mime;
+  final Value<int> rowid;
+  const DocumentFileIndexCompanion({
+    this.documentId = const Value.absent(),
+    this.hash = const Value.absent(),
+    this.name = const Value.absent(),
+    this.size = const Value.absent(),
+    this.mime = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DocumentFileIndexCompanion.insert({
+    required String documentId,
+    required String hash,
+    required String name,
+    required int size,
+    required String mime,
+    this.rowid = const Value.absent(),
+  })  : documentId = Value(documentId),
+        hash = Value(hash),
+        name = Value(name),
+        size = Value(size),
+        mime = Value(mime);
+  static Insertable<DocumentFileIndexRow> custom({
+    Expression<String>? documentId,
+    Expression<String>? hash,
+    Expression<String>? name,
+    Expression<int>? size,
+    Expression<String>? mime,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (documentId != null) 'document_id': documentId,
+      if (hash != null) 'hash': hash,
+      if (name != null) 'name': name,
+      if (size != null) 'size': size,
+      if (mime != null) 'mime': mime,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DocumentFileIndexCompanion copyWith(
+      {Value<String>? documentId,
+      Value<String>? hash,
+      Value<String>? name,
+      Value<int>? size,
+      Value<String>? mime,
+      Value<int>? rowid}) {
+    return DocumentFileIndexCompanion(
+      documentId: documentId ?? this.documentId,
+      hash: hash ?? this.hash,
+      name: name ?? this.name,
+      size: size ?? this.size,
+      mime: mime ?? this.mime,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (documentId.present) {
+      map['document_id'] = Variable<String>(documentId.value);
+    }
+    if (hash.present) {
+      map['hash'] = Variable<String>(hash.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (size.present) {
+      map['size'] = Variable<int>(size.value);
+    }
+    if (mime.present) {
+      map['mime'] = Variable<String>(mime.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DocumentFileIndexCompanion(')
+          ..write('documentId: $documentId, ')
+          ..write('hash: $hash, ')
+          ..write('name: $name, ')
+          ..write('size: $size, ')
+          ..write('mime: $mime, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PdfTextStateTable extends PdfTextState
+    with TableInfo<$PdfTextStateTable, PdfTextStateRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PdfTextStateTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _hashMeta = const VerificationMeta('hash');
+  @override
+  late final GeneratedColumn<String> hash = GeneratedColumn<String>(
+      'hash', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+      'status', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _pagesMeta = const VerificationMeta('pages');
+  @override
+  late final GeneratedColumn<int> pages = GeneratedColumn<int>(
+      'pages', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [hash, status, pages];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'pdf_text_state';
+  @override
+  VerificationContext validateIntegrity(Insertable<PdfTextStateRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('hash')) {
+      context.handle(
+          _hashMeta, hash.isAcceptableOrUnknown(data['hash']!, _hashMeta));
+    } else if (isInserting) {
+      context.missing(_hashMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(_statusMeta,
+          status.isAcceptableOrUnknown(data['status']!, _statusMeta));
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('pages')) {
+      context.handle(
+          _pagesMeta, pages.isAcceptableOrUnknown(data['pages']!, _pagesMeta));
+    } else if (isInserting) {
+      context.missing(_pagesMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {hash};
+  @override
+  PdfTextStateRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PdfTextStateRow(
+      hash: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}hash'])!,
+      status: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
+      pages: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}pages'])!,
+    );
+  }
+
+  @override
+  $PdfTextStateTable createAlias(String alias) {
+    return $PdfTextStateTable(attachedDatabase, alias);
+  }
+}
+
+class PdfTextStateRow extends DataClass implements Insertable<PdfTextStateRow> {
+  final String hash;
+
+  /// `indexed` (its pages' text is in the index, maybe none: a scan),
+  /// `locked` (it has a password) or `unreadable` (PDFium could not open it).
+  final String status;
+  final int pages;
+  const PdfTextStateRow(
+      {required this.hash, required this.status, required this.pages});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['hash'] = Variable<String>(hash);
+    map['status'] = Variable<String>(status);
+    map['pages'] = Variable<int>(pages);
+    return map;
+  }
+
+  PdfTextStateCompanion toCompanion(bool nullToAbsent) {
+    return PdfTextStateCompanion(
+      hash: Value(hash),
+      status: Value(status),
+      pages: Value(pages),
+    );
+  }
+
+  factory PdfTextStateRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PdfTextStateRow(
+      hash: serializer.fromJson<String>(json['hash']),
+      status: serializer.fromJson<String>(json['status']),
+      pages: serializer.fromJson<int>(json['pages']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'hash': serializer.toJson<String>(hash),
+      'status': serializer.toJson<String>(status),
+      'pages': serializer.toJson<int>(pages),
+    };
+  }
+
+  PdfTextStateRow copyWith({String? hash, String? status, int? pages}) =>
+      PdfTextStateRow(
+        hash: hash ?? this.hash,
+        status: status ?? this.status,
+        pages: pages ?? this.pages,
+      );
+  PdfTextStateRow copyWithCompanion(PdfTextStateCompanion data) {
+    return PdfTextStateRow(
+      hash: data.hash.present ? data.hash.value : this.hash,
+      status: data.status.present ? data.status.value : this.status,
+      pages: data.pages.present ? data.pages.value : this.pages,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PdfTextStateRow(')
+          ..write('hash: $hash, ')
+          ..write('status: $status, ')
+          ..write('pages: $pages')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(hash, status, pages);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PdfTextStateRow &&
+          other.hash == this.hash &&
+          other.status == this.status &&
+          other.pages == this.pages);
+}
+
+class PdfTextStateCompanion extends UpdateCompanion<PdfTextStateRow> {
+  final Value<String> hash;
+  final Value<String> status;
+  final Value<int> pages;
+  final Value<int> rowid;
+  const PdfTextStateCompanion({
+    this.hash = const Value.absent(),
+    this.status = const Value.absent(),
+    this.pages = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PdfTextStateCompanion.insert({
+    required String hash,
+    required String status,
+    required int pages,
+    this.rowid = const Value.absent(),
+  })  : hash = Value(hash),
+        status = Value(status),
+        pages = Value(pages);
+  static Insertable<PdfTextStateRow> custom({
+    Expression<String>? hash,
+    Expression<String>? status,
+    Expression<int>? pages,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (hash != null) 'hash': hash,
+      if (status != null) 'status': status,
+      if (pages != null) 'pages': pages,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PdfTextStateCompanion copyWith(
+      {Value<String>? hash,
+      Value<String>? status,
+      Value<int>? pages,
+      Value<int>? rowid}) {
+    return PdfTextStateCompanion(
+      hash: hash ?? this.hash,
+      status: status ?? this.status,
+      pages: pages ?? this.pages,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (hash.present) {
+      map['hash'] = Variable<String>(hash.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (pages.present) {
+      map['pages'] = Variable<int>(pages.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PdfTextStateCompanion(')
+          ..write('hash: $hash, ')
+          ..write('status: $status, ')
+          ..write('pages: $pages, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -20255,6 +20797,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SearchPendingTable searchPending = $SearchPendingTable(this);
   late final $DocumentLinkIndexTable documentLinkIndex =
       $DocumentLinkIndexTable(this);
+  late final $DocumentFileIndexTable documentFileIndex =
+      $DocumentFileIndexTable(this);
+  late final $PdfTextStateTable pdfTextState = $PdfTextStateTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -20293,7 +20838,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         documentRevisions,
         documentLinks,
         searchPending,
-        documentLinkIndex
+        documentLinkIndex,
+        documentFileIndex,
+        pdfTextState
       ];
 }
 
@@ -29766,6 +30313,335 @@ typedef $$DocumentLinkIndexTableProcessedTableManager = ProcessedTableManager<
     ),
     DocumentLinkIndexRow,
     PrefetchHooks Function()>;
+typedef $$DocumentFileIndexTableCreateCompanionBuilder
+    = DocumentFileIndexCompanion Function({
+  required String documentId,
+  required String hash,
+  required String name,
+  required int size,
+  required String mime,
+  Value<int> rowid,
+});
+typedef $$DocumentFileIndexTableUpdateCompanionBuilder
+    = DocumentFileIndexCompanion Function({
+  Value<String> documentId,
+  Value<String> hash,
+  Value<String> name,
+  Value<int> size,
+  Value<String> mime,
+  Value<int> rowid,
+});
+
+class $$DocumentFileIndexTableFilterComposer
+    extends Composer<_$AppDatabase, $DocumentFileIndexTable> {
+  $$DocumentFileIndexTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get documentId => $composableBuilder(
+      column: $table.documentId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get hash => $composableBuilder(
+      column: $table.hash, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get size => $composableBuilder(
+      column: $table.size, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get mime => $composableBuilder(
+      column: $table.mime, builder: (column) => ColumnFilters(column));
+}
+
+class $$DocumentFileIndexTableOrderingComposer
+    extends Composer<_$AppDatabase, $DocumentFileIndexTable> {
+  $$DocumentFileIndexTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get documentId => $composableBuilder(
+      column: $table.documentId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get hash => $composableBuilder(
+      column: $table.hash, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get size => $composableBuilder(
+      column: $table.size, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get mime => $composableBuilder(
+      column: $table.mime, builder: (column) => ColumnOrderings(column));
+}
+
+class $$DocumentFileIndexTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DocumentFileIndexTable> {
+  $$DocumentFileIndexTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get documentId => $composableBuilder(
+      column: $table.documentId, builder: (column) => column);
+
+  GeneratedColumn<String> get hash =>
+      $composableBuilder(column: $table.hash, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<int> get size =>
+      $composableBuilder(column: $table.size, builder: (column) => column);
+
+  GeneratedColumn<String> get mime =>
+      $composableBuilder(column: $table.mime, builder: (column) => column);
+}
+
+class $$DocumentFileIndexTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $DocumentFileIndexTable,
+    DocumentFileIndexRow,
+    $$DocumentFileIndexTableFilterComposer,
+    $$DocumentFileIndexTableOrderingComposer,
+    $$DocumentFileIndexTableAnnotationComposer,
+    $$DocumentFileIndexTableCreateCompanionBuilder,
+    $$DocumentFileIndexTableUpdateCompanionBuilder,
+    (
+      DocumentFileIndexRow,
+      BaseReferences<_$AppDatabase, $DocumentFileIndexTable,
+          DocumentFileIndexRow>
+    ),
+    DocumentFileIndexRow,
+    PrefetchHooks Function()> {
+  $$DocumentFileIndexTableTableManager(
+      _$AppDatabase db, $DocumentFileIndexTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DocumentFileIndexTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DocumentFileIndexTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DocumentFileIndexTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> documentId = const Value.absent(),
+            Value<String> hash = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<int> size = const Value.absent(),
+            Value<String> mime = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              DocumentFileIndexCompanion(
+            documentId: documentId,
+            hash: hash,
+            name: name,
+            size: size,
+            mime: mime,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String documentId,
+            required String hash,
+            required String name,
+            required int size,
+            required String mime,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              DocumentFileIndexCompanion.insert(
+            documentId: documentId,
+            hash: hash,
+            name: name,
+            size: size,
+            mime: mime,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable<$DocumentFileIndexTable, DocumentFileIndexRow>(
+                        table),
+                    BaseReferences<_$AppDatabase, $DocumentFileIndexTable,
+                        DocumentFileIndexRow>(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$DocumentFileIndexTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $DocumentFileIndexTable,
+    DocumentFileIndexRow,
+    $$DocumentFileIndexTableFilterComposer,
+    $$DocumentFileIndexTableOrderingComposer,
+    $$DocumentFileIndexTableAnnotationComposer,
+    $$DocumentFileIndexTableCreateCompanionBuilder,
+    $$DocumentFileIndexTableUpdateCompanionBuilder,
+    (
+      DocumentFileIndexRow,
+      BaseReferences<_$AppDatabase, $DocumentFileIndexTable,
+          DocumentFileIndexRow>
+    ),
+    DocumentFileIndexRow,
+    PrefetchHooks Function()>;
+typedef $$PdfTextStateTableCreateCompanionBuilder = PdfTextStateCompanion
+    Function({
+  required String hash,
+  required String status,
+  required int pages,
+  Value<int> rowid,
+});
+typedef $$PdfTextStateTableUpdateCompanionBuilder = PdfTextStateCompanion
+    Function({
+  Value<String> hash,
+  Value<String> status,
+  Value<int> pages,
+  Value<int> rowid,
+});
+
+class $$PdfTextStateTableFilterComposer
+    extends Composer<_$AppDatabase, $PdfTextStateTable> {
+  $$PdfTextStateTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get hash => $composableBuilder(
+      column: $table.hash, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get pages => $composableBuilder(
+      column: $table.pages, builder: (column) => ColumnFilters(column));
+}
+
+class $$PdfTextStateTableOrderingComposer
+    extends Composer<_$AppDatabase, $PdfTextStateTable> {
+  $$PdfTextStateTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get hash => $composableBuilder(
+      column: $table.hash, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get pages => $composableBuilder(
+      column: $table.pages, builder: (column) => ColumnOrderings(column));
+}
+
+class $$PdfTextStateTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PdfTextStateTable> {
+  $$PdfTextStateTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get hash =>
+      $composableBuilder(column: $table.hash, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<int> get pages =>
+      $composableBuilder(column: $table.pages, builder: (column) => column);
+}
+
+class $$PdfTextStateTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $PdfTextStateTable,
+    PdfTextStateRow,
+    $$PdfTextStateTableFilterComposer,
+    $$PdfTextStateTableOrderingComposer,
+    $$PdfTextStateTableAnnotationComposer,
+    $$PdfTextStateTableCreateCompanionBuilder,
+    $$PdfTextStateTableUpdateCompanionBuilder,
+    (
+      PdfTextStateRow,
+      BaseReferences<_$AppDatabase, $PdfTextStateTable, PdfTextStateRow>
+    ),
+    PdfTextStateRow,
+    PrefetchHooks Function()> {
+  $$PdfTextStateTableTableManager(_$AppDatabase db, $PdfTextStateTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PdfTextStateTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PdfTextStateTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PdfTextStateTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> hash = const Value.absent(),
+            Value<String> status = const Value.absent(),
+            Value<int> pages = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              PdfTextStateCompanion(
+            hash: hash,
+            status: status,
+            pages: pages,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String hash,
+            required String status,
+            required int pages,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              PdfTextStateCompanion.insert(
+            hash: hash,
+            status: status,
+            pages: pages,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable<$PdfTextStateTable, PdfTextStateRow>(table),
+                    BaseReferences<_$AppDatabase, $PdfTextStateTable,
+                        PdfTextStateRow>(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$PdfTextStateTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $PdfTextStateTable,
+    PdfTextStateRow,
+    $$PdfTextStateTableFilterComposer,
+    $$PdfTextStateTableOrderingComposer,
+    $$PdfTextStateTableAnnotationComposer,
+    $$PdfTextStateTableCreateCompanionBuilder,
+    $$PdfTextStateTableUpdateCompanionBuilder,
+    (
+      PdfTextStateRow,
+      BaseReferences<_$AppDatabase, $PdfTextStateTable, PdfTextStateRow>
+    ),
+    PdfTextStateRow,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -29838,4 +30714,8 @@ class $AppDatabaseManager {
       $$SearchPendingTableTableManager(_db, _db.searchPending);
   $$DocumentLinkIndexTableTableManager get documentLinkIndex =>
       $$DocumentLinkIndexTableTableManager(_db, _db.documentLinkIndex);
+  $$DocumentFileIndexTableTableManager get documentFileIndex =>
+      $$DocumentFileIndexTableTableManager(_db, _db.documentFileIndex);
+  $$PdfTextStateTableTableManager get pdfTextState =>
+      $$PdfTextStateTableTableManager(_db, _db.pdfTextState);
 }

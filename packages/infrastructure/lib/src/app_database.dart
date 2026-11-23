@@ -35,6 +35,8 @@ part 'app_database.g.dart';
 ///   v16 (P05a T2) documents, document_revisions, document_links; search by
 ///                the exact spelling (tasks_fts rebuilt, documents_fts, NFC by
 ///                search_pending), document_link_index (ADR-0067)
+///   v17 (P05b T2) the text of this device's PDFs for search: pdf_text_fts,
+///                pdf_text_state, document_file_index; device-only (ADR-0077)
 @DriftDatabase(
   tables: [
     Profiles, Workspaces, TaskLists, Tasks, AuditLog, Outbox, EventLog,
@@ -46,13 +48,14 @@ part 'app_database.g.dart';
     WorkspaceSettings, SyncBase, SyncState, SyncReviews,
     SpaceMembers, SyncParked, MemberCards,
     Documents, DocumentRevisions, DocumentLinks, SearchPending, DocumentLinkIndex,
+    DocumentFileIndex, PdfTextState,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   /// The schema this build writes (and the newest export it accepts).
-  static const currentSchemaVersion = 16;
+  static const currentSchemaVersion = 17;
 
   /// The last schema that changed a synced record's shape: what a sealed
   /// record says it is (ADR-0056). v12 changed only the local outbox. v13
@@ -60,7 +63,8 @@ class AppDatabase extends _$AppDatabase {
   /// a pulled record of v11 or v12 is read with both null. v14 (ADR-0064)
   /// adds a space's `name` to its settings and "moved away" changes. v15
   /// (ADR-0065) adds the member card kind. v16 (ADR-0067) adds documents,
-  /// their revisions and their links.
+  /// their revisions and their links. v17 (ADR-0077) changes only device
+  /// tables (the text of PDFs).
   static const recordSchemaVersion = 16;
 
   @override
@@ -71,6 +75,7 @@ class AppDatabase extends _$AppDatabase {
         onCreate: (m) async {
           await m.createAll();
           await createSearchIndex(this);
+          await createPdfTextIndex(this);
           await _createDocumentIndexes();
           await _createPlanningIndexes();
           await _createExecutionIndexes();
@@ -185,6 +190,15 @@ class AppDatabase extends _$AppDatabase {
             await customStatement('DROP TABLE IF EXISTS tasks_fts');
             await createSearchIndex(this);
             await markAllForSearch(this);
+          }
+          if (from < 17) {
+            // P05b T2 (ADR-0077): the text of this device's PDFs. The documents
+            // are noted again, so their files are listed by the next catch-up.
+            for (final TableInfo t in [documentFileIndex, pdfTextState]) {
+              await m.createTable(t);
+            }
+            await createPdfTextIndex(this);
+            if (from >= 16) await markAllForSearch(this);
           }
         },
         beforeOpen: (details) async {

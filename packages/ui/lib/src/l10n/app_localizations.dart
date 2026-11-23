@@ -4174,6 +4174,12 @@ abstract class AppLocalizations {
   /// **'No matches'**
   String get pdfNoMatches;
 
+  /// No description provided for @pdfMatchCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 match} other{{count} matches}}'**
+  String pdfMatchCount(int count);
+
   /// No description provided for @pdfFinding.
   ///
   /// In en, this message translates to:
@@ -4287,6 +4293,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Try again'**
   String get pdfTryAgain;
+
+  /// No description provided for @docResultsFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'In PDF files'**
+  String get docResultsFiles;
+
+  /// No description provided for @docFileHitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}, page {page}'**
+  String docFileHitTitle(String name, int page);
+
+  /// No description provided for @docFileHitIn.
+  ///
+  /// In en, this message translates to:
+  /// **'In “{title}”'**
+  String docFileHitIn(String title);
 }
 
 class _AppLocalizationsDelegate

@@ -13,6 +13,7 @@
 //     noted rows (title and body text in NFC; a document's links parsed from
 //     its body with the domain's own reader) in one transaction.
 // Records are never rewritten for the index.
+import 'package:application/application.dart' show FileView, fileViewOf;
 import 'package:domain/domain.dart';
 import 'package:drift/drift.dart';
 import 'package:unorm_dart/unorm_dart.dart' as unorm;
@@ -39,6 +40,13 @@ Future<void> createSearchIndex(AppDatabase db) async {
   }
 }
 
+/// P05b T2 (schema v17, ADR-0077): the text of this device's PDFs, one row
+/// per page, by the file's hash; and the files by hash.
+Future<void> createPdfTextIndex(AppDatabase db) async {
+  await db.customStatement('CREATE VIRTUAL TABLE pdf_text_fts USING fts5(text, hash UNINDEXED, page UNINDEXED, $_tokenize)');
+  await db.customStatement('CREATE INDEX document_file_index_hash ON document_file_index (hash)');
+}
+
 /// Notes every task and document, so the next catch-up indexes them all
 /// (the v16 upgrade).
 Future<void> markAllForSearch(AppDatabase db) async {
@@ -62,6 +70,7 @@ Future<void> catchUpSearch(AppDatabase db) async {
       } else {
         await db.customStatement('DELETE FROM documents_fts WHERE rowid = ?', [p.rowRef]);
         await (db.delete(db.documentLinkIndex)..where((x) => x.fromDocumentId.equals(p.recordId))).go();
+        await (db.delete(db.documentFileIndex)..where((x) => x.documentId.equals(p.recordId))).go();
       }
     }
     for (final p in pending) {
@@ -91,6 +100,14 @@ Future<void> catchUpSearch(AppDatabase db) async {
         for (final to in relationsOf(parentId: null, body: body).docLinks) {
           await db.into(db.documentLinkIndex).insertOnConflictUpdate(
               DocumentLinkIndexCompanion.insert(fromDocumentId: p.recordId, toDocumentId: to));
+        }
+        // P05b T2: its PDFs (the first name given to a file in the body).
+        final seen = <String>{};
+        for (final b in body.blocks) {
+          final f = b.attachment;
+          if (f == null || fileViewOf(f) != FileView.pdf || !seen.add(f.hash)) continue;
+          await db.into(db.documentFileIndex).insertOnConflictUpdate(DocumentFileIndexCompanion.insert(
+              documentId: p.recordId, hash: f.hash, name: f.name, size: f.size, mime: f.mime));
         }
       }
     }
@@ -202,4 +219,47 @@ Future<List<String>> backlinkIdsIn(AppDatabase db, String workspaceId, String do
     readsFrom: {db.documents},
   ).get();
   return [for (final r in rows) r.read<String>('id')];
+}
+
+/// P05b T2 (ADR-0077, D3): a PDF page that matched, with the live document
+/// of the workspace that names its file, and a marked passage.
+typedef PdfPageMatch = ({
+  String documentId,
+  String documentTitle,
+  AttachmentRef file,
+  int page,
+  String passage,
+});
+
+/// The pages of this device's PDFs matching what was typed, through the live
+/// documents of [workspaceId] that name them, best first.
+Future<List<PdfPageMatch>> searchPdfPagesIn(AppDatabase db, String workspaceId, String typed, {int limit = 50}) async {
+  final q = searchQueryOf(searchForm(typed));
+  if (q == null) return const [];
+  await catchUpSearch(db);
+  final rows = await db.customSelect(
+    "SELECT d.id AS doc, d.title AS title, i.hash AS hash, i.name AS name, i.size AS size, i.mime AS mime, "
+    "f.page AS page, snippet(pdf_text_fts, 0, ?, ?, '…', 24) AS passage "
+    'FROM pdf_text_fts f JOIN document_file_index i ON i.hash = f.hash JOIN documents d ON d.id = i.document_id '
+    'WHERE pdf_text_fts MATCH ? AND d.workspace_id = ? AND d.deleted_at IS NULL ORDER BY rank, d.title, f.page LIMIT ?',
+    variables: [
+      Variable<String>(_matchStart),
+      Variable<String>(_matchEnd),
+      Variable<String>(q),
+      Variable<String>(workspaceId),
+      Variable<int>(limit),
+    ],
+    readsFrom: {db.documents, db.documentFileIndex},
+  ).get();
+  return [
+    for (final r in rows)
+      (
+        documentId: r.read<String>('doc'),
+        documentTitle: r.read<String>('title'),
+        file: AttachmentRef(
+            hash: r.read<String>('hash'), name: r.read<String>('name'), size: r.read<int>('size'), mime: r.read<String>('mime')),
+        page: r.read<int>('page'),
+        passage: r.read<String>('passage'),
+      ),
+  ];
 }
