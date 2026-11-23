@@ -25,6 +25,7 @@ dependencies:
   qr_flutter: 4.1.0 # BSD-3-Clause (and qr, BSD-3-Clause); P04 T5 (the recovery key as a QR code)
   flutter_quill: 11.6.0 # MIT; P05a T8, the document editor behind an adapter (S-07, ADR-0020, VS-29)
   pdfrx: 3.0.0 # MIT; P05b T1, PDFs inside the app (S-08; PDFium's bundled licenses: ADR-0075, VS-49). 3.1 needs Flutter 3.50
+  flutter_tts: 4.2.5 # MIT; P05b T4, reading aloud with the device's voices behind TtsPort (S-12, VS-50). Windows builds need nuget.exe
 dev_dependencies:
   flutter_test:
     sdk: flutter

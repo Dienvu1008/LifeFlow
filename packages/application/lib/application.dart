@@ -15,6 +15,7 @@ export 'src/habits.dart';
 export 'src/overview.dart';
 export 'src/planning.dart';
 export 'src/ports.dart';
+export 'src/reading.dart';
 export 'src/remote.dart';
 export 'src/remote_spaces.dart';
 export 'src/reminders.dart';

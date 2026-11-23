@@ -5,6 +5,7 @@
 library ui;
 
 export 'src/documents/pdf_view.dart' show initPdfViewer, pdfViewBuilderProvider, PdfViewBuilder, PdfViewSetup, PdfViewControls, PdfOpenFailure;
+export 'src/documents/read_aloud.dart' show ttsPortProvider;
 export 'src/layout.dart';
 export 'src/messages.dart';
 export 'src/providers.dart';

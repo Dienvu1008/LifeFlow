@@ -15,6 +15,9 @@
 //              and goals; the history in the menu, with restore
 //   view only  a viewer, a document in the trash, a body this app cannot
 //              read: nothing is edited
+//   read aloud P05b T4 (ADR-0078): the reader bar; the sentence read is
+//              selected in the editor, which reads only meanwhile; leaving
+//              the page stops it, the app going to the background pauses it
 import 'dart:async';
 import 'dart:convert';
 
@@ -34,6 +37,8 @@ import '../task_actions.dart' show reportResult, showMessage;
 import 'documents_screen.dart' show moveUnderFlow, trashDocumentFlow;
 import 'pdf_page.dart' show openPdfPage;
 import 'quill_adapter.dart';
+import 'read_aloud.dart';
+import 'reader_bar.dart';
 
 Future<void> openDocumentPage(BuildContext context, String id) => Navigator.of(context, rootNavigator: true)
     .push(MaterialPageRoute<void>(builder: (_) => DocumentPage(documentId: id)));
@@ -80,6 +85,11 @@ class DocumentPageState extends ConsumerState<DocumentPage> {
   Future<void>? _inFlight;
   bool _picking = false;
 
+  /// P05b T4: the reader, while it is open; where each block starts in the
+  /// editor (for the sentence shown).
+  ReadAloud? _reader;
+  Map<String, int> _offsets = const {};
+
   /// Whether the shown space may be changed (B4), as last built.
   late bool _canEdit = ref.read(canEditShownProvider);
   int _generation = 0;
@@ -91,7 +101,7 @@ class DocumentPageState extends ConsumerState<DocumentPage> {
     _service = ref.read(documentServiceProvider);
     _queries = ref.read(documentQueriesProvider);
     _files = ref.read(attachmentServiceProvider);
-    _life = AppLifecycleListener(onInactive: _saveSoon, onHide: _saveSoon, onPause: _saveSoon);
+    _life = AppLifecycleListener(onInactive: _saveSoon, onHide: _hidden, onPause: _hidden);
     _title.addListener(_edited);
     _load();
   }
@@ -100,10 +110,14 @@ class DocumentPageState extends ConsumerState<DocumentPage> {
   @visibleForTesting
   q.QuillController? get controller => _c;
 
-  bool get _readOnly {
+  /// The document cannot be changed here (a viewer, the trash, unreadable).
+  bool get _viewOnly {
     final d = _doc;
     return d == null || d.isTrashed || d.isUnreadable || !_canEdit;
   }
+
+  /// Nothing is typed: view only, or while reading aloud.
+  bool get _readOnly => _viewOnly || _reader != null;
 
   Future<void> _load() async {
     final d = await _queries.document(widget.documentId);
@@ -159,6 +173,55 @@ class DocumentPageState extends ConsumerState<DocumentPage> {
   }
 
   void _saveSoon() => unawaited(_save());
+
+  /// The app went to the background: saved, and reading paused (D6).
+  void _hidden() {
+    _saveSoon();
+    unawaited(_reader?.pause());
+  }
+
+  // --- read aloud (P05b T4) ------------------------------------------------------
+
+  Future<void> _openReader() async {
+    await _save();
+    final c = _c;
+    if (c == null || !mounted) return;
+    final body = bodyOf(c.document.toDelta(), ids: _ids);
+    final r = ReadAloud(ref.read(ttsPortProvider), ref.read(settingsServiceProvider));
+    r.addListener(_readerChanged);
+    setState(() {
+      _reader = r;
+      _offsets = blockOffsetsOf(body);
+    });
+    await r.load(body);
+  }
+
+  /// Shows the sentence being read: selected in the editor, scrolled to.
+  void _readerChanged() {
+    final r = _reader, c = _c;
+    if (r == null || c == null || !mounted) return;
+    setState(() {});
+    final s = r.current;
+    final at = s == null ? null : _offsets[s.blockId];
+    if (r.state == ReadState.stopped || at == null) return;
+    c.updateSelection(TextSelection(baseOffset: at + s!.start, extentOffset: at + s.end), q.ChangeSource.local);
+    if (!_focus.hasFocus) _focus.requestFocus();
+  }
+
+  /// The sentence shown while reading (tests read it).
+  @visibleForTesting
+  ReadAloud? get reader => _reader;
+
+  void _closeReader() {
+    final r = _reader;
+    if (r == null) return;
+    r.removeListener(_readerChanged);
+    unawaited(r.stop());
+    r.dispose();
+    setState(() => _reader = null);
+    final c = _c;
+    if (c != null) c.updateSelection(TextSelection.collapsed(offset: c.selection.baseOffset), q.ChangeSource.local);
+  }
 
   bool get _dirty {
     final c = _c;
@@ -219,6 +282,9 @@ class DocumentPageState extends ConsumerState<DocumentPage> {
   void dispose() {
     _idle?.cancel();
     _life.dispose();
+    // Leaving the page stops the reading (D6).
+    _reader?.removeListener(_readerChanged);
+    _reader?.dispose();
     // Leaving the page saves it (C7); the service is kept, the page is gone.
     final c = _c;
     if (c != null && !_readOnly && _loaded) {
@@ -367,6 +433,14 @@ class DocumentPageState extends ConsumerState<DocumentPage> {
       appBar: AppBar(
         title: Text(d?.title ?? l.navDocuments, overflow: TextOverflow.ellipsis),
         actions: [
+          if (d != null && !d.isUnreadable && c != null)
+            IconButton(
+              key: const Key('doc-read-aloud'),
+              tooltip: l.docReadAloud,
+              isSelected: _reader != null,
+              icon: const Icon(Icons.record_voice_over_outlined),
+              onPressed: _reader == null ? _openReader : _closeReader,
+            ),
           if (d != null)
             PopupMenuButton<_PageAction>(
               key: const Key('doc-page-menu'),
@@ -405,7 +479,7 @@ class DocumentPageState extends ConsumerState<DocumentPage> {
                         onSubmitted: (_) => _saveSoon(),
                       ),
                     ),
-                    _StatusLine(doc: d, state: _state, readOnly: _readOnly),
+                    _StatusLine(doc: d, state: _state, readOnly: _viewOnly),
                     if (!_readOnly && c != null) _Toolbar(controller: c, onLink: () => _pickLink(c.selection.baseOffset, 0), onAttach: _attach),
                     const Divider(height: 1),
                     Expanded(
@@ -431,6 +505,7 @@ class DocumentPageState extends ConsumerState<DocumentPage> {
                               ),
                             ),
                     ),
+                    if (_reader case final r?) ReaderBar(reader: r, onClose: _closeReader),
                     _LinksPanel(key: ValueKey('links-$_linksGeneration'), doc: d, canEdit: canEdit && !d.isTrashed, onChanged: () {
                       setState(() => _linksGeneration++);
                     }),

@@ -11,6 +11,7 @@ import 'package:ui/ui.dart';
 
 import 'fake_documents.dart';
 import 'fake_pdf.dart';
+import 'fake_tts.dart';
 
 /// In-memory stand-in for the application ports. Like the real implementation
 /// the task stream is bound to the profile that is active when it subscribes
@@ -197,6 +198,28 @@ class FakeWorld
   Future<void> setLastPdfPage(String hash, int page) async {
     calls.add('pdfPage:$page');
     if (page >= 1) pdfPages[hash] = page;
+  }
+
+  /// P05b D7: reading aloud on this device.
+  double speed = 1.0;
+  final voiceFor = <String, String>{};
+
+  @override
+  Future<double> readingSpeed() async => speed;
+
+  @override
+  Future<void> setReadingSpeed(double s) async {
+    calls.add('speed:$s');
+    speed = s;
+  }
+
+  @override
+  Future<String?> readingVoice(String language) async => voiceFor[language];
+
+  @override
+  Future<void> setReadingVoice(String language, String name) async {
+    calls.add('voice:$language:$name');
+    voiceFor[language] = name;
   }
 
   @override
@@ -639,6 +662,9 @@ class FakeWorld
 
   /// P05b T1: the PDF view (pdfrx is not loaded in widget tests).
   late final FakePdf pdf = FakePdf(calls);
+
+  /// P05b T4: the device's voices.
+  late final FakeTts tts = FakeTts(calls);
 
   void dispose() {
     _changes.close();
@@ -1338,6 +1364,7 @@ Widget appWith(FakeWorld world,
         searchQueriesProvider.overrideWithValue(world.documents),
         attachmentServiceProvider.overrideWithValue(world.documents),
         pdfViewBuilderProvider.overrideWithValue(world.pdf.build),
+        ttsPortProvider.overrideWithValue(world.tts),
         overviewServiceProvider.overrideWithValue(world.overview),
         overviewQueriesProvider.overrideWithValue(world.overview),
         storageNoticeProvider.overrideWithValue(notice),

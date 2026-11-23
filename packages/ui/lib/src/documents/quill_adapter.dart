@@ -183,3 +183,20 @@ List<String> blockIdsOf(DocumentBody body) => [
 
 /// The attachment of an embed's data, or null.
 AttachmentRef? attachmentOfEmbed(Object? data) => data is String ? _fileOf(data) : null;
+
+/// P05b T4 (ADR-0078): where each text block of [body] starts in its Quill
+/// document ([deltaOf]: one line per block, a file one embed), so a sentence
+/// read aloud can be shown in the editor.
+Map<String, int> blockOffsetsOf(DocumentBody body) {
+  final out = <String, int>{};
+  var at = 0;
+  for (final b in body.blocks) {
+    if (b.type == BlockType.attachment) {
+      if (b.attachment != null) at += 2; // the embed and its line end
+      continue;
+    }
+    out[b.id] = at;
+    at += b.text.length + 1;
+  }
+  return out;
+}

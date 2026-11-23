@@ -121,6 +121,30 @@ class DirectorySettingsService implements SettingsService {
     await directory.writeSetting(_pdfPage(hash), '$page');
   }
 
+  // P05b D7 (ADR-0078): reading aloud, this device's.
+  static const _speed = 'tts.speed';
+  static String _voice(String language) => 'tts.voice.$language';
+
+  @override
+  Future<double> readingSpeed() async {
+    final v = double.tryParse(await directory.readSetting(_speed) ?? '');
+    if (v == null || v.isNaN) return 1.0;
+    return v.clamp(minReadingSpeed, maxReadingSpeed);
+  }
+
+  @override
+  Future<void> setReadingSpeed(double speed) =>
+      directory.writeSetting(_speed, '${speed.isNaN ? 1.0 : speed.clamp(minReadingSpeed, maxReadingSpeed)}');
+
+  @override
+  Future<String?> readingVoice(String language) async {
+    final v = await directory.readSetting(_voice(language));
+    return v == null || v.isEmpty ? null : v;
+  }
+
+  @override
+  Future<void> setReadingVoice(String language, String name) => directory.writeSetting(_voice(language), name);
+
   static const _collapsed = 'ui.overview.collapsed';
 
   @override

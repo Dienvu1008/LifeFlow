@@ -322,6 +322,27 @@ void main() {
     expect(await s.collapsedItems(), isEmpty);
   });
 
+  test('P05b D7: the reading speed and the voice per language are device settings; bad values fall back', () async {
+    final s = DirectorySettingsService(dir);
+    expect(await s.readingSpeed(), 1.0);
+    expect(await s.readingVoice('vi'), isNull);
+    await s.setReadingSpeed(1.5);
+    await s.setReadingVoice('vi', 'Microsoft An');
+    await s.setReadingVoice('en', 'Microsoft Zira');
+    final again = DirectorySettingsService(dir);
+    expect(await again.readingSpeed(), 1.5);
+    expect(await again.readingVoice('vi'), 'Microsoft An');
+    expect(await again.readingVoice('en'), 'Microsoft Zira');
+    await s.setReadingSpeed(9);
+    expect(await s.readingSpeed(), 2.0, reason: 'kept within 0.5-2');
+    await s.setReadingSpeed(0.1);
+    expect(await s.readingSpeed(), 0.5);
+    await dir.writeSetting('tts.speed', 'fast');
+    expect(await s.readingSpeed(), 1.0);
+    await dir.writeSetting('tts.speed', '7');
+    expect(await s.readingSpeed(), 2.0, reason: 'a stored value out of bounds is clamped');
+  });
+
   test('P05b D9: the last page of a PDF is a device setting, by its hash; bad values fall back', () async {
     final s = DirectorySettingsService(dir);
     final a = 'sha256:${'a' * 64}';

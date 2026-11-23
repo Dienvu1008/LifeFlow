@@ -247,6 +247,16 @@ abstract interface class SettingsService {
 
   /// Remembers [page] for the PDF of [hash]; below 1 is ignored.
   Future<void> setLastPdfPage(String hash, int page);
+
+  /// P05b D7: the reading-aloud speed of this device (1 by default, kept
+  /// between 0.5 and 2).
+  Future<double> readingSpeed();
+  Future<void> setReadingSpeed(double speed);
+
+  /// P05b D7: the voice chosen on this device for [language] (`vi`, `en`),
+  /// by its name; null when none was chosen.
+  Future<String?> readingVoice(String language);
+  Future<void> setReadingVoice(String language, String name);
 }
 
 /// The IANA time zones this build knows, for a zone picker.

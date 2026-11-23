@@ -7,6 +7,7 @@ import 'package:flutter_quill/flutter_quill.dart' as q;
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ui/src/documents/quill_adapter.dart';
+import 'package:ui/src/documents/tts_adapter.dart';
 
 void main() {
   final file = AttachmentRef(hash: 'sha256:${'a' * 64}', name: 'bảng trắng.png', size: 1234, mime: 'image/png');
@@ -97,5 +98,27 @@ void main() {
     expect(body.blocks.last.runs.single.doc, isNull, reason: 'a link without an id is no link');
     expect(attachmentOfEmbed('{"hash":"h","name":"n","size":1,"mime":"m"}')?.name, 'n');
     expect(attachmentOfEmbed(3), isNull);
+  });
+
+  test('P05b T4: each sentence read aloud is at its offset in the Quill document, files and links included', () {
+    final body = DocumentBody([
+      ...rich().blocks,
+      DocBlock('f2', BlockType.attachment, attachment: file),
+      DocBlock('after', BlockType.paragraph, runs: [TextRun('Sau tệp. Còn nữa!')]),
+    ]);
+    final text = quillDocumentOf(body).toPlainText();
+    expect(readingOf(body).last.text, 'Còn nữa!');
+    final at = blockOffsetsOf(body);
+    final sentences = readingOf(body);
+    expect(sentences, isNotEmpty);
+    for (final s in sentences) {
+      expect(text.substring(at[s.blockId]! + s.start, at[s.blockId]! + s.end), s.text);
+    }
+  });
+
+  test('P05b T4: the reading speed in flutter_tts terms: Android x2 is normal at 0.5, Windows +0.5', () {
+    expect([for (final s in [0.5, 1.0, 2.0]) platformRateOf(s, TargetPlatform.android)], [0.25, 0.5, 1.0]);
+    expect([for (final s in [0.5, 1.0, 2.0]) platformRateOf(s, TargetPlatform.windows)], [0.0, 0.5, 1.5]);
+    expect(platformRateOf(9, TargetPlatform.windows), 1.5, reason: 'kept within 0.5-2');
   });
 }
