@@ -186,16 +186,17 @@ void main() {
     final lan = await device('lan');
     final minh = await device('minh');
     final vy = await device('vy');
-    for (final (d, name) in [(lan, 'Lan'), (minh, 'Minh'), (vy, 'Vy')]) {
+    for (final (d, name) in [(lan, 'Lan Phạm'), (minh, 'Minh Nguyễn'), (vy, 'Vy Trần')]) {
       await (d.db.update(d.db.profiles)).write(ProfilesCompanion(displayName: Value(name)));
     }
     final ws = (await lan.sharing.createSpace('Family')).spaceId!;
     final inv = (await lan.sharing.invite(ws, SpaceRole.viewer, InviteKind.approve)).invitation!;
     okShare(await vy.sharing.join(inv.code));
     final waiting = (await lan.sharing.members(ws)).singleWhere((m) => m.accountId == 'vy');
-    expect((waiting.status, waiting.name), (MemberStatus.pending, 'Vy'), reason: 'the owner sees who waits');
+    expect((waiting.status, waiting.name), (MemberStatus.pending, 'Vy Trần'), reason: 'the owner sees who waits');
+    // Full names: a two-letter name can turn up in random sealed bytes by chance.
     final raw = (await lan.remote.members(ws)).singleWhere((m) => m.accountId == 'vy').sealedName!;
-    expect(utf8.decode(raw, allowMalformed: true), isNot(contains('Vy')), reason: 'the server never sees it');
+    expect(utf8.decode(raw, allowMalformed: true), isNot(contains('Vy Trần')), reason: 'the server never sees it');
 
     okShare(await lan.sharing.approve(ws, 'vy'));
     final atOnce = (await lan.sharing.invite(ws, SpaceRole.editor, InviteKind.joinAtOnce)).invitation!;
@@ -212,11 +213,11 @@ void main() {
     await vy.syncSpace();
     for (final d in [lan, minh, vy]) {
       final names = {for (final m in await d.sharing.members(ws)) m.accountId: m.name};
-      expect(names, {'lan': 'Lan', 'minh': 'Minh', 'vy': 'Vy'}, reason: d.account);
+      expect(names, {'lan': 'Lan Phạm', 'minh': 'Minh Nguyễn', 'vy': 'Vy Trần'}, reason: d.account);
       expect((await d.sharing.members(ws)).singleWhere((m) => m.isMe).accountId, d.account);
     }
     for (final s in server.dump(ws)) {
-      expect(utf8.decode(s.sealed!, allowMalformed: true), isNot(anyOf(contains('Minh'), contains('Vy'))));
+      expect(utf8.decode(s.sealed!, allowMalformed: true), isNot(anyOf(contains('Minh Nguyễn'), contains('Vy Trần'))));
     }
     okShare(await minh.sharing.setMyName(ws, 'Minh N.'));
     expect((await vy.sharing.setMyName(ws, 'Not me')).problem, SharingProblem.notAllowed,
@@ -224,7 +225,7 @@ void main() {
     await minh.syncSpace();
     await lan.syncSpace();
     expect((await lan.sharing.memberNames(ws))['minh'], 'Minh N.');
-    expect((await lan.sharing.memberNames(ws))['vy'], 'Vy');
+    expect((await lan.sharing.memberNames(ws))['vy'], 'Vy Trần');
     expect((await minh.sharing.setMyName(ws, '')).problem, SharingProblem.failed);
     expect(await vy.sharing.myAccountId(), 'vy');
 
@@ -246,7 +247,7 @@ void main() {
             actor: const ActorRef(ActorKind.member, 'minh'),
             workspaceId: ws,
             type: 'NameMember',
-            payload: {'op': 'setName', 'id': 'somewhere-else', 'accountId': 'minh', 'name': 'Minh'},
+            payload: {'op': 'setName', 'id': 'somewhere-else', 'accountId': 'minh', 'name': 'Minh Nguyễn'},
             issuedAt: Instant.now()),
         const MemberCardHandler());
     expect(wrongId, isA<CommandFailure>(), reason: 'a card\'s id is <space>:<account>');
