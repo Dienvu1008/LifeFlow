@@ -125,11 +125,11 @@ class _PdfrxControls extends ChangeNotifier implements PdfViewControls {
   Future<void> zoomOut() => _c.zoomDown();
 
   @override
-  void find(String text) {
+  void find(String text, {bool go = true}) {
     if (text.isEmpty) {
       _searcher.resetTextSearch();
     } else {
-      _searcher.startTextSearch(text, caseInsensitive: true);
+      _searcher.startTextSearch(text, caseInsensitive: true, goToFirstMatch: go);
     }
   }
 

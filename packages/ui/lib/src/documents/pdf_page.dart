@@ -9,6 +9,8 @@
 //              previous and next; Escape closes it
 //   copy       the selected text, unless the PDF forbids copying
 //   password   asked for in a dialog, again after a wrong one
+//   search     a hit (P05b T2, ADR-0077) opens at its page, the words typed
+//              highlighted in the find bar ("3 matches")
 import 'dart:async';
 
 import 'package:application/application.dart';
@@ -25,14 +27,22 @@ import 'pdf_view.dart';
 /// How long the page must stay before it is remembered (D9).
 const pdfPageSaveDelay = Duration(seconds: 1);
 
-Future<void> openPdfPage(BuildContext context, AttachmentRef file, AttachmentService files) =>
+/// Opens [file]; from a search hit (ADR-0077) at [page], with [find]'s
+/// matches highlighted.
+Future<void> openPdfPage(BuildContext context, AttachmentRef file, AttachmentService files, {int? page, String? find}) =>
     Navigator.of(context, rootNavigator: true)
-        .push(MaterialPageRoute<void>(builder: (_) => PdfPage(file: file, files: files)));
+        .push(MaterialPageRoute<void>(builder: (_) => PdfPage(file: file, files: files, page: page, find: find)));
 
 class PdfPage extends ConsumerStatefulWidget {
-  const PdfPage({super.key, required this.file, required this.files});
+  const PdfPage({super.key, required this.file, required this.files, this.page, this.find});
   final AttachmentRef file;
   final AttachmentService files;
+
+  /// The page to open at, instead of the last one shown (a search hit).
+  final int? page;
+
+  /// Words to highlight on opening, in the find bar (a search hit).
+  final String? find;
 
   @override
   ConsumerState<PdfPage> createState() => _PdfPageState();
@@ -69,7 +79,7 @@ class _PdfPageState extends ConsumerState<PdfPage> {
       page = null; // an unreadable setting only loses the page
     }
     _savedPage = page;
-    return (content, page ?? 1);
+    return (content, widget.page ?? page ?? 1);
   }
 
   @override
@@ -88,6 +98,12 @@ class _PdfPageState extends ConsumerState<PdfPage> {
     _controls?.removeListener(_changed);
     c.addListener(_changed);
     setState(() => _controls = c);
+    final words = widget.find?.trim() ?? '';
+    if (words.isNotEmpty && _findText.text.isEmpty) {
+      _findText.text = words;
+      c.find(words, go: false); // stay on the page of the hit
+      setState(() => _finding = true);
+    }
   }
 
   void _changed() {
@@ -201,19 +217,18 @@ class _PdfPageState extends ConsumerState<PdfPage> {
               }
               return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 if (_finding && ready) _FindBar(controls: c, text: _findText, focus: _findFocus, onClose: _closeFind),
+                // Keyed: the bars around it come and go without a new view.
                 Expanded(
-                  child: KeyedSubtree(
-                    key: ValueKey('pdf-view-$_attempt'),
-                    child: ref.watch(pdfViewBuilderProvider)(
-                      context,
-                      PdfViewSetup(
-                        bytes: bytes,
-                        sourceName: 'lifeflow:$_hash#$_attempt',
-                        initialPage: page,
-                        password: _askPassword,
-                        onReady: _ready,
-                        onFailed: (f) => setState(() => _failure = f),
-                      ),
+                  key: ValueKey('pdf-view-$_attempt'),
+                  child: ref.watch(pdfViewBuilderProvider)(
+                    context,
+                    PdfViewSetup(
+                      bytes: bytes,
+                      sourceName: 'lifeflow:$_hash#$_attempt',
+                      initialPage: page,
+                      password: _askPassword,
+                      onReady: _ready,
+                      onFailed: (f) => setState(() => _failure = f),
                     ),
                   ),
                 ),
@@ -259,7 +274,7 @@ class _FindBar extends StatelessWidget {
     final status = !typed
         ? ''
         : c.matchCount > 0
-            ? l.pdfMatchOf((c.matchIndex ?? 0) + 1, c.matchCount)
+            ? (c.matchIndex == null ? l.pdfMatchCount(c.matchCount) : l.pdfMatchOf(c.matchIndex! + 1, c.matchCount))
             : c.isFinding
                 ? l.pdfFinding
                 : l.pdfNoMatches;

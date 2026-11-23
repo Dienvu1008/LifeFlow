@@ -126,8 +126,8 @@ class FakePdfControls extends ChangeNotifier implements PdfViewControls {
   Future<void> zoomOut() async => pdf.calls.add('pdf.zoomOut');
 
   @override
-  void find(String text) {
-    pdf.calls.add('pdf.find:$text');
+  void find(String text, {bool go = true}) {
+    pdf.calls.add('pdf.find:$text${go ? '' : ':stay'}');
     final t = text.toLowerCase();
     _matchPages = t.isEmpty
         ? const []
@@ -135,7 +135,7 @@ class FakePdfControls extends ChangeNotifier implements PdfViewControls {
             for (var i = 0; i < pdf.pages.length; i++)
               for (var at = pdf.pages[i].toLowerCase().indexOf(t); at >= 0; at = pdf.pages[i].toLowerCase().indexOf(t, at + 1)) i + 1,
           ];
-    _match = _matchPages.isEmpty ? null : 0;
+    _match = _matchPages.isEmpty || !go ? null : 0;
     if (_match != null) _page = _matchPages[0];
     notifyListeners();
   }

@@ -19,6 +19,7 @@ export 'src/profile_directory.dart';
 export 'src/profile_export.dart';
 export 'src/profile_restore.dart';
 export 'src/record_kinds.dart';
+export 'src/pdf_text_index.dart';
 export 'src/search_index.dart';
 export 'src/search_service.dart';
 export 'src/attachment_store.dart';

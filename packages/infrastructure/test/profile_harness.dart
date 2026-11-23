@@ -97,6 +97,12 @@ class Services {
 /// Turns a current profile store back into what a build with schema [version]
 /// wrote (for migration tests). Data in the tables that remain is kept.
 Future<void> rewindProfileStore(AppDatabase db, int version) async {
+  if (version < 17) {
+    // P05b T2 (ADR-0077): no text of PDFs.
+    for (final t in ['document_file_index', 'pdf_text_state', 'pdf_text_fts']) {
+      await db.customStatement('DROP TABLE $t');
+    }
+  }
   if (version < 16) {
     // P05a T2 (ADR-0067): no documents; task search as v1-v15 built it
     // (external content, marks removed by the default tokenizer).

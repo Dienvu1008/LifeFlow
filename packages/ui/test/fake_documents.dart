@@ -32,6 +32,10 @@ class FakeDocuments implements DocumentService, DocumentQueries, SearchQueries, 
   final links = <(String doc, DocumentItemType type, String item)>[];
   final itemTitles = <String, String>{};
   final files = <String, Uint8List>{};
+
+  /// P05b T2: the text of each page of a PDF on this device, by hash (found
+  /// by search through the documents that name it).
+  final pdfText = <String, List<String>>{};
   CommandFailure? failNext;
   final _changes = StreamController<void>.broadcast();
   var _n = 0;
@@ -278,7 +282,21 @@ class FakeDocuments implements DocumentService, DocumentQueries, SearchQueries, 
             id: d.id, title: d.title, passage: text, matches: at < 0 ? const [] : [(start: at, end: at + t.length)]));
       }
     }
-    return SearchResults(documents: hits, tasks: [
+    final pages = <FileHitView>[];
+    for (final d in docs.values.where((d) => !d.trashed)) {
+      for (final b in d.body.blocks) {
+        final f = b.attachment;
+        final text = f == null ? null : pdfText[f.hash];
+        if (text == null) continue;
+        for (var i = 0; i < text.length; i++) {
+          final at = text[i].toLowerCase().indexOf(t);
+          if (at < 0) continue;
+          pages.add(FileHitView(
+              documentId: d.id, documentTitle: d.title, file: f!, page: i + 1, passage: text[i], matches: [(start: at, end: at + t.length)]));
+        }
+      }
+    }
+    return SearchResults(files: pages, documents: hits, tasks: [
       for (final x in tasks())
         if (x.title.toLowerCase().contains(t)) TaskHitView(id: x.id, title: x.title, isDone: x.isDone)
     ]);

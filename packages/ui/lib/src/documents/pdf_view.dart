@@ -29,9 +29,9 @@ abstract class PdfViewControls implements Listenable {
   Future<void> zoomIn();
   Future<void> zoomOut();
 
-  /// Finds [text] in the whole PDF (ignoring case) and shows the first match;
-  /// an empty text clears the matches.
-  void find(String text);
+  /// Finds [text] in the whole PDF (ignoring case) and shows the first match
+  /// (only highlights them when [go] is false); an empty text clears them.
+  void find(String text, {bool go = true});
   Future<void> nextMatch();
   Future<void> previousMatch();
 

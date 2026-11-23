@@ -11,11 +11,17 @@ import 'package:application/application.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:infrastructure/infrastructure.dart';
+import 'package:lifeflow_app/bootstrap.dart';
 import 'package:pdfrx/pdfrx.dart' show pdfrxInitialize;
 import 'package:ui/src/documents/document_page.dart' show DocumentPage, DocumentPageState;
 import 'package:ui/src/documents/pdf_page.dart' show PdfPage;
 
-import 'app_integration_test.dart' show finish, pumpApp, settle;
+import 'app_integration_test.dart' show World, finish, pumpApp, settle;
+
+class _NoHost implements ProfileHost {
+  @override
+  Future<void> activate(String profileId, {bool showProfiles = false}) async {}
+}
 
 /// A real two-page PDF; [secret] is on page 2, in the clear inside the file.
 /// The pages are tall, so one page fills the view (the page shown is clear).
@@ -90,6 +96,30 @@ void main() {
   });
   tearDownAll(() => engineCache.delete(recursive: true));
 
+  test('P05b T2: a PDF kept but not read yet (a restore, an older build) is read when the session opens', () async {
+    final w = World();
+    await w.open(StoragePlatform.windows);
+    addTearDown(w.dispose);
+    final id = (await w.directory.active())!.id;
+    Future<AppWiring> open() => openSession(
+        directory: w.directory, profileId: id, platform: StoragePlatform.windows, auth: w.auth, host: _NoHost(), files: w.files);
+    final first = await open();
+    final kept = DriftAttachmentService(first.db, folder: w.directory.attachmentsDir(id), keys: w.directory.attachmentKeys(id));
+    final f = (await kept.add(pdfWith('LifeFlowOlderPdf'), name: 'cũ.pdf', mime: 'application/pdf')).ref!;
+    final gw = DriftCommandGateway(first.db, WorkspaceOwnerAuthorization(first.db));
+    final docs = DriftDocumentService(first.db, gw, deviceId: 'windows');
+    final doc = (await docs.create('Cũ') as CommandOk).entityId;
+    await docs.save(doc, title: 'Cũ', body: DocumentBody([DocBlock('f', BlockType.attachment, attachment: f)]));
+    expect((await DriftSearchQueries(first.db).search('lifeflowolder')).files, isEmpty, reason: 'not read yet');
+    await first.close();
+
+    final again = await open();
+    addTearDown(again.close);
+    await again.background!();
+    final hits = (await DriftSearchQueries(again.db).search('lifeflowolder')).files;
+    expect([for (final h in hits) (h.documentTitle, h.file.name, h.page)], [('Cũ', 'cũ.pdf', 2)]);
+  });
+
   testWidgets('a PDF attached in the UI opens in the app; no clear copy is written; its page is remembered',
       (tester) async {
     const secret = 'LifeFlowSecretPage';
@@ -150,6 +180,27 @@ void main() {
     await tester.pump();
     await until(tester, () => find.text('Page 2 of 2').evaluate().isNotEmpty);
     expect(find.text('Page 2 of 2'), findsOneWidget, reason: 'it opens where it was left');
+    await back(tester);
+
+    // P05b T2 (ADR-0077, D3): the PDF's words are found by the one search,
+    // "in file.pdf, page 2"; the hit opens at its page.
+    await back(tester); // to the documents
+    await tester.enterText(find.byKey(const Key('doc-search')), 'lifeflowsecret');
+    await tester.pump(const Duration(milliseconds: 400));
+    await until(tester, () => find.text('hóa đơn.pdf, page 2').evaluate().isNotEmpty);
+    expect(find.text('In PDF files'), findsOneWidget);
+    expect(find.text('hóa đơn.pdf, page 2'), findsOneWidget);
+    await tester.tap(find.text('hóa đơn.pdf, page 2'));
+    await tester.pump();
+    await until(tester, () => find.text('Page 2 of 2').evaluate().isNotEmpty && find.text('1 match').evaluate().isNotEmpty);
+    expect(find.text('Page 2 of 2'), findsOneWidget);
+    expect(find.text('1 match'), findsOneWidget, reason: 'the words searched, highlighted');
+    // The text index is in the encrypted store: not in the clear either.
+    final leaks2 = await tester.runAsync(() async => [
+          ...filesContaining(w.base, marker),
+          ...filesContaining(w.base, utf8.encode(secret.toLowerCase())),
+        ]);
+    expect(leaks2, isEmpty);
     await back(tester);
     await finish(tester, w);
   });

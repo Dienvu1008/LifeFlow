@@ -192,6 +192,37 @@ void main() {
     expect(w.pdf.shown, isEmpty);
   });
 
+  testWidgets('D3: a PDF page found by search says where it is and opens at that page, the words highlighted', (tester) async {
+    final (w, d) = await openDocWithPdf(tester, setUp: (w) {
+      const pages = ['Hóa đơn tiền điện', 'Biên bản họp tổ dân phố', 'Ký tên'];
+      w.documents.pdfText[pdfFile.hash] = pages;
+      w.pdf.pages = pages;
+      w.pdfPages[pdfFile.hash] = 3; // the last page shown: a hit opens at its own page
+    });
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('doc-search')), 'họp tổ');
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
+    expect(find.text('In PDF files'), findsOneWidget);
+    final hit = find.byKey(ValueKey('file-hit-$d-${pdfFile.hash}-2'));
+    expect(hit, findsOneWidget);
+    expect(find.descendant(of: hit, matching: find.text('hóa đơn.pdf, page 2')), findsOneWidget);
+    expect(find.descendant(of: hit, matching: find.textContaining('In “Hóa đơn”', findRichText: true)), findsOneWidget);
+    expect(find.descendant(of: hit, matching: find.textContaining('Biên bản họp tổ dân phố', findRichText: true)), findsOneWidget);
+    await tester.tap(hit);
+    await tester.pumpAndSettle();
+    expect(find.byType(PdfPage), findsOneWidget);
+    expect(w.calls, containsAllInOrder(['pdf.open:lifeflow:${pdfFile.hash}#0:2', 'pdf.find:họp tổ:stay']));
+    expect(w.calls.where((c) => c.startsWith('pdf.open:')), hasLength(1),
+        reason: 'the find bar and the page bar appearing together do not open the PDF again');
+    expect(pageOf(tester), 'Page 2 of 3');
+    expect(tester.widget<TextField>(find.byKey(const Key('pdf-find-field'))).controller!.text, 'họp tổ');
+    expect(findStatus(tester), '1 match');
+    await tapKey(tester, 'pdf-find-next');
+    expect(findStatus(tester), '1 of 1');
+  });
+
   test('fileViewOf: pictures, PDFs by type or by name when the type is generic, the rest not shown', () {
     AttachmentRef f(String name, String mime) => AttachmentRef(hash: 'sha256:${'e' * 64}', name: name, size: 1, mime: mime);
     expect(fileViewOf(f('a.png', 'image/png')), FileView.picture);

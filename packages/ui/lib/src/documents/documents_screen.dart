@@ -17,6 +17,7 @@ import '../screens/tasks_screen.dart' show showTextDialog;
 import '../shell.dart' show shellMenuButton;
 import '../task_actions.dart' show reportResult, showMessage;
 import 'document_page.dart';
+import 'pdf_page.dart' show openPdfPage;
 
 /// A document with its depth in the tree.
 typedef TreeRow = ({DocumentNodeView node, int depth, bool hasChildren});
@@ -300,8 +301,25 @@ class _SearchResults extends ConsumerWidget {
                 key: ValueKey('doc-hit-${h.id}'),
                 leading: const Icon(Icons.description_outlined),
                 title: Text(h.title),
-                subtitle: h.passage.trim().isEmpty ? null : Text.rich(passageSpan(h, theme), maxLines: 3, overflow: TextOverflow.ellipsis),
+                subtitle: h.passage.trim().isEmpty ? null : Text.rich(passageSpan(h.passage, h.matches, theme), maxLines: 3, overflow: TextOverflow.ellipsis),
                 onTap: () => openDocumentPage(context, h.id),
+              ),
+            // P05b T2 (ADR-0077, D3): pages of the PDFs on this device.
+            if (r.files.isNotEmpty) header(l.docResultsFiles),
+            for (final h in r.files)
+              ListTile(
+                key: ValueKey('file-hit-${h.documentId}-${h.file.hash}-${h.page}'),
+                leading: const Icon(Icons.picture_as_pdf_outlined),
+                title: Text(l.docFileHitTitle(h.file.name, h.page)),
+                subtitle: Text.rich(
+                  TextSpan(children: [
+                    TextSpan(text: '${l.docFileHitIn(h.documentTitle)}\n'),
+                    passageSpan(h.passage, h.matches, theme),
+                  ]),
+                  maxLines: 4,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                onTap: () => openPdfPage(context, h.file, ref.read(attachmentServiceProvider), page: h.page, find: query.trim()),
               ),
             if (r.tasks.isNotEmpty) header(l.docResultsTasks),
             for (final t in r.tasks)
@@ -319,18 +337,18 @@ class _SearchResults extends ConsumerWidget {
 }
 
 /// A search passage with its matched words in bold.
-TextSpan passageSpan(DocumentHitView h, ThemeData theme) {
+TextSpan passageSpan(String passage, List<SearchMatch> matches, ThemeData theme) {
   final spans = <TextSpan>[];
   var at = 0;
-  for (final m in h.matches) {
-    if (m.start < at || m.end > h.passage.length) continue;
-    if (m.start > at) spans.add(TextSpan(text: h.passage.substring(at, m.start)));
+  for (final m in matches) {
+    if (m.start < at || m.end > passage.length) continue;
+    if (m.start > at) spans.add(TextSpan(text: passage.substring(at, m.start)));
     spans.add(TextSpan(
-        text: h.passage.substring(m.start, m.end),
+        text: passage.substring(m.start, m.end),
         style: TextStyle(fontWeight: FontWeight.w700, color: theme.colorScheme.primary)));
     at = m.end;
   }
-  if (at < h.passage.length) spans.add(TextSpan(text: h.passage.substring(at)));
+  if (at < passage.length) spans.add(TextSpan(text: passage.substring(at)));
   return TextSpan(children: spans);
 }
 

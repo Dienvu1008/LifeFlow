@@ -67,7 +67,7 @@ Out of scope: looking up or translating a selected word (P07, through `Selection
 | **S-09** DOCX | sample DOCX files from Word and Google Docs, in Vietnamese (headings, lists, tables, pictures, comments, tracked changes) through a throwaway reader into our blocks; what is kept and lost | a list of what converts; results | no (samples from you welcome) | 1 |
 | **S-12** Voices | flutter_tts 4.2.5 on Windows and Android: Vietnamese and English voices, speed, pause or stop, progress events, the Windows thread issue | a probe app; results | **yes**: listen on your devices | 1 |
 | **T1** Viewer port and PDF (**done**: [ADR-0076](../adr/0076-pdf-viewer.md)) | `FileViewer`, the PDF page (from a document's file), find, selection and copy, last page (D9) | widget tests with a fake viewer; an integration test with a real PDF | no | 2–3 |
-| **T2** PDF in search | text extracted and indexed per page (D3) | search tests (Vietnamese PDF text, the exact spelling); a file elsewhere is not indexed | no | 1–2 |
+| **T2** PDF in search (**done**: [ADR-0077](../adr/0077-pdf-text-in-search.md)) | text extracted and indexed per page (D3) | search tests (Vietnamese PDF text, the exact spelling); a file elsewhere is not indexed | no | 1–2 |
 | ~~T3 DOCX~~ | removed by D1 after S-09 | — | — | — |
 | **T4** Reading aloud | `TtsPort`, the sentence model, the reader controls on a document (D7), the language check (D5) | domain tests; widget tests with a fake voice | no | 2–3 |
 | **T5** PDFs read aloud | from the page shown (D4) | widget tests | no | 1 |

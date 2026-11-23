@@ -2527,6 +2527,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pdfNoMatches => 'No matches';
 
   @override
+  String pdfMatchCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count matches',
+      one: '1 match',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get pdfFinding => 'Finding…';
 
   @override
@@ -2586,4 +2597,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pdfTryAgain => 'Try again';
+
+  @override
+  String get docResultsFiles => 'In PDF files';
+
+  @override
+  String docFileHitTitle(String name, int page) {
+    return '$name, page $page';
+  }
+
+  @override
+  String docFileHitIn(String title) {
+    return 'In “$title”';
+  }
 }

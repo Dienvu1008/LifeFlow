@@ -54,7 +54,7 @@ final List<String> exportedTables = [
 /// sync bookkeeping (P04 T1): another device or a restore starts its own.
 /// `spaceMembers` (P04b T8) is a cache of the server's members of shared
 /// spaces, which are not in a personal export either (ADR-0060).
-const notExportedTables = ['restoreSnapshots', 'syncBase', 'syncState', 'syncReviews', 'spaceMembers', 'syncParked', 'searchPending', 'documentLinkIndex'];
+const notExportedTables = ['restoreSnapshots', 'syncBase', 'syncState', 'syncReviews', 'spaceMembers', 'syncParked', 'searchPending', 'documentLinkIndex', 'documentFileIndex', 'pdfTextState'];
 
 /// P05a T5 (ADR-0070): payload key of the ids, by kind, that exported rows
 /// point to and that are in a shared space, so not in the file. Absent when

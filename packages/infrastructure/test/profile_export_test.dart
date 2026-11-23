@@ -146,6 +146,8 @@ void main() {
         'member_cards', // P04b T13 (schema v15): a record kind of shared spaces
         // P05a T2 (schema v16): documents (record kinds); search bookkeeping (not exported)
         ...['documents', 'document_revisions', 'document_links', 'search_pending', 'document_link_index'],
+        // P05b T2 (schema v17): the text of this device's PDFs (not exported)
+        ...['document_file_index', 'pdf_text_state'],
       });
       expect(host.db.allTables.length,
           exportedTables.length + notExportedTables.length);

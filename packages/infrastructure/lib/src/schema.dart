@@ -580,3 +580,32 @@ class DocumentLinkIndex extends Table {
   @override
   Set<Column> get primaryKey => {fromDocumentId, toDocumentId};
 }
+
+/// P05b T2 (schema v17, ADR-0077): the PDFs each document names, rebuilt
+/// from the body by `catchUpSearch` (as the links above), so a PDF's text is
+/// found only through a live document of the shown space. Device bookkeeping.
+@DataClassName('DocumentFileIndexRow')
+class DocumentFileIndex extends Table {
+  TextColumn get documentId => text()();
+  TextColumn get hash => text()();
+  TextColumn get name => text()();
+  IntColumn get size => integer()();
+  TextColumn get mime => text()();
+  @override
+  Set<Column> get primaryKey => {documentId, hash};
+}
+
+/// P05b T2 (ADR-0077): the PDFs of this device whose text was read, by hash
+/// (the text itself is in `pdf_text_fts`, one row per page). Device
+/// bookkeeping: a file's text lives as long as the file is on this device.
+@DataClassName('PdfTextStateRow')
+class PdfTextState extends Table {
+  TextColumn get hash => text()();
+
+  /// `indexed` (its pages' text is in the index, maybe none: a scan),
+  /// `locked` (it has a password) or `unreadable` (PDFium could not open it).
+  TextColumn get status => text()();
+  IntColumn get pages => integer()();
+  @override
+  Set<Column> get primaryKey => {hash};
+}
