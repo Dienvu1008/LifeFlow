@@ -71,7 +71,7 @@ DocumentRepository:
 ## 11. Open questions
 - OQ-DOC-1: revision snapshot/delta cadence and retention. **Resolved in P05a** (owner's C5, C7, C9; ADR-0066, ADR-0068): a full copy at every save, all kept.
 - OQ-DOC-2: editor library (section 7) — spike / 3c. **Resolved in P05a** (S-07): flutter_quill 11.6.0 behind an adapter (ADR-0073).
-- OQ-DOC-3: viewer library feasibility (PDF/DOCX/PPTX) — spikes S-08/S-09. Open: P05b.
+- OQ-DOC-3: viewer library feasibility (PDF/DOCX/PPTX) — spikes S-08/S-09. **Resolved in P05b (2026-11-04)**: PDF with pdfrx 3.0.0 (PDFium) behind an adapter (ADR-0075, ADR-0076); no DOCX view (D1 after S-09: the owner's real form lost its layout in LifeFlow's blocks); PPTX and XLSX not shown (D2). A DOCX, PPTX or XLSX stays a file with "Save a copy".
 - OQ-V10: FTS5 under encryption (verified-sources).
 
 ## 12. Self-check
