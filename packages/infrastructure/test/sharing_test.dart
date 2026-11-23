@@ -15,6 +15,7 @@
 //   rules      a change is a notice for every member (SHARE-005); export by
 //              the export rule (B14)
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:application/application.dart';
 import 'package:drift/drift.dart' show Value, driftRuntimeOptions;
@@ -351,6 +352,49 @@ void main() {
     expect((await lan.row('task', trip))!['workspaceId'], await lan.personal());
   });
 
+  test('P05b T6 steps 14, 29, 30: a PDF word is found only through a live document of the shown space, '
+      'after the trash, a move to the space and back, and sync', () async {
+    final lan = await device('lan');
+    final minh = await device('minh');
+    final ws = await family(lan, [(minh, SpaceRole.editor)]);
+    await lan.show(await lan.personal());
+    final pdf = AttachmentRef(hash: 'sha256:${'e' * 64}', name: 'P1.pdf', size: 9, mime: 'application/pdf');
+    final index = PdfTextIndex(lan.db, _HereFiles(), read: (_) async => const PdfText(PdfTextStatus.indexed, ['Tờ khai thuế']));
+    final search = DriftSearchQueries(lan.db, pdfs: index);
+    Future<List<String>> found() async => [for (final h in (await search.search('khai')).files) h.documentTitle];
+
+    final d = ok(await lan.docs.create('Hồ sơ thuế'));
+    ok(await lan.docs.save(d,
+        title: 'Hồ sơ thuế', body: DocumentBody([DocBlock('f', BlockType.attachment, attachment: pdf)])));
+    await index.catchUp();
+    expect(await found(), ['Hồ sơ thuế']);
+
+    // Step 14: the trash, then a sync, then restored.
+    ok(await lan.docs.trash(d));
+    expect(await found(), isEmpty, reason: 'in the trash');
+    await lan.syncPersonal();
+    await index.catchUp();
+    expect(await found(), isEmpty, reason: 'in the trash, after a sync');
+    ok(await lan.docs.restore(d));
+    expect(await found(), ['Hồ sơ thuế']);
+
+    // Steps 28-30: into the space and back.
+    okShare(await lan.sharing.move(await lan.sharing.previewMove('document', d, ws)));
+    await lan.syncSpace();
+    await lan.syncPersonal();
+    await index.catchUp();
+    expect(await found(), isEmpty, reason: 'Personal shown: the document moved');
+    await lan.show(ws);
+    expect(await found(), ['Hồ sơ thuế'], reason: 'the space shown');
+    okShare(await lan.sharing.move(await lan.sharing.previewMove('document', d, await lan.personal())));
+    await lan.syncSpace();
+    await lan.syncPersonal();
+    await index.catchUp();
+    expect(await found(), isEmpty, reason: 'the space shown: the document left');
+    await lan.show(await lan.personal());
+    expect(await found(), ['Hồ sơ thuế']);
+  });
+
   test('P05a T5 (C2, C8): a document moves with its subdocuments and its whole history; its links stay; '
       'the members see who wrote what; a viewer saves nothing; and back out', () async {
     final lan = await device('lan');
@@ -676,6 +720,19 @@ void main() {
     expect(await minh.spaceSync.refresh(), isNull);
     expect((await minh.spaces.spaces()).where((s) => s.shared), isEmpty);
   });
+}
+
+/// P05b T6 steps 14, 29, 30: every file is "here"; its bytes are its hash.
+class _HereFiles implements AttachmentService {
+  @override
+  Future<AttachmentAdded> add(Uint8List bytes, {required String name, required String mime}) async =>
+      AttachmentAdded.ok(AttachmentRef(hash: attachmentHashOf(bytes), name: name, size: bytes.length, mime: mime));
+  @override
+  Future<AttachmentAvailability> availability(String hash) async => AttachmentAvailability.here;
+  @override
+  Future<AttachmentContent> open(String hash) async => AttachmentContent(AttachmentAvailability.here, Uint8List(1));
+  @override
+  Future<int> sweep({Duration grace = const Duration(days: 1)}) async => 0;
 }
 
 DocumentBody _text(String s) => DocumentBody([DocBlock('b1', BlockType.paragraph, runs: [TextRun(s)])]);

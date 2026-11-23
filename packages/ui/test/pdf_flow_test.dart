@@ -223,6 +223,29 @@ void main() {
     expect(findStatus(tester), '1 of 1');
   });
 
+  testWidgets('T6 steps 14, 29, 30: the results shown are searched again when the documents change', (tester) async {
+    final (w, d) = await openDocWithPdf(tester, setUp: (w) => w.documents.pdfText[pdfFile.hash] = ['Tờ khai thuế']);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('doc-search')), 'khai');
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
+    final hit = find.byKey(ValueKey('file-hit-$d-${pdfFile.hash}-1'));
+    expect(hit, findsOneWidget);
+
+    // The document is trashed elsewhere (its page, another device): gone.
+    await w.documents.trash(d);
+    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(hit, findsNothing);
+    expect(find.byKey(const Key('doc-no-results')), findsOneWidget);
+    await w.documents.restore(d);
+    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(hit, findsOneWidget, reason: 'back with it');
+    expect(w.calls.where((c) => c == 'search:khai'), hasLength(3), reason: 'once typed, then once per change');
+  });
+
   test('fileViewOf: pictures, PDFs by type or by name when the type is generic, the rest not shown', () {
     AttachmentRef f(String name, String mime) => AttachmentRef(hash: 'sha256:${'e' * 64}', name: name, size: 1, mime: mime);
     expect(fileViewOf(f('a.png', 'image/png')), FileView.picture);

@@ -71,7 +71,7 @@ Out of scope: looking up or translating a selected word (P07, through `Selection
 | ~~T3 DOCX~~ | removed by D1 after S-09 | — | — | — |
 | **T4** Reading aloud (**done**: [ADR-0078](../adr/0078-reading-aloud.md)) | `TtsPort`, the sentence model, the reader controls on a document (D7), the language check (D5) | domain tests; widget tests with a fake voice | no | 2–3 |
 | **T5** PDFs read aloud (**done**: [ADR-0079](../adr/0079-pdf-read-aloud.md)) | from the page shown (D4) | widget tests | no | 1 |
-| **T6** On the devices (checklist: [p05b-device-check.md](../testing/p05b-device-check.md)) | your Windows and Android: PDFs, DOCX, search, reading in Vietnamese and English | your check | **yes** | 1 |
+| **T6** On the devices (**done**: [p05b-device-check.md](../testing/p05b-device-check.md); one fix, one finding accepted) | your Windows and Android: PDFs, DOCX, search, reading in Vietnamese and English | your check | **yes** | 1 |
 | **T7** P05b exit gate | p05b-exit-gate.md, ADRs, invariants, risks; your review | all suites, CI | yes | 1 |
 
 Order: S-08, S-09, S-12 (done, except S-12 in Vietnamese: the owner listens during T4) → T1 → T2 → T4 → T5 → T6 → T7.
