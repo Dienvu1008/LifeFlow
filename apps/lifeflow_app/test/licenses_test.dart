@@ -23,6 +23,16 @@ void main() {
     expect(text, contains('https://github.com/google/desugar_jdk_libs/tree/'));
   });
 
+  test('ADR-0078: the C++/WinRT notice (MIT, compiled into the Windows TTS plugin) is registered', () async {
+    registerBundledLicenses();
+    final entries = await LicenseRegistry.licenses.where((e) => e.packages.contains(cppwinrtPackageName)).toList();
+    expect(entries, hasLength(1));
+    final text = entries.single.paragraphs.map((p) => p.text).join('\n');
+    expect(text, contains('Microsoft.Windows.CppWinRT 2.0.210503.1'));
+    expect(text, contains('Copyright (c) Microsoft Corporation.'));
+    expect(text, contains('Permission is hereby granted, free of charge'));
+  });
+
   test('ADR-0075: the PDFium notices are registered, each in full, with the FTL and IJG credits', () async {
     registerBundledLicenses();
     final entries = await LicenseRegistry.licenses.where((e) => e.packages.contains(pdfiumPackageName)).toList();

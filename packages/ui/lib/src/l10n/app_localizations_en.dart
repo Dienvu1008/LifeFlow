@@ -2610,4 +2610,82 @@ class AppLocalizationsEn extends AppLocalizations {
   String docFileHitIn(String title) {
     return 'In “$title”';
   }
+
+  @override
+  String get docReadAloud => 'Read aloud';
+
+  @override
+  String get ttsPlay => 'Read';
+
+  @override
+  String get ttsPause => 'Pause';
+
+  @override
+  String get ttsClose => 'Stop reading';
+
+  @override
+  String get ttsPrevious => 'Previous sentence';
+
+  @override
+  String get ttsNext => 'Next sentence';
+
+  @override
+  String ttsSentenceOf(int n, int count) {
+    return 'Sentence $n of $count';
+  }
+
+  @override
+  String get ttsSpeed => 'Speed';
+
+  @override
+  String ttsSpeedValue(String speed) {
+    return '$speed×';
+  }
+
+  @override
+  String get ttsVoice => 'Voice';
+
+  @override
+  String ttsVoiceItem(String name, String locale) {
+    return '$name ($locale)';
+  }
+
+  @override
+  String ttsLanguage(String language) {
+    String _temp0 = intl.Intl.selectLogic(
+      language,
+      {
+        'vi': 'Vietnamese',
+        'en': 'English',
+        'other': 'this language',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String ttsNoVoiceFor(String language) {
+    return 'This device has no $language voice. You can pick another voice.';
+  }
+
+  @override
+  String get ttsAddVoiceWindows =>
+      'To add one: Windows Settings → Time & language → Speech → Add voices.';
+
+  @override
+  String get ttsAddVoiceAndroid =>
+      'To add one: Android Settings → Text-to-speech output, then install the voice data of the speech engine (for example Speech Services by Google).';
+
+  @override
+  String get ttsNoVoices => 'This device has no voices for reading aloud.';
+
+  @override
+  String get ttsNothingToRead => 'There is no text to read in this document.';
+
+  @override
+  String get ttsCouldNotRead =>
+      'The voice stopped: it could not read this sentence.';
+
+  @override
+  String get ttsLoading => 'Finding the voices…';
 }

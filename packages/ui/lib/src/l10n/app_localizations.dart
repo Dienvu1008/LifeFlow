@@ -4311,6 +4311,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'In “{title}”'**
   String docFileHitIn(String title);
+
+  /// No description provided for @docReadAloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Read aloud'**
+  String get docReadAloud;
+
+  /// No description provided for @ttsPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Read'**
+  String get ttsPlay;
+
+  /// No description provided for @ttsPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get ttsPause;
+
+  /// No description provided for @ttsClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop reading'**
+  String get ttsClose;
+
+  /// No description provided for @ttsPrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous sentence'**
+  String get ttsPrevious;
+
+  /// No description provided for @ttsNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next sentence'**
+  String get ttsNext;
+
+  /// No description provided for @ttsSentenceOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Sentence {n} of {count}'**
+  String ttsSentenceOf(int n, int count);
+
+  /// No description provided for @ttsSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get ttsSpeed;
+
+  /// No description provided for @ttsSpeedValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{speed}×'**
+  String ttsSpeedValue(String speed);
+
+  /// No description provided for @ttsVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get ttsVoice;
+
+  /// No description provided for @ttsVoiceItem.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} ({locale})'**
+  String ttsVoiceItem(String name, String locale);
+
+  /// No description provided for @ttsLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'{language, select, vi{Vietnamese} en{English} other{this language}}'**
+  String ttsLanguage(String language);
+
+  /// No description provided for @ttsNoVoiceFor.
+  ///
+  /// In en, this message translates to:
+  /// **'This device has no {language} voice. You can pick another voice.'**
+  String ttsNoVoiceFor(String language);
+
+  /// No description provided for @ttsAddVoiceWindows.
+  ///
+  /// In en, this message translates to:
+  /// **'To add one: Windows Settings → Time & language → Speech → Add voices.'**
+  String get ttsAddVoiceWindows;
+
+  /// No description provided for @ttsAddVoiceAndroid.
+  ///
+  /// In en, this message translates to:
+  /// **'To add one: Android Settings → Text-to-speech output, then install the voice data of the speech engine (for example Speech Services by Google).'**
+  String get ttsAddVoiceAndroid;
+
+  /// No description provided for @ttsNoVoices.
+  ///
+  /// In en, this message translates to:
+  /// **'This device has no voices for reading aloud.'**
+  String get ttsNoVoices;
+
+  /// No description provided for @ttsNothingToRead.
+  ///
+  /// In en, this message translates to:
+  /// **'There is no text to read in this document.'**
+  String get ttsNothingToRead;
+
+  /// No description provided for @ttsCouldNotRead.
+  ///
+  /// In en, this message translates to:
+  /// **'The voice stopped: it could not read this sentence.'**
+  String get ttsCouldNotRead;
+
+  /// No description provided for @ttsLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Finding the voices…'**
+  String get ttsLoading;
 }
 
 class _AppLocalizationsDelegate

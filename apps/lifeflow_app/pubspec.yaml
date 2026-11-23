@@ -50,6 +50,7 @@ flutter:
   assets:
     - assets/licenses/desugar_jdk_libs/
     - assets/licenses/pdfium/
+    - assets/licenses/cppwinrt/
 
 # SQLite3MultipleCiphers on every platform (prebuilt, hash-pinned by the
 # sqlite3 hook). Encryption is applied only where ADR-0021 requires it

@@ -21,7 +21,11 @@ const pdfiumCredits = [
   'This software is based in part on the work of the Independent JPEG Group.',
 ];
 
+/// Shown as the package name of the C++/WinRT notice (ADR-0078).
+const cppwinrtPackageName = 'C++/WinRT (Windows, used by flutter_tts)';
+
 const _dir = 'assets/licenses/desugar_jdk_libs';
+const _cppwinrtDir = 'assets/licenses/cppwinrt';
 const _pdfiumDir = 'assets/licenses/pdfium';
 
 /// The notice files SOURCE lists (`notice <file> <sha256>`), in order.
@@ -69,6 +73,13 @@ void registerBundledLicenses() {
       final bytes = await rootBundle.load('$_pdfiumDir/$f');
       yield LicenseEntryWithLineBreaks(const [pdfiumPackageName], noticeText(bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes)));
     }
+  });
+  // P05b T4 (ADR-0078): C++/WinRT, which flutter_tts's Windows build fetches
+  // from NuGet and compiles into its plugin (MIT: its notice travels along).
+  LicenseRegistry.addLicense(() async* {
+    final source = await rootBundle.loadString('$_cppwinrtDir/SOURCE');
+    final license = await rootBundle.loadString('$_cppwinrtDir/LICENSE');
+    yield LicenseEntryWithLineBreaks(const [cppwinrtPackageName], '${source.split('\n').first.trim()}\n\n$license');
   });
   // P04 T1b: the word lists of sync (recovery keys, the passphrase check).
   LicenseRegistry.addLicense(() async* {
