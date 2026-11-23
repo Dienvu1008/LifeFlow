@@ -94,5 +94,5 @@ Finding 1 (step 5): old Vietnamese PDFs, most likely in old font encodings witho
 
 ## Owner sign-off
 - [x] Device checks above (owner, 2026-11-04).
-- [ ] CI green on the T7 branch head.
+- [x] CI green on the T7 branch head (`c84a184`: static-and-unit, flutter-ui-and-app, supabase-db).
 - [ ] Owner approves P05b as done.
