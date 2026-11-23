@@ -1,6 +1,6 @@
 # P06 plan: the AI platform
 
-- Status: **Proposed, waiting for the owner's decisions (§3, D1–D10)**. Nothing is built before the decisions and the spikes (§5).
+- Status: **Decisions taken by the owner 2026-11-04** (§3): D1–D6 and D8–D10 as proposed; **D7 changed: the assistant's history syncs** (end-to-end encrypted, like notes). Next: spikes S-17 and S-18 (§5).
 - Date: 2026-11-04
 - Inputs:
   - [phase-breakdown.md](phase-breakdown.md) P06;
@@ -86,7 +86,7 @@ Out of scope for P06:
 
 ## 3. Owner decisions (D1–D10)
 
-| # | Question | Options | Proposed |
+| # | Question | Options | Proposed (the owner, 2026-11-04: as proposed, except D7) |
 |---|---|---|---|
 | D1 | **What the assistant does in P06** | (a) UC-07 "plan my day" and UC-08 "fix a conflict", as proposals; (b) (a) plus "ask about this document or PDF" (summary, answer, find), read-only; (c) (b) plus a free chat about everything in the shown space | **(b)**. It covers both kinds of AI work: proposals that change things, and answers that change nothing. (c) gives the widest context, which means the most risk and cost; it can come later |
 | D2 | **Where the model runs** | (a) on the device only (local), cloud as a port with no adapter; (b) local by default, plus an optional cloud model with **the person's own API key**, off by default; (c) a cloud model paid by LifeFlow through its server | **(b)**. Local keeps privacy and works offline, but small models are weaker, especially in Vietnamese. The person's own key puts no cost on LifeFlow and needs no server work. (c) needs a server, billing and terms: a paid feature, later, like file sync |
@@ -94,7 +94,7 @@ Out of scope for P06:
 | D4 | **Getting the model** | (a) the app downloads a model from a pinned list (name, size, license, SHA-256) after the person agrees, over Wi-Fi by default; (b) the person picks a GGUF file they downloaded; (c) both | **(c)**. A short list (one small and one larger model per platform, from S-17), plus "Use a model file" for people who know. The file stays in the app's folder; deleting it frees the space |
 | D5 | **Cloud provider** (if D2 (b)) | OpenAI, Google Gemini, Anthropic, an OpenAI-compatible address (for example a self-hosted server) | **One provider plus "OpenAI-compatible address"**, chosen by spike S-18 on: terms (no training on API data, retention), Vietnamese quality, structured output, price. The key stays in secure storage (LF-INV-SEC-001) |
 | D6 | **What may be sent to a cloud model** (the matrix allows Personal with the option on, Confidential only with per-request consent, Restricted never) | (a) as the matrix says, with a consent sheet listing what would be sent ("3 tasks, 1 document: …") each time Confidential is in the request; (b) never Confidential to the cloud; (c) consent once per session | **(a)**. The sheet shows the items by title and their class. "Send without these" removes the Confidential items. A consent is for one request only (privacy-model §3) |
-| D7 | **The assistant's history** (chat and proposals, Confidential) | (a) kept on this device only, encrypted, deletable, not synced, not exported; (b) synced, end-to-end encrypted, like notes; (c) not kept | **(a)** for P06. It is simple, and the person's words to a model stay on the device. Syncing can follow if asked |
+| D7 | **The assistant's history** (chat and proposals, Confidential) | (a) kept on this device only, encrypted, deletable, not synced, not exported; (b) synced, end-to-end encrypted, like notes; (c) not kept | Proposed (a). **Owner's choice: (b)**: a person may need to read the history again on another device. So sessions, their messages and proposals are record kinds, Confidential, sealed and synced like notes (ADR-0052, D12 of P04), in the profile's export, deletable (to the trash, then purged), and in the personal space only (an AI session is not moved into a shared space in P06). Syncing them is sync, not egress to a model: a cloud model still gets nothing without the D6 rules |
 | D8 | **Approving a proposal with several changes** (OQ-AI-1) | (a) all or nothing; (b) each change approved on its own, with "Approve all"; each still version-checked | **(b)**. One stale change does not block the others; it is shown as stale with "Regenerate" |
 | D9 | **Language** | (a) the assistant answers in the language the person writes in (Vietnamese or English); (b) always Vietnamese; (c) a setting | **(a)**, with the app's prompts in English and Vietnamese. S-17 checks Vietnamese quality |
 | D10 | **Limits and cost** | (a) local: no cost, a stop button; cloud: token counts shown per request and a monthly cap set by the person (default: none until set; a warning at each request with an estimate); (b) no limits | **(a)**. With the person's own key, the person pays the provider directly. LifeFlow shows the tokens and the estimate, never bills |
@@ -117,7 +117,7 @@ Out of scope for P06:
   - the Context Builder over the store, which reads only, scoped by the request: the screen, the selection, named items and search hits. It never loads the whole store;
   - the checkpoint, the last gate before any cloud call. A denied item is dropped and listed to the person, never sent;
   - the Tool Gateway: a fixed list of tools mapped to existing commands (create, schedule, move or reschedule a task or event; mark done). Their arguments are validated like any payload, and they run through `CommandGateway.execute` as the approving person;
-  - device-only tables for sessions and proposals (schema v18), not synced and not exported (D7);
+  - record kinds for sessions, messages and proposals (schema v18, a new `recordSchemaVersion`), Confidential, synced end-to-end encrypted and exported like other records (D7); the server needs no change (sealed records);
   - an `aiProvenance` field in the audit log (proposal id, approval id, model, versions).
 - **Untrusted content:** text from the person's items is passed to the model as tagged data (`{"untrusted": true}`), never as instructions. Prompt-injection defense is enforced in code: the model's output is only ever a proposal or an answer.
 - **Adapters:**
