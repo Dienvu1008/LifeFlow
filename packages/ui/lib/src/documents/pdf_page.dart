@@ -11,6 +11,9 @@
 //   password   asked for in a dialog, again after a wrong one
 //   search     a hit (P05b T2, ADR-0077) opens at its page, the words typed
 //              highlighted in the find bar ("3 matches")
+//   read aloud P05b T5 (ADR-0079, D4): from the page shown to the end, the
+//              sentence read shown in the reader bar and the page turned
+//              with it; leaving stops it, the background pauses it (D6)
 import 'dart:async';
 
 import 'package:application/application.dart';
@@ -23,6 +26,8 @@ import '../providers.dart';
 import '../task_actions.dart' show showMessage;
 import 'document_page.dart' show formatBytes;
 import 'pdf_view.dart';
+import 'read_aloud.dart';
+import 'reader_bar.dart';
 
 /// How long the page must stay before it is remembered (D9).
 const pdfPageSaveDelay = Duration(seconds: 1);
@@ -60,6 +65,11 @@ class _PdfPageState extends ConsumerState<PdfPage> {
   var _finding = false;
   Timer? _saveTimer;
   int? _savedPage;
+  late final AppLifecycleListener _life;
+
+  /// P05b T5: the reader, while it is open; the sentence it was on.
+  ReadAloud? _reader;
+  int? _readIndex;
 
   String get _hash => widget.file.hash;
 
@@ -68,6 +78,46 @@ class _PdfPageState extends ConsumerState<PdfPage> {
     super.initState();
     _settings = ref.read(settingsServiceProvider);
     _opened = _open();
+    // D6: the app in the background pauses the reading.
+    _life = AppLifecycleListener(onHide: _pauseReading, onPause: _pauseReading);
+  }
+
+  void _pauseReading() => unawaited(_reader?.pause());
+
+  Future<void> _openReader() async {
+    final c = _controls;
+    if (c == null) return;
+    final first = c.pageNumber;
+    final r = ReadAloud(ref.read(ttsPortProvider), _settings);
+    r.addListener(_readerChanged);
+    setState(() {
+      _reader = r;
+      _readIndex = null;
+    });
+    final pages = [for (var p = first; p <= c.pageCount; p++) await c.pageText(p)];
+    if (!mounted || _reader != r) return;
+    await r.load(pdfReadingBody(pages, first: first));
+  }
+
+  /// The page follows the sentence read (only when the sentence changes, so
+  /// the person can still look elsewhere meanwhile).
+  void _readerChanged() {
+    final r = _reader, c = _controls;
+    if (r == null || !mounted) return;
+    setState(() {});
+    final s = r.current;
+    if (c == null || s == null || r.state != ReadState.playing || r.index == _readIndex) return;
+    _readIndex = r.index;
+    final page = pageOfReadingBlock(s.blockId);
+    if (page != null && page != c.pageNumber) unawaited(c.goToPage(page));
+  }
+
+  void _closeReader() {
+    final r = _reader;
+    if (r == null) return;
+    r.removeListener(_readerChanged);
+    r.dispose(); // stops the voice
+    setState(() => _reader = null);
   }
 
   Future<(AttachmentContent, int)> _open() async {
@@ -85,6 +135,10 @@ class _PdfPageState extends ConsumerState<PdfPage> {
   @override
   void dispose() {
     _saveTimer?.cancel();
+    _life.dispose();
+    // Leaving the page stops the reading (D6).
+    _reader?.removeListener(_readerChanged);
+    _reader?.dispose();
     final c = _controls;
     c?.removeListener(_changed);
     // Leaving remembers the page (D9); the service is kept, the page is gone.
@@ -171,6 +225,12 @@ class _PdfPageState extends ConsumerState<PdfPage> {
             actions: [
               if (ready) ...[
                 IconButton(key: const Key('pdf-find'), tooltip: l.pdfFind, icon: const Icon(Icons.search), onPressed: _openFind),
+                IconButton(
+                    key: const Key('pdf-read-aloud'),
+                    tooltip: l.docReadAloud,
+                    isSelected: _reader != null,
+                    icon: const Icon(Icons.record_voice_over_outlined),
+                    onPressed: _reader == null ? _openReader : _closeReader),
                 if (c.hasSelection)
                   IconButton(key: const Key('pdf-copy'), tooltip: l.pdfCopy, icon: const Icon(Icons.copy), onPressed: _copy),
                 IconButton(key: const Key('pdf-zoom-out'), tooltip: l.pdfZoomOut, icon: const Icon(Icons.zoom_out), onPressed: c.zoomOut),
@@ -232,6 +292,7 @@ class _PdfPageState extends ConsumerState<PdfPage> {
                     ),
                   ),
                 ),
+                if (ready && _reader != null) ReaderBar(reader: _reader!, onClose: _closeReader, showSentence: true),
                 if (ready) _PageBar(controls: c),
               ]);
             },

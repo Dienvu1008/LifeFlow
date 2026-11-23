@@ -50,6 +50,9 @@ abstract class PdfViewControls implements Listenable {
 
   /// The selected text, or null when nothing is selected.
   Future<String?> selectedText();
+
+  /// P05b T5: the text of page [pageNumber] (empty for a scan).
+  Future<String> pageText(int pageNumber);
 }
 
 /// What the PDF page gives a PDF view.

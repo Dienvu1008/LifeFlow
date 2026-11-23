@@ -170,4 +170,8 @@ class FakePdfControls extends ChangeNotifier implements PdfViewControls {
 
   @override
   Future<String?> selectedText() async => _selected;
+
+  @override
+  Future<String> pageText(int pageNumber) async =>
+      pageNumber >= 1 && pageNumber <= pdf.pages.length ? pdf.pages[pageNumber - 1] : '';
 }

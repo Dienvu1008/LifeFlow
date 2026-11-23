@@ -70,7 +70,7 @@ Out of scope: looking up or translating a selected word (P07, through `Selection
 | **T2** PDF in search (**done**: [ADR-0077](../adr/0077-pdf-text-in-search.md)) | text extracted and indexed per page (D3) | search tests (Vietnamese PDF text, the exact spelling); a file elsewhere is not indexed | no | 1–2 |
 | ~~T3 DOCX~~ | removed by D1 after S-09 | — | — | — |
 | **T4** Reading aloud (**done**: [ADR-0078](../adr/0078-reading-aloud.md)) | `TtsPort`, the sentence model, the reader controls on a document (D7), the language check (D5) | domain tests; widget tests with a fake voice | no | 2–3 |
-| **T5** PDFs read aloud | from the page shown (D4) | widget tests | no | 1 |
+| **T5** PDFs read aloud (**done**: [ADR-0079](../adr/0079-pdf-read-aloud.md)) | from the page shown (D4) | widget tests | no | 1 |
 | **T6** On the devices | your Windows and Android: PDFs, DOCX, search, reading in Vietnamese and English | your check | **yes** | 1 |
 | **T7** P05b exit gate | p05b-exit-gate.md, ADRs, invariants, risks; your review | all suites, CI | yes | 1 |
 

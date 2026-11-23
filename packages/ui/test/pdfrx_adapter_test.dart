@@ -74,6 +74,9 @@ void main() {
     c.find('invoice');
     await settle(tester, () => !c.isFinding && c.matchCount == 3);
     expect(c.matchCount, 3, reason: 'ignoring case, on pages 1 and 3');
+    // P05b T5: a page's text, for reading aloud.
+    expect(await waitFor(tester, c.pageText(3)), 'Invoice 2 and invoice 3');
+    expect(await waitFor(tester, c.pageText(9)), '', reason: 'no such page');
     expect(c.matchIndex, 0);
     await waitFor(tester, c.nextMatch());
     expect(c.matchIndex, 1);

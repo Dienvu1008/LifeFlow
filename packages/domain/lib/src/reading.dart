@@ -117,3 +117,29 @@ String readingLanguageOf(DocumentBody body) {
   }
   return vi * 7 >= words.length ? 'vi' : 'en';
 }
+
+/// P05b T5 (ADR-0079, D4): a PDF page's text as it is read. A line break in
+/// a PDF is where a line ended on the page, not where a sentence ends: lines
+/// are joined with a space, and a word cut by a hyphen at a line end is
+/// joined back. A blank line (a new paragraph) still ends a sentence.
+String pdfReadingText(String raw) {
+  final t = raw.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+  final joined = t.replaceAllMapped(RegExp(r'(\p{L})-\n[ \t]*(\p{Ll})', unicode: true), (m) => '${m[1]}${m[2]}');
+  return joined
+      .split(RegExp(r'\n[ \t]*\n\s*'))
+      .map((para) => para.replaceAll(RegExp(r'[ \t]*\n[ \t]*'), ' '))
+      .join('\n');
+}
+
+const _pageBlock = 'page-';
+
+/// The pages of a PDF, from page [first] on, as a body to read: one block
+/// per page (`page-<n>`), its text as [pdfReadingText] gives it.
+DocumentBody pdfReadingBody(List<String> pages, {int first = 1}) => DocumentBody([
+      for (var i = 0; i < pages.length; i++)
+        DocBlock('$_pageBlock${first + i}', BlockType.paragraph, runs: [TextRun(pdfReadingText(pages[i]))]),
+    ]);
+
+/// The page of a block of [pdfReadingBody], or null.
+int? pageOfReadingBlock(String blockId) =>
+    blockId.startsWith(_pageBlock) ? int.tryParse(blockId.substring(_pageBlock.length)) : null;

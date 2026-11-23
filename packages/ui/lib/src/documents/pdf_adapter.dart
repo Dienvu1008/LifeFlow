@@ -159,6 +159,13 @@ class _PdfrxControls extends ChangeNotifier implements PdfViewControls {
   bool get copyAllowed => _copyAllowed;
 
   @override
+  Future<String> pageText(int pageNumber) async {
+    final pages = _c.document.pages;
+    if (pageNumber < 1 || pageNumber > pages.length) return '';
+    return (await pages[pageNumber - 1].loadText())?.fullText ?? '';
+  }
+
+  @override
   Future<String?> selectedText() async {
     final s = _selection;
     if (s == null || !s.hasSelectedText) return null;
