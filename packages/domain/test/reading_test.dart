@@ -126,4 +126,22 @@ void main() {
       expect(readingLanguageOf(of('We ate phở and bún at the river')), 'vi');
     });
   });
+
+  group('a PDF (P05b T5)', () {
+    test('lines are joined, a hyphenated word too; a blank line still ends a sentence', () {
+      expect(pdfReadingText('Biên bản họp tổ\r\ndân phố ở Đà\nNẵng\n\nNgày 4 tháng 11'),
+          'Biên bản họp tổ dân phố ở Đà Nẵng\nNgày 4 tháng 11');
+      expect(pdfReadingText('the infor-\nmation is here.\n  \n\nNext'), 'the information is here.\nNext');
+      expect(pdfReadingText('Đà Nẵng -\nHội An'), 'Đà Nẵng - Hội An', reason: 'a dash between words is kept');
+      expect(pdfReadingText('Hà Nội-\nHuế'), 'Hà Nội- Huế', reason: 'a capital after: not a cut word');
+      expect(texts(pdfReadingText('Một câu\ntrên hai dòng. Câu khác.')), ['Một câu trên hai dòng.', 'Câu khác.']);
+    });
+
+    test('pages from the one shown, one block each, and back to their page', () {
+      final body = pdfReadingBody(['Trang ba.', 'Trang\nbốn.'], first: 3);
+      expect([for (final s in readingOf(body)) (pageOfReadingBlock(s.blockId), s.text)], [(3, 'Trang ba.'), (4, 'Trang bốn.')]);
+      expect(pageOfReadingBlock('b1'), isNull);
+      expect(readingOf(pdfReadingBody(['', '  '])), isEmpty, reason: 'a scan has no text');
+    });
+  });
 }

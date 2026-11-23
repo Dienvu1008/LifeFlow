@@ -3,7 +3,8 @@
 // the system's (Android's text-to-speech engine, Windows' voices).
 
 /// What is read: the domain's sentence model (pure).
-export 'package:domain/domain.dart' show ReadingSentence, maxReadingSentenceLength, readingLanguageOf, readingOf, sentencesOf;
+export 'package:domain/domain.dart' show
+        ReadingSentence, maxReadingSentenceLength, pageOfReadingBlock, pdfReadingBody, pdfReadingText, readingLanguageOf, readingOf, sentencesOf;
 
 /// A voice of this device.
 class TtsVoice {

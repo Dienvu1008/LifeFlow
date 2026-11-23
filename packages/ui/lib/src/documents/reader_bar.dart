@@ -10,9 +10,12 @@ import 'read_aloud.dart';
 String speedText(double s) => s == s.roundToDouble() ? s.toStringAsFixed(0) : '$s';
 
 class ReaderBar extends StatelessWidget {
-  const ReaderBar({super.key, required this.reader, required this.onClose});
+  const ReaderBar({super.key, required this.reader, required this.onClose, this.showSentence = false});
   final ReadAloud reader;
   final VoidCallback onClose;
+
+  /// Shows the sentence being read in the bar (a PDF: its page cannot mark it).
+  final bool showSentence;
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +52,15 @@ class ReaderBar extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
               child: Text(note, key: const Key('tts-note'), style: theme.textTheme.bodySmall),
+            ),
+          if (showSentence && r.current != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
+              child: Text(r.current!.text,
+                  key: const Key('tts-sentence'),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
             ),
           Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: [
             IconButton(
