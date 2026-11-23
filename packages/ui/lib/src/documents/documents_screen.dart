@@ -129,10 +129,24 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
     });
   }
 
+  /// P05b T6 (steps 14, 29, 30): the shown results are searched again when
+  /// the documents change (saved, trashed, restored, moved) or another space
+  /// is shown, so they never show what is no longer there. The old results
+  /// stay on screen until the new ones come (no flicker).
+  void _searchAgain() {
+    if (!mounted || _searched.trim().isEmpty || _results == null) return;
+    setState(() {
+      _results = ref.read(searchQueriesProvider).search(_searched);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final canEdit = ref.watch(canEditShownProvider);
+    ref.listen(documentTreeProvider, (before, now) {
+      if (now.hasValue && !identical(before?.valueOrNull, now.valueOrNull)) _searchAgain();
+    });
     return Scaffold(
       appBar: AppBar(
         leading: shellMenuButton(context),
