@@ -128,6 +128,8 @@ estore. Failure: —. Verification: integration. Severity: medium. Depends: LF-I
 ### LF-INV-SEARCH-001 — Search by the exact spelling (introduced at the P05a exit)
 - Statement: a search matches the words as spelled, marks included, ignoring letter case and how the marks were encoded (text and query both in Unicode NFC); a word without its marks does not match the word with them. Rationale: the owner's C4 and C12. Scope: Documents and tasks search. Enforcement: FTS5 `unicode61 remove_diacritics 0`; NFC in Dart on both sides (ADR-0067). Failure: — . Verification: integration on the real (encrypted) store, device check on both platforms. Severity: high. Depends: —.
 
+### LF-INV-FILE-001 — A file is decrypted only in memory (introduced at the P05b exit)
+- Statement: a file kept in a document is decrypted only in memory, to be shown, searched or read aloud. It is written in the clear only where the person chose: "Save a copy" or an export. The text read from it for search is kept only in the profile's encrypted store, on this device. Rationale: ADR-0072; p05b-plan.md §6. Scope: Documents (attachments, the PDF viewer, PDF text in search, reading aloud). Enforcement: the viewer is given bytes from `AttachmentService.open`, never a path (ADR-0076); PDF text goes into device-only tables of the encrypted store (ADR-0077). Failure: a clear copy on disk. Verification: an app integration test scans the app's folder and the PDF engine's cache folder for the PDF's text after it is shown, searched and indexed; a mutation that writes a copy to the cache is caught. Severity: high. Depends: LF-INV-PRIV-003.
 ## 7. Dictionary and Vocabulary
 
 ### LF-INV-DICT-001 — Lexical identity separate from contextual meaning

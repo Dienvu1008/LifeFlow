@@ -41,7 +41,8 @@ Maps every invariant to its verification method, golden scenario(s) and/or fitne
 | LF-INV-DOC-004 | U, A | — | — | no |
 | LF-INV-DOC-005 | Sync | GS-08 | — | no |
 | LF-INV-DOC-006 | I, Sync | GS-08 | FF-ARCH-06 | no |
-| LF-INV-SEARCH-001 | I, device | GS-28 | — | no |
+| LF-INV-SEARCH-001 | I, device | GS-28, GS-29 | — | no |
+| LF-INV-FILE-001 | I, UI, device | GS-29 | — | no |
 | LF-INV-DICT-001 | U | — | — | no |
 | LF-INV-DICT-002 | U | — | — | no |
 | LF-INV-DICT-003 | U | — | — | no |
@@ -95,8 +96,10 @@ SHARE-001…005 are new and enforced: on the server (RLS, role-checked functions
 
 ## P05a status (2026-11-04)
 DOC-001…005 are enforced and tested (pure rules, the store, sync, the UI); DOC-006 and SEARCH-001 are new. GS-08 proper (two offline edits of one document) passes on the sync harness and on local Supabase, and on the owner's devices; GS-27 and GS-28 are new and pass. PRIV-002/003 hold for documents: they enter a space only by a confirmed move, and their files never leave the device. The test files are listed in [p05a-exit-gate.md](../testing/p05a-exit-gate.md).
+## P05b status (2026-11-04)
+FILE-001 is new: a file is decrypted only in memory, to be shown, searched or read aloud; the app integration test finds no clear copy of a PDF's text in the app's folder or the PDF engine's cache, after the PDF is shown, searched and indexed. SEARCH-001 now covers the text of PDFs (NFC, the exact spelling). GS-29 and GS-30 are new and pass headless and on the owner's devices. PRIV-003 holds: the text of PDFs, the last page and the reading settings stay on the device (not synced, not exported). The test files are listed in [p05b-exit-gate.md](../testing/p05b-exit-gate.md).
 ## Coverage summary
-- 69 invariants (60 harvested + LF-INV-DOC-005 + LF-INV-SEC-011 + LF-INV-SHARE-001…005 at P04b + LF-INV-DOC-006 and LF-INV-SEARCH-001 at P05a). Every one has at least one verification method. **0 critical gaps.**
+- 70 invariants (60 harvested + LF-INV-DOC-005 + LF-INV-SEC-011 + LF-INV-SHARE-001…005 at P04b + LF-INV-DOC-006 and LF-INV-SEARCH-001 at P05a + LF-INV-FILE-001 at P05b). Every one has at least one verification method. **0 critical gaps.**
 - Invariants with only unit coverage and no golden scenario (for example several Dictionary/Document detail invariants) are lower severity; a golden scenario can be added in their phase if needed.
 
 ## Self-check
