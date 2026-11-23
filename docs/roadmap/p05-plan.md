@@ -9,7 +9,7 @@
 
 P05 is split like P04, each part with its own exit gate and the owner's review:
 - **P05a: documents.** Documents with a block editor, a revision at every save, a tree of documents, `[[…]]` links and backlinks, links to tasks, events and goals, search by the exact spelling (Vietnamese marks included), sync, shared spaces, and attachments kept on the device.
-- **P05b: viewers and reading.** PDF and DOCX viewing (S-08, S-09) and reading aloud (S-12). It depends on what license-clean libraries work on Windows; it does not hold up P05a. Planned at P05a's exit.
+- **P05b: viewers and reading.** PDF and DOCX viewing (S-08, S-09) and reading aloud (S-12). It depends on what license-clean libraries work on Windows; it does not hold up P05a. Planned at P05a's exit. **Done 2026-11-04** ([p05b-plan.md](p05b-plan.md), [p05b-exit-gate.md](../testing/p05b-exit-gate.md)): PDF viewing and search in PDFs, reading aloud; no DOCX view (D1 after S-09).
 
 P05a's goal: a person writes and organizes their own documents, and shares some of them in a space, with no content ever lost: not by a conflict, not by a sync, not by a move.
 

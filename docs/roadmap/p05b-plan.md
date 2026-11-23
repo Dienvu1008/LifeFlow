@@ -1,6 +1,6 @@
 # P05b plan: viewers and reading aloud
 
-- Status: **T1–T6 done; exit gate T7 waiting for the owner's sign-off** ([p05b-exit-gate.md](../testing/p05b-exit-gate.md)). **Decisions taken by the owner 2026-11-04** (§3): D1–D10 as proposed, then, after the spikes, **D1 changed (no DOCX view in P05b)** and **D10 answered (PDFium's permissive licenses accepted, [ADR-0075](../adr/0075-pdfium-bundled-licenses.md))**. Spikes: S-08 pass, S-09 (b) fails on a real form, S-12 English pass ([spike-results.md](../spikes/spike-results.md)).
+- Status: **P05b done, signed off by the owner 2026-11-04** ([p05b-exit-gate.md](../testing/p05b-exit-gate.md)). **Decisions taken by the owner 2026-11-04** (§3): D1–D10 as proposed, then, after the spikes, **D1 changed (no DOCX view in P05b)** and **D10 answered (PDFium's permissive licenses accepted, [ADR-0075](../adr/0075-pdfium-bundled-licenses.md))**. Spikes: S-08 pass, S-09 (b) fails on a real form, S-12 English pass ([spike-results.md](../spikes/spike-results.md)).
 - Date: 2026-11-04
 - Inputs: [p05-plan.md](p05-plan.md) (P05b split off at P05a's start), [p05a-exit-gate.md](../testing/p05a-exit-gate.md), [document-knowledge.md](../domains/document-knowledge.md) §6 (`FileViewer`, `TtsPort`, `SelectionAdapter`; OQ-DOC-3), [spike-plan.md](../spikes/spike-plan.md) (S-08, S-09, S-12), [technical-stack.md](../architecture/technical-stack.md) (viewers and TTS not chosen yet), [ADR-0018](../adr/0018-dependency-license-policy.md), [ADR-0072](../adr/0072-encrypted-attachments.md) (files encrypted, on the device only), [ADR-0074](../adr/0074-export-with-documents-and-files.md); use cases UC-10 (look up a word in a PDF: the lookup itself is P07)
 - Estimate: about 10–14 person-days after the spikes (DOCX removed), plus a 30 % risk buffer.
@@ -72,7 +72,7 @@ Out of scope: looking up or translating a selected word (P07, through `Selection
 | **T4** Reading aloud (**done**: [ADR-0078](../adr/0078-reading-aloud.md)) | `TtsPort`, the sentence model, the reader controls on a document (D7), the language check (D5) | domain tests; widget tests with a fake voice | no | 2–3 |
 | **T5** PDFs read aloud (**done**: [ADR-0079](../adr/0079-pdf-read-aloud.md)) | from the page shown (D4) | widget tests | no | 1 |
 | **T6** On the devices (**done**: [p05b-device-check.md](../testing/p05b-device-check.md); one fix, one finding accepted) | your Windows and Android: PDFs, DOCX, search, reading in Vietnamese and English | your check | **yes** | 1 |
-| **T7** P05b exit gate (evidence: [p05b-exit-gate.md](../testing/p05b-exit-gate.md)) | p05b-exit-gate.md, ADRs, invariants, risks; your review | all suites, CI | yes | 1 |
+| **T7** P05b exit gate (**done**, signed off: [p05b-exit-gate.md](../testing/p05b-exit-gate.md)) | p05b-exit-gate.md, ADRs, invariants, risks; your review | all suites, CI | yes | 1 |
 
 Order: S-08, S-09, S-12 (done, except S-12 in Vietnamese: the owner listens during T4) → T1 → T2 → T4 → T5 → T6 → T7.
 

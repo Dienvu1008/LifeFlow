@@ -2,8 +2,8 @@
 
 This page maps each line of the P05b exit gate ([p05b-plan.md §1](../roadmap/p05b-plan.md)) to the tests and checks that prove it. It does the same for the invariant and scenarios the plan proposed (§6), the risks (§7), the fitness functions and the definition of done ([definition-of-done.md](definition-of-done.md)).
 
-- Status: **waiting for the owner's sign-off**.
-- Branch: `p05b/t7-exit-gate`, on `p05b/t6-device-check` (T6, not merged yet), on `main` at `869dd74` (T1, T2, T4 and T5 merged).
+- Status: **signed off by the owner, 2026-11-04**.
+- Branch: `p05b/t7-exit-gate`, on `p05b/t6-device-check`, on `main` at `869dd74` (T1, T2, T4 and T5 merged); T6 and T7 merged into `main` at sign-off.
 
 How to reproduce: as for P05a ([p05a-exit-gate.md](p05a-exit-gate.md)).
 - `dart test` and `flutter test` in every package.
@@ -95,4 +95,4 @@ Finding 1 (step 5): old Vietnamese PDFs, most likely in old font encodings witho
 ## Owner sign-off
 - [x] Device checks above (owner, 2026-11-04).
 - [x] CI green on the T7 branch head (`c84a184`: static-and-unit, flutter-ui-and-app, supabase-db).
-- [ ] Owner approves P05b as done.
+- [x] Owner approves P05b as done (2026-11-04).
