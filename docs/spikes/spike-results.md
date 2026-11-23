@@ -260,3 +260,26 @@ With `sqlite3` 3.5.2 (resolved by the T6a app), the build hook's `source: sqlite
   - **Windows sends no word progress events** (start, end, pause, continue and cancel only), so the highlight follows sentence by sentence, as built. Android has word progress.
   - Windows uses WinRT (OneCore voices).
 - **This Windows PC has no Vietnamese voice:** only David, Zira and Mark (English). To install one: Settings → Time & language → Speech → Add voices → Vietnamese ("Microsoft An").
+## S-17 — A local model inside the app (P06)
+**Interim (2026-11-04): Windows measured by the agent; the owner's Windows and Android runs pending.**
+- **Question:** Can a small model run inside LifeFlow on Windows and Android, offline, well enough in Vietnamese, with output the app can check?
+- **What was done:** a throwaway probe app (`spikes/p06_probe`, branch `spike/s17-local-model`) with `llamadart` 0.20.6 (MIT; llama.cpp for Dart and Flutter, Flutter ≥ 3.38.6, works on our 3.47.2). Fixed prompts: a question and a summary on a Vietnamese meeting note, an English summary, and a day plan as strict JSON (5 tasks, 2 fixed events, 08:00–18:00), checked by code (it parses, uses only given ids, no overlap, within hours). The app has a headless mode (`p06_probe.exe smoke <model> <file>`) that the agent ran on this PC.
+- **Models** (GGUF, Q4_K_M, from Hugging Face `unsloth/…`, tagged Apache-2.0 there; to verify in the model files before any is offered): Qwen 3.5 0.8 B (508 MB), 2 B (1.2 GB), 4 B (2.6 GB); Gemma 4 E2B (3.0 GB).
+- **Results on this Windows PC** (llama.cpp runtime with Vulkan; load times after the first download and first run):
+
+| Model | Load | App memory | Speed | Vietnamese question and summary | Day plan (JSON) |
+|---|---|---|---|---|---|
+| Qwen 3.5 0.8 B | 0.8–2 s | ~0.7 GB | ~250 tok/s | right (date, person, amount); summary right, a little wordy | valid JSON; 7 time overlaps |
+| Qwen 3.5 2 B | 4 s | ~1.4 GB | 80–170 tok/s | right, concise | valid; 1 overlap, 1 task left out |
+| Qwen 3.5 4 B | 9 s | ~2.8 GB | ~90 tok/s | right, the most precise summary | valid; 1 overlap |
+| Gemma 4 E2B | slow first load | ~1.7 GB | ~120 tok/s | right, natural | valid; 1 overlap, 1 task after hours |
+
+- **Found:**
+  - **Vietnamese reading and writing is good** even at 0.8 B: answers about a Vietnamese text were all correct.
+  - **Small models cannot be trusted with times**: every model overlapped at least one task with a fixed event. So the design's determinism boundary is needed, not optional. The model proposes an order and what goes where; LifeFlow's own code checks the times and moves or flags what does not fit before the person sees the proposal.
+  - **Structured JSON needs thinking off** (`enableThinking: false`): with thinking on, every model spent its budget thinking and the JSON was cut off.
+  - The first ever run waits about 20 s before the first word (the GPU backend prepares itself); later runs answer in under a second.
+  - **App size:** the runtime adds a lot. The Windows release folder is 170 MB (Vulkan backend 32 MB, LiteRT-LM 26 MB, WebGPU about 24 MB, …); the Android arm64 APK is 116 MB. LiteRT-LM and WebGPU may not be needed for GGUF: to trim in T4 (llamadart's native runtime configuration).
+  - The native libraries are downloaded by llamadart's build hook (`leehack/llamadart-native` v1.0.0-4), as PDFium is: their licenses (llama.cpp and ggml MIT; LiteRT-LM, Dawn and others) must be read and their notices shipped (T4, like ADR-0075).
+  - Models are cached in `%LOCALAPPDATA%\llamadart\models` by default; LifeFlow would keep them in its own folder.
+- **Still to do:** the owner runs the probe app on Windows and Android (APK `app-arm64-v8a-release.apk`), judges the Vietnamese answers, and notes the speed and memory on the phone; then the recommendation (runtime, model list for D4).
