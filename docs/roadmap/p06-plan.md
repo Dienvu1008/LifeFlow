@@ -1,6 +1,6 @@
 # P06 plan: the AI platform
 
-- Status: **Decisions taken by the owner 2026-11-04** (§3): D1–D6 and D8–D10 as proposed; **D7 changed: the assistant's history syncs** (end-to-end encrypted, like notes). Next: spikes S-17 and S-18 (§5).
+- Status: **Decisions taken by the owner 2026-11-04** (§3): D1–D6 and D8–D10 as proposed; **D7 changed: the assistant's history syncs** (end-to-end encrypted, like notes). T1–T3 done and merged. **S-17 done (2026-11-04)**: llamadart embedded (D3 (a), no Ollama); Windows list Qwen 3.5 2 B (default), 4 B, 0.8 B; Android only Qwen 3.5 0.8 B behind a "slow, not recommended" warning (the owner's call). Next: S-18, T4.
 - Date: 2026-11-04
 - Inputs:
   - [phase-breakdown.md](phase-breakdown.md) P06;
@@ -131,7 +131,7 @@ Out of scope for P06:
 
 | Task | What | Proof | Your check | Days |
 |---|---|---|---|---|
-| **S-17** Local model | A throwaway probe app on Windows and Android with the runtime candidates (llamadart, flutter_gemma; Ollama on Windows) and 2–3 small models (for example Qwen 3.5 0.8 B / 4 B, a Gemma). Measured: Vietnamese and English answers, JSON or tool output that parses, speed (tokens/s), memory, model size, app size, the licenses of the runtime and of each model | results in spike-results.md; a recommended runtime and model list | **yes**: run the probe, judge the Vietnamese answers | 2–3 |
+| **S-17** Local model (**done**: PASS on Windows; slow on Android, see [spike-results.md](../spikes/spike-results.md)) | A throwaway probe app on Windows and Android with the runtime candidates (llamadart, flutter_gemma; Ollama on Windows) and 2–3 small models (for example Qwen 3.5 0.8 B / 4 B, a Gemma). Measured: Vietnamese and English answers, JSON or tool output that parses, speed (tokens/s), memory, model size, app size, the licenses of the runtime and of each model | results in spike-results.md; a recommended runtime and model list | **yes**: run the probe, judge the Vietnamese answers | 2–3 |
 | **S-18** Cloud model (only if D2 (b)) | With your own key: 2–3 providers on the same prompts (plan my day, summarize a Vietnamese document); structured output; tokens and cost per request; the terms on training and retention | results; a provider for D5 | **yes**: give a key, judge the answers | 1–2 |
 | **T1** Domain and egress (**done**: [ADR-0080](../adr/0080-ai-egress-and-approvals.md)) | The proposal and approval model; the AI egress rules (the AI record kinds moved to T3, with their tables) | domain tests; property tests of the matrix | no | 2 |
 | **T2** Context Builder and checkpoint (**done**: [ADR-0081](../adr/0081-ai-context-and-egress-checkpoint.md)) | Scoped context (screen, selection, named items, search); the checkpoint; FF-ARCH-08; GS-16 | integration tests; the property test; a planted leak caught | no | 3–4 |
@@ -144,6 +144,8 @@ Out of scope for P06:
 | **T9** P06 exit gate | p06-exit-gate.md, ADRs, invariants, risks; your review | all suites, CI | yes | 1 |
 
 Order: S-17 (and S-18) → T1 → T2 → T3 → T4 → T5 → T6 → T7 → T8 → T9. T1–T3 do not need a model and can start while you run the spikes.
+
+**After S-17 (2026-11-04):** T4 offers local models on Windows as the normal path and on Android with a clear warning before the download (slow and not recommended there; cloud with the person's own key is the better option on phones). T6 keeps the model's plan small (order and slot by id) and computes and checks every time in code, retrying a broken JSON plan once.
 
 ## 6. Invariants and scenarios
 
