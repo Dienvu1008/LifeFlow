@@ -11,7 +11,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:application/application.dart';
-import 'package:domain/domain.dart' show DataClassification;
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:foundation/foundation.dart';

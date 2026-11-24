@@ -11,7 +11,7 @@ Status in the scaffold:
   - 05 no cyclic package dependency
   - 06 atomic command side-effects (test-based; LF-INV-GOV-003)
   - 07 no AGPL/unknown-license dependency (license scan; ADR-0018) — **runnable since P02 T8**: `dart run tools/fitness/ff_arch_07_licenses.dart` (inventory `license_inventory.txt`; `--detect` suggests lines for new packages; self-test `ff_arch_07_test.dart`; exceptions per ADR-0035; the PDFium notices per ADR-0075, fetched by `tools/licenses/fetch_pdfium_notices.ps1`)
-  - 08 no Restricted item toward cloud AI (test-based; LF-INV-PRIV-002)
+  - 08 no Restricted item toward cloud AI (test-based; LF-INV-PRIV-002) — **runnable since P06 T2**: `dart run tools/fitness/ff_arch_08_ai_egress.dart` (guards: only the checkpoint builds a request for an engine and decides each item with the domain rule; then the tests tagged `ff-arch-08`; ADR-0081)
   - 09 authorize-before-domain (test-based; LF-INV-GOV-002)
 
 These are the pacing checks for P01's Definition of Done (static FFs green).

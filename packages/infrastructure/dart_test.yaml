@@ -3,3 +3,4 @@
 tags:
   ff-arch-06: {}   # every mutation handler writes the atomic set in one transaction
   ff-arch-09: {}   # every mutation is authorized before the domain method runs
+  ff-arch-08: {}   # no Restricted item toward cloud AI; the egress checkpoint decides every item

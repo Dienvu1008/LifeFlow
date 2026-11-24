@@ -3,6 +3,7 @@
 /// and the handler/transaction abstractions. No Flutter, no database.
 library application;
 
+export 'src/ai.dart';
 export 'src/app_services.dart';
 export 'src/attachments.dart';
 export 'src/auth.dart';
