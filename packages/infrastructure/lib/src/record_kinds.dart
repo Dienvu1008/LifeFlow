@@ -76,6 +76,9 @@ class RecordKind {
     'document': DocumentRow.fromJson,
     'documentRevision': DocumentRevisionRow.fromJson,
     'documentLink': DocumentLinkRow.fromJson,
+    'aiSession': AiSessionRow.fromJson,
+    'aiMessage': AiMessageRow.fromJson,
+    'aiProposal': AiProposalRow.fromJson,
   };
   Object _parse(Row r) => _parsers[name]!(r);
 }
@@ -141,6 +144,11 @@ final List<RecordKind> recordKinds = [
       (d) => d.toCompanion(false)),
   _kind('documentLink', 'documentLinks', (db) => db.documentLinks, DocumentLinkRow.fromJson,
       (d) => d.toCompanion(false)),
+  // P06 T3 (schema v18, ADR-0082; the owner's D7): the assistant's history,
+  // a session before its messages, a message before the proposal it holds.
+  _kind('aiSession', 'aiSessions', (db) => db.aiSessions, AiSessionRow.fromJson, (d) => d.toCompanion(false)),
+  _kind('aiMessage', 'aiMessages', (db) => db.aiMessages, AiMessageRow.fromJson, (d) => d.toCompanion(false)),
+  _kind('aiProposal', 'aiProposals', (db) => db.aiProposals, AiProposalRow.fromJson, (d) => d.toCompanion(false)),
   // P04 T1 (schema v10, ADR-0053): settings that sync with the workspace.
   _kind('workspaceSettings', 'workspaceSettings', (db) => db.workspaceSettings, WorkspaceSetting.fromJson,
       (d) => d.toCompanion(false)),
@@ -168,6 +176,7 @@ const subjectKinds = {'schedule', 'exception', 'reminder'};
 /// Kinds a row can point to, for reference checks.
 const referableKinds = {
   'taskList', 'task', 'event', 'calendar', 'goal', 'focusSession', 'executionRecord', 'measurement', 'document',
+  'aiSession', 'aiMessage',
 };
 
 /// The record a dependent row belongs to, as (kind, id), or null.
@@ -176,6 +185,7 @@ const referableKinds = {
       'completion' || 'measurement' || 'periodResult' => ('task', r['taskId'] as String),
       'milestone' => ('goal', r['goalId'] as String),
       'documentRevision' => ('document', r['documentId'] as String),
+      'aiMessage' || 'aiProposal' => ('aiSession', r['sessionId'] as String),
       _ => null,
     };
 
@@ -201,6 +211,7 @@ const optionalRefs = <(String, String, String)>[
   ('executionRecord', 'sessionId', 'focusSession'),
   ('measurement', 'recordId', 'executionRecord'),
   ('document', 'parentId', 'document'), // P05a: a missing parent puts it at the top
+  ('aiProposal', 'messageId', 'aiMessage'), // P06 T3
 ];
 
 /// P04 T7 (ADR-0059; data-classification.md §1, §3): the class of each kind's
@@ -229,6 +240,11 @@ const kindClasses = <String, DataClassification>{
   'document': DataClassification.confidential,
   'documentRevision': DataClassification.confidential,
   'documentLink': DataClassification.personal,
+  // P06 T3 (ADR-0082; D7): what a person asked, what the assistant said and
+  // proposed hold their notes and documents: Confidential, as notes.
+  'aiSession': DataClassification.confidential,
+  'aiMessage': DataClassification.confidential,
+  'aiProposal': DataClassification.confidential,
 };
 
 /// The class of one record: its kind's, raised to Restricted for a

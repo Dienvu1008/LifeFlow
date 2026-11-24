@@ -2761,7 +2761,7 @@ abstract class AppLocalizations {
   /// No description provided for @syRecordKind.
   ///
   /// In en, this message translates to:
-  /// **'{kind, select, task{Task} event{Event} taskList{List} calendar{Calendar} schedule{Schedule} reminder{Reminder} exception{Change to one occurrence} goal{Goal} milestone{Milestone} goalLink{Goal link} focusSession{Focus session} periodResult{Habit result} workspaceSettings{Settings} document{Document} documentRevision{Document version} documentLink{Document link} other{Item}}'**
+  /// **'{kind, select, task{Task} event{Event} taskList{List} calendar{Calendar} schedule{Schedule} reminder{Reminder} exception{Change to one occurrence} goal{Goal} milestone{Milestone} goalLink{Goal link} focusSession{Focus session} periodResult{Habit result} workspaceSettings{Settings} document{Document} documentRevision{Document version} documentLink{Document link} aiSession{Assistant session} aiMessage{Assistant message} aiProposal{Assistant proposal} other{Item}}'**
   String syRecordKind(String kind);
 
   /// No description provided for @syRecordOf.

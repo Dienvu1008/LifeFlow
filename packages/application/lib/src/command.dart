@@ -10,6 +10,7 @@ class Command {
     required this.payload,
     this.expectedVersion, // required for updates, null for creates
     required this.issuedAt,
+    this.aiProvenance,
   });
 
   final String operationId;
@@ -19,6 +20,12 @@ class Command {
   final Map<String, Object?> payload;
   final Version? expectedVersion;
   final Instant issuedAt;
+
+  /// P06 T3 (ADR-0082, LF-INV-AI-003): for a change the person approved from
+  /// an assistant's proposal, where it came from (the proposal, the change,
+  /// the model, where it ran, who approved it). The gateway writes it into
+  /// the audit row. The actor is still the person: they approved it.
+  final Map<String, Object?>? aiProvenance;
 }
 
 /// Typed result of running a command through the gateway.

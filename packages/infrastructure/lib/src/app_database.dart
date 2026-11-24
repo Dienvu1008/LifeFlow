@@ -37,6 +37,8 @@ part 'app_database.g.dart';
 ///                search_pending), document_link_index (ADR-0067)
 ///   v17 (P05b T2) the text of this device's PDFs for search: pdf_text_fts,
 ///                pdf_text_state, document_file_index; device-only (ADR-0077)
+///   v18 (P06 T3) the assistant's sessions, messages and proposals (synced,
+///                D7); audit_log.ai_provenance (ADR-0082)
 @DriftDatabase(
   tables: [
     Profiles, Workspaces, TaskLists, Tasks, AuditLog, Outbox, EventLog,
@@ -49,13 +51,14 @@ part 'app_database.g.dart';
     SpaceMembers, SyncParked, MemberCards,
     Documents, DocumentRevisions, DocumentLinks, SearchPending, DocumentLinkIndex,
     DocumentFileIndex, PdfTextState,
+    AiSessions, AiMessages, AiProposals,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   /// The schema this build writes (and the newest export it accepts).
-  static const currentSchemaVersion = 17;
+  static const currentSchemaVersion = 18;
 
   /// The last schema that changed a synced record's shape: what a sealed
   /// record says it is (ADR-0056). v12 changed only the local outbox. v13
@@ -64,8 +67,9 @@ class AppDatabase extends _$AppDatabase {
   /// adds a space's `name` to its settings and "moved away" changes. v15
   /// (ADR-0065) adds the member card kind. v16 (ADR-0067) adds documents,
   /// their revisions and their links. v17 (ADR-0077) changes only device
-  /// tables (the text of PDFs).
-  static const recordSchemaVersion = 16;
+  /// tables (the text of PDFs). v18 (ADR-0082) adds the assistant's
+  /// sessions, messages and proposals.
+  static const recordSchemaVersion = 18;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -80,6 +84,7 @@ class AppDatabase extends _$AppDatabase {
           await _createPlanningIndexes();
           await _createExecutionIndexes();
           await _createSyncIndexes();
+          await _createAiIndexes();
         },
         onUpgrade: (m, from, to) async {
           if (from < 2) await m.addColumn(profiles, profiles.signedOut);
@@ -200,6 +205,15 @@ class AppDatabase extends _$AppDatabase {
             await createPdfTextIndex(this);
             if (from >= 16) await markAllForSearch(this);
           }
+          if (from < 18) {
+            // P06 T3 (ADR-0082): the assistant's history, and the provenance
+            // of what a person approved from it.
+            for (final TableInfo t in [aiSessions, aiMessages, aiProposals]) {
+              await m.createTable(t);
+            }
+            await _createAiIndexes();
+            await m.addColumn(auditLog, auditLog.aiProvenance);
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
@@ -286,6 +300,12 @@ class AppDatabase extends _$AppDatabase {
     await customStatement('CREATE INDEX document_revisions_document ON document_revisions (document_id, document_version)');
     await customStatement('CREATE INDEX document_links_document ON document_links (document_id)');
     await customStatement('CREATE INDEX document_link_index_to ON document_link_index (to_document_id)');
+  }
+
+  /// P06 T3: a session's messages and proposals.
+  Future<void> _createAiIndexes() async {
+    await customStatement('CREATE INDEX ai_messages_session ON ai_messages (session_id, created_at)');
+    await customStatement('CREATE INDEX ai_proposals_session ON ai_proposals (session_id)');
   }
 
   /// Search over task titles (live ones) in a workspace, by the exact

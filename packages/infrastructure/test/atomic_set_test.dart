@@ -17,7 +17,8 @@ library;
 //                     WorkspaceSettingsCommandHandler, SyncApplyHandler,
 //                     SyncSetupHandler, SyncReviewHandler,
 //                     SpaceMoveHandler, MemberCardHandler,
-//                     DocumentCommandHandler
+//                     DocumentCommandHandler, AiSessionHandler,
+//                     AiProposalHandler, AiApprovedChangeHandler
 import 'package:application/application.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -118,6 +119,8 @@ void main() {
         'focusSession' => (await (db.select(db.focusSessions)..where((t) => t.id.equals(id))).getSingle()).version,
         'goal' => (await (db.select(db.goals)..where((t) => t.id.equals(id))).getSingle()).version,
         'document' => (await (db.select(db.documents)..where((t) => t.id.equals(id))).getSingle()).version,
+        'aiSession' => (await (db.select(db.aiSessions)..where((t) => t.id.equals(id))).getSingle()).version,
+        'aiProposal' => (await (db.select(db.aiProposals)..where((t) => t.id.equals(id))).getSingle()).version,
         'taskList' => (await (db.select(db.taskLists)..where((t) => t.id.equals(id))).getSingle()).version,
         'workspaceSettings' => (await (db.select(db.workspaceSettings)..where((t) => t.id.equals(id))).getSingle()).version,
         _ => (await (db.select(db.profiles)..where((t) => t.id.equals(id))).getSingle()).version,
@@ -143,6 +146,19 @@ void main() {
   const syncHandler = SyncApplyHandler();
   const setupHandler = SyncSetupHandler();
   const reviewHandler = SyncReviewHandler();
+  // P06 T3 (ADR-0082): the assistant's history, and an approved change (the
+  // versions it holds are t1's when the proposal is made, below).
+  const aiSessionHandler = AiSessionHandler();
+  const aiProposalHandler = AiProposalHandler();
+  final aiVersions = <RecordRef, int>{};
+  final approvedHandler = AiApprovedChangeHandler(taskHandler, proposalId: 'ap1', changeId: 'c1', versions: aiVersions);
+  String aiChanges() => encodeAiChanges([
+        for (final (id, type, args) in [
+          ('c1', 'RenameTask', {'id': 't1', 'title': 'A3'}),
+          ('c2', 'SetTaskNotes', {'id': 't1', 'notes': 'Call first'}),
+        ])
+          AiChangeRecord(ProposedChange(id: id, commandType: type, arguments: args, versions: aiVersions, summary: id)),
+      ]);
   // P04 T3: a pulled task, as the sync engine applies it.
   Map<String, Object?> pulledTask() => {
         'id': 'ts1', 'workspaceId': wsId, 'ownerId': profileId, 'version': 3,
@@ -306,6 +322,32 @@ void main() {
           (v, op) => command('TrashDocument', {'op': 'trash', 'id': 'd1'}, opId: op, expected: v)),
       ('document.restore', docHandler, 'document', 'd1',
           (v, op) => command('RestoreDocument', {'op': 'restore', 'id': 'd1'}, opId: op, expected: v)),
+      // P06 T3 (ADR-0082): a session, a message, a proposal on t1, a change
+      // dismissed, one approved (the task renamed and the proposal marked in
+      // one commit), the session trashed with its history and back.
+      ('aiSession.create', aiSessionHandler, 'aiSession', 'as1',
+          (v, op) => command('StartAiSession', {'op': 'create', 'id': 'as1', 'title': 'Plan', 'purpose': 'planDay'},
+              opId: op, expected: v)),
+      ('aiSession.rename', aiSessionHandler, 'aiSession', 'as1',
+          (v, op) => command('RenameAiSession', {'op': 'rename', 'id': 'as1', 'title': 'Plan Monday'}, opId: op, expected: v)),
+      ('aiSession.addMessage', aiSessionHandler, 'aiSession', 'as1',
+          (v, op) => command('AddAiMessage',
+              {'op': 'addMessage', 'id': 'as1', 'messageId': 'am1', 'role': 'person', 'text': 'Plan my day'},
+              opId: op, expected: v)),
+      ('aiSession.addProposal', aiSessionHandler, 'aiSession', 'as1',
+          (v, op) => command('AddAiProposal', {
+                'op': 'addProposal', 'id': 'as1', 'proposalId': 'ap1', 'messageId': 'am1', 'model': 'qwen3.5-2b',
+                'site': 'device', 'changes': aiChanges(),
+              }, opId: op, expected: v)),
+      ('aiProposal.record', aiProposalHandler, 'aiProposal', 'ap1',
+          (v, op) => command('RecordAiChange', {'op': 'record', 'id': 'ap1', 'changeId': 'c2', 'status': 'dismissed'},
+              opId: op, expected: v)),
+      ('aiChange.approve', approvedHandler, 'task', 't1',
+          (v, op) => command('RenameTask', {'op': 'rename', 'id': 't1', 'title': 'A3'}, opId: op, expected: v)),
+      ('aiSession.trash', aiSessionHandler, 'aiSession', 'as1',
+          (v, op) => command('TrashAiSession', {'op': 'trash', 'id': 'as1'}, opId: op, expected: v)),
+      ('aiSession.restore', aiSessionHandler, 'aiSession', 'as1',
+          (v, op) => command('RestoreAiSession', {'op': 'restore', 'id': 'as1'}, opId: op, expected: v)),
       // P03 T3: focus sessions (s3 is made untrustworthy before it is marked).
       ('focus.start', focusHandler, 'focusSession', 's1',
           (v, op) => command('StartFocusSession', {'op': 'start', 'id': 's1', 'mode': 'stopwatch'}, opId: op, expected: v)),
@@ -459,6 +501,9 @@ void main() {
           SpaceMemberSnapshot(accountId: 'acc', role: 'owner'),
           SpaceMemberSnapshot(accountId: 'acc-editor', role: 'editor'),
         ]));
+      }
+      if (label == 'aiSession.addProposal') {
+        aiVersions[const RecordRef('task', 't1')] = await versionOf('task', 't1');
       }
       if (label == 'focus.markUnrecoverable') {
         // A stored row that cannot be trusted: paused without a pause time.

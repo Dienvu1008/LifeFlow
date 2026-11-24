@@ -160,6 +160,59 @@ void main() {
     test('canonical arguments: keys sorted at every level; list order kept; values kept', () {
       expect(canonicalArguments({'b': 1, 'a': {'d': 2, 'c': [3, 1]}}), '{"a":{"c":[3,1],"d":2},"b":1}');
       expect(canonicalArguments({'a': [1, 3]}), isNot(canonicalArguments({'a': [3, 1]})));
+    });
+  });
+
+  // P06 T3 (ADR-0082): a proposal's changes as stored, and their merge.
+  group('stored changes', () {
+    test('round trip: the change, its versions, its outcome', () {
+      final c = AiChangeRecord(change()).withOutcome(AiChangeStatus.stale,
+          reason: 'moved', approvedBy: 'me', approvedAt: at, operationId: 'op1');
+      final back = decodeAiChanges(encodeAiChanges([c, AiChangeRecord(change(id: 'c2'))]));
+      expect(back, hasLength(2));
+      expect(back[0].change.versions, {task: 3, event: 7});
+      expect(canonicalArguments(back[0].change.arguments), canonicalArguments(change().arguments));
+      expect((back[0].status, back[0].reason, back[0].approvedBy, back[0].approvedAt, back[0].operationId),
+          (AiChangeStatus.stale, 'moved', 'me', at, 'op1'));
+      expect((back[1].status, back[1].reason, back[1].approvedAt), (AiChangeStatus.proposed, null, null));
+      expect(() => decodeAiChanges('[{"id":"c1","status":"done"}]'), throwsFormatException);
+    });
+
+    test('a merge keeps the further status of each change; on a tie the newer copy', () {
+      String of(List<AiChangeStatus> s) => encodeAiChanges([
+            for (var i = 0; i < s.length; i++) AiChangeRecord(change(id: 'c$i')).withOutcome(s[i], reason: 'r$i'),
+          ]);
+      final newer = of([AiChangeStatus.dismissed, AiChangeStatus.proposed, AiChangeStatus.stale]);
+      final older = of([AiChangeStatus.applied, AiChangeStatus.failed, AiChangeStatus.stale]);
+      final merged = decodeAiChanges(mergeAiChanges(newer, older));
+      expect([for (final c in merged) c.status], [AiChangeStatus.applied, AiChangeStatus.failed, AiChangeStatus.stale]);
+      expect(decodeAiChanges(mergeAiChanges(older, newer)).map((c) => c.status), [
+        AiChangeStatus.applied,
+        AiChangeStatus.failed,
+        AiChangeStatus.stale,
+      ]);
+      // Applied wins whichever side is newer.
+      for (final s in AiChangeStatus.values) {
+        expect(decodeAiChanges(mergeAiChanges(of([s]), of([AiChangeStatus.applied]))).single.status, AiChangeStatus.applied);
+      }
+    });
+
+    test('the sync merge of a proposal uses it; a message is append-only', () {
+      Map<String, dynamic> row(String changes, int updated, {Object? deleted}) => {
+            'id': 'p1', 'version': 2, 'updatedAt': updated, 'deletedAt': deleted, 'changes': changes, 'note': '',
+          };
+      final base = row(encodeAiChanges([AiChangeRecord(change())]), 1);
+      final applied = row(encodeAiChanges([AiChangeRecord(change()).withOutcome(AiChangeStatus.applied)]), 2);
+      final dismissed = row(encodeAiChanges([AiChangeRecord(change()).withOutcome(AiChangeStatus.dismissed)]), 3);
+      final m = mergeRecord('aiProposal', base, applied, dismissed, localDevice: 'a', remoteDevice: 'b');
+      expect(decodeAiChanges(m.row['changes'] as String).single.status, AiChangeStatus.applied,
+          reason: 'the dismissal is newer, the application stays');
+      // Append-only: a copy is kept whole, never mixed field by field.
+      final msg = {'id': 'm1', 'version': 1, 'updatedAt': 1, 'deletedAt': null, 'body': 'a'};
+      final edited = {...msg, 'version': 2, 'updatedAt': 3, 'body': 'a2'};
+      final gone = {...msg, 'version': 2, 'updatedAt': 2, 'deletedAt': 5};
+      final mm = mergeRecord('aiMessage', msg, edited, gone, localDevice: 'a', remoteDevice: 'b').row;
+      expect((mm['deletedAt'], mm['body']), (5, 'a'));
       expect(canonicalArguments({'title': 'Gọi mẹ'}), '{"title":"Gọi mẹ"}');
     });
   });

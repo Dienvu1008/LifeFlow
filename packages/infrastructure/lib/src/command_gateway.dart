@@ -97,6 +97,8 @@ class DriftCommandGateway implements CommandGateway {
               versionAfter: Value(newVersion.value),
               outcome: 'applied',
               at: now,
+              // P06 T3 (ADR-0082, LF-INV-AI-003): an approved AI change says so.
+              aiProvenance: Value(cmd.aiProvenance == null ? null : jsonEncode(cmd.aiProvenance)),
             ));
 
         // Outbox (LF-INV-OUTBOX-001).

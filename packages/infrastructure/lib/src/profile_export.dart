@@ -16,6 +16,7 @@ import 'package:foundation/foundation.dart' show LocalDate;
 
 import 'app_database.dart';
 import 'execution_rows.dart';
+import 'ai_rows.dart';
 import 'document_rows.dart';
 import 'order_backfill.dart';
 import 'organize_rows.dart';
@@ -312,6 +313,13 @@ class ProfileExport {
   /// Brings a payload written by an older schema up to the current one by
   /// filling what was added since (additive migrations only, VS-04).
   static void _upgradeOlderSchema(Map<String, Object?> map, int fromSchema) {
+    if (fromSchema < AppDatabase.recordSchemaVersion) {
+      // A record table added since (member cards v15, documents v16, the
+      // assistant's history v18, ADR-0082) did not exist: none of its rows.
+      for (final k in recordKinds) {
+        map.putIfAbsent(k.exportKey, () => <Object?>[]);
+      }
+    }
     if (fromSchema < 2) {
       for (final p in (map['profiles'] as List).cast<Map<String, Object?>>()) {
         p.putIfAbsent('signedOut', () => false); // schema v2 (ADR-0024)
@@ -553,6 +561,8 @@ class ProfileExport {
             // document and a task, an event or a goal.
             'documentRevision' => type == 'document',
             'documentLink' => type == 'document' || type == 'task' || type == 'event' || type == 'goal',
+            // P06 T3: a message and a proposal need their session.
+            'aiMessage' || 'aiProposal' => type == 'aiSession',
             _ => type == 'task' || type == 'event',
           };
           if (!allowed || !known(type, id)) bad('a ${k.name} points to an unknown item');
@@ -572,6 +582,9 @@ class ProfileExport {
     // P05a T3: documents as a command would have written them.
     final p05 = documentRowsError(records);
     if (p05 != null) bad(p05);
+    // P06 T3: the assistant's history as a command would have written it.
+    final p06 = aiRowsError(records);
+    if (p06 != null) bad(p06);
     // P03 UX U2: colours from the palette, well-formed order keys.
     final organized = organizeRowsError(records);
     if (organized != null) bad(organized);

@@ -147,6 +147,10 @@ class AuditLog extends Table {
   TextColumn get outcome => text()(); // applied/deniedByPolicy/...
   TextColumn get reason => text().nullable()();
   DateTimeColumn get at => dateTime()();
+  // P06 T3 (schema v18, ADR-0082, LF-INV-AI-003): for a change the person
+  // approved from an assistant's proposal, its provenance as JSON (the
+  // proposal, the change, the model, where it ran); null otherwise.
+  TextColumn get aiProvenance => text().nullable()();
   @override
   Set<Column> get primaryKey => {auditId};
 }
@@ -608,4 +612,47 @@ class PdfTextState extends Table {
   IntColumn get pages => integer()();
   @override
   Set<Column> get primaryKey => {hash};
+}
+
+/// P06 T3 (schema v18, ADR-0082; the owner's D7): a session with the
+/// assistant. Synced like a note (Confidential), in the export, personal
+/// space only. Trashing it trashes its messages and proposals.
+@DataClassName('AiSessionRow')
+class AiSessions extends Table with SyncableColumns {
+  TextColumn get title => text()();
+  TextColumn get purpose => text()(); // planDay | fixConflict | askDocument
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// A message of a session (ADR-0082): written once, never changed
+/// (append-only in a merge).
+@DataClassName('AiMessageRow')
+class AiMessages extends Table with SyncableColumns {
+  TextColumn get sessionId => text()();
+  TextColumn get role => text()(); // person | assistant
+  TextColumn get body => text()();
+
+  /// The model that wrote it and where it ran (an assistant's message).
+  TextColumn get model => text().nullable()();
+  TextColumn get site => text().nullable()(); // device | cloud
+
+  /// The records sent with the question, as JSON (`[{kind, id, version}]`).
+  TextColumn get sentRefs => text().withDefault(const Constant('[]'))();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// A proposal of the assistant (ADR-0080, ADR-0082): its changes as JSON,
+/// each with its status (proposed | applied | stale | failed | dismissed).
+@DataClassName('AiProposalRow')
+class AiProposals extends Table with SyncableColumns {
+  TextColumn get sessionId => text()();
+  TextColumn get messageId => text().nullable()();
+  TextColumn get model => text()();
+  TextColumn get site => text()(); // device | cloud
+  TextColumn get changes => text()();
+  TextColumn get note => text().withDefault(const Constant(''))();
+  @override
+  Set<Column> get primaryKey => {id};
 }

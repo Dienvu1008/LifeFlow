@@ -97,6 +97,13 @@ class Services {
 /// Turns a current profile store back into what a build with schema [version]
 /// wrote (for migration tests). Data in the tables that remain is kept.
 Future<void> rewindProfileStore(AppDatabase db, int version) async {
+  if (version < 18) {
+    // P06 T3 (ADR-0082): no assistant history, no AI provenance.
+    for (final t in ['ai_sessions', 'ai_messages', 'ai_proposals']) {
+      await db.customStatement('DROP TABLE $t'); // drops its indexes too
+    }
+    await db.customStatement('ALTER TABLE audit_log DROP COLUMN ai_provenance');
+  }
   if (version < 17) {
     // P05b T2 (ADR-0077): no text of PDFs.
     for (final t in ['document_file_index', 'pdf_text_state', 'pdf_text_fts']) {
@@ -153,7 +160,10 @@ Future<void> rewindProfileStore(AppDatabase db, int version) async {
     }
     await db.customStatement('ALTER TABLE tasks DROP COLUMN assignee_id');
     for (final k in recordKinds) {
-      if (const {'memberCard', 'document', 'documentRevision', 'documentLink'}.contains(k.name)) continue; // v15-v16, gone
+      if (const {'memberCard', 'document', 'documentRevision', 'documentLink', 'aiSession', 'aiMessage', 'aiProposal'}
+          .contains(k.name)) {
+        continue; // v15-v18, gone
+      }
       await db.customStatement('ALTER TABLE ${k.tableName} DROP COLUMN changed_by');
     }
     await db.customStatement('ALTER TABLE sync_base DROP COLUMN workspace_id');
