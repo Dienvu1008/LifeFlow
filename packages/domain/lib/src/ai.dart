@@ -88,17 +88,17 @@ bool aiMaySend(DataClassification classification, AiEngineSite site, AiEgressPol
     };
 
 /// A thing a proposal reads or changes: a record kind and id.
-class ResourceRef implements Comparable<ResourceRef> {
-  const ResourceRef(this.kind, this.id);
+class RecordRef implements Comparable<RecordRef> {
+  const RecordRef(this.kind, this.id);
   final String kind;
   final String id;
 
   @override
-  bool operator ==(Object o) => o is ResourceRef && o.kind == kind && o.id == id;
+  bool operator ==(Object o) => o is RecordRef && o.kind == kind && o.id == id;
   @override
   int get hashCode => Object.hash(kind, id);
   @override
-  int compareTo(ResourceRef o) => kind == o.kind ? id.compareTo(o.id) : kind.compareTo(o.kind);
+  int compareTo(RecordRef o) => kind == o.kind ? id.compareTo(o.id) : kind.compareTo(o.kind);
   @override
   String toString() => '$kind:$id';
 }
@@ -111,7 +111,7 @@ class ProposedChange {
     required this.id,
     required this.commandType,
     required Map<String, Object?> arguments,
-    required Map<ResourceRef, int> versions,
+    required Map<RecordRef, int> versions,
     required this.summary,
   })  : arguments = Map.unmodifiable(arguments),
         versions = Map.unmodifiable(versions);
@@ -120,7 +120,7 @@ class ProposedChange {
   final String id;
   final String commandType;
   final Map<String, Object?> arguments;
-  final Map<ResourceRef, int> versions;
+  final Map<RecordRef, int> versions;
 
   /// What the person reads ("Move "Gọi điện cho mẹ" to 14:30").
   final String summary;
@@ -161,7 +161,7 @@ class AiPolicyContext {
   final String model;
 
   /// The items the person consented to send for this request.
-  final Set<ResourceRef> consented;
+  final Set<RecordRef> consented;
 }
 
 /// The person's approval of one change (ADR-0012).
@@ -172,7 +172,7 @@ class AiApproval {
     required this.actorId,
     required this.approvedAt,
     required this.arguments,
-    required Map<ResourceRef, int> versions,
+    required Map<RecordRef, int> versions,
     required this.policy,
   }) : versions = Map.unmodifiable(versions);
 
@@ -186,7 +186,7 @@ class AiApproval {
   /// The change's arguments, in canonical JSON (keys sorted): what was
   /// approved is exactly what runs.
   final String arguments;
-  final Map<ResourceRef, int> versions;
+  final Map<RecordRef, int> versions;
   final AiPolicyContext policy;
 }
 
@@ -237,7 +237,7 @@ ApprovalProblem? approvalProblem(
   required String proposalId,
   required ProposedChange change,
   required String actorId,
-  required int? Function(ResourceRef ref) current,
+  required int? Function(RecordRef ref) current,
 }) {
   if (approval.proposalId != proposalId || approval.changeId != change.id || approval.actorId != actorId) {
     return ApprovalProblem.notThisApproval;
@@ -252,5 +252,5 @@ ApprovalProblem? approvalProblem(
   return null;
 }
 
-bool _sameVersions(Map<ResourceRef, int> a, Map<ResourceRef, int> b) =>
+bool _sameVersions(Map<RecordRef, int> a, Map<RecordRef, int> b) =>
     a.length == b.length && a.entries.every((e) => b[e.key] == e.value);

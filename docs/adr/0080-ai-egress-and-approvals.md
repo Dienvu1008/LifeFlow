@@ -17,7 +17,7 @@ The sync rule (`cloudSyncAllowed`) is already pure, in `domain`. These rules bel
    - Every case of the matrix is written once. Restricted toward the cloud is the first case, so no later rule can let it through.
    - `aiMaySend(…, consented:)` is what the Context Builder asks of each item. Consent never turns the cloud on.
 2. **The proposal model.**
-   - A `ResourceRef` is a record kind and an id.
+   - A `RecordRef` is a record kind and an id.
    - A `ProposedChange` is a command type, its exact arguments, the version of each existing thing it was computed against (a new thing has none), and a summary for the person.
    - An `AiProposal` is a session, a model, a time and its changes, each named once.
 3. **The approval.**

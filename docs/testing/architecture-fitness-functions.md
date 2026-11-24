@@ -29,7 +29,7 @@ Each: rule, mechanism, CI stage, failure condition, severity, owner.
 | FF-ARCH-05 | No cyclic dependency between packages/contexts | package dependency graph check | static-analysis | a cycle exists | high | platform |
 | FF-ARCH-06 | Each mutation command handler writes the atomic set (aggregate+audit+outbox+event+dedupe) in one transaction | **targeted test** (not static) + fault-injection (GS-06/07) | integration test | a handler commits a partial set | critical | governance |
 | FF-ARCH-07 | No AGPL or unknown-license dependency in the resolved set | license scan over the dependency tree (ADR-0018) | static-analysis | AGPL/unknown present | critical | platform |
-| FF-ARCH-08 | No egress path includes a Restricted item toward cloud AI | **test** over the Context Builder (GS-16) | integration test | a Restricted item reaches a cloud request | critical | privacy |
+| FF-ARCH-08 | No egress path includes a Restricted item toward cloud AI | **test** over the Context Builder (GS-16), plus static guards (only the checkpoint builds a request for an engine); runnable since P06 T2: `tools/fitness/ff_arch_08_ai_egress.dart` (ADR-0081) | integration test | a Restricted item reaches a cloud request | critical | privacy |
 | FF-ARCH-09 | Every mutation is authorized before the domain method runs | targeted test over the gateway + review | integration test | a mutation path skips authorization | critical | governance |
 | FF-ARCH-10 | User-facing UI text comes from the ARB file (`context.l10n`), not literals; a ratchet over the files not migrated yet | script `tools/fitness/ff_arch_10_ui_strings.dart` + baseline `ui_strings_baseline.txt` (P03 UX U1, ADR-0045) | static scan in CI | a UI file gains a raw string, or a new file has one | medium | i18n |
 

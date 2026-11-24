@@ -20,10 +20,10 @@ AiEgressPolicy pol({bool cloudOn = false, bool scope = false}) =>
     AiEgressPolicy(cloudEnabled: cloudOn, scopeIncludesConfidential: scope);
 
 final at = Instant(DateTime.utc(2026, 11, 4, 9));
-const task = ResourceRef('task', 't1');
-const event = ResourceRef('event', 'e1');
+const task = RecordRef('task', 't1');
+const event = RecordRef('event', 'e1');
 
-ProposedChange change({Map<String, Object?>? args, Map<ResourceRef, int>? versions, String id = 'c1'}) => ProposedChange(
+ProposedChange change({Map<String, Object?>? args, Map<RecordRef, int>? versions, String id = 'c1'}) => ProposedChange(
       id: id,
       commandType: 'SetTaskSchedule',
       arguments: args ?? {'id': 't1', 'start': {'date': '2026-11-04', 'time': '14:30'}, 'minutes': 15},
@@ -99,19 +99,19 @@ void main() {
     test('GS-15 (pure): a thing changed or gone since the proposal makes the approval stale', () {
       final c = change();
       final a = approveChange(proposal([c]), c, actorId: 'me', at: at, policy: policy);
-      ApprovalProblem? check(Map<ResourceRef, int> now) =>
+      ApprovalProblem? check(Map<RecordRef, int> now) =>
           approvalProblem(a, proposalId: 'p1', change: c, actorId: 'me', current: (r) => now[r]);
       expect(check({task: 4, event: 7}), ApprovalProblem.stale, reason: 'the task changed');
       expect(check({task: 3, event: 8}), ApprovalProblem.stale, reason: 'the event changed');
       expect(check({event: 7}), ApprovalProblem.stale, reason: 'the task is gone');
-      expect(check({task: 3, event: 7, const ResourceRef('task', 'other'): 1}), isNull, reason: 'other things do not matter');
+      expect(check({task: 3, event: 7, const RecordRef('task', 'other'): 1}), isNull, reason: 'other things do not matter');
     });
 
     test('another person, proposal or change does not use this approval', () {
       final c = change();
       final other = change(id: 'c2');
       final a = approveChange(proposal([c, other]), c, actorId: 'me', at: at, policy: policy);
-      int? now(ResourceRef r) => {task: 3, event: 7}[r];
+      int? now(RecordRef r) => {task: 3, event: 7}[r];
       expect(approvalProblem(a, proposalId: 'p1', change: c, actorId: 'someone', current: now), ApprovalProblem.notThisApproval);
       expect(approvalProblem(a, proposalId: 'p2', change: c, actorId: 'me', current: now), ApprovalProblem.notThisApproval);
       expect(approvalProblem(a, proposalId: 'p1', change: other, actorId: 'me', current: now), ApprovalProblem.notThisApproval);
@@ -120,7 +120,7 @@ void main() {
     test('what runs is what was approved: changed arguments or versions are refused', () {
       final c = change();
       final a = approveChange(proposal([c]), c, actorId: 'me', at: at, policy: policy);
-      int? now(ResourceRef r) => {task: 3, event: 7}[r];
+      int? now(RecordRef r) => {task: 3, event: 7}[r];
       final moved = change(args: {'id': 't1', 'start': {'date': '2026-11-04', 'time': '15:00'}, 'minutes': 15});
       expect(approvalProblem(a, proposalId: 'p1', change: moved, actorId: 'me', current: now), ApprovalProblem.argumentsChanged);
       final fewer = change(versions: {task: 3});
@@ -139,7 +139,7 @@ void main() {
     test('property: an approval holds exactly when every version it names is unchanged', () {
       final rnd = Random(6);
       for (var n = 0; n < 500; n++) {
-        final refs = [for (var i = 0; i < rnd.nextInt(5); i++) ResourceRef(rnd.nextBool() ? 'task' : 'event', 'x$i')];
+        final refs = [for (var i = 0; i < rnd.nextInt(5); i++) RecordRef(rnd.nextBool() ? 'task' : 'event', 'x$i')];
         final versions = {for (final r in refs) r: 1 + rnd.nextInt(5)};
         final c = change(versions: versions);
         final a = approveChange(proposal([c]), c, actorId: 'me', at: at, policy: policy);
