@@ -254,3 +254,99 @@ ApprovalProblem? approvalProblem(
 
 bool _sameVersions(Map<RecordRef, int> a, Map<RecordRef, int> b) =>
     a.length == b.length && a.entries.every((e) => b[e.key] == e.value);
+
+/// P06 T3 (ADR-0082): where one change of a stored proposal is. In rank
+/// order: a merge of two copies keeps the further one, so an applied change
+/// is never shown as proposed again (as a task's status, ADR-0057).
+enum AiChangeStatus {
+  proposed,
+
+  /// The person said no.
+  dismissed,
+
+  /// A thing it was computed against changed or is gone (LF-INV-AI-002).
+  stale,
+
+  /// The command was refused when it ran.
+  failed,
+  applied,
+}
+
+/// One change of a stored proposal, with what happened to it.
+class AiChangeRecord {
+  const AiChangeRecord(this.change,
+      {this.status = AiChangeStatus.proposed, this.reason, this.approvedBy, this.approvedAt, this.operationId});
+  final ProposedChange change;
+  final AiChangeStatus status;
+
+  /// Why it is stale or failed.
+  final String? reason;
+
+  /// Who approved it and when (applied, stale or failed after an approval).
+  final String? approvedBy;
+  final Instant? approvedAt;
+
+  /// The gateway's operation that applied it (its audit row).
+  final String? operationId;
+
+  AiChangeRecord withOutcome(AiChangeStatus status,
+          {String? reason, String? approvedBy, Instant? approvedAt, String? operationId}) =>
+      AiChangeRecord(change,
+          status: status, reason: reason, approvedBy: approvedBy, approvedAt: approvedAt, operationId: operationId);
+
+  Map<String, Object?> toJson() => {
+        'id': change.id,
+        'commandType': change.commandType,
+        'arguments': change.arguments,
+        'versions': [
+          for (final e in (change.versions.entries.toList()..sort((a, b) => a.key.compareTo(b.key))))
+            {'kind': e.key.kind, 'id': e.key.id, 'version': e.value},
+        ],
+        'summary': change.summary,
+        'status': status.name,
+        if (reason != null) 'reason': reason,
+        if (approvedBy != null) 'approvedBy': approvedBy,
+        if (approvedAt != null) 'approvedAt': approvedAt!.millis,
+        if (operationId != null) 'operationId': operationId,
+      };
+
+  static AiChangeRecord fromJson(Map<String, Object?> j) {
+    final status = AiChangeStatus.values.where((s) => s.name == j['status']).firstOrNull;
+    if (status == null) throw FormatException('unknown change status: ${j['status']}');
+    return AiChangeRecord(
+      ProposedChange(
+        id: j['id'] as String,
+        commandType: j['commandType'] as String,
+        arguments: (j['arguments'] as Map).cast<String, Object?>(),
+        versions: {
+          for (final v in (j['versions'] as List).cast<Map>())
+            RecordRef(v['kind'] as String, v['id'] as String): v['version'] as int,
+        },
+        summary: j['summary'] as String,
+      ),
+      status: status,
+      reason: j['reason'] as String?,
+      approvedBy: j['approvedBy'] as String?,
+      approvedAt: j['approvedAt'] == null ? null : Instant.fromMillis(j['approvedAt'] as int),
+      operationId: j['operationId'] as String?,
+    );
+  }
+}
+
+/// A proposal's changes as stored (a JSON list).
+String encodeAiChanges(List<AiChangeRecord> changes) => jsonEncode([for (final c in changes) c.toJson()]);
+
+List<AiChangeRecord> decodeAiChanges(String json) => [
+      for (final j in (jsonDecode(json) as List).cast<Map>()) AiChangeRecord.fromJson(j.cast<String, Object?>()),
+    ];
+
+/// Two copies of a proposal's changes, merged (sync): for each change the
+/// further status wins (applied over anything); on a tie, [newer]'s copy.
+/// The changes themselves never change after the proposal is made.
+String mergeAiChanges(String newer, String older) {
+  final a = decodeAiChanges(newer), b = {for (final c in decodeAiChanges(older)) c.change.id: c};
+  return encodeAiChanges([
+    for (final c in a)
+      if (b[c.change.id] case final o? when o.status.index > c.status.index) o else c,
+  ]);
+}

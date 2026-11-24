@@ -11,7 +11,9 @@
 // Static guards (fast, no test run):
 //   1. every class implementing CommandHandler is covered by the table-driven
 //      atomic-set test (a new handler cannot skip FF-ARCH-06);
-//   2. a handler's `apply` is called ONLY by the command gateway;
+//   2. a handler's `apply` is called ONLY by the command gateway (and, from
+//      inside it, by the one wrapper of an approved AI change, P06 T3,
+//      ADR-0082: in the gateway's transaction);
 //   3. in the gateway, authorization comes before the handler, and every
 //      governance write sits inside the transaction.
 // Then the tagged tests run and must pass with a minimum number of tests.
@@ -22,6 +24,7 @@ import 'dart:io';
 const _infra = 'packages/infrastructure';
 const _gateway = '$_infra/lib/src/command_gateway.dart';
 const _atomicTest = '$_infra/test/atomic_set_test.dart';
+const _aiWrapper = '$_infra/lib/src/ai_history_handlers.dart';
 
 final _failures = <String>[];
 void _fail(String m) => _failures.add(m);
@@ -82,6 +85,24 @@ void _guardOnlyGatewayCallsApply() {
   if (sites != 1) {
     _fail('FF-ARCH-06: expected exactly one handler.apply call site (the '
         'gateway), found $sites');
+  }
+  // P06 T3: any other `<x>.apply(tx, ...)` is a handler called around the
+  // gateway; only the approved-change wrapper may, once.
+  final wrapped = RegExp(r'\b(?!handler\b)\w+\.apply\(tx\b');
+  var wrappedSites = 0;
+  for (final f in _dartFiles('packages')) {
+    if (!_norm(f.path).contains('/lib/')) continue;
+    final n = wrapped.allMatches(f.readAsStringSync()).length;
+    if (n == 0) continue;
+    wrappedSites += n;
+    if (!_norm(f.path).endsWith(_aiWrapper)) {
+      _fail('FF-ARCH-06: ${_norm(f.path)} calls a handler\'s apply; only the '
+          'gateway, and the approved AI change inside it, may');
+    }
+  }
+  if (wrappedSites != 1) {
+    _fail('FF-ARCH-06: expected exactly one wrapped apply (the approved AI '
+        'change), found $wrappedSites');
   }
   stdout.writeln('  guard 2 ok: handler.apply is called only by the gateway');
 }

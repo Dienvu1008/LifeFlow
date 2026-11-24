@@ -8,13 +8,23 @@
 //               request, as tagged untrusted data. A [CheckedAiRequest] can
 //               only be made here, so an engine cannot be given an unchecked
 //               one (FF-ARCH-08, LF-INV-PRIV-003)
+//   history     (P06 T3, ADR-0082; the owner's D7) sessions, messages and
+//               proposals are records: synced, exported, deletable, in the
+//               personal space only. A change runs only when the person
+//               approves it, as them, bound to its arguments and versions;
+//               one computed against something that changed since is stale
+//               and nothing is written (LF-INV-AI-001/002, GS-15)
 import 'dart:convert';
 
 import 'package:domain/domain.dart';
 
+import 'command.dart';
+
 export 'package:domain/domain.dart'
     show
         AiApproval,
+        AiChangeRecord,
+        AiChangeStatus,
         AiEgress,
         AiEgressPolicy,
         AiEngineSite,
@@ -28,7 +38,9 @@ export 'package:domain/domain.dart'
         aiMaySend,
         approvalProblem,
         approveChange,
-        canonicalArguments;
+        canonicalArguments,
+        decodeAiChanges,
+        encodeAiChanges;
 
 /// What a request is about (P06 D1).
 enum AiPurpose { planDay, fixConflict, askDocument }
@@ -138,4 +150,98 @@ CheckedAiRequest checkAiEgress({
     });
   }
   return CheckedAiRequest._(site, instructions, question, List.unmodifiable(data), List.unmodifiable(lines));
+}
+
+/// Who wrote a message of a session.
+enum AiMessageRole { person, assistant }
+
+/// A session with the assistant, as listed.
+class AiSessionView {
+  const AiSessionView({required this.id, required this.title, required this.purpose, required this.updatedAt});
+  final String id;
+  final String title;
+  final AiPurpose purpose;
+  final DateTime updatedAt;
+}
+
+class AiMessageView {
+  const AiMessageView({
+    required this.id,
+    required this.role,
+    required this.text,
+    required this.createdAt,
+    this.model,
+    this.site,
+    this.sentRefs = const [],
+  });
+  final String id;
+  final AiMessageRole role;
+  final String text;
+  final DateTime createdAt;
+  final String? model;
+  final AiEngineSite? site;
+
+  /// What was sent with the question, and the version of each.
+  final List<(RecordRef, int?)> sentRefs;
+}
+
+class AiProposalView {
+  const AiProposalView({
+    required this.id,
+    required this.sessionId,
+    required this.model,
+    required this.site,
+    required this.changes,
+    this.messageId,
+    this.note = '',
+  });
+  final String id;
+  final String sessionId;
+  final String? messageId;
+  final String model;
+  final AiEngineSite site;
+  final List<AiChangeRecord> changes;
+  final String note;
+}
+
+/// What became of one change the person approved or dismissed.
+class AiChangeOutcome {
+  const AiChangeOutcome(this.changeId, this.status, {this.reason});
+  final String changeId;
+  final AiChangeStatus status;
+  final String? reason;
+}
+
+/// The assistant's history and its proposals (P06 T3). Every write goes
+/// through the command gateway, in the personal space, as its owner.
+abstract interface class AiHistoryService {
+  /// A new session; its id on success.
+  Future<CommandResult> startSession({required String title, required AiPurpose purpose});
+  Future<CommandResult> renameSession(String sessionId, String title);
+
+  /// To the trash with its messages and proposals; [restoreSession] brings
+  /// back the ones that went with it.
+  Future<CommandResult> trashSession(String sessionId);
+  Future<CommandResult> restoreSession(String sessionId);
+
+  /// A message of the session; the message's id on success.
+  Future<CommandResult> addMessage(String sessionId, AiMessageRole role, String text,
+      {String? model, AiEngineSite? site, List<(RecordRef, int?)> sentRefs = const []});
+
+  /// A proposal of the assistant, every change proposed; its id on success.
+  Future<CommandResult> addProposal(String sessionId,
+      {required String model, required AiEngineSite site, required List<ProposedChange> changes, String? messageId, String note = ''});
+
+  /// The person approves one change: it runs as them, if nothing it was
+  /// computed against changed since (else it is stale and nothing is written).
+  Future<AiChangeOutcome> approve(String proposalId, String changeId, {Set<RecordRef> consented = const {}});
+
+  /// Each change still proposed, in order, as [approve] (D8).
+  Future<List<AiChangeOutcome>> approveAll(String proposalId, {Set<RecordRef> consented = const {}});
+  Future<AiChangeOutcome> dismiss(String proposalId, String changeId);
+
+  /// Live sessions, the newest first.
+  Future<List<AiSessionView>> sessions();
+  Future<List<AiMessageView>> messages(String sessionId);
+  Future<List<AiProposalView>> proposals(String sessionId);
 }

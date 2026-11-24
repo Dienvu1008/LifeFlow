@@ -775,7 +775,7 @@
   "syKeepThis": "Keep this",
   "syTakeOther": "Take the other",
   "syDismiss": "OK",
-  "syRecordKind": "{kind, select, task{Task} event{Event} taskList{List} calendar{Calendar} schedule{Schedule} reminder{Reminder} exception{Change to one occurrence} goal{Goal} milestone{Milestone} goalLink{Goal link} focusSession{Focus session} periodResult{Habit result} workspaceSettings{Settings} document{Document} documentRevision{Document version} documentLink{Document link} other{Item}}",
+  "syRecordKind": "{kind, select, task{Task} event{Event} taskList{List} calendar{Calendar} schedule{Schedule} reminder{Reminder} exception{Change to one occurrence} goal{Goal} milestone{Milestone} goalLink{Goal link} focusSession{Focus session} periodResult{Habit result} workspaceSettings{Settings} document{Document} documentRevision{Document version} documentLink{Document link} aiSession{Assistant session} aiMessage{Assistant message} aiProposal{Assistant proposal} other{Item}}",
   "@syRecordKind": {"placeholders": {"kind": {"type": "String"}}},
   "syRecordOf": "{kind}: {title}",
   "@syRecordOf": {"placeholders": {"kind": {"type": "Object"}, "title": {"type": "Object"}}},

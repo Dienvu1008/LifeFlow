@@ -148,6 +148,8 @@ void main() {
         ...['documents', 'document_revisions', 'document_links', 'search_pending', 'document_link_index'],
         // P05b T2 (schema v17): the text of this device's PDFs (not exported)
         ...['document_file_index', 'pdf_text_state'],
+        // P06 T3 (schema v18): the assistant's history (record kinds, D7)
+        ...['ai_sessions', 'ai_messages', 'ai_proposals'],
       });
       expect(host.db.allTables.length,
           exportedTables.length + notExportedTables.length);

@@ -3037,6 +3037,12 @@ class $AuditLogTable extends AuditLog
   late final GeneratedColumn<DateTime> at = GeneratedColumn<DateTime>(
       'at', aliasedName, false,
       type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _aiProvenanceMeta =
+      const VerificationMeta('aiProvenance');
+  @override
+  late final GeneratedColumn<String> aiProvenance = GeneratedColumn<String>(
+      'ai_provenance', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         auditId,
@@ -3050,7 +3056,8 @@ class $AuditLogTable extends AuditLog
         versionAfter,
         outcome,
         reason,
-        at
+        at,
+        aiProvenance
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3137,6 +3144,12 @@ class $AuditLogTable extends AuditLog
     } else if (isInserting) {
       context.missing(_atMeta);
     }
+    if (data.containsKey('ai_provenance')) {
+      context.handle(
+          _aiProvenanceMeta,
+          aiProvenance.isAcceptableOrUnknown(
+              data['ai_provenance']!, _aiProvenanceMeta));
+    }
     return context;
   }
 
@@ -3170,6 +3183,8 @@ class $AuditLogTable extends AuditLog
           .read(DriftSqlType.string, data['${effectivePrefix}reason']),
       at: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}at'])!,
+      aiProvenance: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}ai_provenance']),
     );
   }
 
@@ -3192,6 +3207,7 @@ class AuditLogData extends DataClass implements Insertable<AuditLogData> {
   final String outcome;
   final String? reason;
   final DateTime at;
+  final String? aiProvenance;
   const AuditLogData(
       {required this.auditId,
       required this.operationId,
@@ -3204,7 +3220,8 @@ class AuditLogData extends DataClass implements Insertable<AuditLogData> {
       this.versionAfter,
       required this.outcome,
       this.reason,
-      required this.at});
+      required this.at,
+      this.aiProvenance});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -3228,6 +3245,9 @@ class AuditLogData extends DataClass implements Insertable<AuditLogData> {
       map['reason'] = Variable<String>(reason);
     }
     map['at'] = Variable<DateTime>(at);
+    if (!nullToAbsent || aiProvenance != null) {
+      map['ai_provenance'] = Variable<String>(aiProvenance);
+    }
     return map;
   }
 
@@ -3252,6 +3272,9 @@ class AuditLogData extends DataClass implements Insertable<AuditLogData> {
       reason:
           reason == null && nullToAbsent ? const Value.absent() : Value(reason),
       at: Value(at),
+      aiProvenance: aiProvenance == null && nullToAbsent
+          ? const Value.absent()
+          : Value(aiProvenance),
     );
   }
 
@@ -3271,6 +3294,7 @@ class AuditLogData extends DataClass implements Insertable<AuditLogData> {
       outcome: serializer.fromJson<String>(json['outcome']),
       reason: serializer.fromJson<String?>(json['reason']),
       at: serializer.fromJson<DateTime>(json['at']),
+      aiProvenance: serializer.fromJson<String?>(json['aiProvenance']),
     );
   }
   @override
@@ -3289,6 +3313,7 @@ class AuditLogData extends DataClass implements Insertable<AuditLogData> {
       'outcome': serializer.toJson<String>(outcome),
       'reason': serializer.toJson<String?>(reason),
       'at': serializer.toJson<DateTime>(at),
+      'aiProvenance': serializer.toJson<String?>(aiProvenance),
     };
   }
 
@@ -3304,7 +3329,8 @@ class AuditLogData extends DataClass implements Insertable<AuditLogData> {
           Value<int?> versionAfter = const Value.absent(),
           String? outcome,
           Value<String?> reason = const Value.absent(),
-          DateTime? at}) =>
+          DateTime? at,
+          Value<String?> aiProvenance = const Value.absent()}) =>
       AuditLogData(
         auditId: auditId ?? this.auditId,
         operationId: operationId ?? this.operationId,
@@ -3320,6 +3346,8 @@ class AuditLogData extends DataClass implements Insertable<AuditLogData> {
         outcome: outcome ?? this.outcome,
         reason: reason.present ? reason.value : this.reason,
         at: at ?? this.at,
+        aiProvenance:
+            aiProvenance.present ? aiProvenance.value : this.aiProvenance,
       );
   AuditLogData copyWithCompanion(AuditLogCompanion data) {
     return AuditLogData(
@@ -3344,6 +3372,9 @@ class AuditLogData extends DataClass implements Insertable<AuditLogData> {
       outcome: data.outcome.present ? data.outcome.value : this.outcome,
       reason: data.reason.present ? data.reason.value : this.reason,
       at: data.at.present ? data.at.value : this.at,
+      aiProvenance: data.aiProvenance.present
+          ? data.aiProvenance.value
+          : this.aiProvenance,
     );
   }
 
@@ -3361,7 +3392,8 @@ class AuditLogData extends DataClass implements Insertable<AuditLogData> {
           ..write('versionAfter: $versionAfter, ')
           ..write('outcome: $outcome, ')
           ..write('reason: $reason, ')
-          ..write('at: $at')
+          ..write('at: $at, ')
+          ..write('aiProvenance: $aiProvenance')
           ..write(')'))
         .toString();
   }
@@ -3379,7 +3411,8 @@ class AuditLogData extends DataClass implements Insertable<AuditLogData> {
       versionAfter,
       outcome,
       reason,
-      at);
+      at,
+      aiProvenance);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3395,7 +3428,8 @@ class AuditLogData extends DataClass implements Insertable<AuditLogData> {
           other.versionAfter == this.versionAfter &&
           other.outcome == this.outcome &&
           other.reason == this.reason &&
-          other.at == this.at);
+          other.at == this.at &&
+          other.aiProvenance == this.aiProvenance);
 }
 
 class AuditLogCompanion extends UpdateCompanion<AuditLogData> {
@@ -3411,6 +3445,7 @@ class AuditLogCompanion extends UpdateCompanion<AuditLogData> {
   final Value<String> outcome;
   final Value<String?> reason;
   final Value<DateTime> at;
+  final Value<String?> aiProvenance;
   final Value<int> rowid;
   const AuditLogCompanion({
     this.auditId = const Value.absent(),
@@ -3425,6 +3460,7 @@ class AuditLogCompanion extends UpdateCompanion<AuditLogData> {
     this.outcome = const Value.absent(),
     this.reason = const Value.absent(),
     this.at = const Value.absent(),
+    this.aiProvenance = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   AuditLogCompanion.insert({
@@ -3440,6 +3476,7 @@ class AuditLogCompanion extends UpdateCompanion<AuditLogData> {
     required String outcome,
     this.reason = const Value.absent(),
     required DateTime at,
+    this.aiProvenance = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : auditId = Value(auditId),
         operationId = Value(operationId),
@@ -3462,6 +3499,7 @@ class AuditLogCompanion extends UpdateCompanion<AuditLogData> {
     Expression<String>? outcome,
     Expression<String>? reason,
     Expression<DateTime>? at,
+    Expression<String>? aiProvenance,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -3477,6 +3515,7 @@ class AuditLogCompanion extends UpdateCompanion<AuditLogData> {
       if (outcome != null) 'outcome': outcome,
       if (reason != null) 'reason': reason,
       if (at != null) 'at': at,
+      if (aiProvenance != null) 'ai_provenance': aiProvenance,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -3494,6 +3533,7 @@ class AuditLogCompanion extends UpdateCompanion<AuditLogData> {
       Value<String>? outcome,
       Value<String?>? reason,
       Value<DateTime>? at,
+      Value<String?>? aiProvenance,
       Value<int>? rowid}) {
     return AuditLogCompanion(
       auditId: auditId ?? this.auditId,
@@ -3508,6 +3548,7 @@ class AuditLogCompanion extends UpdateCompanion<AuditLogData> {
       outcome: outcome ?? this.outcome,
       reason: reason ?? this.reason,
       at: at ?? this.at,
+      aiProvenance: aiProvenance ?? this.aiProvenance,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3551,6 +3592,9 @@ class AuditLogCompanion extends UpdateCompanion<AuditLogData> {
     if (at.present) {
       map['at'] = Variable<DateTime>(at.value);
     }
+    if (aiProvenance.present) {
+      map['ai_provenance'] = Variable<String>(aiProvenance.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -3572,6 +3616,7 @@ class AuditLogCompanion extends UpdateCompanion<AuditLogData> {
           ..write('outcome: $outcome, ')
           ..write('reason: $reason, ')
           ..write('at: $at, ')
+          ..write('aiProvenance: $aiProvenance, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -20753,6 +20798,1976 @@ class PdfTextStateCompanion extends UpdateCompanion<PdfTextStateRow> {
   }
 }
 
+class $AiSessionsTable extends AiSessions
+    with TableInfo<$AiSessionsTable, AiSessionRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AiSessionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _workspaceIdMeta =
+      const VerificationMeta('workspaceId');
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+      'workspace_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _ownerIdMeta =
+      const VerificationMeta('ownerId');
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+      'owner_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _versionMeta =
+      const VerificationMeta('version');
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+      'version', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _deletedByMeta =
+      const VerificationMeta('deletedBy');
+  @override
+  late final GeneratedColumn<String> deletedBy = GeneratedColumn<String>(
+      'deleted_by', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _changedByMeta =
+      const VerificationMeta('changedBy');
+  @override
+  late final GeneratedColumn<String> changedBy = GeneratedColumn<String>(
+      'changed_by', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+      'title', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _purposeMeta =
+      const VerificationMeta('purpose');
+  @override
+  late final GeneratedColumn<String> purpose = GeneratedColumn<String>(
+      'purpose', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        workspaceId,
+        ownerId,
+        version,
+        createdAt,
+        updatedAt,
+        deletedAt,
+        deletedBy,
+        changedBy,
+        title,
+        purpose
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'ai_sessions';
+  @override
+  VerificationContext validateIntegrity(Insertable<AiSessionRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+          _workspaceIdMeta,
+          workspaceId.isAcceptableOrUnknown(
+              data['workspace_id']!, _workspaceIdMeta));
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(_ownerIdMeta,
+          ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta));
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('version')) {
+      context.handle(_versionMeta,
+          version.isAcceptableOrUnknown(data['version']!, _versionMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
+    if (data.containsKey('deleted_by')) {
+      context.handle(_deletedByMeta,
+          deletedBy.isAcceptableOrUnknown(data['deleted_by']!, _deletedByMeta));
+    }
+    if (data.containsKey('changed_by')) {
+      context.handle(_changedByMeta,
+          changedBy.isAcceptableOrUnknown(data['changed_by']!, _changedByMeta));
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+          _titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('purpose')) {
+      context.handle(_purposeMeta,
+          purpose.isAcceptableOrUnknown(data['purpose']!, _purposeMeta));
+    } else if (isInserting) {
+      context.missing(_purposeMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  AiSessionRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AiSessionRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      workspaceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}workspace_id'])!,
+      ownerId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}owner_id'])!,
+      version: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}version'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
+      deletedBy: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}deleted_by']),
+      changedBy: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}changed_by']),
+      title: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
+      purpose: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}purpose'])!,
+    );
+  }
+
+  @override
+  $AiSessionsTable createAlias(String alias) {
+    return $AiSessionsTable(attachedDatabase, alias);
+  }
+}
+
+class AiSessionRow extends DataClass implements Insertable<AiSessionRow> {
+  final String id;
+  final String workspaceId;
+  final String ownerId;
+  final int version;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final String? deletedBy;
+  final String? changedBy;
+  final String title;
+  final String purpose;
+  const AiSessionRow(
+      {required this.id,
+      required this.workspaceId,
+      required this.ownerId,
+      required this.version,
+      required this.createdAt,
+      required this.updatedAt,
+      this.deletedAt,
+      this.deletedBy,
+      this.changedBy,
+      required this.title,
+      required this.purpose});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['version'] = Variable<int>(version);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || deletedBy != null) {
+      map['deleted_by'] = Variable<String>(deletedBy);
+    }
+    if (!nullToAbsent || changedBy != null) {
+      map['changed_by'] = Variable<String>(changedBy);
+    }
+    map['title'] = Variable<String>(title);
+    map['purpose'] = Variable<String>(purpose);
+    return map;
+  }
+
+  AiSessionsCompanion toCompanion(bool nullToAbsent) {
+    return AiSessionsCompanion(
+      id: Value(id),
+      workspaceId: Value(workspaceId),
+      ownerId: Value(ownerId),
+      version: Value(version),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      deletedBy: deletedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedBy),
+      changedBy: changedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(changedBy),
+      title: Value(title),
+      purpose: Value(purpose),
+    );
+  }
+
+  factory AiSessionRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AiSessionRow(
+      id: serializer.fromJson<String>(json['id']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      version: serializer.fromJson<int>(json['version']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      deletedBy: serializer.fromJson<String?>(json['deletedBy']),
+      changedBy: serializer.fromJson<String?>(json['changedBy']),
+      title: serializer.fromJson<String>(json['title']),
+      purpose: serializer.fromJson<String>(json['purpose']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'version': serializer.toJson<int>(version),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'deletedBy': serializer.toJson<String?>(deletedBy),
+      'changedBy': serializer.toJson<String?>(changedBy),
+      'title': serializer.toJson<String>(title),
+      'purpose': serializer.toJson<String>(purpose),
+    };
+  }
+
+  AiSessionRow copyWith(
+          {String? id,
+          String? workspaceId,
+          String? ownerId,
+          int? version,
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          Value<DateTime?> deletedAt = const Value.absent(),
+          Value<String?> deletedBy = const Value.absent(),
+          Value<String?> changedBy = const Value.absent(),
+          String? title,
+          String? purpose}) =>
+      AiSessionRow(
+        id: id ?? this.id,
+        workspaceId: workspaceId ?? this.workspaceId,
+        ownerId: ownerId ?? this.ownerId,
+        version: version ?? this.version,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+        deletedBy: deletedBy.present ? deletedBy.value : this.deletedBy,
+        changedBy: changedBy.present ? changedBy.value : this.changedBy,
+        title: title ?? this.title,
+        purpose: purpose ?? this.purpose,
+      );
+  AiSessionRow copyWithCompanion(AiSessionsCompanion data) {
+    return AiSessionRow(
+      id: data.id.present ? data.id.value : this.id,
+      workspaceId:
+          data.workspaceId.present ? data.workspaceId.value : this.workspaceId,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      version: data.version.present ? data.version.value : this.version,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      deletedBy: data.deletedBy.present ? data.deletedBy.value : this.deletedBy,
+      changedBy: data.changedBy.present ? data.changedBy.value : this.changedBy,
+      title: data.title.present ? data.title.value : this.title,
+      purpose: data.purpose.present ? data.purpose.value : this.purpose,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AiSessionRow(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('version: $version, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedBy: $deletedBy, ')
+          ..write('changedBy: $changedBy, ')
+          ..write('title: $title, ')
+          ..write('purpose: $purpose')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, workspaceId, ownerId, version, createdAt,
+      updatedAt, deletedAt, deletedBy, changedBy, title, purpose);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AiSessionRow &&
+          other.id == this.id &&
+          other.workspaceId == this.workspaceId &&
+          other.ownerId == this.ownerId &&
+          other.version == this.version &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.deletedBy == this.deletedBy &&
+          other.changedBy == this.changedBy &&
+          other.title == this.title &&
+          other.purpose == this.purpose);
+}
+
+class AiSessionsCompanion extends UpdateCompanion<AiSessionRow> {
+  final Value<String> id;
+  final Value<String> workspaceId;
+  final Value<String> ownerId;
+  final Value<int> version;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> deletedBy;
+  final Value<String?> changedBy;
+  final Value<String> title;
+  final Value<String> purpose;
+  final Value<int> rowid;
+  const AiSessionsCompanion({
+    this.id = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.version = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.deletedBy = const Value.absent(),
+    this.changedBy = const Value.absent(),
+    this.title = const Value.absent(),
+    this.purpose = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AiSessionsCompanion.insert({
+    required String id,
+    required String workspaceId,
+    required String ownerId,
+    this.version = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.deletedBy = const Value.absent(),
+    this.changedBy = const Value.absent(),
+    required String title,
+    required String purpose,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        workspaceId = Value(workspaceId),
+        ownerId = Value(ownerId),
+        createdAt = Value(createdAt),
+        updatedAt = Value(updatedAt),
+        title = Value(title),
+        purpose = Value(purpose);
+  static Insertable<AiSessionRow> custom({
+    Expression<String>? id,
+    Expression<String>? workspaceId,
+    Expression<String>? ownerId,
+    Expression<int>? version,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? deletedBy,
+    Expression<String>? changedBy,
+    Expression<String>? title,
+    Expression<String>? purpose,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (version != null) 'version': version,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (deletedBy != null) 'deleted_by': deletedBy,
+      if (changedBy != null) 'changed_by': changedBy,
+      if (title != null) 'title': title,
+      if (purpose != null) 'purpose': purpose,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AiSessionsCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? workspaceId,
+      Value<String>? ownerId,
+      Value<int>? version,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<DateTime?>? deletedAt,
+      Value<String?>? deletedBy,
+      Value<String?>? changedBy,
+      Value<String>? title,
+      Value<String>? purpose,
+      Value<int>? rowid}) {
+    return AiSessionsCompanion(
+      id: id ?? this.id,
+      workspaceId: workspaceId ?? this.workspaceId,
+      ownerId: ownerId ?? this.ownerId,
+      version: version ?? this.version,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      deletedBy: deletedBy ?? this.deletedBy,
+      changedBy: changedBy ?? this.changedBy,
+      title: title ?? this.title,
+      purpose: purpose ?? this.purpose,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (deletedBy.present) {
+      map['deleted_by'] = Variable<String>(deletedBy.value);
+    }
+    if (changedBy.present) {
+      map['changed_by'] = Variable<String>(changedBy.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (purpose.present) {
+      map['purpose'] = Variable<String>(purpose.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AiSessionsCompanion(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('version: $version, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedBy: $deletedBy, ')
+          ..write('changedBy: $changedBy, ')
+          ..write('title: $title, ')
+          ..write('purpose: $purpose, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $AiMessagesTable extends AiMessages
+    with TableInfo<$AiMessagesTable, AiMessageRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AiMessagesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _workspaceIdMeta =
+      const VerificationMeta('workspaceId');
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+      'workspace_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _ownerIdMeta =
+      const VerificationMeta('ownerId');
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+      'owner_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _versionMeta =
+      const VerificationMeta('version');
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+      'version', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _deletedByMeta =
+      const VerificationMeta('deletedBy');
+  @override
+  late final GeneratedColumn<String> deletedBy = GeneratedColumn<String>(
+      'deleted_by', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _changedByMeta =
+      const VerificationMeta('changedBy');
+  @override
+  late final GeneratedColumn<String> changedBy = GeneratedColumn<String>(
+      'changed_by', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _sessionIdMeta =
+      const VerificationMeta('sessionId');
+  @override
+  late final GeneratedColumn<String> sessionId = GeneratedColumn<String>(
+      'session_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _roleMeta = const VerificationMeta('role');
+  @override
+  late final GeneratedColumn<String> role = GeneratedColumn<String>(
+      'role', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+      'body', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _modelMeta = const VerificationMeta('model');
+  @override
+  late final GeneratedColumn<String> model = GeneratedColumn<String>(
+      'model', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _siteMeta = const VerificationMeta('site');
+  @override
+  late final GeneratedColumn<String> site = GeneratedColumn<String>(
+      'site', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _sentRefsMeta =
+      const VerificationMeta('sentRefs');
+  @override
+  late final GeneratedColumn<String> sentRefs = GeneratedColumn<String>(
+      'sent_refs', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('[]'));
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        workspaceId,
+        ownerId,
+        version,
+        createdAt,
+        updatedAt,
+        deletedAt,
+        deletedBy,
+        changedBy,
+        sessionId,
+        role,
+        body,
+        model,
+        site,
+        sentRefs
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'ai_messages';
+  @override
+  VerificationContext validateIntegrity(Insertable<AiMessageRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+          _workspaceIdMeta,
+          workspaceId.isAcceptableOrUnknown(
+              data['workspace_id']!, _workspaceIdMeta));
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(_ownerIdMeta,
+          ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta));
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('version')) {
+      context.handle(_versionMeta,
+          version.isAcceptableOrUnknown(data['version']!, _versionMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
+    if (data.containsKey('deleted_by')) {
+      context.handle(_deletedByMeta,
+          deletedBy.isAcceptableOrUnknown(data['deleted_by']!, _deletedByMeta));
+    }
+    if (data.containsKey('changed_by')) {
+      context.handle(_changedByMeta,
+          changedBy.isAcceptableOrUnknown(data['changed_by']!, _changedByMeta));
+    }
+    if (data.containsKey('session_id')) {
+      context.handle(_sessionIdMeta,
+          sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta));
+    } else if (isInserting) {
+      context.missing(_sessionIdMeta);
+    }
+    if (data.containsKey('role')) {
+      context.handle(
+          _roleMeta, role.isAcceptableOrUnknown(data['role']!, _roleMeta));
+    } else if (isInserting) {
+      context.missing(_roleMeta);
+    }
+    if (data.containsKey('body')) {
+      context.handle(
+          _bodyMeta, body.isAcceptableOrUnknown(data['body']!, _bodyMeta));
+    } else if (isInserting) {
+      context.missing(_bodyMeta);
+    }
+    if (data.containsKey('model')) {
+      context.handle(
+          _modelMeta, model.isAcceptableOrUnknown(data['model']!, _modelMeta));
+    }
+    if (data.containsKey('site')) {
+      context.handle(
+          _siteMeta, site.isAcceptableOrUnknown(data['site']!, _siteMeta));
+    }
+    if (data.containsKey('sent_refs')) {
+      context.handle(_sentRefsMeta,
+          sentRefs.isAcceptableOrUnknown(data['sent_refs']!, _sentRefsMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  AiMessageRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AiMessageRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      workspaceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}workspace_id'])!,
+      ownerId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}owner_id'])!,
+      version: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}version'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
+      deletedBy: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}deleted_by']),
+      changedBy: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}changed_by']),
+      sessionId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}session_id'])!,
+      role: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}role'])!,
+      body: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}body'])!,
+      model: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}model']),
+      site: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}site']),
+      sentRefs: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}sent_refs'])!,
+    );
+  }
+
+  @override
+  $AiMessagesTable createAlias(String alias) {
+    return $AiMessagesTable(attachedDatabase, alias);
+  }
+}
+
+class AiMessageRow extends DataClass implements Insertable<AiMessageRow> {
+  final String id;
+  final String workspaceId;
+  final String ownerId;
+  final int version;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final String? deletedBy;
+  final String? changedBy;
+  final String sessionId;
+  final String role;
+  final String body;
+
+  /// The model that wrote it and where it ran (an assistant's message).
+  final String? model;
+  final String? site;
+
+  /// The records sent with the question, as JSON (`[{kind, id, version}]`).
+  final String sentRefs;
+  const AiMessageRow(
+      {required this.id,
+      required this.workspaceId,
+      required this.ownerId,
+      required this.version,
+      required this.createdAt,
+      required this.updatedAt,
+      this.deletedAt,
+      this.deletedBy,
+      this.changedBy,
+      required this.sessionId,
+      required this.role,
+      required this.body,
+      this.model,
+      this.site,
+      required this.sentRefs});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['version'] = Variable<int>(version);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || deletedBy != null) {
+      map['deleted_by'] = Variable<String>(deletedBy);
+    }
+    if (!nullToAbsent || changedBy != null) {
+      map['changed_by'] = Variable<String>(changedBy);
+    }
+    map['session_id'] = Variable<String>(sessionId);
+    map['role'] = Variable<String>(role);
+    map['body'] = Variable<String>(body);
+    if (!nullToAbsent || model != null) {
+      map['model'] = Variable<String>(model);
+    }
+    if (!nullToAbsent || site != null) {
+      map['site'] = Variable<String>(site);
+    }
+    map['sent_refs'] = Variable<String>(sentRefs);
+    return map;
+  }
+
+  AiMessagesCompanion toCompanion(bool nullToAbsent) {
+    return AiMessagesCompanion(
+      id: Value(id),
+      workspaceId: Value(workspaceId),
+      ownerId: Value(ownerId),
+      version: Value(version),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      deletedBy: deletedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedBy),
+      changedBy: changedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(changedBy),
+      sessionId: Value(sessionId),
+      role: Value(role),
+      body: Value(body),
+      model:
+          model == null && nullToAbsent ? const Value.absent() : Value(model),
+      site: site == null && nullToAbsent ? const Value.absent() : Value(site),
+      sentRefs: Value(sentRefs),
+    );
+  }
+
+  factory AiMessageRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AiMessageRow(
+      id: serializer.fromJson<String>(json['id']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      version: serializer.fromJson<int>(json['version']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      deletedBy: serializer.fromJson<String?>(json['deletedBy']),
+      changedBy: serializer.fromJson<String?>(json['changedBy']),
+      sessionId: serializer.fromJson<String>(json['sessionId']),
+      role: serializer.fromJson<String>(json['role']),
+      body: serializer.fromJson<String>(json['body']),
+      model: serializer.fromJson<String?>(json['model']),
+      site: serializer.fromJson<String?>(json['site']),
+      sentRefs: serializer.fromJson<String>(json['sentRefs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'version': serializer.toJson<int>(version),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'deletedBy': serializer.toJson<String?>(deletedBy),
+      'changedBy': serializer.toJson<String?>(changedBy),
+      'sessionId': serializer.toJson<String>(sessionId),
+      'role': serializer.toJson<String>(role),
+      'body': serializer.toJson<String>(body),
+      'model': serializer.toJson<String?>(model),
+      'site': serializer.toJson<String?>(site),
+      'sentRefs': serializer.toJson<String>(sentRefs),
+    };
+  }
+
+  AiMessageRow copyWith(
+          {String? id,
+          String? workspaceId,
+          String? ownerId,
+          int? version,
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          Value<DateTime?> deletedAt = const Value.absent(),
+          Value<String?> deletedBy = const Value.absent(),
+          Value<String?> changedBy = const Value.absent(),
+          String? sessionId,
+          String? role,
+          String? body,
+          Value<String?> model = const Value.absent(),
+          Value<String?> site = const Value.absent(),
+          String? sentRefs}) =>
+      AiMessageRow(
+        id: id ?? this.id,
+        workspaceId: workspaceId ?? this.workspaceId,
+        ownerId: ownerId ?? this.ownerId,
+        version: version ?? this.version,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+        deletedBy: deletedBy.present ? deletedBy.value : this.deletedBy,
+        changedBy: changedBy.present ? changedBy.value : this.changedBy,
+        sessionId: sessionId ?? this.sessionId,
+        role: role ?? this.role,
+        body: body ?? this.body,
+        model: model.present ? model.value : this.model,
+        site: site.present ? site.value : this.site,
+        sentRefs: sentRefs ?? this.sentRefs,
+      );
+  AiMessageRow copyWithCompanion(AiMessagesCompanion data) {
+    return AiMessageRow(
+      id: data.id.present ? data.id.value : this.id,
+      workspaceId:
+          data.workspaceId.present ? data.workspaceId.value : this.workspaceId,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      version: data.version.present ? data.version.value : this.version,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      deletedBy: data.deletedBy.present ? data.deletedBy.value : this.deletedBy,
+      changedBy: data.changedBy.present ? data.changedBy.value : this.changedBy,
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      role: data.role.present ? data.role.value : this.role,
+      body: data.body.present ? data.body.value : this.body,
+      model: data.model.present ? data.model.value : this.model,
+      site: data.site.present ? data.site.value : this.site,
+      sentRefs: data.sentRefs.present ? data.sentRefs.value : this.sentRefs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AiMessageRow(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('version: $version, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedBy: $deletedBy, ')
+          ..write('changedBy: $changedBy, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('role: $role, ')
+          ..write('body: $body, ')
+          ..write('model: $model, ')
+          ..write('site: $site, ')
+          ..write('sentRefs: $sentRefs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id,
+      workspaceId,
+      ownerId,
+      version,
+      createdAt,
+      updatedAt,
+      deletedAt,
+      deletedBy,
+      changedBy,
+      sessionId,
+      role,
+      body,
+      model,
+      site,
+      sentRefs);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AiMessageRow &&
+          other.id == this.id &&
+          other.workspaceId == this.workspaceId &&
+          other.ownerId == this.ownerId &&
+          other.version == this.version &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.deletedBy == this.deletedBy &&
+          other.changedBy == this.changedBy &&
+          other.sessionId == this.sessionId &&
+          other.role == this.role &&
+          other.body == this.body &&
+          other.model == this.model &&
+          other.site == this.site &&
+          other.sentRefs == this.sentRefs);
+}
+
+class AiMessagesCompanion extends UpdateCompanion<AiMessageRow> {
+  final Value<String> id;
+  final Value<String> workspaceId;
+  final Value<String> ownerId;
+  final Value<int> version;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> deletedBy;
+  final Value<String?> changedBy;
+  final Value<String> sessionId;
+  final Value<String> role;
+  final Value<String> body;
+  final Value<String?> model;
+  final Value<String?> site;
+  final Value<String> sentRefs;
+  final Value<int> rowid;
+  const AiMessagesCompanion({
+    this.id = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.version = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.deletedBy = const Value.absent(),
+    this.changedBy = const Value.absent(),
+    this.sessionId = const Value.absent(),
+    this.role = const Value.absent(),
+    this.body = const Value.absent(),
+    this.model = const Value.absent(),
+    this.site = const Value.absent(),
+    this.sentRefs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AiMessagesCompanion.insert({
+    required String id,
+    required String workspaceId,
+    required String ownerId,
+    this.version = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.deletedBy = const Value.absent(),
+    this.changedBy = const Value.absent(),
+    required String sessionId,
+    required String role,
+    required String body,
+    this.model = const Value.absent(),
+    this.site = const Value.absent(),
+    this.sentRefs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        workspaceId = Value(workspaceId),
+        ownerId = Value(ownerId),
+        createdAt = Value(createdAt),
+        updatedAt = Value(updatedAt),
+        sessionId = Value(sessionId),
+        role = Value(role),
+        body = Value(body);
+  static Insertable<AiMessageRow> custom({
+    Expression<String>? id,
+    Expression<String>? workspaceId,
+    Expression<String>? ownerId,
+    Expression<int>? version,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? deletedBy,
+    Expression<String>? changedBy,
+    Expression<String>? sessionId,
+    Expression<String>? role,
+    Expression<String>? body,
+    Expression<String>? model,
+    Expression<String>? site,
+    Expression<String>? sentRefs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (version != null) 'version': version,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (deletedBy != null) 'deleted_by': deletedBy,
+      if (changedBy != null) 'changed_by': changedBy,
+      if (sessionId != null) 'session_id': sessionId,
+      if (role != null) 'role': role,
+      if (body != null) 'body': body,
+      if (model != null) 'model': model,
+      if (site != null) 'site': site,
+      if (sentRefs != null) 'sent_refs': sentRefs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AiMessagesCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? workspaceId,
+      Value<String>? ownerId,
+      Value<int>? version,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<DateTime?>? deletedAt,
+      Value<String?>? deletedBy,
+      Value<String?>? changedBy,
+      Value<String>? sessionId,
+      Value<String>? role,
+      Value<String>? body,
+      Value<String?>? model,
+      Value<String?>? site,
+      Value<String>? sentRefs,
+      Value<int>? rowid}) {
+    return AiMessagesCompanion(
+      id: id ?? this.id,
+      workspaceId: workspaceId ?? this.workspaceId,
+      ownerId: ownerId ?? this.ownerId,
+      version: version ?? this.version,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      deletedBy: deletedBy ?? this.deletedBy,
+      changedBy: changedBy ?? this.changedBy,
+      sessionId: sessionId ?? this.sessionId,
+      role: role ?? this.role,
+      body: body ?? this.body,
+      model: model ?? this.model,
+      site: site ?? this.site,
+      sentRefs: sentRefs ?? this.sentRefs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (deletedBy.present) {
+      map['deleted_by'] = Variable<String>(deletedBy.value);
+    }
+    if (changedBy.present) {
+      map['changed_by'] = Variable<String>(changedBy.value);
+    }
+    if (sessionId.present) {
+      map['session_id'] = Variable<String>(sessionId.value);
+    }
+    if (role.present) {
+      map['role'] = Variable<String>(role.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (model.present) {
+      map['model'] = Variable<String>(model.value);
+    }
+    if (site.present) {
+      map['site'] = Variable<String>(site.value);
+    }
+    if (sentRefs.present) {
+      map['sent_refs'] = Variable<String>(sentRefs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AiMessagesCompanion(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('version: $version, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedBy: $deletedBy, ')
+          ..write('changedBy: $changedBy, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('role: $role, ')
+          ..write('body: $body, ')
+          ..write('model: $model, ')
+          ..write('site: $site, ')
+          ..write('sentRefs: $sentRefs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $AiProposalsTable extends AiProposals
+    with TableInfo<$AiProposalsTable, AiProposalRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AiProposalsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _workspaceIdMeta =
+      const VerificationMeta('workspaceId');
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+      'workspace_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _ownerIdMeta =
+      const VerificationMeta('ownerId');
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+      'owner_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _versionMeta =
+      const VerificationMeta('version');
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+      'version', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _deletedByMeta =
+      const VerificationMeta('deletedBy');
+  @override
+  late final GeneratedColumn<String> deletedBy = GeneratedColumn<String>(
+      'deleted_by', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _changedByMeta =
+      const VerificationMeta('changedBy');
+  @override
+  late final GeneratedColumn<String> changedBy = GeneratedColumn<String>(
+      'changed_by', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _sessionIdMeta =
+      const VerificationMeta('sessionId');
+  @override
+  late final GeneratedColumn<String> sessionId = GeneratedColumn<String>(
+      'session_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _messageIdMeta =
+      const VerificationMeta('messageId');
+  @override
+  late final GeneratedColumn<String> messageId = GeneratedColumn<String>(
+      'message_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _modelMeta = const VerificationMeta('model');
+  @override
+  late final GeneratedColumn<String> model = GeneratedColumn<String>(
+      'model', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _siteMeta = const VerificationMeta('site');
+  @override
+  late final GeneratedColumn<String> site = GeneratedColumn<String>(
+      'site', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _changesMeta =
+      const VerificationMeta('changes');
+  @override
+  late final GeneratedColumn<String> changes = GeneratedColumn<String>(
+      'changes', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+      'note', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(''));
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        workspaceId,
+        ownerId,
+        version,
+        createdAt,
+        updatedAt,
+        deletedAt,
+        deletedBy,
+        changedBy,
+        sessionId,
+        messageId,
+        model,
+        site,
+        changes,
+        note
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'ai_proposals';
+  @override
+  VerificationContext validateIntegrity(Insertable<AiProposalRow> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+          _workspaceIdMeta,
+          workspaceId.isAcceptableOrUnknown(
+              data['workspace_id']!, _workspaceIdMeta));
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(_ownerIdMeta,
+          ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta));
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('version')) {
+      context.handle(_versionMeta,
+          version.isAcceptableOrUnknown(data['version']!, _versionMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
+    if (data.containsKey('deleted_by')) {
+      context.handle(_deletedByMeta,
+          deletedBy.isAcceptableOrUnknown(data['deleted_by']!, _deletedByMeta));
+    }
+    if (data.containsKey('changed_by')) {
+      context.handle(_changedByMeta,
+          changedBy.isAcceptableOrUnknown(data['changed_by']!, _changedByMeta));
+    }
+    if (data.containsKey('session_id')) {
+      context.handle(_sessionIdMeta,
+          sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta));
+    } else if (isInserting) {
+      context.missing(_sessionIdMeta);
+    }
+    if (data.containsKey('message_id')) {
+      context.handle(_messageIdMeta,
+          messageId.isAcceptableOrUnknown(data['message_id']!, _messageIdMeta));
+    }
+    if (data.containsKey('model')) {
+      context.handle(
+          _modelMeta, model.isAcceptableOrUnknown(data['model']!, _modelMeta));
+    } else if (isInserting) {
+      context.missing(_modelMeta);
+    }
+    if (data.containsKey('site')) {
+      context.handle(
+          _siteMeta, site.isAcceptableOrUnknown(data['site']!, _siteMeta));
+    } else if (isInserting) {
+      context.missing(_siteMeta);
+    }
+    if (data.containsKey('changes')) {
+      context.handle(_changesMeta,
+          changes.isAcceptableOrUnknown(data['changes']!, _changesMeta));
+    } else if (isInserting) {
+      context.missing(_changesMeta);
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+          _noteMeta, note.isAcceptableOrUnknown(data['note']!, _noteMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  AiProposalRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AiProposalRow(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      workspaceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}workspace_id'])!,
+      ownerId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}owner_id'])!,
+      version: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}version'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
+      deletedBy: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}deleted_by']),
+      changedBy: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}changed_by']),
+      sessionId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}session_id'])!,
+      messageId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}message_id']),
+      model: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}model'])!,
+      site: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}site'])!,
+      changes: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}changes'])!,
+      note: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}note'])!,
+    );
+  }
+
+  @override
+  $AiProposalsTable createAlias(String alias) {
+    return $AiProposalsTable(attachedDatabase, alias);
+  }
+}
+
+class AiProposalRow extends DataClass implements Insertable<AiProposalRow> {
+  final String id;
+  final String workspaceId;
+  final String ownerId;
+  final int version;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final String? deletedBy;
+  final String? changedBy;
+  final String sessionId;
+  final String? messageId;
+  final String model;
+  final String site;
+  final String changes;
+  final String note;
+  const AiProposalRow(
+      {required this.id,
+      required this.workspaceId,
+      required this.ownerId,
+      required this.version,
+      required this.createdAt,
+      required this.updatedAt,
+      this.deletedAt,
+      this.deletedBy,
+      this.changedBy,
+      required this.sessionId,
+      this.messageId,
+      required this.model,
+      required this.site,
+      required this.changes,
+      required this.note});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['version'] = Variable<int>(version);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || deletedBy != null) {
+      map['deleted_by'] = Variable<String>(deletedBy);
+    }
+    if (!nullToAbsent || changedBy != null) {
+      map['changed_by'] = Variable<String>(changedBy);
+    }
+    map['session_id'] = Variable<String>(sessionId);
+    if (!nullToAbsent || messageId != null) {
+      map['message_id'] = Variable<String>(messageId);
+    }
+    map['model'] = Variable<String>(model);
+    map['site'] = Variable<String>(site);
+    map['changes'] = Variable<String>(changes);
+    map['note'] = Variable<String>(note);
+    return map;
+  }
+
+  AiProposalsCompanion toCompanion(bool nullToAbsent) {
+    return AiProposalsCompanion(
+      id: Value(id),
+      workspaceId: Value(workspaceId),
+      ownerId: Value(ownerId),
+      version: Value(version),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      deletedBy: deletedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedBy),
+      changedBy: changedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(changedBy),
+      sessionId: Value(sessionId),
+      messageId: messageId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(messageId),
+      model: Value(model),
+      site: Value(site),
+      changes: Value(changes),
+      note: Value(note),
+    );
+  }
+
+  factory AiProposalRow.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AiProposalRow(
+      id: serializer.fromJson<String>(json['id']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      version: serializer.fromJson<int>(json['version']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      deletedBy: serializer.fromJson<String?>(json['deletedBy']),
+      changedBy: serializer.fromJson<String?>(json['changedBy']),
+      sessionId: serializer.fromJson<String>(json['sessionId']),
+      messageId: serializer.fromJson<String?>(json['messageId']),
+      model: serializer.fromJson<String>(json['model']),
+      site: serializer.fromJson<String>(json['site']),
+      changes: serializer.fromJson<String>(json['changes']),
+      note: serializer.fromJson<String>(json['note']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'version': serializer.toJson<int>(version),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'deletedBy': serializer.toJson<String?>(deletedBy),
+      'changedBy': serializer.toJson<String?>(changedBy),
+      'sessionId': serializer.toJson<String>(sessionId),
+      'messageId': serializer.toJson<String?>(messageId),
+      'model': serializer.toJson<String>(model),
+      'site': serializer.toJson<String>(site),
+      'changes': serializer.toJson<String>(changes),
+      'note': serializer.toJson<String>(note),
+    };
+  }
+
+  AiProposalRow copyWith(
+          {String? id,
+          String? workspaceId,
+          String? ownerId,
+          int? version,
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          Value<DateTime?> deletedAt = const Value.absent(),
+          Value<String?> deletedBy = const Value.absent(),
+          Value<String?> changedBy = const Value.absent(),
+          String? sessionId,
+          Value<String?> messageId = const Value.absent(),
+          String? model,
+          String? site,
+          String? changes,
+          String? note}) =>
+      AiProposalRow(
+        id: id ?? this.id,
+        workspaceId: workspaceId ?? this.workspaceId,
+        ownerId: ownerId ?? this.ownerId,
+        version: version ?? this.version,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+        deletedBy: deletedBy.present ? deletedBy.value : this.deletedBy,
+        changedBy: changedBy.present ? changedBy.value : this.changedBy,
+        sessionId: sessionId ?? this.sessionId,
+        messageId: messageId.present ? messageId.value : this.messageId,
+        model: model ?? this.model,
+        site: site ?? this.site,
+        changes: changes ?? this.changes,
+        note: note ?? this.note,
+      );
+  AiProposalRow copyWithCompanion(AiProposalsCompanion data) {
+    return AiProposalRow(
+      id: data.id.present ? data.id.value : this.id,
+      workspaceId:
+          data.workspaceId.present ? data.workspaceId.value : this.workspaceId,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      version: data.version.present ? data.version.value : this.version,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      deletedBy: data.deletedBy.present ? data.deletedBy.value : this.deletedBy,
+      changedBy: data.changedBy.present ? data.changedBy.value : this.changedBy,
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      messageId: data.messageId.present ? data.messageId.value : this.messageId,
+      model: data.model.present ? data.model.value : this.model,
+      site: data.site.present ? data.site.value : this.site,
+      changes: data.changes.present ? data.changes.value : this.changes,
+      note: data.note.present ? data.note.value : this.note,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AiProposalRow(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('version: $version, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedBy: $deletedBy, ')
+          ..write('changedBy: $changedBy, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('messageId: $messageId, ')
+          ..write('model: $model, ')
+          ..write('site: $site, ')
+          ..write('changes: $changes, ')
+          ..write('note: $note')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id,
+      workspaceId,
+      ownerId,
+      version,
+      createdAt,
+      updatedAt,
+      deletedAt,
+      deletedBy,
+      changedBy,
+      sessionId,
+      messageId,
+      model,
+      site,
+      changes,
+      note);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AiProposalRow &&
+          other.id == this.id &&
+          other.workspaceId == this.workspaceId &&
+          other.ownerId == this.ownerId &&
+          other.version == this.version &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.deletedBy == this.deletedBy &&
+          other.changedBy == this.changedBy &&
+          other.sessionId == this.sessionId &&
+          other.messageId == this.messageId &&
+          other.model == this.model &&
+          other.site == this.site &&
+          other.changes == this.changes &&
+          other.note == this.note);
+}
+
+class AiProposalsCompanion extends UpdateCompanion<AiProposalRow> {
+  final Value<String> id;
+  final Value<String> workspaceId;
+  final Value<String> ownerId;
+  final Value<int> version;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> deletedBy;
+  final Value<String?> changedBy;
+  final Value<String> sessionId;
+  final Value<String?> messageId;
+  final Value<String> model;
+  final Value<String> site;
+  final Value<String> changes;
+  final Value<String> note;
+  final Value<int> rowid;
+  const AiProposalsCompanion({
+    this.id = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.version = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.deletedBy = const Value.absent(),
+    this.changedBy = const Value.absent(),
+    this.sessionId = const Value.absent(),
+    this.messageId = const Value.absent(),
+    this.model = const Value.absent(),
+    this.site = const Value.absent(),
+    this.changes = const Value.absent(),
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AiProposalsCompanion.insert({
+    required String id,
+    required String workspaceId,
+    required String ownerId,
+    this.version = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.deletedBy = const Value.absent(),
+    this.changedBy = const Value.absent(),
+    required String sessionId,
+    this.messageId = const Value.absent(),
+    required String model,
+    required String site,
+    required String changes,
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        workspaceId = Value(workspaceId),
+        ownerId = Value(ownerId),
+        createdAt = Value(createdAt),
+        updatedAt = Value(updatedAt),
+        sessionId = Value(sessionId),
+        model = Value(model),
+        site = Value(site),
+        changes = Value(changes);
+  static Insertable<AiProposalRow> custom({
+    Expression<String>? id,
+    Expression<String>? workspaceId,
+    Expression<String>? ownerId,
+    Expression<int>? version,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? deletedBy,
+    Expression<String>? changedBy,
+    Expression<String>? sessionId,
+    Expression<String>? messageId,
+    Expression<String>? model,
+    Expression<String>? site,
+    Expression<String>? changes,
+    Expression<String>? note,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (version != null) 'version': version,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (deletedBy != null) 'deleted_by': deletedBy,
+      if (changedBy != null) 'changed_by': changedBy,
+      if (sessionId != null) 'session_id': sessionId,
+      if (messageId != null) 'message_id': messageId,
+      if (model != null) 'model': model,
+      if (site != null) 'site': site,
+      if (changes != null) 'changes': changes,
+      if (note != null) 'note': note,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AiProposalsCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? workspaceId,
+      Value<String>? ownerId,
+      Value<int>? version,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<DateTime?>? deletedAt,
+      Value<String?>? deletedBy,
+      Value<String?>? changedBy,
+      Value<String>? sessionId,
+      Value<String?>? messageId,
+      Value<String>? model,
+      Value<String>? site,
+      Value<String>? changes,
+      Value<String>? note,
+      Value<int>? rowid}) {
+    return AiProposalsCompanion(
+      id: id ?? this.id,
+      workspaceId: workspaceId ?? this.workspaceId,
+      ownerId: ownerId ?? this.ownerId,
+      version: version ?? this.version,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      deletedBy: deletedBy ?? this.deletedBy,
+      changedBy: changedBy ?? this.changedBy,
+      sessionId: sessionId ?? this.sessionId,
+      messageId: messageId ?? this.messageId,
+      model: model ?? this.model,
+      site: site ?? this.site,
+      changes: changes ?? this.changes,
+      note: note ?? this.note,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (deletedBy.present) {
+      map['deleted_by'] = Variable<String>(deletedBy.value);
+    }
+    if (changedBy.present) {
+      map['changed_by'] = Variable<String>(changedBy.value);
+    }
+    if (sessionId.present) {
+      map['session_id'] = Variable<String>(sessionId.value);
+    }
+    if (messageId.present) {
+      map['message_id'] = Variable<String>(messageId.value);
+    }
+    if (model.present) {
+      map['model'] = Variable<String>(model.value);
+    }
+    if (site.present) {
+      map['site'] = Variable<String>(site.value);
+    }
+    if (changes.present) {
+      map['changes'] = Variable<String>(changes.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AiProposalsCompanion(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('version: $version, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedBy: $deletedBy, ')
+          ..write('changedBy: $changedBy, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('messageId: $messageId, ')
+          ..write('model: $model, ')
+          ..write('site: $site, ')
+          ..write('changes: $changes, ')
+          ..write('note: $note, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -20800,6 +22815,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $DocumentFileIndexTable documentFileIndex =
       $DocumentFileIndexTable(this);
   late final $PdfTextStateTable pdfTextState = $PdfTextStateTable(this);
+  late final $AiSessionsTable aiSessions = $AiSessionsTable(this);
+  late final $AiMessagesTable aiMessages = $AiMessagesTable(this);
+  late final $AiProposalsTable aiProposals = $AiProposalsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -20840,7 +22858,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         searchPending,
         documentLinkIndex,
         documentFileIndex,
-        pdfTextState
+        pdfTextState,
+        aiSessions,
+        aiMessages,
+        aiProposals
       ];
 }
 
@@ -22176,6 +24197,7 @@ typedef $$AuditLogTableCreateCompanionBuilder = AuditLogCompanion Function({
   required String outcome,
   Value<String?> reason,
   required DateTime at,
+  Value<String?> aiProvenance,
   Value<int> rowid,
 });
 typedef $$AuditLogTableUpdateCompanionBuilder = AuditLogCompanion Function({
@@ -22191,6 +24213,7 @@ typedef $$AuditLogTableUpdateCompanionBuilder = AuditLogCompanion Function({
   Value<String> outcome,
   Value<String?> reason,
   Value<DateTime> at,
+  Value<String?> aiProvenance,
   Value<int> rowid,
 });
 
@@ -22238,6 +24261,9 @@ class $$AuditLogTableFilterComposer
 
   ColumnFilters<DateTime> get at => $composableBuilder(
       column: $table.at, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get aiProvenance => $composableBuilder(
+      column: $table.aiProvenance, builder: (column) => ColumnFilters(column));
 }
 
 class $$AuditLogTableOrderingComposer
@@ -22287,6 +24313,10 @@ class $$AuditLogTableOrderingComposer
 
   ColumnOrderings<DateTime> get at => $composableBuilder(
       column: $table.at, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get aiProvenance => $composableBuilder(
+      column: $table.aiProvenance,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$AuditLogTableAnnotationComposer
@@ -22333,6 +24363,9 @@ class $$AuditLogTableAnnotationComposer
 
   GeneratedColumn<DateTime> get at =>
       $composableBuilder(column: $table.at, builder: (column) => column);
+
+  GeneratedColumn<String> get aiProvenance => $composableBuilder(
+      column: $table.aiProvenance, builder: (column) => column);
 }
 
 class $$AuditLogTableTableManager extends RootTableManager<
@@ -22370,6 +24403,7 @@ class $$AuditLogTableTableManager extends RootTableManager<
             Value<String> outcome = const Value.absent(),
             Value<String?> reason = const Value.absent(),
             Value<DateTime> at = const Value.absent(),
+            Value<String?> aiProvenance = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               AuditLogCompanion(
@@ -22385,6 +24419,7 @@ class $$AuditLogTableTableManager extends RootTableManager<
             outcome: outcome,
             reason: reason,
             at: at,
+            aiProvenance: aiProvenance,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -22400,6 +24435,7 @@ class $$AuditLogTableTableManager extends RootTableManager<
             required String outcome,
             Value<String?> reason = const Value.absent(),
             required DateTime at,
+            Value<String?> aiProvenance = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               AuditLogCompanion.insert(
@@ -22415,6 +24451,7 @@ class $$AuditLogTableTableManager extends RootTableManager<
             outcome: outcome,
             reason: reason,
             at: at,
+            aiProvenance: aiProvenance,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
@@ -30642,6 +32679,923 @@ typedef $$PdfTextStateTableProcessedTableManager = ProcessedTableManager<
     ),
     PdfTextStateRow,
     PrefetchHooks Function()>;
+typedef $$AiSessionsTableCreateCompanionBuilder = AiSessionsCompanion Function({
+  required String id,
+  required String workspaceId,
+  required String ownerId,
+  Value<int> version,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String?> deletedBy,
+  Value<String?> changedBy,
+  required String title,
+  required String purpose,
+  Value<int> rowid,
+});
+typedef $$AiSessionsTableUpdateCompanionBuilder = AiSessionsCompanion Function({
+  Value<String> id,
+  Value<String> workspaceId,
+  Value<String> ownerId,
+  Value<int> version,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String?> deletedBy,
+  Value<String?> changedBy,
+  Value<String> title,
+  Value<String> purpose,
+  Value<int> rowid,
+});
+
+class $$AiSessionsTableFilterComposer
+    extends Composer<_$AppDatabase, $AiSessionsTable> {
+  $$AiSessionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerId => $composableBuilder(
+      column: $table.ownerId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deletedBy => $composableBuilder(
+      column: $table.deletedBy, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get changedBy => $composableBuilder(
+      column: $table.changedBy, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get purpose => $composableBuilder(
+      column: $table.purpose, builder: (column) => ColumnFilters(column));
+}
+
+class $$AiSessionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AiSessionsTable> {
+  $$AiSessionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get ownerId => $composableBuilder(
+      column: $table.ownerId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deletedBy => $composableBuilder(
+      column: $table.deletedBy, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get changedBy => $composableBuilder(
+      column: $table.changedBy, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get title => $composableBuilder(
+      column: $table.title, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get purpose => $composableBuilder(
+      column: $table.purpose, builder: (column) => ColumnOrderings(column));
+}
+
+class $$AiSessionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AiSessionsTable> {
+  $$AiSessionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerId =>
+      $composableBuilder(column: $table.ownerId, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get deletedBy =>
+      $composableBuilder(column: $table.deletedBy, builder: (column) => column);
+
+  GeneratedColumn<String> get changedBy =>
+      $composableBuilder(column: $table.changedBy, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get purpose =>
+      $composableBuilder(column: $table.purpose, builder: (column) => column);
+}
+
+class $$AiSessionsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $AiSessionsTable,
+    AiSessionRow,
+    $$AiSessionsTableFilterComposer,
+    $$AiSessionsTableOrderingComposer,
+    $$AiSessionsTableAnnotationComposer,
+    $$AiSessionsTableCreateCompanionBuilder,
+    $$AiSessionsTableUpdateCompanionBuilder,
+    (
+      AiSessionRow,
+      BaseReferences<_$AppDatabase, $AiSessionsTable, AiSessionRow>
+    ),
+    AiSessionRow,
+    PrefetchHooks Function()> {
+  $$AiSessionsTableTableManager(_$AppDatabase db, $AiSessionsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AiSessionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AiSessionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AiSessionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> workspaceId = const Value.absent(),
+            Value<String> ownerId = const Value.absent(),
+            Value<int> version = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String?> deletedBy = const Value.absent(),
+            Value<String?> changedBy = const Value.absent(),
+            Value<String> title = const Value.absent(),
+            Value<String> purpose = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              AiSessionsCompanion(
+            id: id,
+            workspaceId: workspaceId,
+            ownerId: ownerId,
+            version: version,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            deletedBy: deletedBy,
+            changedBy: changedBy,
+            title: title,
+            purpose: purpose,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String workspaceId,
+            required String ownerId,
+            Value<int> version = const Value.absent(),
+            required DateTime createdAt,
+            required DateTime updatedAt,
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String?> deletedBy = const Value.absent(),
+            Value<String?> changedBy = const Value.absent(),
+            required String title,
+            required String purpose,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              AiSessionsCompanion.insert(
+            id: id,
+            workspaceId: workspaceId,
+            ownerId: ownerId,
+            version: version,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            deletedBy: deletedBy,
+            changedBy: changedBy,
+            title: title,
+            purpose: purpose,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable<$AiSessionsTable, AiSessionRow>(table),
+                    BaseReferences<_$AppDatabase, $AiSessionsTable,
+                        AiSessionRow>(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$AiSessionsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $AiSessionsTable,
+    AiSessionRow,
+    $$AiSessionsTableFilterComposer,
+    $$AiSessionsTableOrderingComposer,
+    $$AiSessionsTableAnnotationComposer,
+    $$AiSessionsTableCreateCompanionBuilder,
+    $$AiSessionsTableUpdateCompanionBuilder,
+    (
+      AiSessionRow,
+      BaseReferences<_$AppDatabase, $AiSessionsTable, AiSessionRow>
+    ),
+    AiSessionRow,
+    PrefetchHooks Function()>;
+typedef $$AiMessagesTableCreateCompanionBuilder = AiMessagesCompanion Function({
+  required String id,
+  required String workspaceId,
+  required String ownerId,
+  Value<int> version,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String?> deletedBy,
+  Value<String?> changedBy,
+  required String sessionId,
+  required String role,
+  required String body,
+  Value<String?> model,
+  Value<String?> site,
+  Value<String> sentRefs,
+  Value<int> rowid,
+});
+typedef $$AiMessagesTableUpdateCompanionBuilder = AiMessagesCompanion Function({
+  Value<String> id,
+  Value<String> workspaceId,
+  Value<String> ownerId,
+  Value<int> version,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String?> deletedBy,
+  Value<String?> changedBy,
+  Value<String> sessionId,
+  Value<String> role,
+  Value<String> body,
+  Value<String?> model,
+  Value<String?> site,
+  Value<String> sentRefs,
+  Value<int> rowid,
+});
+
+class $$AiMessagesTableFilterComposer
+    extends Composer<_$AppDatabase, $AiMessagesTable> {
+  $$AiMessagesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerId => $composableBuilder(
+      column: $table.ownerId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deletedBy => $composableBuilder(
+      column: $table.deletedBy, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get changedBy => $composableBuilder(
+      column: $table.changedBy, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get sessionId => $composableBuilder(
+      column: $table.sessionId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get role => $composableBuilder(
+      column: $table.role, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get body => $composableBuilder(
+      column: $table.body, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get model => $composableBuilder(
+      column: $table.model, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get site => $composableBuilder(
+      column: $table.site, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get sentRefs => $composableBuilder(
+      column: $table.sentRefs, builder: (column) => ColumnFilters(column));
+}
+
+class $$AiMessagesTableOrderingComposer
+    extends Composer<_$AppDatabase, $AiMessagesTable> {
+  $$AiMessagesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get ownerId => $composableBuilder(
+      column: $table.ownerId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deletedBy => $composableBuilder(
+      column: $table.deletedBy, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get changedBy => $composableBuilder(
+      column: $table.changedBy, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get sessionId => $composableBuilder(
+      column: $table.sessionId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get role => $composableBuilder(
+      column: $table.role, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get body => $composableBuilder(
+      column: $table.body, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get model => $composableBuilder(
+      column: $table.model, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get site => $composableBuilder(
+      column: $table.site, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get sentRefs => $composableBuilder(
+      column: $table.sentRefs, builder: (column) => ColumnOrderings(column));
+}
+
+class $$AiMessagesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AiMessagesTable> {
+  $$AiMessagesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerId =>
+      $composableBuilder(column: $table.ownerId, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get deletedBy =>
+      $composableBuilder(column: $table.deletedBy, builder: (column) => column);
+
+  GeneratedColumn<String> get changedBy =>
+      $composableBuilder(column: $table.changedBy, builder: (column) => column);
+
+  GeneratedColumn<String> get sessionId =>
+      $composableBuilder(column: $table.sessionId, builder: (column) => column);
+
+  GeneratedColumn<String> get role =>
+      $composableBuilder(column: $table.role, builder: (column) => column);
+
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<String> get model =>
+      $composableBuilder(column: $table.model, builder: (column) => column);
+
+  GeneratedColumn<String> get site =>
+      $composableBuilder(column: $table.site, builder: (column) => column);
+
+  GeneratedColumn<String> get sentRefs =>
+      $composableBuilder(column: $table.sentRefs, builder: (column) => column);
+}
+
+class $$AiMessagesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $AiMessagesTable,
+    AiMessageRow,
+    $$AiMessagesTableFilterComposer,
+    $$AiMessagesTableOrderingComposer,
+    $$AiMessagesTableAnnotationComposer,
+    $$AiMessagesTableCreateCompanionBuilder,
+    $$AiMessagesTableUpdateCompanionBuilder,
+    (
+      AiMessageRow,
+      BaseReferences<_$AppDatabase, $AiMessagesTable, AiMessageRow>
+    ),
+    AiMessageRow,
+    PrefetchHooks Function()> {
+  $$AiMessagesTableTableManager(_$AppDatabase db, $AiMessagesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AiMessagesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AiMessagesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AiMessagesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> workspaceId = const Value.absent(),
+            Value<String> ownerId = const Value.absent(),
+            Value<int> version = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String?> deletedBy = const Value.absent(),
+            Value<String?> changedBy = const Value.absent(),
+            Value<String> sessionId = const Value.absent(),
+            Value<String> role = const Value.absent(),
+            Value<String> body = const Value.absent(),
+            Value<String?> model = const Value.absent(),
+            Value<String?> site = const Value.absent(),
+            Value<String> sentRefs = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              AiMessagesCompanion(
+            id: id,
+            workspaceId: workspaceId,
+            ownerId: ownerId,
+            version: version,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            deletedBy: deletedBy,
+            changedBy: changedBy,
+            sessionId: sessionId,
+            role: role,
+            body: body,
+            model: model,
+            site: site,
+            sentRefs: sentRefs,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String workspaceId,
+            required String ownerId,
+            Value<int> version = const Value.absent(),
+            required DateTime createdAt,
+            required DateTime updatedAt,
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String?> deletedBy = const Value.absent(),
+            Value<String?> changedBy = const Value.absent(),
+            required String sessionId,
+            required String role,
+            required String body,
+            Value<String?> model = const Value.absent(),
+            Value<String?> site = const Value.absent(),
+            Value<String> sentRefs = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              AiMessagesCompanion.insert(
+            id: id,
+            workspaceId: workspaceId,
+            ownerId: ownerId,
+            version: version,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            deletedBy: deletedBy,
+            changedBy: changedBy,
+            sessionId: sessionId,
+            role: role,
+            body: body,
+            model: model,
+            site: site,
+            sentRefs: sentRefs,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable<$AiMessagesTable, AiMessageRow>(table),
+                    BaseReferences<_$AppDatabase, $AiMessagesTable,
+                        AiMessageRow>(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$AiMessagesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $AiMessagesTable,
+    AiMessageRow,
+    $$AiMessagesTableFilterComposer,
+    $$AiMessagesTableOrderingComposer,
+    $$AiMessagesTableAnnotationComposer,
+    $$AiMessagesTableCreateCompanionBuilder,
+    $$AiMessagesTableUpdateCompanionBuilder,
+    (
+      AiMessageRow,
+      BaseReferences<_$AppDatabase, $AiMessagesTable, AiMessageRow>
+    ),
+    AiMessageRow,
+    PrefetchHooks Function()>;
+typedef $$AiProposalsTableCreateCompanionBuilder = AiProposalsCompanion
+    Function({
+  required String id,
+  required String workspaceId,
+  required String ownerId,
+  Value<int> version,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String?> deletedBy,
+  Value<String?> changedBy,
+  required String sessionId,
+  Value<String?> messageId,
+  required String model,
+  required String site,
+  required String changes,
+  Value<String> note,
+  Value<int> rowid,
+});
+typedef $$AiProposalsTableUpdateCompanionBuilder = AiProposalsCompanion
+    Function({
+  Value<String> id,
+  Value<String> workspaceId,
+  Value<String> ownerId,
+  Value<int> version,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String?> deletedBy,
+  Value<String?> changedBy,
+  Value<String> sessionId,
+  Value<String?> messageId,
+  Value<String> model,
+  Value<String> site,
+  Value<String> changes,
+  Value<String> note,
+  Value<int> rowid,
+});
+
+class $$AiProposalsTableFilterComposer
+    extends Composer<_$AppDatabase, $AiProposalsTable> {
+  $$AiProposalsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerId => $composableBuilder(
+      column: $table.ownerId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deletedBy => $composableBuilder(
+      column: $table.deletedBy, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get changedBy => $composableBuilder(
+      column: $table.changedBy, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get sessionId => $composableBuilder(
+      column: $table.sessionId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get messageId => $composableBuilder(
+      column: $table.messageId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get model => $composableBuilder(
+      column: $table.model, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get site => $composableBuilder(
+      column: $table.site, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get changes => $composableBuilder(
+      column: $table.changes, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get note => $composableBuilder(
+      column: $table.note, builder: (column) => ColumnFilters(column));
+}
+
+class $$AiProposalsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AiProposalsTable> {
+  $$AiProposalsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get ownerId => $composableBuilder(
+      column: $table.ownerId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deletedBy => $composableBuilder(
+      column: $table.deletedBy, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get changedBy => $composableBuilder(
+      column: $table.changedBy, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get sessionId => $composableBuilder(
+      column: $table.sessionId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get messageId => $composableBuilder(
+      column: $table.messageId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get model => $composableBuilder(
+      column: $table.model, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get site => $composableBuilder(
+      column: $table.site, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get changes => $composableBuilder(
+      column: $table.changes, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get note => $composableBuilder(
+      column: $table.note, builder: (column) => ColumnOrderings(column));
+}
+
+class $$AiProposalsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AiProposalsTable> {
+  $$AiProposalsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerId =>
+      $composableBuilder(column: $table.ownerId, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get deletedBy =>
+      $composableBuilder(column: $table.deletedBy, builder: (column) => column);
+
+  GeneratedColumn<String> get changedBy =>
+      $composableBuilder(column: $table.changedBy, builder: (column) => column);
+
+  GeneratedColumn<String> get sessionId =>
+      $composableBuilder(column: $table.sessionId, builder: (column) => column);
+
+  GeneratedColumn<String> get messageId =>
+      $composableBuilder(column: $table.messageId, builder: (column) => column);
+
+  GeneratedColumn<String> get model =>
+      $composableBuilder(column: $table.model, builder: (column) => column);
+
+  GeneratedColumn<String> get site =>
+      $composableBuilder(column: $table.site, builder: (column) => column);
+
+  GeneratedColumn<String> get changes =>
+      $composableBuilder(column: $table.changes, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+}
+
+class $$AiProposalsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $AiProposalsTable,
+    AiProposalRow,
+    $$AiProposalsTableFilterComposer,
+    $$AiProposalsTableOrderingComposer,
+    $$AiProposalsTableAnnotationComposer,
+    $$AiProposalsTableCreateCompanionBuilder,
+    $$AiProposalsTableUpdateCompanionBuilder,
+    (
+      AiProposalRow,
+      BaseReferences<_$AppDatabase, $AiProposalsTable, AiProposalRow>
+    ),
+    AiProposalRow,
+    PrefetchHooks Function()> {
+  $$AiProposalsTableTableManager(_$AppDatabase db, $AiProposalsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AiProposalsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AiProposalsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AiProposalsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> workspaceId = const Value.absent(),
+            Value<String> ownerId = const Value.absent(),
+            Value<int> version = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String?> deletedBy = const Value.absent(),
+            Value<String?> changedBy = const Value.absent(),
+            Value<String> sessionId = const Value.absent(),
+            Value<String?> messageId = const Value.absent(),
+            Value<String> model = const Value.absent(),
+            Value<String> site = const Value.absent(),
+            Value<String> changes = const Value.absent(),
+            Value<String> note = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              AiProposalsCompanion(
+            id: id,
+            workspaceId: workspaceId,
+            ownerId: ownerId,
+            version: version,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            deletedBy: deletedBy,
+            changedBy: changedBy,
+            sessionId: sessionId,
+            messageId: messageId,
+            model: model,
+            site: site,
+            changes: changes,
+            note: note,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String workspaceId,
+            required String ownerId,
+            Value<int> version = const Value.absent(),
+            required DateTime createdAt,
+            required DateTime updatedAt,
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String?> deletedBy = const Value.absent(),
+            Value<String?> changedBy = const Value.absent(),
+            required String sessionId,
+            Value<String?> messageId = const Value.absent(),
+            required String model,
+            required String site,
+            required String changes,
+            Value<String> note = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              AiProposalsCompanion.insert(
+            id: id,
+            workspaceId: workspaceId,
+            ownerId: ownerId,
+            version: version,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            deletedBy: deletedBy,
+            changedBy: changedBy,
+            sessionId: sessionId,
+            messageId: messageId,
+            model: model,
+            site: site,
+            changes: changes,
+            note: note,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable<$AiProposalsTable, AiProposalRow>(table),
+                    BaseReferences<_$AppDatabase, $AiProposalsTable,
+                        AiProposalRow>(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$AiProposalsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $AiProposalsTable,
+    AiProposalRow,
+    $$AiProposalsTableFilterComposer,
+    $$AiProposalsTableOrderingComposer,
+    $$AiProposalsTableAnnotationComposer,
+    $$AiProposalsTableCreateCompanionBuilder,
+    $$AiProposalsTableUpdateCompanionBuilder,
+    (
+      AiProposalRow,
+      BaseReferences<_$AppDatabase, $AiProposalsTable, AiProposalRow>
+    ),
+    AiProposalRow,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -30718,4 +33672,10 @@ class $AppDatabaseManager {
       $$DocumentFileIndexTableTableManager(_db, _db.documentFileIndex);
   $$PdfTextStateTableTableManager get pdfTextState =>
       $$PdfTextStateTableTableManager(_db, _db.pdfTextState);
+  $$AiSessionsTableTableManager get aiSessions =>
+      $$AiSessionsTableTableManager(_db, _db.aiSessions);
+  $$AiMessagesTableTableManager get aiMessages =>
+      $$AiMessagesTableTableManager(_db, _db.aiMessages);
+  $$AiProposalsTableTableManager get aiProposals =>
+      $$AiProposalsTableTableManager(_db, _db.aiProposals);
 }

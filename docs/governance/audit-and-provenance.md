@@ -46,17 +46,18 @@ Rules (Decisions):
 - Health-sourced measurements keep the origin id so de-duplication and later re-reads are possible (VS-14).
 
 ## 4. Provenance for AI actions
-When a command's actor is `aiAssistant`, the audit entry and an AI-action record capture:
+As built in P06 T3 ([ADR-0082](../adr/0082-ai-history-and-approved-changes.md)): an approved change runs as **the person who approved it** (actor `owner`); the actor kind `aiAssistant` is refused by authorization, so the assistant cannot run anything itself (LF-INV-AI-001). The audit row of the change carries, in `audit_log.ai_provenance` (JSON, LF-INV-AI-003):
 ```
 aiProvenance {
-  proposalId
-  approvalId
-  model: {provider, name}
-  inputsDigest           // hash of the context + arguments the proposal was built from
-  approvedResourceVersions: map<ResourceRef, Version>
+  proposalId, changeId, sessionId   // the proposal record and the change in it (the approval)
+  model, site                       // which model, on the device or in the cloud
+  approvedBy, approvedAt
+  arguments                         // the canonical JSON that was approved and ran
+  versions: ["kind:id@version"]     // what it was computed against (LF-INV-AI-002)
+  consented: ["kind:id"]            // items the person consented to send
 }
 ```
-This supports LF-INV-AI-002 (approval bound to version) and makes an AI change auditable end to end.
+The proposal record itself keeps each change's outcome (applied with its operation id, stale, failed, dismissed) and syncs (D7). What was sent to the model is on the session's message (`sentRefs`); a digest of the whole context comes with the orchestrator (T6). This supports LF-INV-AI-002 and makes an AI change auditable end to end.
 
 ## 5. Retention and export
 - Audit and provenance are kept at least as long as the data they describe; purged with the entity under the retention policy (data batch).

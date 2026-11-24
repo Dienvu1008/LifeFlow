@@ -5,6 +5,7 @@
 // server's. Never a global last-writer-wins (LF-INV-SYNC-003): each kind has
 // its rule, and where a value gives way it is kept as a review item ("Changes
 // to review", D9), never dropped.
+import 'ai.dart' show mergeAiChanges;
 
 /// Bookkeeping columns of every record, not content.
 /// P04b (v13): `changedBy`, who changed it last in a shared space, follows the
@@ -49,7 +50,8 @@ const _wholeValueKinds = {'schedule', 'reminder', 'exception', 'periodResult', '
 /// Kinds that are never changed after they are made (append-only, EXEC-001):
 /// the same id on both sides is the same fact, so either copy will do.
 /// P05a T4 (ADR-0069): a document's revisions are written once (DOC-006).
-const _appendOnlyKinds = {'measurement', 'executionRecord', 'documentRevision'};
+/// P06 T3 (ADR-0082): an assistant's or a person's message is written once.
+const _appendOnlyKinds = {'measurement', 'executionRecord', 'documentRevision', 'aiMessage'};
 
 /// Fields that are one value with a review when both sides changed them.
 /// P05a T4 (ADR-0069): a document's body changed on both sides: the newer
@@ -118,6 +120,9 @@ SyncMerge mergeRecord(
       out[f] = lv;
     } else if (kind == 'task' && f == 'status' && lv is String && rv is String) {
       out[f] = _rank(lv) >= _rank(rv) ? lv : rv;
+    } else if (kind == 'aiProposal' && f == 'changes' && lv is String && rv is String) {
+      // P06 T3 (ADR-0082): per change, the further status (applied wins).
+      out[f] = localWins ? mergeAiChanges(lv, rv) : mergeAiChanges(rv, lv);
     } else {
       out[f] = newer[f];
       if (reviewed.contains(f)) {

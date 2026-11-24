@@ -1571,6 +1571,9 @@ class AppLocalizationsEn extends AppLocalizations {
         'document': 'Document',
         'documentRevision': 'Document version',
         'documentLink': 'Document link',
+        'aiSession': 'Assistant session',
+        'aiMessage': 'Assistant message',
+        'aiProposal': 'Assistant proposal',
         'other': 'Item',
       },
     );
