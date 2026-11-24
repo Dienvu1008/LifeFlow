@@ -56,4 +56,21 @@ void main() {
     expect(all, contains('Anti-Grain Geometry'));
     expect(all, contains('The LLVM Project is under the Apache License v2.0 with LLVM Exceptions'));
   });
+
+  test('ADR-0084: the llama.cpp runtime notices are registered, each in full', () async {
+    registerBundledLicenses();
+    final entries = await LicenseRegistry.licenses.where((e) => e.packages.contains(llamacppPackageName)).toList();
+    final source = await rootBundle.loadString('assets/licenses/llamacpp/SOURCE');
+    final files = pdfiumNoticeFiles(source);
+    expect(files, hasLength(10));
+    expect(entries, hasLength(1 + files.length));
+    String textOf(LicenseEntry e) => e.paragraphs.map((p) => p.text).join('\n');
+    expect(textOf(entries.first), contains('https://github.com/leehack/llamadart-native/releases/tag/v1.0.0-4'));
+    final all = entries.skip(1).map(textOf).join('\n');
+    expect(all, contains('The ggml authors'));
+    expect(all, contains('Copyright (c) 2017 Sean Barrett'), reason: 'stb_image, its MIT option');
+    expect(all, contains('MIT No Attribution'), reason: 'miniaudio');
+    expect(all, contains('unlicense.org'), reason: 'subprocess.h');
+    expect(all, contains('Niels Lohmann'));
+  });
 }

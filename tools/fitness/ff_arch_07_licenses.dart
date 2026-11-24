@@ -86,6 +86,56 @@ List<String> pdfiumNoticeProblems({
   return problems;
 }
 
+/// ADR-0084: the notices of the llama.cpp runtime that llamadart's build hook
+/// downloads (tools/licenses/fetch_llamacpp_notices.ps1 writes them, with
+/// SOURCE).
+const llamacppNoticeDir = 'apps/lifeflow_app/assets/licenses/llamacpp';
+
+/// The notices ADR-0084 names: llama.cpp and the code it vendors into the
+/// shipped libraries, the runtime's own, and the GPU headers.
+const llamacppRequiredNotices = {
+  'llama.cpp.txt',
+  'llamadart-native.txt',
+  'cpp-httplib.txt',
+  'nlohmann-json.txt',
+  'stb_image.txt',
+  'miniaudio.txt',
+  'subprocess.h.txt',
+  'vulkan-headers.md',
+  'spirv-headers.txt',
+};
+
+/// Problems with the llama.cpp notices when llamadart [locked] is shipped
+/// (null: not shipped). [source] is SOURCE's text or null.
+List<String> llamacppNoticeProblems({
+  required String? locked,
+  required String? source,
+  required bool Function(String path) exists,
+}) {
+  if (locked == null) return const [];
+  if (source == null) {
+    return ['pub:llamadart: $llamacppNoticeDir/SOURCE is missing (run tools/licenses/fetch_llamacpp_notices.ps1, ADR-0084)'];
+  }
+  final problems = <String>[];
+  final lines = source.split('\n').map((l) => l.trim()).toList();
+  final version = lines.where((l) => l.startsWith('llamadart ')).map((l) => l.substring(10).trim()).firstOrNull;
+  if (version != locked) {
+    problems.add('pub:llamadart is $locked but the llama.cpp notices are from llamadart $version '
+        '(read the licenses of its runtime release again and re-run the script, ADR-0084)');
+  }
+  final notices = [
+    for (final l in lines)
+      if (l.startsWith('notice ')) l.split(RegExp(r'\s+'))[1],
+  ];
+  for (final n in llamacppRequiredNotices) {
+    if (!notices.contains(n)) problems.add('pub:llamadart: SOURCE does not list the notice $n (ADR-0084)');
+  }
+  for (final n in notices) {
+    if (!exists('$llamacppNoticeDir/$n')) problems.add('pub:llamadart: notice file missing: $llamacppNoticeDir/$n (ADR-0084)');
+  }
+  return problems;
+}
+
 class Entry {
   Entry(this.key, this.version, this.license);
   final String key; // pub:<name> | gradle:<group>:<artifact>
@@ -228,6 +278,11 @@ void main(List<String> args) {
     ...pdfiumNoticeProblems(
       locked: shipped['pub:pdfium_dart'],
       source: sourceFile.existsSync() ? sourceFile.readAsStringSync() : null,
+      exists: (p) => File(p).existsSync(),
+    ),
+    ...llamacppNoticeProblems(
+      locked: shipped['pub:llamadart'],
+      source: File('$llamacppNoticeDir/SOURCE').existsSync() ? File('$llamacppNoticeDir/SOURCE').readAsStringSync() : null,
       exists: (p) => File(p).existsSync(),
     ),
   ];

@@ -4,6 +4,7 @@
 library application;
 
 export 'src/ai.dart';
+export 'src/ai_engine.dart';
 export 'src/app_services.dart';
 export 'src/attachments.dart';
 export 'src/auth.dart';
