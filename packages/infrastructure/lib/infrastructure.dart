@@ -8,6 +8,7 @@ library infrastructure;
 export 'src/ai_context_builder.dart';
 export 'src/ai_history_handlers.dart';
 export 'src/ai_history_service.dart';
+export 'src/cloud_engine.dart';
 export 'src/local_engine.dart';
 export 'src/local_models.dart';
 export 'src/app_database.dart';

@@ -39,7 +39,7 @@ Every row is classified: **Chosen now** (needed for P01–P03, decided), **Candi
 |---|---|---|---|---|
 | AI engine abstraction | `AiEngine` port (application, P06 T4): takes only a `CheckedAiRequest` of its own site | project code | Chosen (P06) | ai-architecture.md, ADR-0081, ADR-0083 |
 | Local provider | **llamadart 0.20.6** (llama.cpp, embedded; Windows and Android), models Qwen 3.5 0.8B/2B/4B Q4_K_M (Apache-2.0), downloaded pinned by SHA-256 | MIT (llamadart, llama.cpp; VS-51); the runtime's bundled notices ADR-0084 | Chosen (P06 T4, spike S-17) | ADR-0083. Android: 0.8B only, marked slow and not recommended (owner, S-17). No Ollama |
-| Cloud provider | `AiEngine` port, no adapter | — | Port only | No cloud AI chosen; routing governed by ADR-0016 |
+| Cloud provider | `CloudAiEngine` (P06 T5): OpenAI, Google Gemini, Anthropic, Groq, any OpenAI-compatible address, over HTTPS with `http` (BSD-3, already used) | project code; the providers' API terms (VS-52) | Chosen (P06 T5) | ADR-0085; the person's own key, off by default (D2); routing ADR-0016 |
 
 [Decision] No AI provider is a committed dependency in the MVP; AI is P06. P06 T4 (ADR-0083) adds the local engine with llamadart; the cloud adapters come in T5 (the owner's D5: as many providers as possible: OpenAI, Google Gemini, Anthropic, Groq, and an OpenAI-compatible address).
 
