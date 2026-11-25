@@ -80,8 +80,8 @@ Maps every invariant to its verification method, golden scenario(s) and/or fitne
 | LF-INV-PRIV-001 | I | GS-16 | FF-ARCH-08 | no |
 | LF-INV-PRIV-002 | Sec, I | GS-16 | FF-ARCH-08 | no |
 | LF-INV-PRIV-003 | I | GS-16 | FF-ARCH-08 | no |
-| LF-INV-AI-001 | I, A | GS-15(context), injection | FF-ARCH-03 | no |
-| LF-INV-AI-002 | I | GS-15 | — | no |
+| LF-INV-AI-001 | I, A | GS-15(context), GS-31 (ai_assistant_test, P06 T6); the assistant actor refused (ai_history_test, T3) | FF-ARCH-06 guard 2, FF-ARCH-08 guard 4 | no |
+| LF-INV-AI-002 | I | GS-15 (ai_history_test T3, ai_assistant_test T6) | — | no |
 
 ## P02 status (2026-11-10)
 PLAN-004/010/011/012/013 and CAL-001/002 are enforced and tested; the test files for each are listed in [p02-exit-gate.md](../testing/p02-exit-gate.md).

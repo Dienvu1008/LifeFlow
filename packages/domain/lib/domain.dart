@@ -4,6 +4,7 @@
 library domain;
 
 export 'src/ai.dart';
+export 'src/ai_day_plan.dart';
 export 'src/data_classification.dart';
 export 'src/documents.dart';
 export 'src/focus.dart';

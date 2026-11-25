@@ -18,11 +18,13 @@ import 'dart:convert';
 import 'package:application/application.dart';
 import 'package:drift/drift.dart';
 import 'package:foundation/foundation.dart';
+import 'package:time_kernel/time_kernel.dart' as tk;
 import 'package:uuid/uuid.dart';
 
 import 'ai_history_handlers.dart';
 import 'app_database.dart';
 import 'profile_store.dart';
+import 'schedule_mapping.dart' show scheduleFieldsJson;
 import 'task_command_handler.dart';
 
 /// A command the assistant may propose (P06 T6 brings the whole list).
@@ -71,10 +73,43 @@ class AiTool {
   Map<String, Object?> payloadOf(ProposedChange change) => {...change.arguments, 'op': op};
 }
 
+/// Why [schedule] is not a one-off timed slot of task [taskId] as the app
+/// writes one, or null. The assistant may only give a task a start and an
+/// end on one day: no repeat, no deadline, and exactly the payload the app
+/// would make for that slot (what is approved is what runs).
+String? aiScheduleArgumentError(String taskId, Object? schedule) {
+  if (schedule is! Map) return 'a schedule is needed';
+  final s = schedule.cast<String, Object?>();
+  try {
+    tk.TimedPoint point(String p) => tk.TimedPoint(ZonedWallClock(
+        LocalDate.parse(s['${p}Date'] as String), TimeOfDayValue.parse(s['${p}Time'] as String), s['${p}Zone'] as String));
+    final spec = tk.ScheduleSpec(start: point('start'), end: point('end'));
+    if (tk.validateSchedule(spec) is! Ok) return 'not a valid time';
+    if (spec.start!.date != spec.end!.date) return 'a slot is within one day';
+    final expected = scheduleFieldsJson('task', taskId, spec, null);
+    return canonicalArguments(expected) == canonicalArguments(s) ? null : 'only a one-off slot on one day';
+  } on Object {
+    return 'not a valid time';
+  }
+}
+
 class AiToolCatalog {
   AiToolCatalog(Iterable<AiTool> tools) : _tools = {for (final t in tools) t.commandType: t};
   final Map<String, AiTool> _tools;
   AiTool? operator [](String commandType) => _tools[commandType];
+
+  /// P06 T6 (ADR-0086): the tools of the assistant's turns. A plan or a
+  /// conflict fix sets a task's time; the two text tools stay from T3.
+  static final AiToolCatalog standard = AiToolCatalog([
+    ...minimal._tools.values,
+    AiTool(
+        commandType: 'SetTaskSchedule',
+        kind: 'task',
+        handler: TaskCommandHandler(),
+        op: 'setSchedule',
+        arguments: {'id', 'schedule'},
+        check: (a) => aiScheduleArgumentError(a['id'] as String, a['schedule'])),
+  ]);
 
   /// T3's tools, enough to prove the path: renaming a task, its notes.
   static final AiToolCatalog minimal = AiToolCatalog([
@@ -104,7 +139,7 @@ class AiToolCatalog {
 
 class DriftAiHistoryService implements AiHistoryService {
   DriftAiHistoryService(this.db, this.gateway, {AiToolCatalog? catalog, this.clock = const SystemClock()})
-      : catalog = catalog ?? AiToolCatalog.minimal,
+      : catalog = catalog ?? AiToolCatalog.standard,
         _store = ProfileStore(db);
   final AppDatabase db;
   final CommandGateway gateway;

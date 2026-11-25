@@ -5,6 +5,7 @@
 /// (added in T2/T3). See docs/architecture/repository-structure.md, docs/data/.
 library infrastructure;
 
+export 'src/ai_assistant_service.dart';
 export 'src/ai_context_builder.dart';
 export 'src/ai_history_handlers.dart';
 export 'src/ai_history_service.dart';

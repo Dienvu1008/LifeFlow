@@ -76,8 +76,8 @@ AI-driven changes execute through the command gateway as the approving owner (AD
 | No new decision introduced | this doc consumes ADR-0012/0016 only | consistent (no new ADR) |
 
 ## 8. Open questions
-- OQ-AI-1: multi-command proposal approval (per-command vs batch). P06.
-- OQ-AI-2: behavior when only a cloud model is available but data forbids cloud. P06 (proposal: decline).
+- OQ-AI-1: multi-command proposal approval (per-command vs batch). **Decided (P06 D8): each change on its own, with "Approve all" (ADR-0082).**
+- OQ-AI-2: behavior when only a cloud model is available but data forbids cloud. **Decided (P06 T6, ADR-0086): decline; never lower privacy (`chooseAiRoute`).**
 - OQ-AI-3: retrieval/ranking approach for context. P06.
 
 ## 9. Self-check
