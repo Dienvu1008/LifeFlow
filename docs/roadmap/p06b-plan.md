@@ -1,12 +1,12 @@
 # P06b plan: the assistant in the navigation, free chat, and five UI changes
-- Status: **Draft, waiting for the owner's answers** (§4). Nothing is built yet.
+- Status: **Agreed by the owner 2026-11-04** (answers in §4). Next: W1.
 - Date: 2026-11-04
 - Why: using the app, the owner could not find the assistant. The only ways in were the ✨ buttons on the Calendar, a document and a PDF, plus Settings → Assistant. He reversed P06 D1 ("no free chat") and asked for five UI changes.
 - Inputs:
   - [p06-plan.md](p06-plan.md) D1–D10;
   - [ADR-0087](../adr/0087-assistant-ui.md) (no free chat; this plan supersedes that part);
   - [ADR-0016](../adr/0016-data-classification-and-egress-policy.md) (the egress matrix);
-  - [p06-device-check.md](../testing/p06-device-check.md) (some steps change with this work).
+  - [p06-device-check.md](../testing/p06-device-check.md) (on the T8 branch, not merged yet; some steps change with this work).
 - Relation to P06: P06 T8 (device check) and T9 (exit gate) stay. The exit gate is checked after this work, so the device check covers the new screens.
 
 ## 1. Decision change
@@ -47,12 +47,12 @@
 - **Free chat:**
   - a new purpose `AiPurpose.chat`, with its own egress row;
   - several turns: earlier messages of the session go with each new question (bounded by a token budget; the oldest turns drop first);
-  - context: search hits for the question (documents, tasks, PDF pages) in the shown space, at most 8 per kind, as "ask about a document" does today;
+  - context: search hits for the question (documents, tasks, PDF pages) across **all spaces of the profile** (Q2), at most 8 per kind; each hit keeps its own classification, so the egress rules still decide per item what may go to a cloud model;
   - routing through `chooseAiRoute` (local first; cloud only if enabled; decline rather than lower privacy);
   - the consent sheet before anything Confidential goes to a cloud model;
   - answers stream in when the engine supports it;
   - the sessions are saved in the history and sync (D7).
-- **Can the chat propose changes?** See question Q1. The proposal is to start read-only (it answers, it does not propose), and to let it call the existing proposal tools later.
+- **The chat may propose changes** (Q1): it can call the existing proposal tools (create or move tasks and events). Each change shows as a proposal card in the chat and runs only after the person approves it (D8, LF-INV-AI-001); a stale proposal is refused (LF-INV-AI-002).
 
 ### W5. Drag and drop for documents (UI 3)
 - The Overview's drag code (drop slots, handles, long-press drag, `resolveDrop`) is private to overview_tree.dart and tied to Overview rows. It is extracted into a shared, row-agnostic widget; the Overview keeps working the same (its tests must stay green).
@@ -65,12 +65,13 @@
   - tasks, lists and events can be trashed and restored by command, but there is no query for the trashed ones and no screen;
   - nothing can be deleted for good;
   - only goals can be archived.
-- Proposed:
-  - one **Trash** screen with tabs or filters (tasks, lists, events, documents), each item with Restore and (if Q3 says yes) Delete forever;
-  - one **Archive** screen for archived tasks and lists, with Unarchive;
-  - an **archive** action on tasks and lists;
-  - a setting for archived tasks that were scheduled: **show them on the Calendar and Timeline, or hide them** (default: hide);
-  - where they live: the drawer, or a menu entry on Overview and Documents (see Q5).
+- Agreed (Q3–Q5):
+  - one **Trash** screen with filters (tasks, lists, events, documents). Each item has **Restore** and **Delete forever**; the screen has **Empty trash**. Delete forever asks for confirmation.
+  - trashed items are **deleted for good after 30 days** by default. The number of days is a setting (Settings), applied when the app opens and once a day while it runs. The purge also removes the item's dependants (a list's tasks and events, a document's children) and syncs as a delete.
+  - an **archive** action on **tasks, lists, events and documents**, and one **Archive** screen with **Unarchive**. Archived items leave the Overview, the documents tree and search, but are not deleted.
+  - **archiving a list archives all its tasks and events**; unarchiving the list brings them back (items archived on their own before stay archived).
+  - a setting for archived items that were scheduled: **show them on the Calendar and Timeline, or hide them** (default: hide).
+  - Trash and Archive are entries in the **navigation drawer** (and the rail), below the main destinations.
 - This is the largest item. It needs a schema change (a new column or status), new queries, sync of the new field, and the agenda filter to respect it.
 - A bug found while reading the agenda code: a cancelled one-off task in the past can be shown as overdue. It is fixed in this item, with a test.
 
@@ -82,15 +83,15 @@
 | W3 | Document app bar | medium | depends on W2's menu |
 | W4 | Assistant destination and free chat | large | the core of the request |
 | W5 | Document drag and drop | medium | refactor of the Overview drag code |
-| W6 | Trash and Archive | large | schema change; needs Q2–Q4 answered |
+| W6 | Trash and Archive | large | schema change (archive field, purge) |
 
 - Every item: its own branch, headless tests, mutation checks, docs, CI green, a Vietnamese handoff, merge after the owner approves.
 - After W6: update p06-device-check.md for the new screens, then the owner's device check (P06 T8) and the exit gate (T9).
 
-## 4. Questions for the owner
-- **Q1. Free chat and changes:** may the chat **propose** changes (create or move tasks and events, always as proposals you approve), or only answer? Proposal: only answer at first.
-- **Q2. What the chat may read:** search hits in the shown space only (proposed), or all spaces of the profile?
-- **Q3. Delete forever:** should the Trash have "Delete forever" (and "Empty trash")? Should trashed items be deleted automatically after some days (for example 30)?
-- **Q4. Archive:** for tasks only, or for lists too (archiving a list archives its tasks)? Archive is separate from the done and cancelled statuses: a done task can be archived or not.
-- **Q5. Where the Trash and Archive screens live:** entries in the drawer/rail, or in the options menu of Overview and Documents?
-- **Q6. Order:** is the order in §3 fine, or should W4 (the assistant) come first?
+## 4. The owner's answers (2026-11-04)
+- **Q1.** The chat may propose changes (always as proposals the person approves).
+- **Q2.** The chat reads all spaces of the profile.
+- **Q3.** The Trash has Delete forever; items are deleted automatically after 30 days, and the number of days is a setting.
+- **Q4.** Archive applies to lists, tasks, events and documents. Archiving a list archives its tasks and events.
+- **Q5.** Trash and Archive are reached from the navigation drawer.
+- **Q6.** The order in §3 stands.
