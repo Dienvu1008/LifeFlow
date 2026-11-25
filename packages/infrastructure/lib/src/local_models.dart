@@ -166,13 +166,15 @@ class FileLocalModelService implements LocalModelService {
         final out = await part.open(mode: have == 0 ? FileMode.write : FileMode.append);
         try {
           await for (final chunk in res.stream) {
-            if (cancel?.isCancelled ?? false) {
-              throw const LocalModelFailure(LocalModelFailureKind.cancelled);
-            }
             have += chunk.length;
             if (have > info.sizeBytes) break;
             await out.writeFrom(chunk);
             onProgress?.call(have, info.sizeBytes);
+            // A stop takes effect after the chunk being written (what came is
+            // kept for the next try); a file already whole is kept as whole.
+            if ((cancel?.isCancelled ?? false) && have < info.sizeBytes) {
+              throw const LocalModelFailure(LocalModelFailureKind.cancelled);
+            }
           }
         } on LocalModelFailure {
           rethrow;

@@ -77,3 +77,4 @@ D4 asks for a pinned list of models, downloaded after the person agrees, plus "U
   - 22 were killed at once.
   - Two survived and got tests: a part file longer than the model (it would have asked for a range past the end, forever), and the choice kept after a delete (a later download would have been chosen by itself).
   - All 24 killed after that.
+- Found by CI (Linux): there the test server's whole file came in one chunk, and a stop asked during the last chunk was never seen. The stop is now checked after each chunk is written (a file already whole is kept), and the test server sends small pieces with a pause, as a real download arrives. Checked three times in a Linux container and on Windows; the check's mutation is killed.

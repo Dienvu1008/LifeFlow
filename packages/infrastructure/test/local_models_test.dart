@@ -50,7 +50,13 @@ class _Server {
         s.destroy();
         return;
       }
-      req.response.add(body);
+      // In small pieces, as a real download arrives (one piece on some
+      // systems otherwise, and a stop would come after the end).
+      for (var i = 0; i < body.length; i += 16384) {
+        req.response.add(body.sublist(i, min(i + 16384, body.length)));
+        await req.response.flush();
+        await Future<void>.delayed(const Duration(milliseconds: 2));
+      }
       await req.response.close();
     });
   }
