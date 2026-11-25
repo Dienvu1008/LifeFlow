@@ -13,6 +13,7 @@
 #   pdfrx 3.0.0, pdfrx_engine 0.9.3, pdfium_dart 0.4.3, pdfium_flutter 0.4.3 (MIT) and what they bring: image 4.13.1 and synchronized 3.6.1+1 (MIT), rxdart 0.28.0 (Apache-2.0), material_ui 1.11.1 and cupertino_ui 1.1.7 (BSD-3-Clause, the Flutter authors); archive moves to 4.7.1 (MIT) for image. The build-hook toolchain moves too (native_toolchain_c 0.19.6, code_assets 2.2.0, hooks 2.2.0, objective_c 9.6.4, record_use 1.1.1, meta 1.19.0, and process 5.0.6 new; all BSD-3-Clause, the Dart and Flutter authors): with native_toolchain_c 0.19.2 the hook could not compile pdfium_dart's small C helper on this Windows machine ("'C:\Program' is not recognized"). LICENSE files read 2026-11-04; the PDF viewer (P05b T1, S-08, VS-49, ADR-0076).
 #   The PDFium binary that pdfium_dart's build hook downloads is not a pub package: its bundled notices are checked separately (assets/licenses/pdfium/SOURCE, ADR-0075).
 #   flutter_tts 4.2.5: MIT, reading aloud with the device's voices (P05b T4, S-12, VS-50, ADR-0078). Its Windows build fetches Microsoft.Windows.CppWinRT 2.0.210503.1 (MIT) from NuGet and compiles it in: not a pub package; its notice ships in assets/licenses/cppwinrt.
+#   llamadart 0.20.6 and dinja 1.3.2 (its chat templates): MIT, LICENSE files read 2026-11-04; local models through llama.cpp (P06 T4, S-17, ADR-0083). Its build hook downloads the llamadart-native runtime (leehack/llamadart-native v1.0.0-4): not a pub package; its notices ship in assets/licenses/llamacpp (ADR-0084).
 #   Native SQLite3MultipleCiphers (via the sqlite3 build hook) is not a pub package, so this scan does not see it.
 # Android (Gradle)
 # Dart / Flutter packages
@@ -41,6 +42,7 @@ pub:dart_jsonwebtoken 3.4.1 MIT
 pub:dart_quill_delta 10.8.3 MIT
 pub:dbus 0.8.0 MPL-2.0
 pub:diff_match_patch 0.4.1 Apache-2.0
+pub:dinja 1.3.2 MIT
 pub:drift 2.35.3 MIT
 pub:equatable 3.0.0 MIT
 pub:fake_async 1.3.3 Apache-2.0
@@ -99,6 +101,7 @@ pub:leak_tracker 11.0.2 BSD-3-Clause
 pub:leak_tracker_flutter_testing 3.0.10 BSD-3-Clause
 pub:leak_tracker_testing 3.0.2 BSD-3-Clause
 pub:lints 6.1.0 BSD-3-Clause
+pub:llamadart 0.20.6 MIT
 pub:logging 1.3.0 BSD-3-Clause
 pub:markdown 7.3.1 BSD-3-Clause
 pub:matcher 0.12.20 BSD-3-Clause

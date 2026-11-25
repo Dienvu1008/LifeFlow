@@ -69,6 +69,12 @@ jobs:
         with:
           channel: stable
           flutter-version: 3.47.2
+      # P06 T4 (ADR-0083): the llama.cpp runtime archive that llamadart's
+      # build hook downloads for the app's tests (pinned by llamadart's version).
+      - uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache/hosted/pub.dev/llamadart-0.20.6/.dart_tool/llamadart
+          key: llamadart-0.20.6-${{ runner.os }}
       - name: UI analyze + widget tests (adaptive shell, flows, storage banner)
         working-directory: packages/ui
         run: |

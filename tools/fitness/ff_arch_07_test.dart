@@ -62,6 +62,23 @@ void main() {
   expect('SOURCE without the FreeType notice fails',
       pdfiumNoticeProblems(locked: '0.4.3', source: pdfiumSource.replaceAll('notice freetype.txt bb\n', ''), exists: any),
       pass: false, mentions: 'freetype.txt');
+  // P06 T4 (ADR-0084): the llama.cpp runtime's notices.
+  final llamaSource = 'llamadart 0.20.6\nrelease v1.0.0-4\n'
+      '${[for (final n in llamacppRequiredNotices) 'notice $n aa'].join('\n')}\n';
+  expect('no llamadart, no llama.cpp notices needed', llamacppNoticeProblems(locked: null, source: null, exists: none),
+      pass: true);
+  expect('the llama.cpp notices of the locked version pass',
+      llamacppNoticeProblems(locked: '0.20.6', source: llamaSource, exists: any), pass: true);
+  expect('llamadart without the notices fails',
+      llamacppNoticeProblems(locked: '0.20.6', source: null, exists: any), pass: false, mentions: 'SOURCE is missing');
+  expect('notices of another llamadart fail',
+      llamacppNoticeProblems(locked: '0.21.0', source: llamaSource, exists: any), pass: false, mentions: 'read the licenses');
+  expect('a listed notice file missing fails',
+      llamacppNoticeProblems(locked: '0.20.6', source: llamaSource, exists: (p) => !p.endsWith('miniaudio.txt')),
+      pass: false, mentions: 'miniaudio.txt');
+  expect('SOURCE without the llama.cpp notice fails',
+      llamacppNoticeProblems(locked: '0.20.6', source: llamaSource.replaceAll('notice llama.cpp.txt aa\n', ''), exists: any),
+      pass: false, mentions: 'llama.cpp.txt');
   expect('lock parsing skips path and sdk packages', [
     if (lockedPackages('''
 packages:

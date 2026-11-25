@@ -24,7 +24,11 @@ const pdfiumCredits = [
 /// Shown as the package name of the C++/WinRT notice (ADR-0078).
 const cppwinrtPackageName = 'C++/WinRT (Windows, used by flutter_tts)';
 
+/// Shown as the package name of the llama.cpp runtime's notices (ADR-0084).
+const llamacppPackageName = 'llama.cpp (local models, used by llamadart)';
+
 const _dir = 'assets/licenses/desugar_jdk_libs';
+const _llamacppDir = 'assets/licenses/llamacpp';
 const _cppwinrtDir = 'assets/licenses/cppwinrt';
 const _pdfiumDir = 'assets/licenses/pdfium';
 
@@ -80,6 +84,19 @@ void registerBundledLicenses() {
     final source = await rootBundle.loadString('$_cppwinrtDir/SOURCE');
     final license = await rootBundle.loadString('$_cppwinrtDir/LICENSE');
     yield LicenseEntryWithLineBreaks(const [cppwinrtPackageName], '${source.split('\n').first.trim()}\n\n$license');
+  });
+  // P06 T4 (ADR-0084): the llama.cpp runtime that llamadart's build hook
+  // downloads, used as published, and the code built into it.
+  LicenseRegistry.addLicense(() async* {
+    final source = await rootBundle.loadString('$_llamacppDir/SOURCE');
+    final release = source.split('\n').where((l) => l.startsWith('http')).firstOrNull?.trim() ?? '';
+    yield LicenseEntryWithLineBreaks(
+      const [llamacppPackageName],
+      'The runtime of the local models, used unmodified as published at $release.',
+    );
+    for (final f in pdfiumNoticeFiles(source)) {
+      yield LicenseEntryWithLineBreaks(const [llamacppPackageName], await rootBundle.loadString('$_llamacppDir/$f'));
+    }
   });
   // P04 T1b: the word lists of sync (recovery keys, the passphrase check).
   LicenseRegistry.addLicense(() async* {
