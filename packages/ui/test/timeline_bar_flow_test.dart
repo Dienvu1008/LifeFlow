@@ -6,6 +6,7 @@
 // the page's first day, or to today when today is on it. A title too long
 // for its space slides once inside it.
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:foundation/foundation.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -203,6 +204,26 @@ void main() {
     expect(shift(), lessThan(0));
     await tester.pumpAndSettle();
     expect(marquee, findsNothing);
+  });
+
+  // Owner P06b W1: the month is as large as the other app-bar titles.
+  testWidgets('the title has the app-bar title size, closed and open', (tester) async {
+    final w = world();
+    addTearDown(w.dispose);
+    await tester.pumpWidget(appWith(w));
+    await tester.pumpAndSettle();
+    await goToTab(tester, 'Timeline');
+    final title = find.byKey(const Key('timeline-month'));
+    final barSize = Theme.of(tester.element(title)).appBarTheme.titleTextStyle!.fontSize!;
+    double sizeOf(String text) => tester
+        .renderObject<RenderParagraph>(find.descendant(of: title, matching: find.text(text)))
+        .text
+        .style!
+        .fontSize!;
+    expect(sizeOf('November 2026'), barSize);
+    await tester.tap(title);
+    await tester.pumpAndSettle();
+    expect(sizeOf('Nov 2026'), barSize);
   });
 
   testWidgets('a title that fits never moves', (tester) async {

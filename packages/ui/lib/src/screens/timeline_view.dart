@@ -137,7 +137,9 @@ class TimelineTitle extends ConsumerWidget {
       key: const Key('timeline-month'),
       style: TextButton.styleFrom(
         foregroundColor: Theme.of(context).colorScheme.onSurface,
-        textStyle: Theme.of(context).textTheme.titleLarge,
+        // Owner P06b W1: the size of the other app-bar titles (Overview,
+        // Documents), not a larger one.
+        textStyle: AppBarTheme.of(context).titleTextStyle ?? Theme.of(context).textTheme.titleMedium,
       ),
       onPressed: () => toggleTimelineCalendar(ref),
       icon: Icon(open ? Icons.arrow_drop_up : Icons.arrow_drop_down),
