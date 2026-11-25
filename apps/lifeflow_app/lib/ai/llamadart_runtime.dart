@@ -4,15 +4,17 @@
 // tested headless; this file only translates. Thinking is off: with it on,
 // small models spent the whole budget thinking and cut the JSON (S-17).
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:application/application.dart';
 import 'package:infrastructure/infrastructure.dart';
 import 'package:llamadart/llamadart.dart';
 
 class LlamadartRuntime implements LocalRuntime {
-  LlamadartRuntime() : _engine = LlamaEngine(LlamaBackend());
-  final LlamaEngine _engine;
+  LlamadartRuntime();
+
+  // Made on first use: the native runtime is loaded only when a model is.
+  LlamaEngine? _made;
+  LlamaEngine get _engine => _made ??= LlamaEngine(LlamaBackend());
 
   static List<LlamaChatMessage> _messages(List<AiChatMessage> messages) => [
         for (final m in messages)
@@ -59,18 +61,13 @@ class LlamadartRuntime implements LocalRuntime {
   }
 
   @override
-  Future<void> cancel() async => _engine.cancelGeneration();
+  Future<void> cancel() async => _made?.cancelGeneration();
 
   @override
-  Future<void> unload() => _engine.unloadModel();
+  Future<void> unload() async => _made?.unloadModel();
 
-  Future<void> dispose() => _engine.dispose();
-}
-
-/// The engine on this device and its models, in the app's own folder
-/// (`<app support>/models`, one copy for every profile).
-({LocalAiEngine engine, FileLocalModelService models}) localAi(Directory appSupport) {
-  final models = FileLocalModelService(Directory('${appSupport.path}${Platform.pathSeparator}models'),
-      platform: Platform.isAndroid ? LocalPlatform.android : LocalPlatform.windows);
-  return (engine: LocalAiEngine(LlamadartRuntime(), models), models: models);
+  Future<void> dispose() async {
+    await _made?.dispose();
+    _made = null;
+  }
 }

@@ -1,6 +1,7 @@
 import 'package:application/application.dart' show AppearanceSettings, ThemePreference;
 import 'package:flutter/foundation.dart' show LicenseEntryWithLineBreaks, LicenseRegistry;
 import 'package:flutter/services.dart' show rootBundle;
+import 'assistant/assistant_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -78,7 +79,11 @@ GoRouter createRouter({String initialLocation = '/overview'}) => GoRouter(
                   builder: (context, state) => screen,
                   // P04 T5: Settings → Sync.
                   routes: path == '/settings'
-                      ? [GoRoute(path: 'sync', builder: (context, state) => const SyncScreen())]
+                      ? [
+                          GoRoute(path: 'sync', builder: (context, state) => const SyncScreen()),
+                          // P06 T7: Settings → Assistant.
+                          GoRoute(path: 'assistant', builder: (context, state) => const AssistantSettingsScreen()),
+                        ]
                       : const [],
                 ),
               ]),

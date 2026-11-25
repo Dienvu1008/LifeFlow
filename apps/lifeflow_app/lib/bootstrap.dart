@@ -1,6 +1,7 @@
 // Composition root wiring (docs/architecture/repository-structure.md): the only
 // place that connects infrastructure implementations to the UI ports.
 import 'dart:async';
+import 'dart:io';
 
 import 'package:application/application.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform;
@@ -8,6 +9,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:infrastructure/infrastructure.dart';
 import 'package:ui/ui.dart';
 
+import 'ai/llamadart_runtime.dart';
+import 'ai/secure_ai_keys.dart';
 import 'notifications.dart';
 
 /// Everything the UI needs for ONE profile, built when that profile opens.
@@ -129,6 +132,11 @@ Future<AppWiring> openSession({
   ReminderScheduler reminders = const NoDeviceReminders(),
   SyncWiring? sync,
   void Function(String message)? onWarning,
+  // P06 T7 (ADR-0087): the person's API keys (secure storage by default),
+  // the local runtime, and the file dialog for a model file.
+  AiKeyStore Function(String profileId)? aiKeys,
+  LocalRuntime Function()? localRuntime,
+  Future<String?> Function()? pickModelFile,
 }) async {
   final store = await directory.openProfile(profileId);
   final db = store.db;
@@ -239,11 +247,44 @@ Future<AppWiring> openSession({
         unawaited(spaceScheduler.start());
       }
     }
+    // P06 T7 (ADR-0087): the assistant. The models and the token counts are
+    // the device's (in the app's folder); the settings, the cloud choice and
+    // the keys are this profile's. Nothing loads a model until it is used.
+    final aiFolder = '${directory.baseDir.path}${Platform.pathSeparator}ai';
+    final aiPlatform = platform == StoragePlatform.android ? LocalPlatform.android : LocalPlatform.windows;
+    final aiModels = FileLocalModelService(Directory('$aiFolder${Platform.pathSeparator}models'), platform: aiPlatform);
+    final aiLedger = FileAiUsageLedger(File('$aiFolder${Platform.pathSeparator}usage.json'));
+    final aiKeyStore = (aiKeys ?? (id) => SecureAiKeyStore(id))(profileId);
+    late final DeviceAiSetup aiSetup;
+    final cloudEngine = CloudAiEngine(config: () => aiSetup.cloud(), keys: aiKeyStore, ledger: aiLedger);
+    aiSetup = DeviceAiSetup(
+      profileId: profileId,
+      read: directory.readSetting,
+      write: directory.writeSetting,
+      keys: aiKeyStore,
+      ledger: aiLedger,
+      catalog: cloudEngine,
+      models: aiModels,
+      platform: aiPlatform,
+    );
+    final localEngine = LocalAiEngine((localRuntime ?? LlamadartRuntime.new)(), aiModels);
+    final aiHistory = DriftAiHistoryService(db, gateway);
+    final assistant = DriftAiAssistant(
+      db: db,
+      history: aiHistory,
+      calendar: DriftCalendarQueries(db, agenda, limits: () => settings.limitsCache.limits),
+      time: deviceTime,
+      engines: [localEngine, cloudEngine],
+      settings: aiSetup.settings,
+    );
+
     return AppWiring(
       profileId: profileId,
       background: () async {
         await fileWork;
         await pdfs.idle;
+        await assistant.stop();
+        await localEngine.unload();
       },
       sync: scheduler,
       spaceSync: spaceScheduler,
@@ -294,6 +335,10 @@ Future<AppWiring> openSession({
             DriftCalendarQueries(db, agenda, limits: () => settings.limitsCache.limits)),
         storageNoticeProvider.overrideWithValue(notice),
         initialRouteProvider.overrideWithValue(initialRoute),
+        aiAssistantProvider.overrideWithValue(assistant),
+        aiHistoryProvider.overrideWithValue(aiHistory),
+        aiSetupProvider.overrideWithValue(aiSetup),
+        aiModelFilePickerProvider.overrideWithValue(pickModelFile),
       ],
     );
   } catch (_) {

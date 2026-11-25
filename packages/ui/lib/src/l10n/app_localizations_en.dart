@@ -2691,4 +2691,335 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ttsLoading => 'Finding the voices…';
+
+  @override
+  String get aiAssistant => 'Assistant';
+
+  @override
+  String get aiPlanMyDay => 'Plan my day';
+
+  @override
+  String get aiFixConflicts => 'Fix conflicts';
+
+  @override
+  String get aiPlanThisDay => 'Plan this day with the assistant';
+
+  @override
+  String get aiAskAssistant => 'Ask the assistant';
+
+  @override
+  String aiDayLabel(String date) {
+    return 'Day: $date';
+  }
+
+  @override
+  String get aiChangeDay => 'Change the day';
+
+  @override
+  String get aiYourNote => 'Anything to add? (optional)';
+
+  @override
+  String get aiWorking => 'The assistant is working…';
+
+  @override
+  String get aiStop => 'Stop';
+
+  @override
+  String get aiApprove => 'Approve';
+
+  @override
+  String get aiApproveAll => 'Approve all';
+
+  @override
+  String get aiDismiss => 'Dismiss';
+
+  @override
+  String get aiRegenerate => 'Regenerate';
+
+  @override
+  String get aiStatusProposed => 'Proposed';
+
+  @override
+  String get aiStatusApplied => 'Applied';
+
+  @override
+  String get aiStatusStale => 'Out of date: something changed since';
+
+  @override
+  String get aiStatusFailed => 'Could not be applied';
+
+  @override
+  String get aiStatusDismissed => 'Dismissed';
+
+  @override
+  String get aiNothingChangesUntil => 'Nothing changes until you approve it.';
+
+  @override
+  String get aiNothingToPlan =>
+      'There is no open task without a time to plan that day.';
+
+  @override
+  String get aiNoConflicts => 'No conflicts that day.';
+
+  @override
+  String get aiNothingPlaced => 'The assistant placed nothing.';
+
+  @override
+  String get aiDeclinedNoEngine =>
+      'Set up a model first: Settings → Assistant.';
+
+  @override
+  String get aiDeclinedPrivacy =>
+      'No model you allowed may receive this data, so nothing was sent.';
+
+  @override
+  String get aiDeclinedSpace =>
+      'The assistant works in your personal space only.';
+
+  @override
+  String get aiFailNotReady =>
+      'The model is not ready. Check Settings → Assistant.';
+
+  @override
+  String get aiFailUnauthorized => 'The provider refused the key.';
+
+  @override
+  String get aiFailRateLimited =>
+      'The provider asks to wait a moment. Try again later.';
+
+  @override
+  String get aiFailNetwork => 'No connection to the provider.';
+
+  @override
+  String get aiFailCap =>
+      'This would go over your monthly token limit, so it was not sent.';
+
+  @override
+  String get aiFailRefused => 'The model declined to answer.';
+
+  @override
+  String get aiFailMalformed =>
+      'The model\'s answer could not be read. Try again.';
+
+  @override
+  String get aiFailStopped => 'Stopped.';
+
+  @override
+  String aiFailOther(String reason) {
+    return 'Something went wrong: $reason';
+  }
+
+  @override
+  String aiUnplaced(String names) {
+    return 'No room that day for: $names';
+  }
+
+  @override
+  String aiViaDevice(String model) {
+    return 'On this device · $model';
+  }
+
+  @override
+  String aiViaCloud(String model) {
+    return 'Cloud · $model';
+  }
+
+  @override
+  String get aiConsentTitle => 'Send to the cloud model?';
+
+  @override
+  String get aiConsentBody =>
+      'These items are private. They are sent to the cloud model only if you agree, for this request only.';
+
+  @override
+  String get aiConsentWaiting => 'Waiting for your consent';
+
+  @override
+  String get aiConsentLeftOut => 'Never sent (not allowed)';
+
+  @override
+  String get aiConsentSend => 'Send';
+
+  @override
+  String get aiConsentWithout => 'Send without these';
+
+  @override
+  String get aiClassPublic => 'Public';
+
+  @override
+  String get aiClassPersonal => 'Personal';
+
+  @override
+  String get aiClassConfidential => 'Private';
+
+  @override
+  String get aiClassRestricted => 'Health or secret';
+
+  @override
+  String get aiHistory => 'History';
+
+  @override
+  String get aiNoHistory => 'No conversations yet.';
+
+  @override
+  String get aiDeleteSession => 'Delete the conversation';
+
+  @override
+  String get aiSessionDeleted => 'Conversation moved to the trash';
+
+  @override
+  String get aiAskTitle => 'Ask about this document';
+
+  @override
+  String get aiAskHint => 'Your question';
+
+  @override
+  String get aiAsk => 'Ask';
+
+  @override
+  String get aiSettingsHint =>
+      'Models on this device, a cloud model, the hours of a plan';
+
+  @override
+  String get aiLocalModels => 'Models on this device';
+
+  @override
+  String get aiRecommended => 'Recommended';
+
+  @override
+  String get aiSlowHere => 'Slow on this device: not recommended';
+
+  @override
+  String aiModelFacts(String size, String license, String memory) {
+    return '$size · $license · about $memory GB of memory';
+  }
+
+  @override
+  String get aiDownload => 'Download';
+
+  @override
+  String aiDownloading(int percent) {
+    return 'Downloading… $percent%';
+  }
+
+  @override
+  String get aiUse => 'Use';
+
+  @override
+  String get aiInUse => 'In use';
+
+  @override
+  String get aiDelete => 'Delete';
+
+  @override
+  String get aiOwnFile => 'Your own file';
+
+  @override
+  String get aiUseModelFile => 'Use a model file (GGUF)';
+
+  @override
+  String get aiModelFilePath => 'Path of the GGUF file';
+
+  @override
+  String get aiSlowWarningTitle => 'Local models are slow on phones';
+
+  @override
+  String get aiSlowWarningBody =>
+      'On a phone, even the smallest model takes about 2 minutes to load and up to several minutes per answer. A cloud model with your own key works better here. Download anyway?';
+
+  @override
+  String get aiDownloadAnyway => 'Download anyway';
+
+  @override
+  String aiDownloadBody(String size) {
+    return 'This downloads $size. Use Wi-Fi if you can.';
+  }
+
+  @override
+  String get aiPreferred => 'Try first';
+
+  @override
+  String get aiEngineDevice => 'The model on this device';
+
+  @override
+  String get aiEngineCloud => 'The cloud model';
+
+  @override
+  String get aiCloud => 'Cloud model';
+
+  @override
+  String get aiCloudOn => 'Use a cloud model';
+
+  @override
+  String get aiCloudOnHint =>
+      'Off by default. Private items are sent only with your consent; health data never.';
+
+  @override
+  String get aiProvider => 'Provider';
+
+  @override
+  String get aiAddress => 'Address (https://…)';
+
+  @override
+  String get aiKey => 'API key';
+
+  @override
+  String get aiKeySaved => 'A key is saved for this provider';
+
+  @override
+  String get aiNoKey => 'No key saved for this provider';
+
+  @override
+  String get aiSaveKey => 'Save the key';
+
+  @override
+  String get aiForgetKey => 'Forget the key';
+
+  @override
+  String get aiModel => 'Model';
+
+  @override
+  String get aiLoadModels => 'Load the models';
+
+  @override
+  String get aiCap => 'Monthly token limit (empty: none)';
+
+  @override
+  String aiUsed(int count) {
+    return '$count tokens used this month';
+  }
+
+  @override
+  String get aiHours => 'Hours of a day plan';
+
+  @override
+  String get aiFrom => 'From';
+
+  @override
+  String get aiTo => 'To';
+
+  @override
+  String get aiLanguage => 'Language of plans';
+
+  @override
+  String get aiLangVi => 'Tiếng Việt';
+
+  @override
+  String get aiLangEn => 'English';
+
+  @override
+  String get aiSaved => 'Saved';
+
+  @override
+  String aiModelsFailed(String reason) {
+    return 'The models could not be loaded: $reason';
+  }
+
+  @override
+  String aiDownloadFailed(String reason) {
+    return 'The download failed: $reason';
+  }
+
+  @override
+  String get aiNotGguf => 'This is not a GGUF model file.';
 }

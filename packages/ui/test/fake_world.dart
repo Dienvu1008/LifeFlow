@@ -1325,7 +1325,12 @@ ProfileView profile(String id, String name,
 
 /// The full app with the ports overridden by [world].
 Widget appWith(FakeWorld world,
-        {StorageNotice? notice, SyncService? sync, SpaceService? spaces, SharingService? sharing, SpaceSyncRunner? spaceSync}) =>
+        {StorageNotice? notice,
+        SyncService? sync,
+        SpaceService? spaces,
+        SharingService? sharing,
+        SpaceSyncRunner? spaceSync,
+        List<Override> extra = const []}) =>
     ProviderScope(
       overrides: [
         syncServiceProvider.overrideWithValue(sync),
@@ -1368,6 +1373,7 @@ Widget appWith(FakeWorld world,
         overviewServiceProvider.overrideWithValue(world.overview),
         overviewQueriesProvider.overrideWithValue(world.overview),
         storageNoticeProvider.overrideWithValue(notice),
+        ...extra,
       ],
       child: const LifeFlowApp(),
     );

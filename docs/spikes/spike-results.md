@@ -300,3 +300,28 @@ With `sqlite3` 3.5.2 (resolved by the T6a app), the build hook's `source: sqlite
   - **Android:** Qwen 3.5 0.8 B only, behind a clear warning before the download ("slow on phones; not recommended; a cloud model with your own key works better here"). Cloud (D2 (b), S-18) is the real option on phones.
   - **In every case:** a stop button, the answer streamed as it comes, the deterministic time check of every plan (already required by the first run), and one retry of a broken JSON plan.
   - Before T4 offers a model: verify its license in the model files, pin its SHA-256, trim the native libraries LifeFlow does not need (LiteRT-LM, WebGPU), and ship the runtime's notices.
+
+## S-18 — Cloud models with the person's own key (P06)
+**Result (2026-11-04): PASS for Groq and Gemini; OpenAI and Anthropic not run (no key yet).**
+- **Question:** Does the cloud engine of T5 (ADR-0085) work against the real services, and how do the providers compare on the S-17 prompts (a Vietnamese question and summary, an English summary, a day plan as strict JSON)?
+- **What was done:** `packages/infrastructure/tool/s18_probe.dart` ran the S-17 prompts through the real `CloudAiEngine` with the owner's keys. The keys came from the environment and were never written or printed. Each key first listed its models (Gemini 49, Groq 11), then two models per provider ran.
+- **Results** (times from this PC, the day of the run; the tokens are what the provider counted):
+
+| Model | Vietnamese question | Vietnamese summary | English summary | Day plan (JSON, checked) |
+|---|---|---|---|---|
+| Groq `openai/gpt-oss-20b` | 0.8 s, right, but **words run together** ("ngày30tháng11, nộp chochịLan") | 1.2 s, right; invents a year ("2/11/2023") | 0.9 s, right | 2.0 s, 1 838 tokens, valid, **no overlap** |
+| Groq `qwen/qwen3.8-27b` | 0.4 s, right, clean | 1.1 s, right, clean | 0.5 s, right | 1.3 s, 766 tokens, valid, **no overlap** |
+| Gemini `gemini-flash-lite-latest` | 0.9 s, right | 1.0 s, right, concise | 1.0 s, right | 1.9 s, 664 tokens, valid, 1 overlap |
+| Gemini `gemini-3.8-flash` | HTTP 503 "high demand" on every request, twice a minute apart | | | |
+
+- **Found:**
+  - **The wire works.** On Groq (OpenAI's format), answers stream, the tokens are counted and JSON comes back strict. On Gemini (generateContent), answers stream with the key in a header and `responseJsonSchema` is accepted. Model lists come from the keys.
+  - **The cloud is 10–20 times faster** for a day plan than the local model on the owner's PC (1–2 s against about 26 s; minutes on the phone), and better: two of three plans had no overlap. The code's time check (`fitDayPlan`) is still needed: Gemini Flash-Lite overlapped one task.
+  - **Vietnamese:** Qwen 3.8 27B on Groq and Gemini Flash-Lite write clean Vietnamese. GPT-OSS 20B runs words together and invents details, so it is not recommended for Vietnamese.
+  - **A busy model returns HTTP 503** (Gemini "high demand"; Anthropic uses 529 "overloaded"). The engine showed it as a general failure. **Fixed:** 503 and 529 now count as "the provider asks to wait", like 429, with a test (mutation killed).
+  - Reasoning models count their thinking in the tokens (GPT-OSS: 513 tokens for a one-line answer). The monthly cap counts what the provider bills.
+- **Recommendation:**
+  - The settings list the provider's own models, so no default is pinned.
+  - The help text suggests **Groq `qwen/qwen3.8-27b`** or **Gemini Flash-Lite** for Vietnamese and fast plans.
+  - OpenAI and Anthropic are wired the same way and tested against their formats. They run when the owner adds keys (`LIFEFLOW_S18_OPENAI_KEY`, `LIFEFLOW_S18_ANTHROPIC_KEY`).
+  - **The provider terms** (training on API data, retention) remain the owner's reading before publishing. The settings screen should link each provider's terms (T8/T9 follow-up).

@@ -14,6 +14,7 @@
 //   read aloud P05b T5 (ADR-0079, D4): from the page shown to the end, the
 //              sentence read shown in the reader bar and the page turned
 //              with it; leaving stops it, the background pauses it (D6)
+import '../assistant/assistant_page.dart';
 import 'dart:async';
 
 import 'package:application/application.dart';
@@ -231,6 +232,13 @@ class _PdfPageState extends ConsumerState<PdfPage> {
                     isSelected: _reader != null,
                     icon: const Icon(Icons.record_voice_over_outlined),
                     onPressed: _reader == null ? _openReader : _closeReader),
+                // P06 T7: ask the assistant about this PDF.
+                if (ref.watch(aiAssistantProvider) != null)
+                  IconButton(
+                      key: const Key('pdf-ask-assistant'),
+                      tooltip: l.aiAskAssistant,
+                      icon: const Icon(Icons.auto_awesome),
+                      onPressed: () => showAskAssistant(context, RecordRef('file', _hash))),
                 if (c.hasSelection)
                   IconButton(key: const Key('pdf-copy'), tooltip: l.pdfCopy, icon: const Icon(Icons.copy), onPressed: _copy),
                 IconButton(key: const Key('pdf-zoom-out'), tooltip: l.pdfZoomOut, icon: const Icon(Icons.zoom_out), onPressed: c.zoomOut),

@@ -18,6 +18,7 @@
 //   read aloud P05b T4 (ADR-0078): the reader bar; the sentence read is
 //              selected in the editor, which reads only meanwhile; leaving
 //              the page stops it, the app going to the background pauses it
+import '../assistant/assistant_page.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -440,6 +441,14 @@ class DocumentPageState extends ConsumerState<DocumentPage> {
               isSelected: _reader != null,
               icon: const Icon(Icons.record_voice_over_outlined),
               onPressed: _reader == null ? _openReader : _closeReader,
+            ),
+          // P06 T7: ask the assistant about this document.
+          if (d != null && ref.watch(aiAssistantProvider) != null)
+            IconButton(
+              key: const Key('doc-ask-assistant'),
+              tooltip: l.aiAskAssistant,
+              icon: const Icon(Icons.auto_awesome),
+              onPressed: () => showAskAssistant(context, RecordRef('document', widget.documentId)),
             ),
           if (d != null)
             PopupMenuButton<_PageAction>(

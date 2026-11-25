@@ -1,3 +1,4 @@
+import '../assistant/assistant_settings.dart';
 import 'package:application/application.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -225,6 +226,8 @@ class SettingsScreen extends ConsumerWidget {
           const Divider(height: 32),
           // P04 T5 (D9): Settings → Sync.
           const SyncSettingsTile(),
+          // P06 T7: Settings → Assistant (where the app has one).
+          const AssistantSettingsTile(),
           const Divider(height: 32),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),

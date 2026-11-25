@@ -112,6 +112,17 @@ class MemoryFiles implements FileGateway {
   }
 }
 
+/// P06 T7: API keys in memory (secure storage is not there in tests).
+class MemoryAiKeys implements AiKeyStore {
+  final values = <CloudProvider, String>{};
+  @override
+  Future<String?> read(CloudProvider p) async => values[p];
+  @override
+  Future<void> write(CloudProvider p, String key) async => values[p] = key;
+  @override
+  Future<void> delete(CloudProvider p) async => values.remove(p);
+}
+
 class MemoryKeys {
   final values = <String, String>{};
   DatabaseKeyStore call(String name) => _Slot(this, name);
@@ -152,6 +163,7 @@ class World {
   final warnings = <String>[];
   final files = MemoryFiles();
   final device = RecordingReminders();
+  final aiKeys = MemoryAiKeys();
 
   Future<void> open(StoragePlatform platform, {bool fallback = false}) async {
     base = await Directory.systemTemp.createTemp('lifeflow_app_');
@@ -176,6 +188,7 @@ class World {
           windowsPlainFallback: fallback,
           reminders: device,
           onWarning: warnings.add,
+          aiKeys: (_) => aiKeys,
         ),
       );
 

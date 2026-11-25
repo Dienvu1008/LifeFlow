@@ -4425,6 +4425,600 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Finding the voices…'**
   String get ttsLoading;
+
+  /// No description provided for @aiAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant'**
+  String get aiAssistant;
+
+  /// No description provided for @aiPlanMyDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan my day'**
+  String get aiPlanMyDay;
+
+  /// No description provided for @aiFixConflicts.
+  ///
+  /// In en, this message translates to:
+  /// **'Fix conflicts'**
+  String get aiFixConflicts;
+
+  /// No description provided for @aiPlanThisDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan this day with the assistant'**
+  String get aiPlanThisDay;
+
+  /// No description provided for @aiAskAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask the assistant'**
+  String get aiAskAssistant;
+
+  /// No description provided for @aiDayLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Day: {date}'**
+  String aiDayLabel(String date);
+
+  /// No description provided for @aiChangeDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Change the day'**
+  String get aiChangeDay;
+
+  /// No description provided for @aiYourNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Anything to add? (optional)'**
+  String get aiYourNote;
+
+  /// No description provided for @aiWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'The assistant is working…'**
+  String get aiWorking;
+
+  /// No description provided for @aiStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get aiStop;
+
+  /// No description provided for @aiApprove.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get aiApprove;
+
+  /// No description provided for @aiApproveAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve all'**
+  String get aiApproveAll;
+
+  /// No description provided for @aiDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get aiDismiss;
+
+  /// No description provided for @aiRegenerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Regenerate'**
+  String get aiRegenerate;
+
+  /// No description provided for @aiStatusProposed.
+  ///
+  /// In en, this message translates to:
+  /// **'Proposed'**
+  String get aiStatusProposed;
+
+  /// No description provided for @aiStatusApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Applied'**
+  String get aiStatusApplied;
+
+  /// No description provided for @aiStatusStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Out of date: something changed since'**
+  String get aiStatusStale;
+
+  /// No description provided for @aiStatusFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not be applied'**
+  String get aiStatusFailed;
+
+  /// No description provided for @aiStatusDismissed.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismissed'**
+  String get aiStatusDismissed;
+
+  /// No description provided for @aiNothingChangesUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing changes until you approve it.'**
+  String get aiNothingChangesUntil;
+
+  /// No description provided for @aiNothingToPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'There is no open task without a time to plan that day.'**
+  String get aiNothingToPlan;
+
+  /// No description provided for @aiNoConflicts.
+  ///
+  /// In en, this message translates to:
+  /// **'No conflicts that day.'**
+  String get aiNoConflicts;
+
+  /// No description provided for @aiNothingPlaced.
+  ///
+  /// In en, this message translates to:
+  /// **'The assistant placed nothing.'**
+  String get aiNothingPlaced;
+
+  /// No description provided for @aiDeclinedNoEngine.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up a model first: Settings → Assistant.'**
+  String get aiDeclinedNoEngine;
+
+  /// No description provided for @aiDeclinedPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'No model you allowed may receive this data, so nothing was sent.'**
+  String get aiDeclinedPrivacy;
+
+  /// No description provided for @aiDeclinedSpace.
+  ///
+  /// In en, this message translates to:
+  /// **'The assistant works in your personal space only.'**
+  String get aiDeclinedSpace;
+
+  /// No description provided for @aiFailNotReady.
+  ///
+  /// In en, this message translates to:
+  /// **'The model is not ready. Check Settings → Assistant.'**
+  String get aiFailNotReady;
+
+  /// No description provided for @aiFailUnauthorized.
+  ///
+  /// In en, this message translates to:
+  /// **'The provider refused the key.'**
+  String get aiFailUnauthorized;
+
+  /// No description provided for @aiFailRateLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'The provider asks to wait a moment. Try again later.'**
+  String get aiFailRateLimited;
+
+  /// No description provided for @aiFailNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'No connection to the provider.'**
+  String get aiFailNetwork;
+
+  /// No description provided for @aiFailCap.
+  ///
+  /// In en, this message translates to:
+  /// **'This would go over your monthly token limit, so it was not sent.'**
+  String get aiFailCap;
+
+  /// No description provided for @aiFailRefused.
+  ///
+  /// In en, this message translates to:
+  /// **'The model declined to answer.'**
+  String get aiFailRefused;
+
+  /// No description provided for @aiFailMalformed.
+  ///
+  /// In en, this message translates to:
+  /// **'The model\'s answer could not be read. Try again.'**
+  String get aiFailMalformed;
+
+  /// No description provided for @aiFailStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped.'**
+  String get aiFailStopped;
+
+  /// No description provided for @aiFailOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong: {reason}'**
+  String aiFailOther(String reason);
+
+  /// No description provided for @aiUnplaced.
+  ///
+  /// In en, this message translates to:
+  /// **'No room that day for: {names}'**
+  String aiUnplaced(String names);
+
+  /// No description provided for @aiViaDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'On this device · {model}'**
+  String aiViaDevice(String model);
+
+  /// No description provided for @aiViaCloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud · {model}'**
+  String aiViaCloud(String model);
+
+  /// No description provided for @aiConsentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to the cloud model?'**
+  String get aiConsentTitle;
+
+  /// No description provided for @aiConsentBody.
+  ///
+  /// In en, this message translates to:
+  /// **'These items are private. They are sent to the cloud model only if you agree, for this request only.'**
+  String get aiConsentBody;
+
+  /// No description provided for @aiConsentWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for your consent'**
+  String get aiConsentWaiting;
+
+  /// No description provided for @aiConsentLeftOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Never sent (not allowed)'**
+  String get aiConsentLeftOut;
+
+  /// No description provided for @aiConsentSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get aiConsentSend;
+
+  /// No description provided for @aiConsentWithout.
+  ///
+  /// In en, this message translates to:
+  /// **'Send without these'**
+  String get aiConsentWithout;
+
+  /// No description provided for @aiClassPublic.
+  ///
+  /// In en, this message translates to:
+  /// **'Public'**
+  String get aiClassPublic;
+
+  /// No description provided for @aiClassPersonal.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal'**
+  String get aiClassPersonal;
+
+  /// No description provided for @aiClassConfidential.
+  ///
+  /// In en, this message translates to:
+  /// **'Private'**
+  String get aiClassConfidential;
+
+  /// No description provided for @aiClassRestricted.
+  ///
+  /// In en, this message translates to:
+  /// **'Health or secret'**
+  String get aiClassRestricted;
+
+  /// No description provided for @aiHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get aiHistory;
+
+  /// No description provided for @aiNoHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'No conversations yet.'**
+  String get aiNoHistory;
+
+  /// No description provided for @aiDeleteSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete the conversation'**
+  String get aiDeleteSession;
+
+  /// No description provided for @aiSessionDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation moved to the trash'**
+  String get aiSessionDeleted;
+
+  /// No description provided for @aiAskTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask about this document'**
+  String get aiAskTitle;
+
+  /// No description provided for @aiAskHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your question'**
+  String get aiAskHint;
+
+  /// No description provided for @aiAsk.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask'**
+  String get aiAsk;
+
+  /// No description provided for @aiSettingsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Models on this device, a cloud model, the hours of a plan'**
+  String get aiSettingsHint;
+
+  /// No description provided for @aiLocalModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Models on this device'**
+  String get aiLocalModels;
+
+  /// No description provided for @aiRecommended.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended'**
+  String get aiRecommended;
+
+  /// No description provided for @aiSlowHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Slow on this device: not recommended'**
+  String get aiSlowHere;
+
+  /// No description provided for @aiModelFacts.
+  ///
+  /// In en, this message translates to:
+  /// **'{size} · {license} · about {memory} GB of memory'**
+  String aiModelFacts(String size, String license, String memory);
+
+  /// No description provided for @aiDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get aiDownload;
+
+  /// No description provided for @aiDownloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading… {percent}%'**
+  String aiDownloading(int percent);
+
+  /// No description provided for @aiUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Use'**
+  String get aiUse;
+
+  /// No description provided for @aiInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'In use'**
+  String get aiInUse;
+
+  /// No description provided for @aiDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get aiDelete;
+
+  /// No description provided for @aiOwnFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Your own file'**
+  String get aiOwnFile;
+
+  /// No description provided for @aiUseModelFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a model file (GGUF)'**
+  String get aiUseModelFile;
+
+  /// No description provided for @aiModelFilePath.
+  ///
+  /// In en, this message translates to:
+  /// **'Path of the GGUF file'**
+  String get aiModelFilePath;
+
+  /// No description provided for @aiSlowWarningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Local models are slow on phones'**
+  String get aiSlowWarningTitle;
+
+  /// No description provided for @aiSlowWarningBody.
+  ///
+  /// In en, this message translates to:
+  /// **'On a phone, even the smallest model takes about 2 minutes to load and up to several minutes per answer. A cloud model with your own key works better here. Download anyway?'**
+  String get aiSlowWarningBody;
+
+  /// No description provided for @aiDownloadAnyway.
+  ///
+  /// In en, this message translates to:
+  /// **'Download anyway'**
+  String get aiDownloadAnyway;
+
+  /// No description provided for @aiDownloadBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This downloads {size}. Use Wi-Fi if you can.'**
+  String aiDownloadBody(String size);
+
+  /// No description provided for @aiPreferred.
+  ///
+  /// In en, this message translates to:
+  /// **'Try first'**
+  String get aiPreferred;
+
+  /// No description provided for @aiEngineDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'The model on this device'**
+  String get aiEngineDevice;
+
+  /// No description provided for @aiEngineCloud.
+  ///
+  /// In en, this message translates to:
+  /// **'The cloud model'**
+  String get aiEngineCloud;
+
+  /// No description provided for @aiCloud.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud model'**
+  String get aiCloud;
+
+  /// No description provided for @aiCloudOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a cloud model'**
+  String get aiCloudOn;
+
+  /// No description provided for @aiCloudOnHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Off by default. Private items are sent only with your consent; health data never.'**
+  String get aiCloudOnHint;
+
+  /// No description provided for @aiProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider'**
+  String get aiProvider;
+
+  /// No description provided for @aiAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Address (https://…)'**
+  String get aiAddress;
+
+  /// No description provided for @aiKey.
+  ///
+  /// In en, this message translates to:
+  /// **'API key'**
+  String get aiKey;
+
+  /// No description provided for @aiKeySaved.
+  ///
+  /// In en, this message translates to:
+  /// **'A key is saved for this provider'**
+  String get aiKeySaved;
+
+  /// No description provided for @aiNoKey.
+  ///
+  /// In en, this message translates to:
+  /// **'No key saved for this provider'**
+  String get aiNoKey;
+
+  /// No description provided for @aiSaveKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Save the key'**
+  String get aiSaveKey;
+
+  /// No description provided for @aiForgetKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Forget the key'**
+  String get aiForgetKey;
+
+  /// No description provided for @aiModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get aiModel;
+
+  /// No description provided for @aiLoadModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Load the models'**
+  String get aiLoadModels;
+
+  /// No description provided for @aiCap.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly token limit (empty: none)'**
+  String get aiCap;
+
+  /// No description provided for @aiUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} tokens used this month'**
+  String aiUsed(int count);
+
+  /// No description provided for @aiHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Hours of a day plan'**
+  String get aiHours;
+
+  /// No description provided for @aiFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'From'**
+  String get aiFrom;
+
+  /// No description provided for @aiTo.
+  ///
+  /// In en, this message translates to:
+  /// **'To'**
+  String get aiTo;
+
+  /// No description provided for @aiLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Language of plans'**
+  String get aiLanguage;
+
+  /// No description provided for @aiLangVi.
+  ///
+  /// In en, this message translates to:
+  /// **'Tiếng Việt'**
+  String get aiLangVi;
+
+  /// No description provided for @aiLangEn.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get aiLangEn;
+
+  /// No description provided for @aiSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get aiSaved;
+
+  /// No description provided for @aiModelsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The models could not be loaded: {reason}'**
+  String aiModelsFailed(String reason);
+
+  /// No description provided for @aiDownloadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The download failed: {reason}'**
+  String aiDownloadFailed(String reason);
+
+  /// No description provided for @aiNotGguf.
+  ///
+  /// In en, this message translates to:
+  /// **'This is not a GGUF model file.'**
+  String get aiNotGguf;
 }
 
 class _AppLocalizationsDelegate

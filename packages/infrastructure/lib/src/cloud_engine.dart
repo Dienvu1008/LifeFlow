@@ -185,7 +185,9 @@ class CloudAiEngine implements AiEngine, CloudModelCatalog {
     }
     final kind = switch (status) {
       401 || 403 => AiEngineFailureKind.unauthorized,
-      429 => AiEngineFailureKind.rateLimited,
+      // P06 S-18: 503 (Gemini "high demand") and 529 (Anthropic "overloaded")
+      // ask to wait, like a rate limit.
+      429 || 503 || 529 => AiEngineFailureKind.rateLimited,
       _ => AiEngineFailureKind.failed,
     };
     throw AiEngineFailure(kind, 'HTTP $status: ${_clean(message, key)}');
