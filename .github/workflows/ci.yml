@@ -81,13 +81,13 @@ jobs:
         run: |
           flutter pub get
           flutter analyze
-          flutter test
+          flutter test -r github
       - name: App analyze + integration tests (real store + gateway behind the UI)
         working-directory: apps/lifeflow_app
         run: |
           flutter pub get
           flutter analyze
-          flutter test
+          flutter test -r github
 
   # P04 (p04-plan.md D3): the sync server schema and its allow/deny tests
   # (RLS, R-PERMISSION) on a local Supabase database in Docker.
