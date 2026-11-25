@@ -1,9 +1,9 @@
 # ADR-0084: The licenses bundled in the llama.cpp runtime
 
-- Status: **Proposed (P06 T4, 2026-11-04): the owner's decision is needed** (as for ADR-0075)
+- Status: Accepted (owner decision, 2026-11-04; P06 T4)
 - Date: 2026-11-04
 - Deciders: Project owner
-- Amends (when accepted): [ADR-0018](0018-dependency-license-policy.md) (adds rule 9)
+- Amends: [ADR-0018](0018-dependency-license-policy.md) (adds rule 9)
 - Related: [ADR-0075](0075-pdfium-bundled-licenses.md) (the same kind of decision for PDFium), [ADR-0083](0083-local-model-engine.md), [verified-sources.md](../research/verified-sources.md) VS-51
 
 ## Context
@@ -26,7 +26,7 @@ Most of the table is already accepted by ADR-0018 rule 2 (MIT, Apache-2.0, BSD).
 - **Public-domain dedications (the Unlicense) and MIT-0**: miniaudio and subprocess.h. They are as permissive as a license can be: no conditions, not even a notice.
 - **The Visual C++ runtime DLLs**: not an open-source license. Microsoft allows apps built with Visual Studio to ship these files beside the app, unmodified.
 
-## Decision (proposed)
+## Decision
 1. **ADR-0018 rule 9:** for the llama.cpp runtime that llamadart's build hook downloads, these are also accepted:
    - **public domain (Unlicense) and MIT-0**, for the code llama.cpp vendors (miniaudio, sheredom subprocess.h; for stb_image the MIT option is taken);
    - **the Microsoft Visual C++ runtime DLLs** that the runtime ships app-locally, used unmodified, under Microsoft's redistribution terms.

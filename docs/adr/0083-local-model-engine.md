@@ -3,7 +3,7 @@
 - Status: Accepted (P06 task T4, 2026-11-04)
 - Date: 2026-11-04
 - Deciders: implementation within [p06-plan.md](../roadmap/p06-plan.md) (the owner's D3 and D4, and his reading of spike S-17)
-- Related: [ADR-0081](0081-ai-context-and-egress-checkpoint.md) (`CheckedAiRequest`), [ADR-0084](0084-llama-cpp-runtime-licenses.md) (the runtime's bundled licenses), [spike-results.md](../spikes/spike-results.md) S-17, [ai-architecture.md](../architecture/ai-architecture.md)
+- Related: [ADR-0081](0081-ai-context-and-egress-checkpoint.md) (`CheckedAiRequest`), [ADR-0084](0084-llama-cpp-runtime-licenses.md) (the runtime's bundled licenses, accepted by the owner), [spike-results.md](../spikes/spike-results.md) S-17, [ai-architecture.md](../architecture/ai-architecture.md)
 
 ## Context
 S-17 showed that llama.cpp, embedded through `llamadart`, runs small Qwen 3.5 models well on Windows and slowly on Android. The owner decided:

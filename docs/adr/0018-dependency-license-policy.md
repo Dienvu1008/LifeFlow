@@ -1,6 +1,6 @@
 # ADR-0018: Dependency license policy
 
-- Status: Accepted (owner decision); amended by ADR-0035 (rule 7, 2026-11-10) and ADR-0075 (rule 8, PDFium's bundled permissive licenses, 2026-11-04)
+- Status: Accepted (owner decision); amended by ADR-0035 (rule 7, 2026-11-10) , ADR-0075 (rule 8, PDFium's bundled permissive licenses, 2026-11-04) and ADR-0084 (rule 9, the llama.cpp runtime, 2026-11-04)
 - Date: 2026-11-04
 - Deciders: Project owner
 - Evidence: [../security/security-requirements.md](../security/security-requirements.md) SR-16/SR-17; [../research/verified-sources.md](../research/verified-sources.md); brief section 22 (license claims must be verified)
@@ -16,6 +16,8 @@ LifeFlow is intended as a potentially closed-source, distributable app. Copyleft
 5. **Scope:** applies to direct dependencies and to important transitive dependencies (those that materially affect distribution). Each chosen library in technical-stack.md lists its license and an accept/reject reason, cross-referenced to a `VS-*` row in verified-sources.
 6. **Enforcement:** adding a dependency requires a verified-sources row; a review step and the CI license scan **FF-ARCH-07** (`tools/fitness/ff_arch_07_licenses.dart`, since P02) flag any license outside rule 2 before merge (ties to SR-16/SR-17).
 7. **GPL-2.0 with the Classpath Exception: only for `com.android.tools:desugar_jdk_libs`** (Android desugaring), used unmodified, with its notices shipped in the app. Added by [ADR-0035](0035-gpl-classpath-exception-for-android-desugaring.md) (owner decision 2026-11-10). Any other GPL dependency needs its own decision.
+8. **FTL, IJG, libpng v2, zlib, Unicode v3 and AGG 2.3: only for the libraries bundled in the PDFium binary that pdfrx uses**, unmodified at a pinned release, with every notice and credit shipped. Added by [ADR-0075](0075-pdfium-bundled-licenses.md) (owner decision 2026-11-04).
+9. **Public domain (Unlicense), MIT-0 and the Microsoft Visual C++ runtime DLLs: only for the llama.cpp runtime that llamadart's build hook downloads**, unmodified at the release pinned by llamadart, with every notice shipped. Added by [ADR-0084](0084-llama-cpp-runtime-licenses.md) (owner decision 2026-11-04).
 
 ## Consequences
 - Pro: avoids an AGPL obligation reaching the shippable app; keeps the distribution options open.
