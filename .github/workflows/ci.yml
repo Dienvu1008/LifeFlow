@@ -44,7 +44,8 @@ jobs:
           dart pub get
           dart run build_runner build
           dart analyze
-          dart test
+          # Each failed test becomes an annotation (its name and message).
+          dart test -r github
       - name: FF-ARCH-01 (pure domain import scan)
         run: dart run tools/fitness/ff_arch_01_pure_domain.dart
       - name: FF-ARCH-04 (ui depends on application ports only)
