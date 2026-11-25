@@ -352,6 +352,8 @@ void main() {
         (401, AiEngineFailureKind.unauthorized),
         (403, AiEngineFailureKind.unauthorized),
         (429, AiEngineFailureKind.rateLimited),
+        (503, AiEngineFailureKind.rateLimited), // S-18: Gemini under high demand
+        (529, AiEngineFailureKind.rateLimited),
         (500, AiEngineFailureKind.failed),
       ]) {
         server.replies.add(_status(code, '{"error":{"message":"Incorrect API key provided: $key"}}'));
