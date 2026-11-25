@@ -59,6 +59,8 @@ void main() {
 
     await tester.tap(find.byKey(const Key('ai-cloud-switch')));
     await settle(tester);
+    expect(find.text('https://platform.openai.com/docs/guides/your-data'), findsOneWidget, reason: 'the provider''s terms');
+    await tester.scrollUntilVisible(find.byKey(const Key('ai-key')), 200, scrollable: find.byType(Scrollable).last);
     await tester.enterText(find.byKey(const Key('ai-key')), 'sk-test-123');
     await tester.ensureVisible(find.byKey(const Key('ai-save-key')));
     await tester.tap(find.byKey(const Key('ai-save-key')));
