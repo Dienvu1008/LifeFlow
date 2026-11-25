@@ -3022,4 +3022,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aiNotGguf => 'This is not a GGUF model file.';
+
+  @override
+  String aiTerms(String provider) {
+    return 'How $provider uses your data (its terms)';
+  }
+
+  @override
+  String get aiTermsCopied => 'Link copied: open it in your browser';
 }

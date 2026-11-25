@@ -206,18 +206,22 @@ abstract interface class LocalModelService {
 
 /// A cloud model provider.
 enum CloudProvider {
-  openai('OpenAI', 'https://api.openai.com/v1'),
-  gemini('Google Gemini', 'https://generativelanguage.googleapis.com/v1beta'),
-  anthropic('Anthropic', 'https://api.anthropic.com/v1'),
-  groq('Groq', 'https://api.groq.com/openai/v1'),
+  openai('OpenAI', 'https://api.openai.com/v1', 'https://platform.openai.com/docs/guides/your-data'),
+  gemini('Google Gemini', 'https://generativelanguage.googleapis.com/v1beta', 'https://ai.google.dev/gemini-api/terms'),
+  anthropic('Anthropic', 'https://api.anthropic.com/v1', 'https://www.anthropic.com/legal/commercial-terms'),
+  groq('Groq', 'https://api.groq.com/openai/v1', 'https://console.groq.com/docs/your-data'),
 
   /// Any server speaking OpenAI's chat completions (a self-hosted one, a
   /// router, …): the person gives its address.
-  openaiCompatible('OpenAI-compatible', '');
+  openaiCompatible('OpenAI-compatible', '', '');
 
-  const CloudProvider(this.label, this.defaultBaseUrl);
+  const CloudProvider(this.label, this.defaultBaseUrl, this.termsUrl);
   final String label;
   final String defaultBaseUrl;
+
+  /// P06 T8 (the owner's decision): where the provider says what it does
+  /// with API data (training, retention); '' for an address of the person's.
+  final String termsUrl;
 }
 
 /// The cloud model the person set up.

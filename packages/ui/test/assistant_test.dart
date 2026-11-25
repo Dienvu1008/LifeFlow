@@ -17,6 +17,7 @@ import 'dart:async';
 
 import 'package:application/application.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:foundation/foundation.dart';
@@ -328,6 +329,16 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Groq').last);
       await tester.pumpAndSettle();
+      expect(find.text('https://console.groq.com/docs/your-data'), findsOneWidget, reason: 'the provider''s terms');
+      String? copied;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+        if (call.method == 'Clipboard.setData') copied = (call.arguments as Map)['text'] as String?;
+        return null;
+      });
+      await tap(tester, const Key('ai-terms'));
+      expect(copied, 'https://console.groq.com/docs/your-data');
+      expect(find.text('Link copied: open it in your browser'), findsOneWidget);
+      await tester.pumpAndSettle(const Duration(seconds: 5));
       await tester.enterText(find.byKey(const Key('ai-key')), 'gsk-SECRET');
       await tap(tester, const Key('ai-save-key'));
       expect(calls.last, 's.key:groq:set');

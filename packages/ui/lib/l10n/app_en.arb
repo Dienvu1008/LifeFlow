@@ -1219,5 +1219,8 @@
   "@aiModelsFailed": {"placeholders": {"reason": {"type": "String"}}},
   "aiDownloadFailed": "The download failed: {reason}",
   "@aiDownloadFailed": {"placeholders": {"reason": {"type": "String"}}},
-  "aiNotGguf": "This is not a GGUF model file."
+  "aiNotGguf": "This is not a GGUF model file.",
+  "aiTerms": "How {provider} uses your data (its terms)",
+  "@aiTerms": {"placeholders": {"provider": {"type": "String"}}},
+  "aiTermsCopied": "Link copied: open it in your browser"
 }
