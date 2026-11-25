@@ -50,6 +50,21 @@ enum AiEngineFailureKind {
 
   /// The engine itself failed (it could not load the model, …).
   failed,
+
+  /// P06 T5: the provider refused the key.
+  unauthorized,
+
+  /// The provider asks to wait (rate or quota).
+  rateLimited,
+
+  /// No connection to the provider, or it took too long.
+  network,
+
+  /// The request would go over the person's monthly cap (D10): not sent.
+  capReached,
+
+  /// The model declined to answer (its safety rules).
+  refused,
 }
 
 class AiEngineFailure implements Exception {
@@ -182,4 +197,89 @@ abstract interface class LocalModelService {
   /// The model the assistant uses on this device, or null.
   Future<InstalledModel?> selected();
   Future<void> select(String? id);
+}
+
+// ---------------------------------------------------------------------------
+// P06 T5 (ADR-0085; the owner's D2, D5, D10): cloud models with the person's
+// own key. As many providers as possible: OpenAI, Google Gemini, Anthropic,
+// Groq, and any OpenAI-compatible address.
+
+/// A cloud model provider.
+enum CloudProvider {
+  openai('OpenAI', 'https://api.openai.com/v1'),
+  gemini('Google Gemini', 'https://generativelanguage.googleapis.com/v1beta'),
+  anthropic('Anthropic', 'https://api.anthropic.com/v1'),
+  groq('Groq', 'https://api.groq.com/openai/v1'),
+
+  /// Any server speaking OpenAI's chat completions (a self-hosted one, a
+  /// router, …): the person gives its address.
+  openaiCompatible('OpenAI-compatible', '');
+
+  const CloudProvider(this.label, this.defaultBaseUrl);
+  final String label;
+  final String defaultBaseUrl;
+}
+
+/// The cloud model the person set up.
+class CloudAiConfig {
+  const CloudAiConfig({required this.provider, required this.model, this.baseUrl, this.monthlyTokenCap});
+  final CloudProvider provider;
+
+  /// As the provider names it (listed by [CloudModelCatalog.models]).
+  final String model;
+
+  /// Overrides the provider's address (required for openaiCompatible).
+  final String? baseUrl;
+
+  /// Tokens per calendar month on this device (D10); null: no cap set.
+  final int? monthlyTokenCap;
+
+  String get effectiveBaseUrl => (baseUrl?.trim().isNotEmpty ?? false) ? baseUrl!.trim() : provider.defaultBaseUrl;
+}
+
+/// The person's API keys, in the platform's secure storage (LF-INV-SEC-001):
+/// never in the store, an export, a sync or a log.
+abstract interface class AiKeyStore {
+  Future<String?> read(CloudProvider provider);
+  Future<void> write(CloudProvider provider, String key);
+  Future<void> delete(CloudProvider provider);
+}
+
+/// One request's tokens, as the provider counted them.
+class AiUsageEntry {
+  const AiUsageEntry({
+    required this.at,
+    required this.provider,
+    required this.model,
+    required this.promptTokens,
+    required this.completionTokens,
+  });
+  final DateTime at;
+  final CloudProvider provider;
+  final String model;
+  final int promptTokens;
+  final int completionTokens;
+  int get totalTokens => promptTokens + completionTokens;
+}
+
+/// The tokens used on this device (D10). LifeFlow never bills: the person
+/// pays the provider; this is what they see and cap.
+abstract interface class AiUsageLedger {
+  Future<void> record(AiUsageEntry entry);
+
+  /// Tokens of the calendar month of [now] (local time).
+  Future<int> usedInMonthOf(DateTime now);
+  Future<List<AiUsageEntry>> entriesInMonthOf(DateTime now);
+}
+
+/// About how many tokens a request of [messages] may use at most: its text
+/// (a token is about 3 characters, fewer for Vietnamese than English) plus
+/// the answer's limit. Shown before a request and checked against the cap.
+int estimateAiTokens(List<AiChatMessage> messages, int maxTokens) =>
+    (messages.fold<int>(0, (n, m) => n + m.text.length) / 3).ceil() + maxTokens;
+
+/// The models a provider offers to this key (read from the provider, not a
+/// list in the app: names change often).
+abstract interface class CloudModelCatalog {
+  Future<List<String>> models(CloudProvider provider, {String? baseUrl});
 }
