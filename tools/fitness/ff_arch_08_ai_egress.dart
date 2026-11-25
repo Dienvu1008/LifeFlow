@@ -9,7 +9,10 @@
 //   2. the checkpoint decides each item with the domain's rule (aiMaySend),
 //      and builds the request from the items it allowed only;
 //   3. no other library under packages/ or apps/ builds a request's data
-//      from context items (no `'untrusted': true` outside the checkpoint).
+//      from context items (no `'untrusted': true` outside the checkpoint);
+//   4. (P06 T6, ADR-0086) in shipped code only the router (chooseAiRoute)
+//      calls the checkpoint: every request of the assistant takes the route
+//      of ai-architecture §4 (Restricted never to the cloud, decline).
 // Then the tests tagged ff-arch-08 run (GS-16, the property over random
 // contexts, injected text) and must pass with a minimum number of tests.
 //
@@ -18,6 +21,7 @@ import 'dart:io';
 
 const _checkpoint = 'packages/application/lib/src/ai.dart';
 const _infra = 'packages/infrastructure';
+const _router = 'packages/application/lib/src/ai_assistant.dart';
 
 final _failures = <String>[];
 void _fail(String m) => _failures.add(m);
@@ -89,6 +93,22 @@ void _guardNoOtherRequestData() {
   stdout.writeln('  guard 3 ok: no other library builds request data');
 }
 
+void _guardOnlyTheRouterChecks() {
+  final call = RegExp(r'\bcheckAiEgress\(');
+  var routed = 0;
+  for (final f in _libFiles()) {
+    final p = _norm(f.path);
+    final n = call.allMatches(f.readAsStringSync()).length;
+    if (n == 0 || p.endsWith(_checkpoint)) continue;
+    if (p.endsWith(_router)) {
+      routed += n;
+      continue;
+    }
+    _fail('FF-ARCH-08: $p calls checkAiEgress itself; requests go through chooseAiRoute (ADR-0086)');
+  }
+  if (routed != 1) _fail('FF-ARCH-08: expected the router to call checkAiEgress once, found $routed');
+  stdout.writeln('  guard 4 ok: only the router builds the assistant\'s requests');
+}
 int _runTagged(String tag, {required int atLeast}) {
   final r = Process.runSync('dart', ['test', '-t', tag, '-r', 'expanded'], workingDirectory: _infra, runInShell: true);
   final out = '${r.stdout}\n${r.stderr}';
@@ -108,8 +128,9 @@ void main() {
   _guardCheckedRequest();
   _guardCheckpointUsesTheRule();
   _guardNoOtherRequestData();
+  _guardOnlyTheRouterChecks();
   stdout.writeln('FF-ARCH-08 tagged tests:');
-  final n = _runTagged('ff-arch-08', atLeast: 10);
+  final n = _runTagged('ff-arch-08', atLeast: 25);
   stdout.writeln('  ff-arch-08: $n test(s) passed');
   if (_failures.isEmpty) {
     stdout.writeln('FF-ARCH-08 OK');
