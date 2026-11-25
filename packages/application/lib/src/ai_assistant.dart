@@ -175,3 +175,34 @@ Future<AiRoute> chooseAiRoute({
   return AiRoute._(AiTurnOutcome.declined,
       reason: reasons.isEmpty ? 'no assistant engine is set up' : reasons.join('; '));
 }
+
+/// P06 T7 (ADR-0087): what the assistant's settings screen reads and changes.
+/// The settings and the cloud choice belong to the profile (another profile
+/// on the device does not inherit the cloud option); the models are the
+/// device's; the keys are the profile's, in secure storage.
+abstract interface class AiSetupService {
+  Future<AiAssistantSettings> settings();
+  Future<void> setSettings(AiAssistantSettings settings);
+
+  /// The cloud model set up, or null.
+  Future<CloudAiConfig?> cloud();
+  Future<void> setCloud(CloudAiConfig? config);
+
+  /// Whether a key is kept for [provider] (the key itself is never shown).
+  Future<bool> hasKey(CloudProvider provider);
+
+  /// Keeps [key] for [provider]; null or blank forgets it.
+  Future<void> setKey(CloudProvider provider, String? key);
+
+  /// The models [provider] offers to the kept key.
+  Future<List<String>> cloudModels(CloudProvider provider, {String? baseUrl});
+
+  /// Tokens used this calendar month on this device.
+  Future<int> tokensThisMonth();
+
+  /// The models of this device.
+  LocalModelService get models;
+
+  /// The platform, for the model list and its warnings.
+  LocalPlatform get platform;
+}

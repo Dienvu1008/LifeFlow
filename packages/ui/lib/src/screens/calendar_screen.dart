@@ -3,6 +3,7 @@
 // shown, never resolved (D7); weeks start on the device setting (D3). The
 // views only read CalendarQueries; every change is a command.
 // Dogfooding C2 (ADR-0051): every view turns like pages, with a slide.
+import '../assistant/assistant_page.dart';
 import 'package:application/application.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -230,6 +231,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               ),
               if (grid && roomy) ...[zoomOut, zoomIn, night],
               if (grid && !roomy) night,
+              // P06 T7: the assistant plans the shown day (today in a longer view).
+              if (ref.watch(aiAssistantProvider) != null)
+                IconButton(
+                  key: const Key('calendar-assistant'),
+                  tooltip: l.aiPlanThisDay,
+                  icon: const Icon(Icons.auto_awesome),
+                  onPressed: () => openAssistantPage(context, date: pos.mode == CalendarMode.day ? pos.anchor : today),
+                ),
               IconButton(
                 key: const Key('calendar-today-tasks'),
                 tooltip: l.calOpenTimeline,

@@ -106,6 +106,7 @@ Future<void> main() async {
       deviceZone: deviceZone ?? 'UTC',
       reminders: reminders,
       files: const FilePickerGateway(),
+      pickModelFile: pickModelFilePath,
       sync: sync,
       windowsPlainFallback: windowsPlainFallback,
       // Local log only; never uploaded (no telemetry, SR-15).

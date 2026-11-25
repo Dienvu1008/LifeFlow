@@ -56,6 +56,15 @@ class FilePickerGateway implements FileGateway {
       await FilePicker.saveFile(fileName: suggestedName, bytes: bytes, mimeType: mime) != null;
 }
 
+/// P06 T7 (ADR-0087): the path of a GGUF model the person chose ("Use a
+/// model file"). Null when cancelled, or where the system gives no path (an
+/// Android content address): the file is copied from a path, being too big
+/// to read into memory.
+Future<String?> pickModelFilePath() async {
+  final file = await FilePicker.pickFile(dialogTitle: 'Choose a model file (GGUF)');
+  return file?.path;
+}
+
 /// The type of a file by its name's extension, as far as LifeFlow shows it
 /// (pictures inline, the rest as a file).
 String mimeOfName(String name) {

@@ -402,3 +402,27 @@ final rulesNoticesProvider = FutureProvider.autoDispose<List<RulesNotice>>((ref)
 
 /// "Assigned to me" in the Overview of a shared space (B9).
 final assignedToMeProvider = StateProvider<bool>((ref) => false);
+
+// --- P06 T7: the assistant (ADR-0087) -------------------------------------
+
+/// The assistant's turns. Null where the app has none wired (then no entry
+/// to it is shown).
+final aiAssistantProvider = Provider<AiAssistant?>((ref) => null);
+
+/// The assistant's history and the approval of its proposals.
+final aiHistoryProvider = Provider<AiHistoryService?>((ref) => null);
+
+/// The assistant's settings, models and cloud choice.
+final aiSetupProvider = Provider<AiSetupService?>((ref) => null);
+
+/// Opens the app's file dialog for a GGUF model and gives its path; null
+/// where the build has none (the path is typed instead).
+final aiModelFilePickerProvider = Provider<Future<String?> Function()?>((ref) => null);
+
+/// The live conversations of the ACTIVE profile, newest first. Invalidate
+/// after a turn or a delete.
+final aiSessionsProvider = FutureProvider.autoDispose<List<AiSessionView>>((ref) async {
+  ref.watch(activeProfileProvider);
+  final h = ref.watch(aiHistoryProvider);
+  return h == null ? const [] : h.sessions();
+});
