@@ -47,6 +47,15 @@ Future<void> tapKey(WidgetTester tester, String key) async {
 
 Future<void> openDocuments(WidgetTester tester) => goToTab(tester, 'Documents');
 
+/// P06b W3: the save state, in the tooltip of the icon in the app bar.
+String docStatus(WidgetTester tester) => tester.widget<IconButton>(find.byKey(const Key('doc-status'))).tooltip!;
+
+/// P06b W3: an entry [key] of the document page's options menu.
+Future<void> docMenu(WidgetTester tester, String key) async {
+  await tapKey(tester, 'doc-page-menu');
+  await tapKey(tester, key);
+}
+
 DocumentPageState pageState(WidgetTester tester) => tester.state<DocumentPageState>(find.byType(DocumentPage));
 
 /// Types [text] at the end of the editor's text.
@@ -75,11 +84,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(w.calls, contains('doc.create:Ghi chú họp:null'));
     expect(find.byType(DocumentPage), findsOneWidget);
-    expect(find.text('Saved'), findsOneWidget);
+    expect(docStatus(tester), 'Saved');
 
     typeAtEnd(tester, 'Thứ Hai lúc 9 giờ');
     await tester.pump();
-    expect(find.textContaining('Not saved yet'), findsOneWidget);
+    expect(docStatus(tester), 'Not saved yet');
     expect(saves(w), isEmpty, reason: 'not before 10 s without typing');
     await tester.pump(const Duration(seconds: 9));
     expect(saves(w), isEmpty);
@@ -89,7 +98,7 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
     expect(saves(w), ['doc.save:d0:Ghi chú họp:Thứ Hai lúc 9 giờ.']);
-    expect(find.textContaining('Saved'), findsOneWidget);
+    expect(docStatus(tester), 'Saved');
 
     // Nothing changed: leaving writes nothing more.
     await tester.pageBack();
@@ -105,6 +114,7 @@ void main() {
     await openDocuments(tester);
     await tester.tap(find.byKey(ValueKey('doc-$id')));
     await tester.pumpAndSettle();
+    await tapKey(tester, 'doc-title-edit');
     await tester.enterText(find.byKey(const Key('doc-title')), 'Nhật ký tháng 11');
     typeAtEnd(tester, 'Trời mưa');
     await tester.pump();
@@ -279,7 +289,7 @@ void main() {
 
     await tester.tap(find.byKey(ValueKey('doc-$plan')));
     await tester.pumpAndSettle();
-    await tapKey(tester, 'doc-links');
+    await docMenu(tester, 'doc-links');
     expect(find.byKey(ValueKey('backlink-$from')), findsOneWidget);
     expect(find.text('Đọc Kế hoạch trước.'), findsOneWidget, reason: 'the sentence around the link');
   });
@@ -299,7 +309,7 @@ void main() {
     await tester.pumpAndSettle();
     await tapKey(tester, 'doc-item-task-t1');
     expect(w.calls, contains('doc.link:$d:task:t1'));
-    await tapKey(tester, 'doc-links');
+    await docMenu(tester, 'doc-links');
     expect(find.byKey(const ValueKey('linked-task-t1')), findsOneWidget);
     expect(find.text('Nấu phở bò'), findsOneWidget);
     await tapKey(tester, 'unlink-task-t1');
@@ -367,7 +377,8 @@ void main() {
     await tester.tap(find.byKey(ValueKey('doc-$d')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('doc-toolbar')), findsNothing);
-    expect(find.textContaining('View only'), findsWidgets);
+    expect(docStatus(tester), 'View only');
+    expect(find.byKey(const Key('doc-title-edit')), findsNothing, reason: 'the title cannot be opened for editing');
     expect(pageState(tester).controller!.readOnly, isTrue);
     await tester.pageBack();
     await tester.pumpAndSettle();

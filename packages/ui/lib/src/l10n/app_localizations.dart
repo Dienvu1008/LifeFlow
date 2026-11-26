@@ -3760,6 +3760,30 @@ abstract class AppLocalizations {
   /// **'View only'**
   String get docViewOnly;
 
+  /// No description provided for @docTitleEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit the title'**
+  String get docTitleEdit;
+
+  /// No description provided for @docTitleDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done with the title'**
+  String get docTitleDone;
+
+  /// No description provided for @docStopReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop reading aloud'**
+  String get docStopReading;
+
+  /// No description provided for @docLinksMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Backlinks and linked items'**
+  String get docLinksMenu;
+
   /// No description provided for @docInTrash.
   ///
   /// In en, this message translates to:

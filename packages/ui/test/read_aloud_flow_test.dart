@@ -14,7 +14,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:ui/src/documents/read_aloud.dart' show ReadState;
 
-import 'documents_flow_test.dart' show openDocuments, pageState, pumpApp, saves, tapKey, world;
+import 'documents_flow_test.dart' show docMenu, openDocuments, pageState, pumpApp, saves, tapKey, world;
 import 'fake_tts.dart';
 import 'fake_world.dart';
 
@@ -46,7 +46,7 @@ bool enabled(WidgetTester tester, String key) => tester.widget<IconButton>(find.
 void main() {
   testWidgets('D7: read sentence by sentence, each selected in the editor, which reads only; nothing saved', (tester) async {
     final (w, _) = await openDoc(tester, body([('a', viText), ('b', 'Xong.')]));
-    await tapKey(tester, 'doc-read-aloud');
+    await docMenu(tester, 'doc-read-aloud');
     expect(find.byKey(const Key('doc-reader')), findsOneWidget);
     expect(position(tester), 'Sentence 1 of 4');
     expect(tester.widget<Text>(find.byKey(const Key('tts-voice-name'))).data, 'Microsoft An', reason: 'a Vietnamese voice');
@@ -84,7 +84,7 @@ void main() {
 
   testWidgets('pause stops the voice and starts the sentence over; stop goes back to the start', (tester) async {
     final (w, _) = await openDoc(tester, body([('a', viText)]));
-    await tapKey(tester, 'doc-read-aloud');
+    await docMenu(tester, 'doc-read-aloud');
     await tapKey(tester, 'tts-play');
     w.tts.finish();
     await tester.pumpAndSettle();
@@ -102,7 +102,7 @@ void main() {
 
   testWidgets('previous and next: while reading they read that sentence; paused they only move', (tester) async {
     final (w, _) = await openDoc(tester, body([('a', viText)]));
-    await tapKey(tester, 'doc-read-aloud');
+    await docMenu(tester, 'doc-read-aloud');
     expect(enabled(tester, 'tts-previous'), isFalse);
     await tapKey(tester, 'tts-next');
     expect(position(tester), 'Sentence 2 of 3');
@@ -126,7 +126,7 @@ void main() {
       w.tts.list = [an, const TtsVoice(name: 'Google tiếng Việt', locale: 'vi_VN'), zira];
       w.voiceFor['vi'] = 'Google tiếng Việt';
     });
-    await tapKey(tester, 'doc-read-aloud');
+    await docMenu(tester, 'doc-read-aloud');
     expect(tester.widget<Text>(find.byKey(const Key('tts-speed-value'))).data, '1.25×');
     expect(tester.widget<Text>(find.byKey(const Key('tts-voice-name'))).data, 'Google tiếng Việt');
     await tapKey(tester, 'tts-play');
@@ -143,7 +143,7 @@ void main() {
 
   testWidgets('an English document gets an English voice', (tester) async {
     final (w, _) = await openDoc(tester, body([('a', 'Meeting at nine. Bring a chair.')]));
-    await tapKey(tester, 'doc-read-aloud');
+    await docMenu(tester, 'doc-read-aloud');
     await tapKey(tester, 'tts-play');
     expect(spoken(w), ['Microsoft David:1.0:Meeting at nine.'], reason: 'the first English voice');
     expect(find.byKey(const Key('tts-no-voice')), findsNothing);
@@ -151,7 +151,7 @@ void main() {
 
   testWidgets('D5: no Vietnamese voice: the reader says so and how to add one; another voice can be picked', (tester) async {
     final (w, _) = await openDoc(tester, body([('a', viText)]), setUp: (w) => w.tts.list = [david, zira]);
-    await tapKey(tester, 'doc-read-aloud');
+    await docMenu(tester, 'doc-read-aloud');
     expect(find.textContaining('This device has no Vietnamese voice.'), findsOneWidget);
     expect(find.textContaining('Android Settings → Text-to-speech output'), findsOneWidget);
     expect(enabled(tester, 'tts-play'), isFalse);
@@ -166,7 +166,7 @@ void main() {
     debugDefaultTargetPlatformOverride = TargetPlatform.windows;
     try {
       await openDoc(tester, body([('a', viText)]), setUp: (w) => w.tts.list = [zira]);
-      await tapKey(tester, 'doc-read-aloud');
+      await docMenu(tester, 'doc-read-aloud');
       expect(find.textContaining('Windows Settings → Time & language → Speech → Add voices.'), findsOneWidget);
     } finally {
       debugDefaultTargetPlatformOverride = null;
@@ -175,7 +175,7 @@ void main() {
 
   testWidgets('no voices at all, or nothing to read: said, and nothing can be read', (tester) async {
     await openDoc(tester, body([('a', viText)]), setUp: (w) => w.tts.list = []);
-    await tapKey(tester, 'doc-read-aloud');
+    await docMenu(tester, 'doc-read-aloud');
     expect(find.text('This device has no voices for reading aloud.'), findsOneWidget);
     expect(enabled(tester, 'tts-play'), isFalse);
     expect(find.byKey(const Key('tts-voice')), findsNothing);
@@ -183,14 +183,14 @@ void main() {
 
   testWidgets('nothing to read', (tester) async {
     await openDoc(tester, body([('a', '   ')]));
-    await tapKey(tester, 'doc-read-aloud');
+    await docMenu(tester, 'doc-read-aloud');
     expect(find.text('There is no text to read in this document.'), findsOneWidget);
     expect(enabled(tester, 'tts-play'), isFalse);
   });
 
   testWidgets('the voice fails on a sentence: reading pauses there and says so', (tester) async {
     final (w, _) = await openDoc(tester, body([('a', viText)]));
-    await tapKey(tester, 'doc-read-aloud');
+    await docMenu(tester, 'doc-read-aloud');
     await tapKey(tester, 'tts-play');
     w.tts.finish(false);
     await tester.pumpAndSettle();
@@ -201,7 +201,7 @@ void main() {
 
   testWidgets('D6: leaving the page stops the reading; the app in the background pauses it', (tester) async {
     final (w, _) = await openDoc(tester, body([('a', viText)]));
-    await tapKey(tester, 'doc-read-aloud');
+    await docMenu(tester, 'doc-read-aloud');
     await tapKey(tester, 'tts-play');
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);

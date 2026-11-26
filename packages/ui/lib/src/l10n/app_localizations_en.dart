@@ -2264,6 +2264,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get docViewOnly => 'View only';
 
   @override
+  String get docTitleEdit => 'Edit the title';
+
+  @override
+  String get docTitleDone => 'Done with the title';
+
+  @override
+  String get docStopReading => 'Stop reading aloud';
+
+  @override
+  String get docLinksMenu => 'Backlinks and linked items';
+
+  @override
   String get docInTrash =>
       'This document is in the trash. Restore it to change it.';
 
