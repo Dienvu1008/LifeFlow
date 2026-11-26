@@ -11,6 +11,7 @@
 //   plan     the hours of a day plan; the language of plans
 import 'package:application/application.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -329,6 +330,19 @@ class _AssistantSettingsScreenState extends ConsumerState<AssistantSettingsScree
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: TextField(key: const Key('ai-address'), controller: _address, decoration: InputDecoration(labelText: l.aiAddress)),
+            ),
+          // P06 T8 (the owner's decision): what the provider does with the data.
+          if (_provider.termsUrl.isNotEmpty)
+            ListTile(
+              key: const Key('ai-terms'),
+              leading: const Icon(Icons.policy_outlined),
+              title: Text(l.aiTerms(_provider.label)),
+              subtitle: Text(_provider.termsUrl),
+              trailing: const Icon(Icons.copy),
+              onTap: () async {
+                await Clipboard.setData(ClipboardData(text: _provider.termsUrl));
+                if (mounted) _snack(l.aiTermsCopied);
+              },
             ),
           ListTile(
               key: const Key('ai-key-status'),

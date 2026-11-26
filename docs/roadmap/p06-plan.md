@@ -140,7 +140,7 @@ Out of scope for P06:
 | **T5** Cloud engine (**done**: [ADR-0085](../adr/0085-cloud-model-engine.md); real services in S-18) | The adapter (S-18), the key in secure storage, the consent sheet, token counts and the cap | adapter tests against a fake server; consent tests | no | 2–3 |
 | **T6** Orchestrator and tools (**done**: [ADR-0086](../adr/0086-assistant-orchestrator.md)) | The turn loop, the Tool Gateway with the fixed tool list, untrusted tagging, the injection test, routing (local/cloud by class, OQ-AI-2 decline) | integration tests with a scripted fake model; the injection test | no | 3–4 |
 | **T7** The assistant in the UI (**done**: [ADR-0087](../adr/0087-assistant-ui.md)) | "Plan my day" and "Fix this conflict" (proposals with approve each or all, stale shown, regenerate); "Ask about this document/PDF"; the history; settings (model, cloud, key, cap) | widget tests with a fake engine | no | 4–5 |
-| **T8** On the devices | Your Windows and Android: the use cases of D1 in Vietnamese and English, offline, with and without cloud, consent, a stale proposal | your check | **yes** | 1 |
+| **T8** (checklist: [p06-device-check.md](../testing/p06-device-check.md)) On the devices | Your Windows and Android: the use cases of D1 in Vietnamese and English, offline, with and without cloud, consent, a stale proposal | your check | **yes** | 1 |
 | **T9** P06 exit gate | p06-exit-gate.md, ADRs, invariants, risks; your review | all suites, CI | yes | 1 |
 
 Order: S-17 (and S-18) → T1 → T2 → T3 → T4 → T5 → T6 → T7 → T8 → T9. T1–T3 do not need a model and can start while you run the spikes.

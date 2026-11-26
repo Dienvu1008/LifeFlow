@@ -44,7 +44,8 @@ jobs:
           dart pub get
           dart run build_runner build
           dart analyze
-          dart test
+          # Each failed test becomes an annotation (its name and message).
+          dart test -r github
       - name: FF-ARCH-01 (pure domain import scan)
         run: dart run tools/fitness/ff_arch_01_pure_domain.dart
       - name: FF-ARCH-04 (ui depends on application ports only)
@@ -80,13 +81,13 @@ jobs:
         run: |
           flutter pub get
           flutter analyze
-          flutter test
+          flutter test -r github
       - name: App analyze + integration tests (real store + gateway behind the UI)
         working-directory: apps/lifeflow_app
         run: |
           flutter pub get
           flutter analyze
-          flutter test
+          flutter test -r github
 
   # P04 (p04-plan.md D3): the sync server schema and its allow/deny tests
   # (RLS, R-PERMISSION) on a local Supabase database in Docker.

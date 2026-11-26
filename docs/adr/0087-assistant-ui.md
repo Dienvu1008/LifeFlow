@@ -65,3 +65,4 @@ T3–T6 built the assistant behind ports. The person needs to reach it, see what
   - Settings shows this platform's models, and a key saved reaches the key store, not the screen.
 - A bug found by the tests: "Send without these" also consented to the waiting items, so they would have been sent. Fixed and covered.
 - Mutations: 16, run one at a time, over the consent choice, the proposal card, the outcome texts, the download warning, the key field and the entries. 14 were killed at once. Two survived and got tests: "Regenerate" shown with nothing stale, and approve buttons left on decided changes. All 16 killed after that.
+- P06 T8 (the owner's decision): each provider's terms page (what it does with API data: training, retention) is linked in the cloud settings; a tap copies the link, as the app does with other web links. The addresses were checked (HTTP 200) on 2026-11-04 and are kept in `CloudProvider.termsUrl`.

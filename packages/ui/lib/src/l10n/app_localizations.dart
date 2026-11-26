@@ -5295,6 +5295,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This is not a GGUF model file.'**
   String get aiNotGguf;
+
+  /// No description provided for @aiTerms.
+  ///
+  /// In en, this message translates to:
+  /// **'How {provider} uses your data (its terms)'**
+  String aiTerms(String provider);
+
+  /// No description provided for @aiTermsCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied: open it in your browser'**
+  String get aiTermsCopied;
 }
 
 class _AppLocalizationsDelegate
