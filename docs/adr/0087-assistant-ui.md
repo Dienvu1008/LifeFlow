@@ -1,6 +1,6 @@
 # ADR-0087: The assistant in the app
 
-- Status: Accepted (P06 task T7, 2026-11-04)
+- Status: Accepted (P06 task T7, 2026-11-04); part 1 ("not a new tab") superseded by [ADR-0088](0088-assistant-destination-and-free-chat.md)
 - Date: 2026-11-04
 - Deciders: implementation within [p06-plan.md](../roadmap/p06-plan.md) (the owner's D1–D10; the owner's call after S-17 on phones)
 - Related: [ADR-0082](0082-ai-history-and-approved-changes.md), [ADR-0083](0083-local-model-engine.md), [ADR-0085](0085-cloud-model-engine.md), [ADR-0086](0086-assistant-orchestrator.md), [ui-ux-architecture.md](../architecture/ui-ux-architecture.md)
