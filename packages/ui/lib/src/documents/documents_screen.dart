@@ -13,7 +13,9 @@ import '../screens/spaces_ui.dart' show moveItemFlow, moveLabel;
 import '../screens/tasks_screen.dart' show showTextDialog;
 import '../shell.dart' show shellMenuButton;
 import '../task_actions.dart' show reportResult, showMessage;
+import '../overview_tree.dart' show DropZone;
 import '../widgets/options_menu.dart';
+import '../widgets/row_drag.dart';
 import 'document_page.dart';
 
 /// A document with its depth in the tree.
@@ -37,6 +39,56 @@ List<TreeRow> treeRows(List<DocumentNodeView> tree, Set<String> collapsed) {
     out.add((node: n, depth: d, hasChildren: parents.contains(n.id)));
   }
   return out;
+}
+
+/// Where a dropped document goes: under [parentId] (null: the top), after
+/// [afterId] (null: first), as `DocumentService.move` takes it.
+typedef DocumentDrop = ({String? parentId, String? afterId});
+
+/// P06b W5 (owner UI 3): where [dragged] lands when dropped on the row of
+/// [targetId] in [zone] of the tree as shown ([collapsed] folded):
+///   before   just above the row, in the row's parent
+///   into     the row's last subdocument
+///   after    just below the row: its first subdocument when it is open with
+///            subdocuments (they show right below), else after it
+/// Null when nothing would change, or the target is the dragged document or
+/// under it (DOC-001: never under itself).
+DocumentDrop? resolveDocumentDrop(
+    List<DocumentNodeView> tree, Set<String> collapsed, String dragged, String targetId, DropZone zone) {
+  final ids = {for (final n in tree) n.id};
+  String? parentOf(String id) {
+    final p = tree.firstWhere((n) => n.id == id).parentId;
+    return ids.contains(p) ? p : null;
+  }
+
+  if (!ids.contains(dragged) || !ids.contains(targetId)) return null;
+  // The dragged one and everything under it cannot take it.
+  for (String? x = targetId; x != null; x = parentOf(x)) {
+    if (x == dragged) return null;
+  }
+  List<String> kids(String? parent) => [for (final n in tree) if (n.id != dragged && parentOf(n.id) == parent) n.id];
+
+  final DocumentDrop drop;
+  switch (zone) {
+    case DropZone.into:
+      final k = kids(targetId);
+      drop = (parentId: targetId, afterId: k.isEmpty ? null : k.last);
+    case DropZone.before:
+      final parent = parentOf(targetId);
+      final k = kids(parent);
+      final i = k.indexOf(targetId);
+      drop = (parentId: parent, afterId: i <= 0 ? null : k[i - 1]);
+    case DropZone.after:
+      drop = kids(targetId).isNotEmpty && !collapsed.contains(targetId)
+          ? (parentId: targetId, afterId: null)
+          : (parentId: parentOf(targetId), afterId: targetId);
+  }
+  // Where it already is: nothing to do.
+  final parent = parentOf(dragged);
+  final all = [for (final n in tree) if (parentOf(n.id) == parent) n.id];
+  final i = all.indexOf(dragged);
+  final current = (parentId: parent, afterId: i <= 0 ? null : all[i - 1]);
+  return drop == current ? null : drop;
 }
 
 /// "New document" (under [parentId] when given): asks for a title, then
@@ -104,6 +156,27 @@ class DocumentsScreen extends ConsumerStatefulWidget {
 class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
   final _collapsed = <String>{};
 
+  /// P06b W5: the document being dragged, and the row and zone under it.
+  String? _dragging;
+  ({String id, DropZone zone})? _hover;
+  Offset? _pointer;
+
+  /// [id] is [ancestor] or under it.
+  static bool _isUnder(List<DocumentNodeView> tree, String id, String ancestor) {
+    final parent = {for (final n in tree) n.id: n.parentId};
+    for (String? x = id; x != null; x = parent[x]) {
+      if (x == ancestor) return true;
+    }
+    return false;
+  }
+
+  /// The depth [drop] puts a document at, for the drop line.
+  static int _depthOf(List<TreeRow> rows, DocumentDrop drop) {
+    if (drop.parentId == null) return 0;
+    final p = rows.where((r) => r.node.id == drop.parentId).firstOrNull;
+    return p == null ? 0 : p.depth + 1;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
@@ -153,15 +226,16 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
               );
             }
             final rows = treeRows(tree, _collapsed);
-            return ListView(
-              key: const Key('doc-tree'),
-              padding: const EdgeInsets.only(bottom: 96),
-              children: [
-                for (final r in rows)
-                  ListTile(
-                    key: ValueKey('doc-${r.node.id}'),
-                    contentPadding: EdgeInsets.only(left: 8 + 20.0 * r.depth, right: 4),
-                    leading: r.hasChildren
+            final look = ref.watch(appearanceProvider).valueOrNull ?? const AppearanceSettings();
+            final drop = _dragging == null || _hover == null
+                ? null
+                : resolveDocumentDrop(tree, _collapsed, _dragging!, _hover!.id, _hover!.zone);
+            Widget tile(TreeRow r) => ListTile(
+                  key: ValueKey('doc-${r.node.id}'),
+                  contentPadding: EdgeInsets.only(left: 8 + 20.0 * r.depth, right: 4),
+                  leading: Row(mainAxisSize: MainAxisSize.min, children: [
+                    if (canEdit) const RowDragHandle(),
+                    r.hasChildren
                         ? IconButton(
                             key: ValueKey('doc-toggle-${r.node.id}'),
                             tooltip: r.node.title,
@@ -170,14 +244,150 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
                                 _collapsed.contains(r.node.id) ? _collapsed.remove(r.node.id) : _collapsed.add(r.node.id)),
                           )
                         : const SizedBox(width: 48, child: Icon(Icons.description_outlined)),
-                    title: Text(r.node.title, maxLines: 2, overflow: TextOverflow.ellipsis),
-                    onTap: () => openDocumentPage(context, r.node.id),
-                    trailing: canEdit ? _DocMenu(node: r.node) : null,
-                  ),
-              ],
+                  ]),
+                  title: Text(r.node.title, maxLines: 2, overflow: TextOverflow.ellipsis),
+                  onTap: () => openDocumentPage(context, r.node.id),
+                  trailing: canEdit ? _DocMenu(node: r.node) : null,
+                );
+            return DragHandlesScope(
+              show: showDragHandles(context, look.dragHandles),
+              // The drop zone follows the pointer, not the dragged copy's corner.
+              child: Listener(
+                onPointerDown: (e) => _pointer = e.position,
+                onPointerMove: (e) => _pointer = e.position,
+                child: ListView(
+                key: const Key('doc-tree'),
+                padding: const EdgeInsets.only(bottom: 96),
+                children: [
+                  for (final r in rows)
+                    if (!canEdit)
+                      tile(r)
+                    else
+                      _DocDropSlot(
+                        key: ValueKey('doc-slot-${r.node.id}'),
+                        row: r,
+                        hover: _hover?.id == r.node.id ? _hover!.zone : null,
+                        // The line at the depth it lands on; nothing shown where it cannot go.
+                        landing: _hover?.id == r.node.id && drop != null ? _depthOf(rows, drop) : null,
+                        fade: _dragging != null && _isUnder(tree, r.node.id, _dragging!),
+                        onHover: (zone) {
+                          if (_hover?.id != r.node.id || _hover?.zone != zone) setState(() => _hover = (id: r.node.id, zone: zone));
+                        },
+                        onLeave: () {
+                          if (_hover?.id == r.node.id) setState(() => _hover = null);
+                        },
+                        onDrop: (dragged, zone) {
+                          setState(() => _hover = null);
+                          final to = resolveDocumentDrop(tree, _collapsed, dragged, r.node.id, zone);
+                          if (to == null) return;
+                          // Dropped into a folded one: open it, so the document is seen there.
+                          if (to.parentId != null) _collapsed.remove(to.parentId);
+                          reportResult(context, ref.read(documentServiceProvider).move(dragged, parentId: to.parentId, afterId: to.afterId));
+                        },
+                        onDragStart: () => setState(() => _dragging = r.node.id),
+                        onDragEnd: () => setState(() {
+                          _dragging = null;
+                          _hover = null;
+                        }),
+                        pointer: () => _pointer,
+                        child: tile(r),
+                      ),
+                ],
+              ),
+              ),
             );
           },
         );
+  }
+}
+
+/// P06b W5 (owner UI 3): a row of the tree that can be dragged (by its
+/// handle, or a long press on touch and where the handles are hidden) and
+/// dropped on: its top quarter puts the document before it, its bottom
+/// quarter after it, the middle into it.
+class _DocDropSlot extends StatelessWidget {
+  const _DocDropSlot({
+    super.key,
+    required this.row,
+    required this.hover,
+    required this.landing,
+    required this.fade,
+    required this.onHover,
+    required this.onLeave,
+    required this.onDrop,
+    required this.onDragStart,
+    required this.onDragEnd,
+    required this.pointer,
+    required this.child,
+  });
+  final TreeRow row;
+  final Offset? Function() pointer;
+
+  /// The zone of this row under the dragged document, if any.
+  final DropZone? hover;
+
+  /// The depth the document would land at; null when it cannot land here.
+  final int? landing;
+
+  /// This row is the dragged one, or under it.
+  final bool fade;
+  final ValueChanged<DropZone> onHover;
+  final VoidCallback onLeave;
+  final void Function(String dragged, DropZone zone) onDrop;
+  final VoidCallback onDragStart;
+  final VoidCallback onDragEnd;
+  final Widget child;
+
+  DropZone? _zoneAt(BuildContext context, Offset global) {
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return null;
+    final f = (box.globalToLocal(global).dy / box.size.height).clamp(0.0, 1.0);
+    return f < 0.25 ? DropZone.before : (f > 0.75 ? DropZone.after : DropZone.into);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final h = hover;
+    final ok = landing != null;
+    Widget content = AnimatedOpacity(opacity: fade ? 0.35 : 1, duration: const Duration(milliseconds: 120), child: child);
+    if (h == DropZone.into && ok) {
+      content = Material(key: const Key('doc-drop-into'), color: scheme.primaryContainer.withValues(alpha: 0.6), child: content);
+    }
+    final target = DragTarget<String>(
+      onWillAcceptWithDetails: (_) => true,
+      onMove: (d) {
+        final z = _zoneAt(context, pointer() ?? d.offset);
+        if (z != null) onHover(z);
+      },
+      onLeave: (_) => onLeave(),
+      onAcceptWithDetails: (d) {
+        final z = _zoneAt(context, pointer() ?? d.offset) ?? hover;
+        if (z != null) onDrop(d.data, z);
+      },
+      builder: (context, _, __) => Stack(children: [
+        content,
+        if (h != null && h != DropZone.into && ok)
+          PositionedDirectional(
+            key: const Key('doc-drop-line'),
+            start: 8 + 20.0 * landing! + 8,
+            end: 8,
+            top: h == DropZone.before ? 0 : null,
+            bottom: h == DropZone.after ? 0 : null,
+            height: 3,
+            child: DecoratedBox(decoration: BoxDecoration(color: scheme.primary, borderRadius: BorderRadius.circular(2))),
+          ),
+      ]),
+    );
+    return RowDragScope(
+      id: row.node.id,
+      title: row.node.title,
+      preview: child,
+      rowBox: () => context.findRenderObject() as RenderBox?,
+      onStart: onDragStart,
+      onEnd: onDragEnd,
+      child: Builder(builder: (context) => longPressRowDrag(context, target)),
+    );
   }
 }
 

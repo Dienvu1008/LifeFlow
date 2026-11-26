@@ -109,7 +109,17 @@ class FakeDocuments implements DocumentService, DocumentQueries, SearchQueries, 
   @override
   Future<CommandResult> move(String id, {String? parentId, String? afterId}) async {
     calls.add('doc.move:$id:$parentId');
+    if (afterId != null) calls.add('doc.after:$id:$afterId');
     docs[id]!.parentId = parentId;
+    // P06b W5: the place among its siblings, as the real service keeps it.
+    final all = [for (final d in docs.values) if (d.id != id) d]..sort((a, b) => a.order.compareTo(b.order));
+    final at = afterId == null
+        ? all.indexWhere((d) => d.parentId == parentId)
+        : all.indexWhere((d) => d.id == afterId) + 1;
+    all.insert(at < 0 ? all.length : at, docs[id]!);
+    for (final (i, d) in all.indexed) {
+      d.order = i;
+    }
     _changes.add(null);
     return CommandOk(id, Version(docs[id]!.version), const []);
   }
