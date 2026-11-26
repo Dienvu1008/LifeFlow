@@ -31,6 +31,7 @@ ADR-0088 gave the assistant a destination and a free chat that reads all spaces 
    - Each answer shows its engine and model, and its proposal under it.
    - "New chat" starts again; a chat from the history opens and goes on.
    - When a message is not kept (consent cancelled, declined, failed), its words go back into the field.
+7. **The order of messages.** A session's messages are read by time, then by the order they were written on this device (rowid), then by id. Times are kept to the second and a UUID v7 is random within a millisecond, so a question and its answer written together could come back swapped. This was the infrastructure test that failed about one CI run in three.
 ## Consequences
 - Older app versions on other devices do not list chat sessions (they skip an unknown purpose) until they are updated; nothing is lost.
 - Each cloud turn with private items asks for consent again (D6 is per request). If this proves tiring, a "for this chat" consent is a later decision for the owner.
