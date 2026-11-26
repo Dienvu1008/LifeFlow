@@ -65,7 +65,6 @@ What tests could not cover, and this check does:
 | 29 | Android | Type the Groq key; plan tomorrow with the cloud, consenting | A proposal in a few seconds; approve one; sync; Windows shows it applied | |
 | 30 | Android | Ask about P1 with the cloud | The answer from the PDF's text | |
 | 31 | Both | Note the app size: the Windows folder, the installed Android app | About 104 MB on Windows, about 60 MB for the arm64 APK (S-17's probe: 170 and 116) | |
-
 | | | **Part 2: the new screens (P06b)** | | |
 | 32 | Windows | Install the build over the earlier one and open the profile with your data | Everything is there (tasks, lists, events, documents, calendar). The Archive is empty. The Trash shows what you trashed before (tasks, lists, events, documents), each with its date. Nothing was deleted or archived by the upgrade | |
 | 33 | Windows | The window wide: look at the left rail | In order: Overview, Timeline, Calendar, Documents, Assistant, Habits, Goals, Archive, Trash, Settings; the profile on top | |
