@@ -58,7 +58,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   /// The schema this build writes (and the newest export it accepts).
-  static const currentSchemaVersion = 18;
+  static const currentSchemaVersion = 19;
 
   /// The last schema that changed a synced record's shape: what a sealed
   /// record says it is (ADR-0056). v12 changed only the local outbox. v13
@@ -68,8 +68,9 @@ class AppDatabase extends _$AppDatabase {
   /// (ADR-0065) adds the member card kind. v16 (ADR-0067) adds documents,
   /// their revisions and their links. v17 (ADR-0077) changes only device
   /// tables (the text of PDFs). v18 (ADR-0082) adds the assistant's
-  /// sessions, messages and proposals.
-  static const recordSchemaVersion = 18;
+  /// sessions, messages and proposals. v19 (ADR-0094) adds archivedAt and
+  /// purgedAt to lists, tasks, events and documents.
+  static const recordSchemaVersion = 19;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -213,6 +214,22 @@ class AppDatabase extends _$AppDatabase {
             }
             await _createAiIndexes();
             await m.addColumn(auditLog, auditLog.aiProvenance);
+          }
+          if (from < 19) {
+            // P06b W6 (ADR-0094): archive and delete for good. A table made in
+            // an earlier step of this upgrade already has the columns.
+            await m.addColumn(taskLists, taskLists.archivedAt);
+            await m.addColumn(taskLists, taskLists.purgedAt);
+            await m.addColumn(tasks, tasks.archivedAt);
+            await m.addColumn(tasks, tasks.purgedAt);
+            if (from >= 4) {
+              await m.addColumn(events, events.archivedAt);
+              await m.addColumn(events, events.purgedAt);
+            }
+            if (from >= 16) {
+              await m.addColumn(documents, documents.archivedAt);
+              await m.addColumn(documents, documents.purgedAt);
+            }
           }
         },
         beforeOpen: (details) async {

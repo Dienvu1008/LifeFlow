@@ -145,6 +145,36 @@ class DirectorySettingsService implements SettingsService {
   @override
   Future<void> setReadingVoice(String language, String name) => directory.writeSetting(_voice(language), name);
 
+  // P06b W6 (ADR-0094): this device's.
+  static const _retention = 'trash.retentionDays';
+  static const _showArchived = 'archive.showScheduled';
+
+  /// Kept in step with the stored setting (read by the agenda queries).
+  bool showArchivedCache = false;
+
+  @override
+  Future<int> trashRetentionDays() async {
+    final v = int.tryParse(await directory.readSetting(_retention) ?? '');
+    return v != null && trashRetentionChoices.contains(v) ? v : defaultTrashRetentionDays;
+  }
+
+  @override
+  Future<void> setTrashRetentionDays(int days) =>
+      directory.writeSetting(_retention, '${trashRetentionChoices.contains(days) ? days : defaultTrashRetentionDays}');
+
+  @override
+  Future<bool> showArchivedScheduled() async {
+    final v = await directory.readSetting(_showArchived) == 'true';
+    showArchivedCache = v;
+    return v;
+  }
+
+  @override
+  Future<void> setShowArchivedScheduled(bool show) async {
+    showArchivedCache = show;
+    await directory.writeSetting(_showArchived, '$show');
+  }
+
   static const _collapsed = 'ui.overview.collapsed';
 
   @override
@@ -260,9 +290,9 @@ class DriftTaskQueries implements TaskQueries {
       // P03 UX U2: only a live list counts (a merge can leave a task in a
       // trashed list; it shows in no list then).
       leftOuterJoin(db.taskLists,
-          db.taskLists.id.equalsExp(db.tasks.taskListId) & db.taskLists.deletedAt.isNull()),
+          db.taskLists.id.equalsExp(db.tasks.taskListId) & db.taskLists.deletedAt.isNull() & db.taskLists.archivedAt.isNull()),
     ])
-      ..where(db.tasks.workspaceId.equals(ws) & db.tasks.deletedAt.isNull())
+      ..where(db.tasks.workspaceId.equals(ws) & db.tasks.deletedAt.isNull() & db.tasks.archivedAt.isNull())
       // P03 UX U2: order keys within each container (new items are keyed
       // at the end, so this keeps the creation order); id breaks a tie.
       ..orderBy([OrderingTerm.asc(db.tasks.orderKey), OrderingTerm.asc(db.tasks.id)]);

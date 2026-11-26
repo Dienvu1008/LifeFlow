@@ -110,7 +110,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Old project'), findsOneWidget);
     expect(find.text('Get fit'), findsNothing);
-    await tester.tap(find.text('Trash'));
+    await tester.tap(find.descendant(of: find.byKey(const Key('goal-filter')), matching: find.text('Trash')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('goals-empty')), findsOneWidget);
   });
@@ -212,7 +212,7 @@ void main() {
     expect(w.calls.last, 'goal.trash:g1');
     expect(find.byKey(const Key('goal-page')), findsNothing, reason: 'the page closes');
     expect(find.textContaining('Its tasks and events are kept'), findsOneWidget);
-    await tester.tap(find.text('Trash'));
+    await tester.tap(find.descendant(of: find.byKey(const Key('goal-filter')), matching: find.text('Trash')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('goal-restore-g1')));
     await tester.pumpAndSettle();

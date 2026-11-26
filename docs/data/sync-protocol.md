@@ -61,7 +61,7 @@ A conflict is: an incoming op has `baseVersion = v`, but the local entity is alr
 ## 6. Tombstones and deletion
 - A delete is a tombstone op; applying it sets the local tombstone, it does not hard-delete (LF-INV-SYNC-004).
 - Delete-vs-edit conflict (UC-19): a tombstone meeting a concurrent edit surfaces a conflict record; default proposal is tombstone wins for trash semantics but the edit is recoverable from history. [Open] OQ-SYNC-2, P04.
-- Purge (hard delete) only happens locally after a retention window and is itself a replicated op so other devices purge too.
+- Purge (hard delete) only happens locally after a retention window and is itself a replicated op so other devices purge too. Since ADR-0094 (schema v19) "delete forever" is that replicated op: the record is blanked and marked `purgedAt`, its tombstone stays, and the server's purge (90 days) later drops the row on every device.
 
 ## 7. Retry and failure
 - Push/pull use bounded exponential backoff; offline simply defers (NFR-OFF-01 unaffected).

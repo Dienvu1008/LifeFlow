@@ -19,6 +19,7 @@ import 'screens/focus_page.dart';
 import 'screens/goals_screen.dart';
 import 'screens/profiles_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/shelf_screens.dart';
 import 'screens/spaces_ui.dart';
 import 'screens/sync_screen.dart';
 import 'screens/tasks_screen.dart';
@@ -32,7 +33,7 @@ import 'shell.dart';
 /// callback) goes to the Overview, so the app never replaces itself with a
 /// "Page Not Found" screen. The old "/tasks" (P01–P03 links and the shell's
 /// first location until U6) is the Overview.
-const _knownRoots = ['/overview', '/timeline', '/calendar', '/documents', '/assistant', '/habits', '/goals', '/settings', '/profiles'];
+const _knownRoots = ['/overview', '/timeline', '/calendar', '/documents', '/assistant', '/habits', '/goals', '/archive', '/trash', '/settings', '/profiles'];
 
 String? _redirectUnknown(GoRouterState state) {
   final path = state.uri.path;
@@ -72,6 +73,8 @@ GoRouter createRouter({String initialLocation = '/overview'}) => GoRouter(
               ('/assistant', AssistantScreen()),
               ('/habits', HabitsScreen()),
               ('/goals', GoalsScreen()),
+              ('/archive', ArchiveScreen()),
+              ('/trash', TrashScreen()),
               ('/settings', SettingsScreen()),
               ('/profiles', ProfilesScreen()),
             ])

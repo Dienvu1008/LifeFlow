@@ -104,13 +104,18 @@ class SystemDeviceTime implements DeviceTime {
 }
 
 class DriftAgendaQueries implements AgendaQueries {
-  DriftAgendaQueries(this.db, this.time, {tk.OccurrenceLimits Function()? limits})
+  DriftAgendaQueries(this.db, this.time, {tk.OccurrenceLimits Function()? limits, bool Function()? showArchived})
       : _store = ProfileStore(db),
-        _limits = limits ?? (() => tk.OccurrenceLimits.standard);
+        _limits = limits ?? (() => tk.OccurrenceLimits.standard),
+        showArchived = showArchived ?? (() => false);
   final AppDatabase db;
   final DeviceTime time;
   final ProfileStore _store;
   final tk.OccurrenceLimits Function() _limits;
+
+  /// P06b W6 (ADR-0094): whether archived tasks and events that are
+  /// scheduled show on the Calendar and the Timeline (a setting; no).
+  final bool Function() showArchived;
 
   LocalDate _today() => tk.dateAt(time.now(), time.zone());
 
@@ -149,7 +154,8 @@ class DriftAgendaQueries implements AgendaQueries {
     final ws = profile.activeWorkspaceId.value;
     final tasks = {
       for (final t in await (db.select(db.tasks)
-            ..where((t) => t.workspaceId.equals(ws) & t.deletedAt.isNull()))
+            ..where((t) =>
+                t.workspaceId.equals(ws) & t.deletedAt.isNull() & (showArchived() ? const Constant(true) : t.archivedAt.isNull())))
           .get())
         t.id: t,
     };

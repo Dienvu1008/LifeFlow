@@ -257,6 +257,16 @@ abstract interface class SettingsService {
   /// by its name; null when none was chosen.
   Future<String?> readingVoice(String language);
   Future<void> setReadingVoice(String language, String name);
+
+  /// P06b W6 (ADR-0094): the days the trash keeps an item before it is deleted
+  /// for good ([defaultTrashRetentionDays]; 0 keeps it until the trash is emptied).
+  Future<int> trashRetentionDays();
+  Future<void> setTrashRetentionDays(int days);
+
+  /// P06b W6: whether archived tasks and events that are scheduled still show on
+  /// the Calendar and the Timeline (no by default).
+  Future<bool> showArchivedScheduled();
+  Future<void> setShowArchivedScheduled(bool show);
 }
 
 /// The IANA time zones this build knows, for a zone picker.

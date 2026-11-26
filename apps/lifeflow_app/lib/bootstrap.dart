@@ -164,10 +164,12 @@ Future<AppWiring> openSession({
     // limits are known before the first query; saving them updates the cache.
     final settings = DirectorySettingsService(directory);
     await settings.planningSettings();
+    await settings.showArchivedScheduled(); // primes what the agenda reads
     const zones = KernelZoneCatalog();
     final zone = zones.deviceZoneOr(deviceZone);
     final deviceTime = SystemDeviceTime(() => zone);
-    final agenda = DriftAgendaQueries(db, deviceTime, limits: () => settings.limitsCache.limits);
+    final agenda = DriftAgendaQueries(db, deviceTime,
+        limits: () => settings.limitsCache.limits, showArchived: () => settings.showArchivedCache);
 
     // P02 T7: this profile's reminders replace whatever is pending on the
     // device (another profile's after a switch or a sign-out lock).
@@ -182,6 +184,14 @@ Future<AppWiring> openSession({
       await habits.closePeriods();
     } catch (e) {
       onWarning?.call('[habits] $e'); // never blocks opening the profile
+    }
+    // P06b W6 (ADR-0094): what has been in the trash long enough is deleted
+    // for good (the retention is a setting; the trash screen does it too).
+    final shelf = DriftShelfService(db, gateway);
+    try {
+      await shelf.purgeOlderThan(await settings.trashRetentionDays());
+    } catch (e) {
+      onWarning?.call('[trash] $e'); // never blocks opening the profile
     }
     final transfer = DriftDataTransferService(db, directory, gateway: gateway);
 
@@ -306,6 +316,8 @@ Future<AppWiring> openSession({
         searchQueriesProvider.overrideWithValue(DriftSearchQueries(db, pdfs: pdfs)),
         attachmentServiceProvider.overrideWithValue(attachments),
         goalServiceProvider.overrideWithValue(DriftGoalService(db, gateway)),
+        shelfServiceProvider.overrideWithValue(shelf),
+        shelfQueriesProvider.overrideWithValue(shelf),
         overviewServiceProvider.overrideWithValue(DriftOverviewService(db, gateway)),
         overviewQueriesProvider.overrideWithValue(DriftOverviewQueries(db)),
         goalQueriesProvider.overrideWithValue(DriftGoalQueries(db, deviceTime)),

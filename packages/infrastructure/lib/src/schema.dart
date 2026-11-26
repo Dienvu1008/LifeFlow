@@ -91,6 +91,12 @@ class TaskLists extends Table with SyncableColumns {
   // and the fractional order key within the item's container.
   IntColumn get colorIndex => integer().nullable()();
   TextColumn get orderKey => text().withDefault(const Constant('a0'))();
+  // P06b W6 (schema v19, ADR-0094): put away without being deleted (null =
+  // not), and deleted for good (null = not): the content is blanked and the
+  // tombstone stays, so every device does the same and the server's purge
+  // later drops the row (GS-14).
+  DateTimeColumn get archivedAt => dateTime().nullable()();
+  DateTimeColumn get purgedAt => dateTime().nullable()();
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -127,6 +133,12 @@ class Tasks extends Table with SyncableColumns {
   // P04b T8 (schema v13, B9): the member a task of a shared space is assigned
   // to (an account id), or null.
   TextColumn get assigneeId => text().nullable()();
+  // P06b W6 (schema v19, ADR-0094): put away without being deleted (null =
+  // not), and deleted for good (null = not): the content is blanked and the
+  // tombstone stays, so every device does the same and the server's purge
+  // later drops the row (GS-14).
+  DateTimeColumn get archivedAt => dateTime().nullable()();
+  DateTimeColumn get purgedAt => dateTime().nullable()();
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -237,6 +249,12 @@ class Events extends Table with SyncableColumns {
   TextColumn get listId => text().nullable()();
   IntColumn get colorIndex => integer().nullable()();
   TextColumn get orderKey => text().withDefault(const Constant('a0'))();
+  // P06b W6 (schema v19, ADR-0094): put away without being deleted (null =
+  // not), and deleted for good (null = not): the content is blanked and the
+  // tombstone stays, so every device does the same and the server's purge
+  // later drops the row (GS-14).
+  DateTimeColumn get archivedAt => dateTime().nullable()();
+  DateTimeColumn get purgedAt => dateTime().nullable()();
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -532,6 +550,12 @@ class Documents extends Table with SyncableColumns {
   TextColumn get title => text()();
   TextColumn get body => text()();
   TextColumn get orderKey => text().withDefault(const Constant('a0'))();
+  // P06b W6 (schema v19, ADR-0094): put away without being deleted (null =
+  // not), and deleted for good (null = not): the content is blanked and the
+  // tombstone stays, so every device does the same and the server's purge
+  // later drops the row (GS-14).
+  DateTimeColumn get archivedAt => dateTime().nullable()();
+  DateTimeColumn get purgedAt => dateTime().nullable()();
   @override
   Set<Column> get primaryKey => {id};
 }

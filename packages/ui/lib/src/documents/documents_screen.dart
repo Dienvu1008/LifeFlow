@@ -10,6 +10,7 @@ import '../l10n.dart';
 import '../messages.dart';
 import '../providers.dart';
 import '../screens/spaces_ui.dart' show moveItemFlow, moveLabel;
+import '../screens/shelf_screens.dart' show archiveFlow;
 import '../screens/tasks_screen.dart' show showTextDialog;
 import '../shell.dart' show shellMenuButton;
 import '../task_actions.dart' show reportResult, showMessage;
@@ -391,7 +392,7 @@ class _DocDropSlot extends StatelessWidget {
   }
 }
 
-enum _DocAction { sub, move, space, trash }
+enum _DocAction { sub, move, space, archive, trash }
 
 class _DocMenu extends ConsumerWidget {
   const _DocMenu({required this.node});
@@ -411,6 +412,8 @@ class _DocMenu extends ConsumerWidget {
             await moveUnderFlow(context, ref, node);
           case _DocAction.space:
             await moveItemFlow(context, ref, kind: 'document', id: node.id);
+          case _DocAction.archive:
+            await archiveFlow(context, ref, ShelfKind.document, node.id, node.title);
           case _DocAction.trash:
             await trashDocumentFlow(context, ref, node.id, node.title);
         }
@@ -419,6 +422,7 @@ class _DocMenu extends ConsumerWidget {
         PopupMenuItem(value: _DocAction.sub, child: Text(l.docNewSub)),
         PopupMenuItem(value: _DocAction.move, child: Text(l.docMoveUnder)),
         if (moveLabel(context, ref) case final m?) PopupMenuItem(value: _DocAction.space, child: Text(m)),
+        PopupMenuItem(value: _DocAction.archive, child: Text(l.shelfArchive)),
         PopupMenuItem(value: _DocAction.trash, child: Text(l.moveToTrash)),
       ],
     );

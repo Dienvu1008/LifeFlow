@@ -12,7 +12,8 @@ class _Destination {
 }
 
 /// P03 UX U6 (ADR-0050): Overview, Timeline, Calendar, (P05a T8, C10)
-/// Documents, (P06b W4, ADR-0088) Assistant, Habits, Goals, Settings.
+/// Documents, (P06b W4, ADR-0088) Assistant, Habits, Goals, (P06b W6) Archive,
+/// Trash, Settings.
 /// Profiles is a branch too, but it is reached from the profile at the top
 /// of the drawer or the rail, not from a destination.
 List<_Destination> _destinationsOf(BuildContext context) {
@@ -25,12 +26,15 @@ List<_Destination> _destinationsOf(BuildContext context) {
     _Destination(l.navAssistant, Icons.auto_awesome_outlined, Icons.auto_awesome),
     _Destination(l.navHabits, Icons.track_changes_outlined, Icons.track_changes),
     _Destination(l.navGoals, Icons.flag_outlined, Icons.flag),
+    // P06b W6 (ADR-0094): what is put away, and what was deleted.
+    _Destination(l.navArchive, Icons.archive_outlined, Icons.archive),
+    _Destination(l.navTrash, Icons.delete_outline, Icons.delete),
     _Destination(l.navSettings, Icons.settings_outlined, Icons.settings),
   ];
 }
 
-/// The branch index of Profiles (after the eight destinations).
-const profilesIndex = 8;
+/// The branch index of Profiles (after the ten destinations).
+const profilesIndex = 10;
 /// Lets a tab's app bar open the shell's navigation drawer. [open] is null
 /// when the layout has no drawer (rail layouts).
 class ShellMenuScope extends InheritedWidget {
@@ -190,6 +194,8 @@ class _AdaptiveScaffoldState extends State<AdaptiveScaffold> {
                   ),
                   if (widget.railSpaces != null) widget.railSpaces!,
                 ]),
+                // P06b W6: ten destinations do not fit a short window.
+                scrollable: true,
                 extended: extended,
                 labelType:
                     extended ? NavigationRailLabelType.none : NavigationRailLabelType.all,

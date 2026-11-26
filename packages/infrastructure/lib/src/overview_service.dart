@@ -28,7 +28,7 @@ class DriftOverviewQueries implements OverviewQueries {
     }
     final ws = profile.activeWorkspaceId.value;
     final q = db.select(db.taskLists)
-      ..where((l) => l.workspaceId.equals(ws) & l.deletedAt.isNull())
+      ..where((l) => l.workspaceId.equals(ws) & l.deletedAt.isNull() & l.archivedAt.isNull())
       ..orderBy([(l) => OrderingTerm.asc(l.orderKey), (l) => OrderingTerm.asc(l.id)]);
     yield* q.watch().map((rows) => [
           for (final l in rows) TaskListView(id: l.id, title: l.title, colorIndex: l.colorIndex, orderKey: l.orderKey)
@@ -49,9 +49,9 @@ class DriftOverviewQueries implements OverviewQueries {
           db.schedules.subjectType.equals('event') &
               db.schedules.subjectId.equalsExp(db.events.id) &
               db.schedules.deletedAt.isNull()),
-      leftOuterJoin(db.taskLists, db.taskLists.id.equalsExp(db.events.listId) & db.taskLists.deletedAt.isNull()),
+      leftOuterJoin(db.taskLists, db.taskLists.id.equalsExp(db.events.listId) & db.taskLists.deletedAt.isNull() & db.taskLists.archivedAt.isNull()),
     ])
-      ..where(db.events.workspaceId.equals(ws) & db.events.deletedAt.isNull())
+      ..where(db.events.workspaceId.equals(ws) & db.events.deletedAt.isNull() & db.events.archivedAt.isNull())
       ..orderBy([OrderingTerm.asc(db.events.orderKey), OrderingTerm.asc(db.events.id)]);
     yield* q.watch().map((rows) => [
           for (final row in rows)

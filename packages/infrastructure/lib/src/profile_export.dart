@@ -320,6 +320,15 @@ class ProfileExport {
         map.putIfAbsent(k.exportKey, () => <Object?>[]);
       }
     }
+    if (fromSchema < 19) {
+      // Schema v19 (ADR-0094): nothing was archived or deleted for good.
+      for (final key in const ['taskLists', 'tasks', 'events', 'documents']) {
+        for (final r in (map[key] as List? ?? const []).whereType<Map>()) {
+          r.putIfAbsent('archivedAt', () => null);
+          r.putIfAbsent('purgedAt', () => null);
+        }
+      }
+    }
     if (fromSchema < 2) {
       for (final p in (map['profiles'] as List).cast<Map<String, Object?>>()) {
         p.putIfAbsent('signedOut', () => false); // schema v2 (ADR-0024)

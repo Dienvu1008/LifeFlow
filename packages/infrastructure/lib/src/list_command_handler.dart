@@ -110,7 +110,7 @@ class ListCommandHandler implements CommandHandler {
       case 'restore':
         if (existing == null || existing.workspaceId != ws) throw DomainRejection('list not found');
         final at = existing.deletedAt;
-        if (at == null) throw DomainRejection('the list is not in the trash');
+        if (at == null || existing.purgedAt != null) throw DomainRejection('the list is not in the trash');
         final by = existing.deletedBy;
         await write(const TaskListsCompanion(deletedAt: Value(null), deletedBy: Value(null)));
         // What went with it: the same tombstone time and actor.

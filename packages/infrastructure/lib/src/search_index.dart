@@ -127,7 +127,7 @@ Future<List<String>> searchTaskIdsIn(AppDatabase db, String workspaceId, String 
   await catchUpSearch(db);
   final rows = await db.customSelect(
     'SELECT t.id AS id FROM tasks_fts f JOIN tasks t ON t.rowid = f.rowid '
-    'WHERE tasks_fts MATCH ? AND t.workspace_id = ? AND t.deleted_at IS NULL ORDER BY rank',
+    'WHERE tasks_fts MATCH ? AND t.workspace_id = ? AND t.deleted_at IS NULL AND t.archived_at IS NULL ORDER BY rank',
     variables: [Variable<String>(q), Variable<String>(workspaceId)],
     readsFrom: {db.tasks},
   ).get();
@@ -141,7 +141,7 @@ Future<List<String>> searchDocumentIdsIn(AppDatabase db, String workspaceId, Str
   await catchUpSearch(db);
   final rows = await db.customSelect(
     'SELECT d.id AS id FROM documents_fts f JOIN documents d ON d.rowid = f.rowid '
-    'WHERE documents_fts MATCH ? AND d.workspace_id = ? AND d.deleted_at IS NULL ORDER BY rank',
+    'WHERE documents_fts MATCH ? AND d.workspace_id = ? AND d.deleted_at IS NULL AND d.archived_at IS NULL ORDER BY rank',
     variables: [Variable<String>(q), Variable<String>(workspaceId)],
     readsFrom: {db.documents},
   ).get();
@@ -183,7 +183,7 @@ Future<List<(String, String)>> searchDocumentPassagesIn(AppDatabase db, String w
   final rows = await db.customSelect(
     "SELECT d.id AS id, snippet(documents_fts, 1, ?, ?, '…', 24) AS passage "
     'FROM documents_fts f JOIN documents d ON d.rowid = f.rowid '
-    'WHERE documents_fts MATCH ? AND d.workspace_id = ? AND d.deleted_at IS NULL ORDER BY rank LIMIT ?',
+    'WHERE documents_fts MATCH ? AND d.workspace_id = ? AND d.deleted_at IS NULL AND d.archived_at IS NULL ORDER BY rank LIMIT ?',
     variables: [
       Variable<String>(_matchStart),
       Variable<String>(_matchEnd),
@@ -204,7 +204,7 @@ Future<List<String>> searchDocumentTitleIdsIn(AppDatabase db, String workspaceId
   await catchUpSearch(db);
   final rows = await db.customSelect(
     'SELECT d.id AS id FROM documents_fts f JOIN documents d ON d.rowid = f.rowid '
-    'WHERE documents_fts MATCH ? AND d.workspace_id = ? AND d.deleted_at IS NULL ORDER BY rank LIMIT ?',
+    'WHERE documents_fts MATCH ? AND d.workspace_id = ? AND d.deleted_at IS NULL AND d.archived_at IS NULL ORDER BY rank LIMIT ?',
     variables: [Variable<String>('title : ($q)'), Variable<String>(workspaceId), Variable<int>(limit)],
     readsFrom: {db.documents},
   ).get();
@@ -217,7 +217,7 @@ Future<List<String>> backlinkIdsIn(AppDatabase db, String workspaceId, String do
   await catchUpSearch(db);
   final rows = await db.customSelect(
     'SELECT d.id AS id FROM document_link_index i JOIN documents d ON d.id = i.from_document_id '
-    'WHERE i.to_document_id = ? AND d.workspace_id = ? AND d.deleted_at IS NULL AND d.id <> ? ORDER BY d.title, d.id',
+    'WHERE i.to_document_id = ? AND d.workspace_id = ? AND d.deleted_at IS NULL AND d.archived_at IS NULL AND d.id <> ? ORDER BY d.title, d.id',
     variables: [Variable<String>(documentId), Variable<String>(workspaceId), Variable<String>(documentId)],
     readsFrom: {db.documents},
   ).get();
@@ -246,7 +246,7 @@ Future<List<PdfPageMatch>> searchPdfPagesIn(AppDatabase db, String workspaceId, 
     "SELECT d.id AS doc, d.title AS title, i.hash AS hash, i.name AS name, i.size AS size, i.mime AS mime, "
     "f.page AS page, snippet(pdf_text_fts, 0, ?, ?, '…', 24) AS passage "
     'FROM pdf_text_fts f JOIN document_file_index i ON i.hash = f.hash JOIN documents d ON d.id = i.document_id '
-    'WHERE pdf_text_fts MATCH ? AND d.workspace_id = ? AND d.deleted_at IS NULL ORDER BY rank, d.title, f.page LIMIT ?',
+    'WHERE pdf_text_fts MATCH ? AND d.workspace_id = ? AND d.deleted_at IS NULL AND d.archived_at IS NULL ORDER BY rank, d.title, f.page LIMIT ?',
     variables: [
       Variable<String>(_matchStart),
       Variable<String>(_matchEnd),
