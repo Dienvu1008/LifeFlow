@@ -120,8 +120,9 @@ Future<void> catchUpSearch(AppDatabase db) async {
 
 /// The live tasks of [workspaceId] whose title matches what was typed (C12),
 /// best first.
-Future<List<String>> searchTaskIdsIn(AppDatabase db, String workspaceId, String typed) async {
-  final q = searchQueryOf(searchForm(typed));
+Future<List<String>> searchTaskIdsIn(AppDatabase db, String workspaceId, String typed, {bool anyWord = false}) async {
+  // P06b W4: the chat searches a whole question by any of its words.
+  final q = anyWord ? searchAnyQueryOf(searchForm(typed)) : searchQueryOf(searchForm(typed));
   if (q == null) return const [];
   await catchUpSearch(db);
   final rows = await db.customSelect(
@@ -173,8 +174,10 @@ const _matchStart = '\uE000', _matchEnd = '\uE001';
 /// P05a T6 (ADR-0071): the live documents of [workspaceId] matching what was
 /// typed, best first, each with a passage of its text around the matches
 /// (marked as [passageOf] reads them).
-Future<List<(String, String)>> searchDocumentPassagesIn(AppDatabase db, String workspaceId, String typed, {int limit = 50}) async {
-  final q = searchQueryOf(searchForm(typed));
+Future<List<(String, String)>> searchDocumentPassagesIn(AppDatabase db, String workspaceId, String typed,
+    {int limit = 50, bool anyWord = false}) async {
+  // P06b W4: the chat searches a whole question by any of its words.
+  final q = anyWord ? searchAnyQueryOf(searchForm(typed)) : searchQueryOf(searchForm(typed));
   if (q == null) return const [];
   await catchUpSearch(db);
   final rows = await db.customSelect(
@@ -233,8 +236,10 @@ typedef PdfPageMatch = ({
 
 /// The pages of this device's PDFs matching what was typed, through the live
 /// documents of [workspaceId] that name them, best first.
-Future<List<PdfPageMatch>> searchPdfPagesIn(AppDatabase db, String workspaceId, String typed, {int limit = 50}) async {
-  final q = searchQueryOf(searchForm(typed));
+Future<List<PdfPageMatch>> searchPdfPagesIn(AppDatabase db, String workspaceId, String typed,
+    {int limit = 50, bool anyWord = false}) async {
+  // P06b W4: the chat searches a whole question by any of its words.
+  final q = anyWord ? searchAnyQueryOf(searchForm(typed)) : searchQueryOf(searchForm(typed));
   if (q == null) return const [];
   await catchUpSearch(db);
   final rows = await db.customSelect(

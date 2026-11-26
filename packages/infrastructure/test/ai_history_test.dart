@@ -139,6 +139,22 @@ void main() {
       expect(kinds, containsAll(['aiSession', 'aiMessage', 'aiProposal']));
     });
 
+    // P06b W4: the intermittent CI failure. Times are kept to the second and
+    // a UUID v7 is random within a millisecond: messages written together
+    // came back in either order.
+    test('messages come back in the order they were written, also at the same time', () async {
+      // One instant for all: what a fast device does within a millisecond.
+      final same = DriftAiHistoryService(db, gw, clock: FixedClock(Instant(DateTime.utc(2026, 11, 4, 2))));
+      final s = ok(await same.startSession(title: 'Nhanh', purpose: AiPurpose.chat));
+      final written = <String>[];
+      for (var i = 0; i < 40; i++) {
+        written.add('${i.isEven ? 'Hỏi' : 'Đáp'} $i');
+        ok(await same.addMessage(s, i.isEven ? AiMessageRole.person : AiMessageRole.assistant, written.last,
+            model: i.isEven ? null : 'm', site: i.isEven ? null : AiEngineSite.device));
+      }
+      expect([for (final m in await same.messages(s)) m.text], written);
+    });
+
     test("a person's message has no model; a proposal is only proposed; bad input is refused", () async {
       final s = await session();
       final r = await ai.addMessage(s, AiMessageRole.person, 'Xin chào', model: 'x');
@@ -536,7 +552,7 @@ void main() {
       for (final (why, tamper) in <(String, void Function(Map<String, Object?>))>[
         ('unreadable changes', (p) => (p['aiProposals'] as List).first['changes'] = '{nope'),
         ('an unknown role', (p) => (p['aiMessages'] as List).first['role'] = 'system'),
-        ('an unknown purpose', (p) => (p['aiSessions'] as List).first['purpose'] = 'chat'),
+        ('an unknown purpose', (p) => (p['aiSessions'] as List).first['purpose'] = 'autopilot'),
         ('a message of an unknown session', (p) => (p['aiMessages'] as List).first['sessionId'] = 'nope'),
       ]) {
         final p = payload();

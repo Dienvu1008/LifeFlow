@@ -109,7 +109,22 @@ class AiToolCatalog {
         op: 'setSchedule',
         arguments: {'id', 'schedule'},
         check: (a) => aiScheduleArgumentError(a['id'] as String, a['schedule'])),
+    // P06b W4 (ADR-0088): the chat may propose a new task (in the personal
+    // space, at the end of the tasks without a list); its id is the app's.
+    AiTool(
+        commandType: 'CreateTask',
+        kind: 'task',
+        handler: TaskCommandHandler(),
+        op: 'create',
+        arguments: {'id', 'title'},
+        creates: true,
+        check: (a) => _titleError(a['title'])),
   ]);
+
+  static String? _titleError(Object? title) => switch (title) {
+        final String t when t.trim().isNotEmpty && t == t.trim() && t.length <= maxAiTitleLength => null,
+        _ => 'a title is a non-empty text without spaces around it',
+      };
 
   /// T3's tools, enough to prove the path: renaming a task, its notes.
   static final AiToolCatalog minimal = AiToolCatalog([
@@ -119,10 +134,7 @@ class AiToolCatalog {
         handler: TaskCommandHandler(),
         op: 'rename',
         arguments: {'id', 'title'},
-        check: (a) => switch (a['title']) {
-              final String t when t.trim().isNotEmpty && t == t.trim() && t.length <= maxAiTitleLength => null,
-              _ => 'a title is a non-empty text without spaces around it',
-            }),
+        check: (a) => _titleError(a['title'])),
     AiTool(
         commandType: 'SetTaskNotes',
         kind: 'task',
@@ -410,7 +422,14 @@ class DriftAiHistoryService implements AiHistoryService {
     final ws = await _store.personalWorkspaceId();
     final rows = await (db.select(db.aiMessages)
           ..where((m) => m.sessionId.equals(sessionId) & m.deletedAt.isNull())
-          ..orderBy([(m) => OrderingTerm.asc(m.createdAt), (m) => OrderingTerm.asc(m.id)]))
+          // P06b W4: times are kept to the second, and a UUID v7 is random
+          // within a millisecond, so a question and its answer written
+          // together are put in the order they were written (rowid) first.
+          ..orderBy([
+            (m) => OrderingTerm.asc(m.createdAt),
+            (m) => OrderingTerm.asc(const CustomExpression<int>('rowid')),
+            (m) => OrderingTerm.asc(m.id),
+          ]))
         .get();
     return [
       for (final m in rows)

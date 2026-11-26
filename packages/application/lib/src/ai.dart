@@ -42,16 +42,21 @@ export 'package:domain/domain.dart'
         decodeAiChanges,
         encodeAiChanges;
 
-/// What a request is about (P06 D1).
-enum AiPurpose { planDay, fixConflict, askDocument }
+/// What a request is about (P06 D1; [chat] since P06b W4, ADR-0088).
+enum AiPurpose { planDay, fixConflict, askDocument, chat }
 
 /// What to put in a request's context: the named things (the screen, a
 /// selection, the items of the day) and, optionally, search hits for words.
 class AiContextRequest {
-  const AiContextRequest({required this.purpose, this.named = const [], this.query});
+  const AiContextRequest({required this.purpose, this.named = const [], this.query, this.allSpaces = false});
   final AiPurpose purpose;
   final List<RecordRef> named;
   final String? query;
+
+  /// P06b W4 (the owner's Q2): the search hits come from every space of the
+  /// profile, not only the shown one; a hit from a shared space is titled
+  /// with that space's name. Named things stay in the shown space.
+  final bool allSpaces;
 }
 
 /// One thing in a context. [text] is the person's content: data for the
@@ -85,7 +90,8 @@ class AiContext {
 }
 
 abstract interface class AiContextBuilder {
-  /// The context for [request], in the shown space only.
+  /// The context for [request], in the shown space (its search hits in
+  /// every space with [AiContextRequest.allSpaces]).
   Future<AiContext> build(AiContextRequest request);
 }
 

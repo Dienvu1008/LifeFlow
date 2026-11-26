@@ -116,6 +116,13 @@ abstract interface class AiAssistant {
   Future<AiTurnResult> askDocument(RecordRef item, String question,
       {String? sessionId, Set<RecordRef> consented, bool withoutUnconsented, void Function(String text)? onText});
 
+  /// P06b W4 (ADR-0088): one turn of a free chat. The earlier turns of
+  /// [sessionId] go with it (as private data, through the checkpoint), and
+  /// so do the shown space's next days and what the profile's spaces hold
+  /// about [message]. The answer may come with a proposal (tasks of the
+  /// personal space to create, rename or schedule), approved by the person.
+  Future<AiTurnResult> chat(String message, {String? sessionId, Set<RecordRef> consented, bool withoutUnconsented});
+
   /// Stops the answer being written.
   Future<void> stop();
 }

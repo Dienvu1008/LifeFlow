@@ -4756,6 +4756,54 @@ abstract class AppLocalizations {
   /// **'No conversations yet.'**
   String get aiNoHistory;
 
+  /// No description provided for @navAssistant.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant'**
+  String get navAssistant;
+
+  /// No description provided for @aiChatHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask about your plans and documents, or ask for a change'**
+  String get aiChatHint;
+
+  /// No description provided for @aiChatSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get aiChatSend;
+
+  /// No description provided for @aiNewChat.
+  ///
+  /// In en, this message translates to:
+  /// **'New chat'**
+  String get aiNewChat;
+
+  /// No description provided for @aiChatIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask about your tasks, events and documents in all your spaces. The assistant can also propose changes to the tasks of your personal space. Nothing changes until you approve it.'**
+  String get aiChatIntro;
+
+  /// No description provided for @aiNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The assistant is not available in this version of the app.'**
+  String get aiNotAvailable;
+
+  /// No description provided for @aiSettingsMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Assistant settings'**
+  String get aiSettingsMenu;
+
+  /// No description provided for @aiYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get aiYou;
+
   /// No description provided for @aiDeleteSession.
   ///
   /// In en, this message translates to:

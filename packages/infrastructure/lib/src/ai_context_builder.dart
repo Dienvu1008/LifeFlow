@@ -107,32 +107,53 @@ class DriftAiContextBuilder implements AiContextBuilder {
 
     final words = request.query?.trim() ?? '';
     if (words.isNotEmpty) {
-      for (final (id, marked) in await searchDocumentPassagesIn(db, ws, words, limit: maxSearchHits)) {
-        final d = await (db.select(db.documents)..where((x) => x.id.equals(id))).getSingleOrNull();
-        if (d == null) continue;
-        add(AiContextItem(
-            ref: RecordRef('document', id),
-            classification: DataClassification.confidential,
-            title: d.title,
-            text: passageOf(marked).$1,
-            version: d.version));
+      // P06b W4: the chat searches the question by any of its words, in
+      // every space of the profile (the shown one first; spaces left are
+      // not searched). At most [maxSearchHits] of each kind in all.
+      final any = request.purpose == AiPurpose.chat;
+      final spaces = <(String, String?)>[(ws, null)];
+      if (request.allSpaces) {
+        for (final w in await _store.workspaces()) {
+          if (w.id == ws || w.leftAt != null) continue;
+          spaces.add((w.id, w.shared ? (w.name ?? 'shared space') : null));
+        }
       }
-      for (final id in (await searchTaskIdsIn(db, ws, words)).take(maxSearchHits)) {
-        final row = await recordKindByName['task']!.readOne(db, id);
-        if (row == null) continue;
-        add(AiContextItem(
-            ref: RecordRef('task', id),
-            classification: dataClassOf('task', row),
-            title: '${row['title']}',
-            text: await _textOf('task', row),
-            version: row['version'] as int?));
-      }
-      for (final p in await searchPdfPagesIn(db, ws, words, limit: maxSearchHits)) {
-        add(AiContextItem(
-            ref: RecordRef('file', '${p.file.hash}#${p.page}'),
-            classification: DataClassification.confidential,
-            title: '${p.file.name}, page ${p.page}',
-            text: await _pdfText(p.file.hash, page: p.page)));
+      String titled(String title, String? space) => space == null ? title : '$space · $title';
+      var docs = 0, tasks = 0, pages = 0;
+      for (final (space, name) in spaces) {
+        for (final (id, marked) in await searchDocumentPassagesIn(db, space, words, limit: maxSearchHits, anyWord: any)) {
+          if (docs >= maxSearchHits) break;
+          final d = await (db.select(db.documents)..where((x) => x.id.equals(id))).getSingleOrNull();
+          if (d == null) continue;
+          docs++;
+          add(AiContextItem(
+              ref: RecordRef('document', id),
+              classification: DataClassification.confidential,
+              title: titled(d.title, name),
+              text: passageOf(marked).$1,
+              version: d.version));
+        }
+        for (final id in await searchTaskIdsIn(db, space, words, anyWord: any)) {
+          if (tasks >= maxSearchHits) break;
+          final row = await recordKindByName['task']!.readOne(db, id);
+          if (row == null) continue;
+          tasks++;
+          add(AiContextItem(
+              ref: RecordRef('task', id),
+              classification: dataClassOf('task', row),
+              title: titled('${row['title']}', name),
+              text: await _textOf('task', row),
+              version: row['version'] as int?));
+        }
+        for (final p in await searchPdfPagesIn(db, space, words, limit: maxSearchHits, anyWord: any)) {
+          if (pages >= maxSearchHits) break;
+          pages++;
+          add(AiContextItem(
+              ref: RecordRef('file', '${p.file.hash}#${p.page}'),
+              classification: DataClassification.confidential,
+              title: titled('${p.file.name}, page ${p.page}', name),
+              text: await _pdfText(p.file.hash, page: p.page)));
+        }
       }
     }
     return AiContext(List.unmodifiable(items), truncated: truncated);

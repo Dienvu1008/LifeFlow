@@ -268,6 +268,23 @@ void main() {
     });
   });
 
+  // P06b W4: the assistant's chat searches a whole question by any word.
+  group('a question searched (P06b W4)', () {
+    test('any of its words; common words and punctuation left out', () {
+      expect(searchAnyQueryOf('Tôi có việc gì về thuế không?'), '"thuế"');
+      expect(searchAnyQueryOf('Khi nào họp tổ dân phố?'), '"họp" OR "tổ" OR "dân" OR "phố"');
+      expect(searchAnyQueryOf('What is in my tax return?'), '"tax" OR "return"');
+      expect(searchAnyQueryOf('Gì vậy?'), isNull);
+      expect(searchAnyQueryOf(''), isNull);
+    });
+
+    test('each word once, numbers kept, FTS syntax cannot break it, at most 12 words', () {
+      expect(searchAnyQueryOf('Thuế thuế THUẾ 2026 năm 5'), '"Thuế" OR "2026" OR "năm" OR "5"');
+      expect(searchAnyQueryOf('NEAR(xy) "yz" a*b'), '"NEAR" OR "xy" OR "yz"');
+      final many = List.generate(20, (i) => 'từ$i').join(' ');
+      expect(searchAnyQueryOf(many)!.split(' OR '), hasLength(12));
+    });
+  });
   group('search query (C4)', () {
     test('words must all be there; the last may be the start of a word', () {
       expect(searchQueryOf('ghi chú'), '"ghi" "chú"*');

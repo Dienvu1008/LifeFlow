@@ -17,15 +17,19 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:application/application.dart';
-import 'package:domain/domain.dart' show DayInterval, DayPlanTask, DayPlanWish, fitDayPlan, formatDayMinute, parseDayMinute;
+import 'package:domain/domain.dart'
+    show DayInterval, DayPlanTask, DayPlanWish, fitDayPlan, formatDayMinute, parseDayMinute;
 import 'package:drift/drift.dart';
 import 'package:foundation/foundation.dart';
 import 'package:time_kernel/time_kernel.dart' as tk;
+import 'package:uuid/uuid.dart';
 
 import 'ai_context_builder.dart';
+import 'ai_history_handlers.dart' show maxAiTitleLength;
 import 'app_database.dart';
 import 'calendar_service.dart';
 import 'profile_store.dart';
+import 'record_kinds.dart' show dataClassOf, kindClasses, recordKindByName;
 import 'schedule_mapping.dart' show readSchedule, scheduleFieldsJson;
 
 /// The most tasks one plan places (the context's own bound is 30 items).
@@ -77,6 +81,7 @@ class DriftAiAssistant implements AiAssistant {
   final Future<AiAssistantSettings> Function() settings;
   final AiContextBuilder context;
   final ProfileStore _store;
+  final _uuid = const Uuid();
 
   bool get _vi => _lang == 'vi';
   String _lang = 'vi';
@@ -410,6 +415,276 @@ class DriftAiAssistant implements AiAssistant {
         text: answer);
   }
 
+  // ---- the chat (P06b W4, ADR-0088) -------------------------------------------
+
+  /// When an item of the coming days is: its day, and its time if it has one.
+  static String _when(LocalDate date, SchedulePointInput? start, SchedulePointInput? end) {
+    final d = start?.date ?? date;
+    final from = start?.time, to = end?.time;
+    return 'on $d (${d.weekday.name})${from == null ? '' : ' at $from${to == null ? '' : '-$to'}'}';
+  }
+
+  /// The class of what an earlier answer was made from: a PDF's text is
+  /// Confidential; a record by its row, or, once it is gone, by its kind (a
+  /// measurement whose source cannot be read any more, or an unknown kind,
+  /// is Restricted: nothing unclassified leaves the device).
+  Future<DataClassification> _classOf(RecordRef ref) async {
+    if (ref.kind == 'file') return DataClassification.confidential;
+    final kind = recordKindByName[ref.kind];
+    final row = kind == null ? null : await kind.readOne(db, ref.id);
+    if (row != null) return dataClassOf(ref.kind, row);
+    if (ref.kind == 'measurement') return DataClassification.restricted;
+    return kindClasses[ref.kind] ?? DataClassification.restricted;
+  }
+
+  /// The earlier turns of [sessionId] as one private item (`aichat:<id>`),
+  /// newest last, within [chatHistoryChars]. They are the chat history
+  /// (Confidential), Restricted when an earlier answer was made from a
+  /// Restricted item: they go through the checkpoint like any item, so a
+  /// cloud model gets them only with consent, and never what came from
+  /// Restricted data.
+  Future<AiContextItem?> _earlier(String? sessionId) async {
+    if (sessionId == null) return null;
+    final all = await history.messages(sessionId);
+    if (all.isEmpty) return null;
+    final kept = all.length > chatHistoryMessages ? all.sublist(all.length - chatHistoryMessages) : all;
+    var cls = DataClassification.confidential;
+    for (final m in kept) {
+      for (final (ref, _) in m.sentRefs) {
+        if (await _classOf(ref) == DataClassification.restricted) cls = DataClassification.restricted;
+      }
+    }
+    final lines = [
+      for (final m in kept) '${m.role == AiMessageRole.person ? 'Person' : 'Assistant'}: ${m.text.trim()}',
+    ];
+    var text = lines.join('\n');
+    if (text.length > chatHistoryChars) text = '…${text.substring(text.length - chatHistoryChars)}';
+    return AiContextItem(
+        ref: RecordRef('aichat', sessionId),
+        classification: cls,
+        title: _vi ? 'Các tin nhắn trước trong cuộc trò chuyện này' : 'Earlier messages of this chat',
+        text: text);
+  }
+
+  @override
+  Future<AiTurnResult> chat(String message,
+      {String? sessionId, Set<RecordRef> consented = const {}, bool withoutUnconsented = false}) async {
+    final s = await settings();
+    _lang = s.language;
+    final said = message.trim();
+    if (said.isEmpty) return const AiTurnResult(AiTurnOutcome.nothingToDo, reason: 'no message');
+    if (await _store.commandContext() == null) return const AiTurnResult(AiTurnOutcome.declined, reason: 'no active profile');
+    final personal = await _store.personalWorkspaceId();
+    final now = time.now(), zone = time.zone();
+    final today = tk.dateAt(now, zone);
+    final clock = tk.wallClockAt(now, zone).time;
+
+    // 1. What it reads: the earlier turns, the shown space's coming days,
+    // and what every space holds about the message (the owner's Q2).
+    final earlier = await _earlier(sessionId);
+    final days = await calendar.range(today, today.addDays(chatAgendaDays - 1));
+    final when = <RecordRef, String>{};
+    for (final t in days.tasks) {
+      if (t.isDone || when.length >= chatAgendaItems) continue;
+      when.putIfAbsent(RecordRef('task', t.taskId), () => _when(t.originalDate, t.deviceStart ?? t.start, t.deviceEnd ?? t.end));
+    }
+    for (final e in days.events) {
+      if (e.isCancelled || when.length >= chatAgendaItems) continue;
+      when.putIfAbsent(RecordRef('event', e.eventId), () => _when(e.originalDate, e.deviceStart ?? e.start, e.deviceEnd ?? e.end));
+    }
+    final built = await context
+        .build(AiContextRequest(purpose: AiPurpose.chat, named: when.keys.toList(), query: said, allSpaces: true));
+
+    // Only the personal space's tasks can be changed (an approval runs
+    // there, ADR-0082): they say so, so the model proposes nothing else.
+    final taskIds = [for (final i in built.items) if (i.ref.kind == 'task') i.ref.id];
+    final changeable = taskIds.isEmpty || personal == null
+        ? const <String>{}
+        : {
+            for (final t in await (db.select(db.tasks)
+                  ..where((t) => t.id.isIn(taskIds) & t.workspaceId.equals(personal) & t.deletedAt.isNull()))
+                .get())
+              t.id,
+          };
+    final items = [
+      if (earlier != null) earlier,
+      for (final it in built.items)
+        AiContextItem(
+          ref: it.ref,
+          classification: it.classification,
+          title: it.title,
+          version: it.version,
+          text: [
+            if (when[it.ref] case final w?) w,
+            if (changeable.contains(it.ref.id) && it.ref.kind == 'task') 'changeable',
+            it.text,
+          ].where((x) => x.isNotEmpty).join('\n'),
+        ),
+    ];
+    final versions = {for (final it in built.items) if (it.version != null) it.ref: it.version!};
+
+    final instructions = [
+      'You are the person\'s assistant in LifeFlow, a planner of tasks, events and documents. '
+          'Today is $today (${today.weekday.name}); the time is $clock.',
+      'The data may hold the earlier messages of this chat (ref "aichat:…"), the coming days of the shown space '
+          '("on <date> at <time>"), and items found for the message. Use them; if they do not hold the answer, say so.',
+      'Write "reply" briefly, in the language of the person\'s message.',
+      'You may propose changes in "changes"; nothing changes until the person approves each one. A change is '
+          'action "create" (a new task: "title"; "date" YYYY-MM-DD and "start" HH:MM and "minutes" if it should have a time), '
+          '"rename" ("taskId", "title") or "schedule" ("taskId", "date", "start", "minutes"). Only tasks whose text says '
+          '"changeable" may be renamed or scheduled; use only their ids (the part after "task:"). '
+          'Leave unused fields "" or 0. Propose nothing unless the person asks for a change.',
+      'Answer only with JSON following the schema.',
+    ].join(' ');
+
+    // 2. The route: the cloud only when it is on (the message itself is the
+    // person's private words), every item through the checkpoint.
+    final route = await chooseAiRoute(
+      engines: [for (final e in await _ordered(s)) if (e.site != AiEngineSite.cloud || s.cloudEnabled) e],
+      policy: _policy(s),
+      context: AiContext(items, truncated: built.truncated),
+      instructions: instructions,
+      question: said,
+      // The earlier turns are what a chat is about: an engine that may not
+      // get them is passed over (OQ-AI-2). A Restricted hit is only left out.
+      needed: {
+        for (final i in items)
+          if (i.ref.kind == 'aichat' || i.classification != DataClassification.restricted) i.ref,
+      },
+      consented: consented,
+      withoutUnconsented: withoutUnconsented,
+    );
+    if (!route.ready) return AiTurnResult(route.outcome, lines: route.lines, reason: route.reason, site: route.engine?.site);
+    final engine = route.engine!, req = route.request!;
+    final model = await engine.model() ?? engine.site.name;
+    final Map<String, Object?> answer;
+    try {
+      answer = await engine.structured(req, schema: chatSchema, maxTokens: 1200);
+    } on AiEngineFailure catch (e) {
+      return AiTurnResult(AiTurnOutcome.failed,
+          failure: e.kind, reason: e.message, lines: req.lines, site: engine.site, model: model);
+    }
+
+    // 3. The changes: only what the checks allow, built by the code (the
+    // model never names a command).
+    _titles = {for (final i in built.items) if (i.ref.kind == 'task') i.ref.id: i.title};
+    final changes = _chatChanges(answer['changes'], sent: req.sentRefs, changeable: changeable, versions: versions);
+    final reply = answer['reply'] is String && (answer['reply'] as String).trim().isNotEmpty
+        ? (answer['reply'] as String).trim()
+        : '…';
+
+    // 4. The turn in the history (D7).
+    final session = sessionId ??
+        _ok(await history.startSession(
+            title: said.length > 60 ? '${said.substring(0, 60).trimRight()}…' : said, purpose: AiPurpose.chat));
+    _ok(await history.addMessage(session, AiMessageRole.person, said));
+    final messageId = _ok(await history.addMessage(session, AiMessageRole.assistant, reply,
+        model: model,
+        site: engine.site,
+        sentRefs: [for (final r in req.sentRefs) if (r.kind != 'aichat') (r, versions[r])]));
+    if (changes.isEmpty) {
+      return AiTurnResult(AiTurnOutcome.answered,
+          sessionId: session, messageId: messageId, site: engine.site, model: model, lines: req.lines, text: reply);
+    }
+    final proposalId = _ok(await history.addProposal(session,
+        model: model, site: engine.site, changes: changes, messageId: messageId, note: reply));
+    return AiTurnResult(AiTurnOutcome.proposed,
+        sessionId: session,
+        proposalId: proposalId,
+        messageId: messageId,
+        site: engine.site,
+        model: model,
+        lines: req.lines,
+        text: reply);
+  }
+
+  /// The proposed changes of a chat answer that pass the checks: a task to
+  /// rename or schedule must be one that was sent, of the personal space,
+  /// with its version; a schedule is one slot within one day; a new task's
+  /// slot follows it (its first version is 1, so it runs after it).
+  List<ProposedChange> _chatChanges(Object? raw,
+      {required Set<RecordRef> sent, required Set<String> changeable, required Map<RecordRef, int> versions}) {
+    final out = <ProposedChange>[];
+    final zone = time.zone();
+    String id() => 'c${out.length + 1}';
+    ProposedChange? slot(String taskId, String title, Object? date, Object? start, Object? minutes, int version) {
+      final LocalDate day;
+      try {
+        day = LocalDate.parse('$date');
+      } on Object {
+        return null;
+      }
+      final from = parseDayMinute(start);
+      if (from == null) return null;
+      final length = minutes is int && minutes > 0 ? minutes.clamp(5, 12 * 60) : 30;
+      final to = from + length;
+      if (to >= 24 * 60) return null;
+      final at = TimeOfDayValue(from ~/ 60, from % 60), end = TimeOfDayValue(to ~/ 60, to % 60);
+      final spec = tk.ScheduleSpec(
+          start: tk.TimedPoint(ZonedWallClock(day, at, zone)), end: tk.TimedPoint(ZonedWallClock(day, end, zone)));
+      return ProposedChange(
+        id: id(),
+        commandType: 'SetTaskSchedule',
+        arguments: {'id': taskId, 'schedule': scheduleFieldsJson('task', taskId, spec, null)},
+        versions: {RecordRef('task', taskId): version},
+        summary: _vi ? '"$title": $day $at–$end' : '"$title": $day $at–$end',
+      );
+    }
+
+    // One change per task: each is bound to the version it was made against,
+    // so a second one on the same task would be stale once the first runs.
+    final touched = <String>{};
+    for (final c in raw is List ? raw : const []) {
+      if (c is! Map || out.length >= maxChatChanges) continue;
+      final action = '${c['action'] ?? ''}';
+      var taskId = '${c['taskId'] ?? ''}'.trim();
+      if (taskId.startsWith('task:')) taskId = taskId.substring(5);
+      final title = '${c['title'] ?? ''}'.trim();
+      final ref = RecordRef('task', taskId);
+      final known = taskId.isNotEmpty &&
+          !touched.contains(taskId) &&
+          sent.contains(ref) &&
+          changeable.contains(taskId) &&
+          versions[ref] != null;
+
+      switch (action) {
+        case 'create':
+          if (title.isEmpty || title.length > maxAiTitleLength) continue;
+          final newId = _uuid.v7();
+          out.add(ProposedChange(
+            id: id(),
+            commandType: 'CreateTask',
+            arguments: {'id': newId, 'title': title},
+            versions: const {},
+            summary: _vi ? 'Việc mới: "$title"' : 'New task: "$title"',
+          ));
+          if (slot(newId, title, c['date'], c['start'], c['minutes'], 1) case final s?) out.add(s);
+        case 'rename':
+          if (!known || title.isEmpty || title.length > maxAiTitleLength) continue;
+          out.add(ProposedChange(
+            id: id(),
+            commandType: 'RenameTask',
+            arguments: {'id': taskId, 'title': title},
+            versions: {ref: versions[ref]!},
+            summary: _vi ? 'Đổi tên thành "$title"' : 'Rename to "$title"',
+          ));
+          touched.add(taskId);
+        case 'schedule':
+          if (!known) continue;
+          final name = _titles[taskId] ?? taskId;
+          if (slot(taskId, name, c['date'], c['start'], c['minutes'], versions[ref]!) case final s?) {
+            out.add(s);
+            touched.add(taskId);
+          }
+      }
+    }
+    return out;
+  }
+
+  /// Titles of the items of the last chat context, by task id (for the
+  /// summaries of the changes).
+  Map<String, String> _titles = const {};
+
   @override
   Future<void> stop() async {
     for (final e in engines) {
@@ -417,6 +692,45 @@ class DriftAiAssistant implements AiAssistant {
     }
   }
 }
+
+/// P06b W4: the most earlier messages, their characters, the coming days
+/// and their items a chat turn carries, and the most changes it proposes.
+const chatHistoryMessages = 12;
+const chatHistoryChars = 6000;
+const chatAgendaDays = 7;
+const chatAgendaItems = 15;
+const maxChatChanges = 10;
+
+/// What the chat's model writes: a reply, and the changes it proposes. Every
+/// field is required (some providers' strict JSON needs it): "" or 0 when
+/// not used.
+const chatSchema = <String, Object?>{
+  'type': 'object',
+  'properties': {
+    'reply': {'type': 'string'},
+    'changes': {
+      'type': 'array',
+      'items': {
+        'type': 'object',
+        'properties': {
+          'action': {
+            'type': 'string',
+            'enum': ['create', 'rename', 'schedule'],
+          },
+          'taskId': {'type': 'string'},
+          'title': {'type': 'string'},
+          'date': {'type': 'string'},
+          'start': {'type': 'string'},
+          'minutes': {'type': 'integer'},
+        },
+        'required': ['action', 'taskId', 'title', 'date', 'start', 'minutes'],
+        'additionalProperties': false,
+      },
+    },
+  },
+  'required': ['reply', 'changes'],
+  'additionalProperties': false,
+};
 
 /// The assistant's settings as one JSON value (the app keeps it in its
 /// encrypted registry, T7).
