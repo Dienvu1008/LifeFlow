@@ -1,5 +1,5 @@
 # P06b plan: the assistant in the navigation, free chat, and five UI changes
-- Status: **Agreed by the owner 2026-11-04** (answers in §4). W1 and W2 built ([ADR-0089](../adr/0089-app-bar-options-and-one-search.md)), W3 built ([ADR-0090](../adr/0090-document-page-app-bar.md)); W1–W3 merged. W4 built ([ADR-0091](../adr/0091-free-chat.md)), waiting for the owner's review. Next: W5.
+- Status: **Agreed by the owner 2026-11-04** (answers in §4). W1 and W2 built ([ADR-0089](../adr/0089-app-bar-options-and-one-search.md)), W3 built ([ADR-0090](../adr/0090-document-page-app-bar.md)); W1–W3 merged. W4 merged ([ADR-0091](../adr/0091-free-chat.md)). W5 built ([ADR-0092](../adr/0092-document-drag-and-drop.md)), waiting for the owner's review. Next: W4b, then W6.
 - Date: 2026-11-04
 - Why: using the app, the owner could not find the assistant. The only ways in were the ✨ buttons on the Calendar, a document and a PDF, plus Settings → Assistant. He reversed P06 D1 ("no free chat") and asked for five UI changes.
 - Inputs:
@@ -54,6 +54,11 @@
   - the sessions are saved in the history and sync (D7).
 - **The chat may propose changes** (Q1): create, rename or schedule tasks of the personal space (ADR-0091; events and shared spaces' tasks are read, not changed, in W4). Each change shows as a proposal card in the chat and runs only after the person approves it (D8, LF-INV-AI-001); a stale proposal is refused (LF-INV-AI-002).
 
+### W4b. The chat creates and moves events (the owner, 2026-11-04)
+- After W4 the owner asked for events too: the chat may propose a new event (title, day, start and end) and moving an event of the personal space to another time, approved as every change.
+- Needs event tools in the proposal catalog (create, a new time), checked as the task slot is, and the events of the coming days marked "changeable" in the chat's data.
+- A repeating event is not moved as a whole: only one of its days (as the Calendar's "this event only").
+
 ### W5. Drag and drop for documents (UI 3)
 - The Overview's drag code (drop slots, handles, long-press drag, `resolveDrop`) is private to overview_tree.dart and tied to Overview rows. It is extracted into a shared, row-agnostic widget; the Overview keeps working the same (its tests must stay green).
 - The documents tree uses it. A drop maps to `DocumentService.move(id, parentId, afterId)`: before or after a sibling, or into a document as its child.
@@ -83,6 +88,7 @@
 | W3 | Document app bar | medium | depends on W2's menu |
 | W4 | Assistant destination and free chat | large | the core of the request |
 | W5 | Document drag and drop | medium | refactor of the Overview drag code |
+| W4b | The chat creates and moves events | medium | added by the owner after W4 |
 | W6 | Trash and Archive | large | schema change (archive field, purge) |
 
 - Every item: its own branch, headless tests, mutation checks, docs, CI green, a Vietnamese handoff, merge after the owner approves.

@@ -17,6 +17,7 @@ import '../providers.dart';
 import '../schedule_text.dart';
 import '../task_actions.dart';
 import '../theme/lifeflow_theme.dart';
+import '../widgets/row_drag.dart';
 import 'event_editor.dart';
 import 'focus_page.dart';
 import 'goals_screen.dart';
@@ -293,12 +294,8 @@ class _OverviewViewState extends ConsumerState<OverviewView> {
           }
         }
         final look = ref.watch(appearanceProvider).valueOrNull ?? const AppearanceSettings();
-        final handles = switch (look.dragHandles) {
-          DragHandles.always => true,
-          DragHandles.never => false,
-          DragHandles.auto => isPointerPlatform(Theme.of(context).platform),
-        };
-        return _Handles(show: handles, child: Listener(
+        final handles = showDragHandles(context, look.dragHandles);
+        return DragHandlesScope(show: handles, child: Listener(
           onPointerDown: (e) {
             _downX = e.position.dx;
             _pointer = e.position;
@@ -491,7 +488,7 @@ class _DropSlotState extends State<_DropSlot> {
       ),
     );
     if (row is LooseHeaderRow) return target;
-    return _DragScope(
+    return RowDragScope(
       id: row.id,
       title: _titleOf(row),
       preview: widget.child,
@@ -516,129 +513,6 @@ String _titleOf(OverviewRow r) => switch (r) {
       LooseHeaderRow() => '',
     };
 
-/// Whether the Overview shows drag handles (dogfooding O1); also given to
-/// the dragged copy so it looks like its row.
-class _Handles extends InheritedWidget {
-  const _Handles({required this.show, required super.child});
-  final bool show;
-
-  static bool of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<_Handles>()?.show ?? true;
-
-  @override
-  bool updateShouldNotify(_Handles old) => old.show != show;
-}
-
-/// Lets the row's handle (and a long press on the row) start a drag of [id].
-class _DragScope extends InheritedWidget {
-  const _DragScope({
-    required this.id,
-    required this.title,
-    required this.preview,
-    required this.rowBox,
-    required this.onStart,
-    required this.onEnd,
-    required super.child,
-  });
-  final String id;
-  final String title;
-
-  /// The row as it looks, for the dragged copy.
-  final Widget preview;
-  final RenderBox? Function() rowBox;
-  final VoidCallback onStart;
-  final VoidCallback onEnd;
-
-  static _DragScope? of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<_DragScope>();
-
-  @override
-  bool updateShouldNotify(_DragScope old) => old.id != id || old.title != title || old.preview != preview;
-}
-
-/// The dragged copy: the whole row at its width, a little transparent, raised.
-/// Built when the drag starts (in the overlay), so the row is laid out.
-Widget _feedback(BuildContext context, _DragScope scope) =>
-    _FeedbackCopy(scope: scope, handles: _Handles.of(context));
-
-class _FeedbackCopy extends StatelessWidget {
-  const _FeedbackCopy({required this.scope, required this.handles});
-  final _DragScope scope;
-  final bool handles;
-
-  @override
-  Widget build(BuildContext context) {
-    final box = scope.rowBox();
-    final width = box != null && box.hasSize ? box.size.width : 320.0;
-    return _Handles(
-      show: handles,
-      child: SizedBox(
-        key: const Key('drag-feedback'),
-        width: width,
-        child: Opacity(
-          opacity: 0.9,
-          child: Material(
-            elevation: 6,
-            color: Theme.of(context).colorScheme.surfaceContainerHigh,
-            borderRadius: BorderRadius.circular(6),
-            clipBehavior: Clip.antiAlias,
-            child: scope.preview,
-          ),
-        ),
-      ),
-    );
-  }
-}
-/// Keeps the copy where the row was under the pointer (not at its corner).
-DragAnchorStrategy _rowAnchor(_DragScope scope) => (draggable, context, position) {
-      final box = scope.rowBox();
-      return box == null || !box.hasSize ? Offset.zero : box.globalToLocal(position);
-    };
-
-/// The drag handle at the start of a row (hidden by the setting, O1).
-class _Handle extends StatelessWidget {
-  const _Handle();
-
-  @override
-  Widget build(BuildContext context) {
-    if (!_Handles.of(context)) return const SizedBox.shrink();
-    final scope = _DragScope.of(context);
-    if (scope == null) return const SizedBox(width: 24);
-    return Draggable<String>(
-      data: scope.id,
-      dragAnchorStrategy: _rowAnchor(scope),
-      feedback: _feedback(context, scope),
-      onDragStarted: scope.onStart,
-      onDragEnd: (_) => scope.onEnd(),
-      child: Semantics(
-        label: context.l10n.ovDragHandle(scope.title),
-        child: MouseRegion(
-          cursor: SystemMouseCursors.grab,
-          child: SizedBox(
-            key: ValueKey('drag-${scope.id}'),
-            width: 24,
-            height: 40,
-            child: Icon(Icons.drag_indicator, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// A long press anywhere on the row drags it too: on touch, and wherever the
-/// handles are hidden.
-Widget _longPressDrag(BuildContext context, Widget child) {
-  final scope = _DragScope.of(context);
-  if (scope == null || (isPointerPlatform(Theme.of(context).platform) && _Handles.of(context))) return child;
-  return LongPressDraggable<String>(
-    data: scope.id,
-    dragAnchorStrategy: _rowAnchor(scope),
-    feedback: _feedback(context, scope),
-    onDragStarted: scope.onStart,
-    onDragEnd: (_) => scope.onEnd(),
-    child: child,
-  );
-}
-
 /// The colour bar on the left (U-D4) and the indentation of a row.
 Widget _frame(BuildContext context, {required int indent, required int? colour, required Widget child}) {
   final c = itemColorOf(context, colour);
@@ -648,7 +522,7 @@ Widget _frame(BuildContext context, {required int indent, required int? colour, 
       decoration: BoxDecoration(
         border: BorderDirectional(start: BorderSide(color: c ?? Colors.transparent, width: 4)),
       ),
-      child: _longPressDrag(context, child),
+      child: longPressRowDrag(context, child),
     ),
   );
 }
@@ -722,7 +596,7 @@ class _ListHeader extends ConsumerWidget {
         key: ValueKey('list-${list.id}'),
         contentPadding: const EdgeInsetsDirectional.only(start: 0, end: 8),
         leading: Row(mainAxisSize: MainAxisSize.min, children: [
-          const _Handle(),
+          const RowDragHandle(),
           _toggle(context, ref, list.id, list.title, show: row.itemCount > 0, collapsed: row.collapsed),
           Icon(Icons.folder_outlined, color: itemColorOf(context, list.colorIndex)),
         ]),
@@ -825,7 +699,7 @@ class _TaskItem extends ConsumerWidget {
         key: ValueKey('task-${t.id}'),
         contentPadding: const EdgeInsetsDirectional.only(start: 0, end: 8),
         leading: Row(mainAxisSize: MainAxisSize.min, children: [
-          const _Handle(),
+          const RowDragHandle(),
           _toggle(context, ref, t.id, t.title, show: row.hasChildren, collapsed: row.collapsed),
           auto
               ? Checkbox(
@@ -930,7 +804,7 @@ class _EventItem extends ConsumerWidget {
         key: ValueKey('event-${e.id}'),
         contentPadding: const EdgeInsetsDirectional.only(start: 0, end: 8),
         leading: Row(mainAxisSize: MainAxisSize.min, children: [
-          const _Handle(),
+          const RowDragHandle(),
           const SizedBox(width: 32),
           Semantics(
             label: l.ovEventLabel(e.title),
