@@ -2008,6 +2008,12 @@ abstract class AppLocalizations {
   /// **'More'**
   String get calMore;
 
+  /// No description provided for @moreOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'More options'**
+  String get moreOptions;
+
   /// No description provided for @calManageCalendars.
   ///
   /// In en, this message translates to:

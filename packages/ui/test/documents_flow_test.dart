@@ -209,25 +209,27 @@ void main() {
     final d = w.documents.put('Công thức', body: FakeDocuments.text('Phở bò: nấu nước dùng 6 giờ'));
     await pumpApp(tester, w);
     await openDocuments(tester);
-    await tester.enterText(find.byKey(const Key('doc-search')), 'phở');
-    await tester.pump(const Duration(milliseconds: 300));
-    await tester.pumpAndSettle();
+    // P06b W2: the field left the Documents app bar; the menu opens it.
+    expect(find.byKey(const Key('search-field')), findsNothing);
+    await openSearchFromMenu(tester);
+    await searchFor(tester, 'phở');
     expect(find.byKey(ValueKey('doc-hit-$d')), findsOneWidget);
     expect(find.byKey(const ValueKey('task-hit-t1')), findsOneWidget);
     expect(find.text('Tasks'), findsOneWidget);
-    await tester.enterText(find.byKey(const Key('doc-search')), 'không có');
-    await tester.pump(const Duration(milliseconds: 300));
-    await tester.pumpAndSettle();
+    await searchFor(tester, 'không có');
     expect(find.byKey(const Key('doc-no-results')), findsOneWidget);
-    await tester.enterText(find.byKey(const Key('doc-search')), 'nước');
-    await tester.pump(const Duration(milliseconds: 300));
-    await tester.pumpAndSettle();
+    await searchFor(tester, 'nước');
     await tester.tap(find.byKey(ValueKey('doc-hit-$d')));
     await tester.pumpAndSettle();
     expect(find.byType(DocumentPage), findsOneWidget);
+    // Back from the hit: the search with its results is still there.
     await tester.pageBack();
     await tester.pumpAndSettle();
-    await tapKey(tester, 'doc-search-clear');
+    expect(find.byKey(ValueKey('doc-hit-$d')), findsOneWidget);
+    await tapKey(tester, 'search-clear');
+    expect(find.byKey(const Key('search-empty')), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
     expect(find.byKey(const Key('doc-tree')), findsOneWidget);
   });
 

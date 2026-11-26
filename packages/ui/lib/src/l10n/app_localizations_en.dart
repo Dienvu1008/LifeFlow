@@ -1112,6 +1112,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calMore => 'More';
 
   @override
+  String get moreOptions => 'More options';
+
+  @override
   String get calManageCalendars => 'Manage calendars';
 
   @override

@@ -21,6 +21,7 @@ import '../providers.dart';
 import '../schedule_text.dart';
 import '../task_actions.dart';
 import '../task_tree.dart';
+import '../widgets/options_menu.dart';
 import '../widgets/schedule_fields.dart';
 import 'calendars_dialog.dart';
 import 'calendar_grid_view.dart';
@@ -245,21 +246,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 icon: const Icon(Icons.view_timeline_outlined),
                 onPressed: () => openTimeline(pos.mode == CalendarMode.day ? pos.anchor : today),
               ),
-              PopupMenuButton<String>(
-                tooltip: l.calMore,
-                onSelected: (v) => switch (v) {
-                  'in' => zoomCalendar(ref, 1.25),
-                  'out' => zoomCalendar(ref, 1 / 1.25),
-                  _ => showDialog<void>(context: context, builder: (_) => const CalendarsDialog()),
-                },
-                itemBuilder: (_) => [
-                  if (grid && !roomy) ...[
-                    PopupMenuItem(value: 'in', child: Text(l.calZoomIn)),
-                    PopupMenuItem(value: 'out', child: Text(l.calZoomOut)),
-                  ],
-                  PopupMenuItem(value: 'calendars', child: Text(l.calManageCalendars)),
+              // P06b W2: Search first, then the Calendar's own entries.
+              OptionsMenu(tooltip: l.calMore, options: [
+                if (grid && !roomy) ...[
+                  MenuOption(label: l.calZoomIn, onSelected: () => zoomCalendar(ref, 1.25)),
+                  MenuOption(label: l.calZoomOut, onSelected: () => zoomCalendar(ref, 1 / 1.25)),
                 ],
-              ),
+                MenuOption(
+                    label: l.calManageCalendars,
+                    onSelected: () => showDialog<void>(context: context, builder: (_) => const CalendarsDialog())),
+              ]),
             ],
           ),
           body: Stack(children: [

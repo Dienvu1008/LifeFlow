@@ -136,9 +136,12 @@ Future<String?> pickList(BuildContext context, List<TaskListView> lists, String?
       },
     );
 
-/// The + of the Overview: a small speed dial (list, event, task).
+/// The + of the Overview: a small speed dial (search, list, event, task;
+/// search since P06b W2, the owner's UI 1).
 class OverviewAddButton extends StatefulWidget {
-  const OverviewAddButton({super.key, required this.onTask, required this.onList, required this.onEvent});
+  const OverviewAddButton(
+      {super.key, required this.onSearch, required this.onTask, required this.onList, required this.onEvent});
+  final VoidCallback onSearch;
   final VoidCallback onTask;
   final VoidCallback onList;
   final VoidCallback onEvent;
@@ -174,6 +177,7 @@ class _OverviewAddButtonState extends State<OverviewAddButton> {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         if (_open) ...[
+          mini('add-search', l.search, Icons.search, widget.onSearch),
           mini('add-list', l.ovNewList, Icons.folder_outlined, widget.onList),
           mini('add-event', l.ovNewEvent, Icons.event_outlined, widget.onEvent),
           mini('add-task', l.ovAddTask, Icons.check_box_outlined, widget.onTask),
