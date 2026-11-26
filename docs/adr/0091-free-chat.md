@@ -24,7 +24,7 @@ ADR-0088 gave the assistant a destination and a free chat that reads all spaces 
    - **One change per task** in a proposal: each change is bound to its task's version, so a second one would be stale once the first runs.
    - At most 10 changes. Anything else (ids not sent, a shared space's task, a bad date or time, a slot past midnight, other actions) is dropped.
    - Every change is approved by the person, each or all (D8, LF-INV-AI-001), stale when its task changed (LF-INV-AI-002). An approved change carries its AI provenance in the audit log.
-5. **Not in this step:** events are read but not created or moved; a shared space's tasks are read but not changed (an approval runs in the personal space).
+5. **Not in this step:** events are read but not created or moved (they are, since [ADR-0093](0093-chat-events.md)); a shared space's tasks are read but not changed (an approval runs in the personal space).
 6. **The screen:**
    - The destination shows the chat.
    - Before a first message it shows what the assistant can do, the shortcuts "Plan my day" and "Fix conflicts" (they open the day page and start at once), and the history.

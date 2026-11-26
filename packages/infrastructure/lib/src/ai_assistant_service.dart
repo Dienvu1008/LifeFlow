@@ -483,29 +483,42 @@ class DriftAiAssistant implements AiAssistant {
     // and what every space holds about the message (the owner's Q2).
     final earlier = await _earlier(sessionId);
     final days = await calendar.range(today, today.addDays(chatAgendaDays - 1));
-    final when = <RecordRef, String>{};
+    // Each item with its day and time, one line for each day it is on.
+    final when = <RecordRef, List<String>>{};
+    final occurrences = <String, List<EventItem>>{};
     for (final t in days.tasks) {
-      if (t.isDone || when.length >= chatAgendaItems) continue;
-      when.putIfAbsent(RecordRef('task', t.taskId), () => _when(t.originalDate, t.deviceStart ?? t.start, t.deviceEnd ?? t.end));
+      final ref = RecordRef('task', t.taskId);
+      if (t.isDone || (when.length >= chatAgendaItems && !when.containsKey(ref))) continue;
+      when.putIfAbsent(ref, () => []).add(_when(t.originalDate, t.deviceStart ?? t.start, t.deviceEnd ?? t.end));
     }
     for (final e in days.events) {
-      if (e.isCancelled || when.length >= chatAgendaItems) continue;
-      when.putIfAbsent(RecordRef('event', e.eventId), () => _when(e.originalDate, e.deviceStart ?? e.start, e.deviceEnd ?? e.end));
+      final ref = RecordRef('event', e.eventId);
+      if (e.isCancelled || (when.length >= chatAgendaItems && !when.containsKey(ref))) continue;
+      occurrences.putIfAbsent(e.eventId, () => []).add(e);
+      when.putIfAbsent(ref, () => []).add(_when(e.originalDate, e.deviceStart ?? e.start, e.deviceEnd ?? e.end) +
+          (e.isRepeating ? ' (repeats; this one is of ${e.originalDate})' : ''));
     }
     final built = await context
         .build(AiContextRequest(purpose: AiPurpose.chat, named: when.keys.toList(), query: said, allSpaces: true));
 
-    // Only the personal space's tasks can be changed (an approval runs
-    // there, ADR-0082): they say so, so the model proposes nothing else.
+    // Only the personal space's tasks and timed events can be changed (an
+    // approval runs there, ADR-0082): they say so, so the model proposes
+    // nothing else.
     final taskIds = [for (final i in built.items) if (i.ref.kind == 'task') i.ref.id];
-    final changeable = taskIds.isEmpty || personal == null
-        ? const <String>{}
-        : {
-            for (final t in await (db.select(db.tasks)
-                  ..where((t) => t.id.isIn(taskIds) & t.workspaceId.equals(personal) & t.deletedAt.isNull()))
-                .get())
-              t.id,
-          };
+    final eventIds = [for (final i in built.items) if (i.ref.kind == 'event') i.ref.id];
+    final changeable = <String>{
+      if (taskIds.isNotEmpty && personal != null)
+        for (final t in await (db.select(db.tasks)
+              ..where((t) => t.id.isIn(taskIds) & t.workspaceId.equals(personal) & t.deletedAt.isNull()))
+            .get())
+          t.id,
+      if (eventIds.isNotEmpty && personal != null)
+        for (final e in await (db.select(db.events)
+              ..where((e) => e.id.isIn(eventIds) & e.workspaceId.equals(personal) & e.deletedAt.isNull()))
+            .get())
+          // A day-long event has no time to move to.
+          if (occurrences[e.id]?.any((o) => o.deviceStart?.time != null) ?? false) e.id,
+    };
     final items = [
       if (earlier != null) earlier,
       for (final it in built.items)
@@ -515,8 +528,8 @@ class DriftAiAssistant implements AiAssistant {
           title: it.title,
           version: it.version,
           text: [
-            if (when[it.ref] case final w?) w,
-            if (changeable.contains(it.ref.id) && it.ref.kind == 'task') 'changeable',
+            if (when[it.ref] case final w?) ...w,
+            if (changeable.contains(it.ref.id) && (it.ref.kind == 'task' || it.ref.kind == 'event')) 'changeable',
             it.text,
           ].where((x) => x.isNotEmpty).join('\n'),
         ),
@@ -531,8 +544,11 @@ class DriftAiAssistant implements AiAssistant {
       'Write "reply" briefly, in the language of the person\'s message.',
       'You may propose changes in "changes"; nothing changes until the person approves each one. A change is '
           'action "create" (a new task: "title"; "date" YYYY-MM-DD and "start" HH:MM and "minutes" if it should have a time), '
-          '"rename" ("taskId", "title") or "schedule" ("taskId", "date", "start", "minutes"). Only tasks whose text says '
-          '"changeable" may be renamed or scheduled; use only their ids (the part after "task:"). '
+          '"rename" ("taskId", "title"), "schedule" ("taskId", "date", "start", "minutes"), '
+          '"createEvent" (a new event: "title", "date", "start", "minutes" its length) or "moveEvent" ("eventId", the new '
+          '"date" and "start"; "minutes" its length, 0 to keep it; for an event that repeats, "fromDate" is the day '
+          'of the occurrence to move, and only that one moves). Only tasks and events whose text says "changeable" may be '
+          'changed; use only their ids (the part after "task:" or "event:"). '
           'Leave unused fields "" or 0. Propose nothing unless the person asks for a change.',
       'Answer only with JSON following the schema.',
     ].join(' ');
@@ -568,7 +584,8 @@ class DriftAiAssistant implements AiAssistant {
     // 3. The changes: only what the checks allow, built by the code (the
     // model never names a command).
     _titles = {for (final i in built.items) if (i.ref.kind == 'task') i.ref.id: i.title};
-    final changes = _chatChanges(answer['changes'], sent: req.sentRefs, changeable: changeable, versions: versions);
+    final changes = _chatChanges(answer['changes'],
+        sent: req.sentRefs, changeable: changeable, versions: versions, occurrences: occurrences);
     final reply = answer['reply'] is String && (answer['reply'] as String).trim().isNotEmpty
         ? (answer['reply'] as String).trim()
         : '…';
@@ -598,16 +615,21 @@ class DriftAiAssistant implements AiAssistant {
         text: reply);
   }
 
-  /// The proposed changes of a chat answer that pass the checks: a task to
-  /// rename or schedule must be one that was sent, of the personal space,
-  /// with its version; a schedule is one slot within one day; a new task's
-  /// slot follows it (its first version is 1, so it runs after it).
+  /// The proposed changes of a chat answer that pass the checks: a task or an
+  /// event to change must be one that was sent, of the personal space, with
+  /// its version; a slot is within one day; a new task's slot follows it
+  /// (its first version is 1, so it runs after it); a new event carries its
+  /// own slot; a repeating event moves one of the days it was shown on.
   List<ProposedChange> _chatChanges(Object? raw,
-      {required Set<RecordRef> sent, required Set<String> changeable, required Map<RecordRef, int> versions}) {
+      {required Set<RecordRef> sent,
+      required Set<String> changeable,
+      required Map<RecordRef, int> versions,
+      required Map<String, List<EventItem>> occurrences}) {
     final out = <ProposedChange>[];
     final zone = time.zone();
     String id() => 'c${out.length + 1}';
-    ProposedChange? slot(String taskId, String title, Object? date, Object? start, Object? minutes, int version) {
+
+    ({LocalDate day, TimeOfDayValue at, TimeOfDayValue end, tk.ScheduleSpec spec})? slotOf(Object? date, Object? start, int length) {
       final LocalDate day;
       try {
         day = LocalDate.parse('$date');
@@ -616,29 +638,43 @@ class DriftAiAssistant implements AiAssistant {
       }
       final from = parseDayMinute(start);
       if (from == null) return null;
-      final length = minutes is int && minutes > 0 ? minutes.clamp(5, 12 * 60) : 30;
       final to = from + length;
       if (to >= 24 * 60) return null;
       final at = TimeOfDayValue(from ~/ 60, from % 60), end = TimeOfDayValue(to ~/ 60, to % 60);
-      final spec = tk.ScheduleSpec(
-          start: tk.TimedPoint(ZonedWallClock(day, at, zone)), end: tk.TimedPoint(ZonedWallClock(day, end, zone)));
-      return ProposedChange(
-        id: id(),
-        commandType: 'SetTaskSchedule',
-        arguments: {'id': taskId, 'schedule': scheduleFieldsJson('task', taskId, spec, null)},
-        versions: {RecordRef('task', taskId): version},
-        summary: _vi ? '"$title": $day $at–$end' : '"$title": $day $at–$end',
+      return (
+        day: day,
+        at: at,
+        end: end,
+        spec: tk.ScheduleSpec(
+            start: tk.TimedPoint(ZonedWallClock(day, at, zone)), end: tk.TimedPoint(ZonedWallClock(day, end, zone)))
       );
     }
 
-    // One change per task: each is bound to the version it was made against,
-    // so a second one on the same task would be stale once the first runs.
+    int lengthOf(Object? minutes, int fallback) => minutes is int && minutes > 0 ? minutes.clamp(5, 12 * 60) : fallback;
+
+    ProposedChange? slot(String taskId, String title, Object? date, Object? start, Object? minutes, int version) {
+      final s = slotOf(date, start, lengthOf(minutes, 30));
+      if (s == null) return null;
+      return ProposedChange(
+        id: id(),
+        commandType: 'SetTaskSchedule',
+        arguments: {'id': taskId, 'schedule': scheduleFieldsJson('task', taskId, s.spec, null)},
+        versions: {RecordRef('task', taskId): version},
+        summary: '"$title": ${s.day} ${s.at}–${s.end}',
+      );
+    }
+
+    // One change per task or event: each is bound to the version it was
+    // made against, so a second one on the same item would be stale once the
+    // first runs.
     final touched = <String>{};
     for (final c in raw is List ? raw : const []) {
       if (c is! Map || out.length >= maxChatChanges) continue;
       final action = '${c['action'] ?? ''}';
       var taskId = '${c['taskId'] ?? ''}'.trim();
       if (taskId.startsWith('task:')) taskId = taskId.substring(5);
+      var eventId = '${c['eventId'] ?? ''}'.trim();
+      if (eventId.startsWith('event:')) eventId = eventId.substring(6);
       final title = '${c['title'] ?? ''}'.trim();
       final ref = RecordRef('task', taskId);
       final known = taskId.isNotEmpty &&
@@ -676,11 +712,77 @@ class DriftAiAssistant implements AiAssistant {
             out.add(s);
             touched.add(taskId);
           }
+        case 'createEvent':
+          // An event needs a day and a start; the length is an hour unless said.
+          if (title.isEmpty || title.length > maxAiTitleLength) continue;
+          final s = slotOf(c['date'], c['start'], lengthOf(c['minutes'], 60));
+          if (s == null) continue;
+          final newId = _uuid.v7();
+          out.add(ProposedChange(
+            id: id(),
+            commandType: 'CreateEvent',
+            arguments: {'id': newId, 'title': title, 'schedule': scheduleFieldsJson('event', newId, s.spec, null)},
+            versions: const {},
+            summary: _vi
+                ? 'Sự kiện mới: "$title", ${s.day} ${s.at}–${s.end}'
+                : 'New event: "$title", ${s.day} ${s.at}–${s.end}',
+          ));
+        case 'moveEvent':
+          final eref = RecordRef('event', eventId);
+          final shown = occurrences[eventId];
+          if (eventId.isEmpty ||
+              touched.contains(eventId) ||
+              shown == null ||
+              shown.isEmpty ||
+              !sent.contains(eref) ||
+              !changeable.contains(eventId) ||
+              versions[eref] == null) {
+            continue;
+          }
+          final first = shown.first;
+          if (first.title.trim().isEmpty || first.title != first.title.trim() || first.title.length > maxAiTitleLength) continue;
+          if (first.isRepeating) {
+            // Only one of the days it was shown on moves (as "this event only").
+            final from = '${c['fromDate'] ?? ''}'.trim();
+            if (!shown.any((o) => '${o.originalDate}' == from)) continue;
+            final to = slotOf(c['date'], c['start'], 30);
+            if (to == null) continue;
+            out.add(ProposedChange(
+              id: id(),
+              commandType: 'MoveEventOccurrence',
+              arguments: {'id': eventId, 'kind': 'move', 'originalDate': from, 'moveDate': '${to.day}', 'moveTime': '${to.at}'},
+              versions: {eref: versions[eref]!},
+              summary: _vi
+                  ? '"${first.title}" (ngày $from): ${to.day} ${to.at}'
+                  : '"${first.title}" (of $from): ${to.day} ${to.at}',
+            ));
+          } else {
+            // Its length is kept unless the model gives another.
+            final a = first.deviceStart, z = first.deviceEnd;
+            final kept = a?.time != null && z?.time != null && a!.date == z!.date
+                ? z.time!.minuteOfDay - a.time!.minuteOfDay
+                : 0;
+            final to = slotOf(c['date'], c['start'], lengthOf(c['minutes'], kept > 0 ? kept : 60));
+            if (to == null) continue;
+            out.add(ProposedChange(
+              id: id(),
+              commandType: 'MoveEvent',
+              arguments: {
+                'id': eventId,
+                'title': first.title,
+                'location': first.location,
+                'calendarId': first.calendarId,
+                'schedule': scheduleFieldsJson('event', eventId, to.spec, null),
+              },
+              versions: {eref: versions[eref]!},
+              summary: '"${first.title}": ${to.day} ${to.at}–${to.end}',
+            ));
+          }
+          touched.add(eventId);
       }
     }
     return out;
   }
-
   /// Titles of the items of the last chat context, by task id (for the
   /// summaries of the changes).
   Map<String, String> _titles = const {};
@@ -715,15 +817,17 @@ const chatSchema = <String, Object?>{
         'properties': {
           'action': {
             'type': 'string',
-            'enum': ['create', 'rename', 'schedule'],
+            'enum': ['create', 'rename', 'schedule', 'createEvent', 'moveEvent'],
           },
           'taskId': {'type': 'string'},
+          'eventId': {'type': 'string'},
+          'fromDate': {'type': 'string'},
           'title': {'type': 'string'},
           'date': {'type': 'string'},
           'start': {'type': 'string'},
           'minutes': {'type': 'integer'},
         },
-        'required': ['action', 'taskId', 'title', 'date', 'start', 'minutes'],
+        'required': ['action', 'taskId', 'eventId', 'fromDate', 'title', 'date', 'start', 'minutes'],
         'additionalProperties': false,
       },
     },
