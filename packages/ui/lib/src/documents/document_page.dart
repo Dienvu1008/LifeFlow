@@ -35,6 +35,7 @@ import '../screens/goals_screen.dart' show openGoalPage;
 import '../screens/spaces_ui.dart' show moveItemFlow, moveLabel;
 import '../screens/task_page.dart' show openTaskPage;
 import '../task_actions.dart' show reportResult, showMessage;
+import '../widgets/marquee_text.dart';
 import '../widgets/options_menu.dart';
 import 'documents_screen.dart' show moveUnderFlow, trashDocumentFlow;
 import 'pdf_page.dart' show openPdfPage;
@@ -95,7 +96,27 @@ class DocumentPageState extends ConsumerState<DocumentPage> {
   /// Whether the shown space may be changed (B4), as last built.
   late bool _canEdit = ref.read(canEditShownProvider);
   int _generation = 0;
-  int _linksGeneration = 0;
+
+  /// P06b W3: the title is open for editing under the app bar.
+  bool _titleOpen = false;
+  final _titleFocus = FocusNode();
+
+  /// Opens the title under the app bar with the cursor at its end, or
+  /// closes it (and saves soon).
+  void _toggleTitle() {
+    if (_titleOpen) {
+      _titleFocus.unfocus();
+      setState(() => _titleOpen = false);
+      _saveSoon();
+      return;
+    }
+    setState(() => _titleOpen = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_titleOpen) return;
+      _title.selection = TextSelection.collapsed(offset: _title.text.length);
+      _titleFocus.requestFocus();
+    });
+  }
 
   @override
   void initState() {
@@ -304,6 +325,7 @@ class DocumentPageState extends ConsumerState<DocumentPage> {
     c?.removeListener(_checkLinkTrigger);
     c?.dispose();
     _title.dispose();
+    _titleFocus.dispose();
     _focus.dispose();
     _scroll.dispose();
     super.dispose();
@@ -336,7 +358,6 @@ class DocumentPageState extends ConsumerState<DocumentPage> {
     final title = picked.title;
     c.replaceText(at, replace, title, TextSelection.collapsed(offset: at + title.length));
     c.formatText(at, title.length, q.LinkAttribute('$docLinkScheme${picked.id}'));
-    setState(() => _linksGeneration++);
   }
 
   /// What a tap on a link does (tests call it; Quill calls [_openLink]).
@@ -412,7 +433,6 @@ class DocumentPageState extends ConsumerState<DocumentPage> {
         final item = await showDialog<({DocumentItemType type, String id})>(context: context, builder: (_) => const ItemLinkPicker());
         if (item == null || !mounted) return;
         await reportResult(context, _service.link(d.id, item.type, item.id));
-        if (mounted) setState(() => _linksGeneration++);
       case _PageAction.moveUnder:
         await moveUnderFlow(context, ref,
             DocumentNodeView(id: d.id, title: d.title, parentId: d.parentId, orderKey: ''));
@@ -431,18 +451,31 @@ class DocumentPageState extends ConsumerState<DocumentPage> {
     final canEdit = _canEdit = ref.watch(canEditShownProvider);
     final c = _c;
     if (c != null && c.readOnly != _readOnly) c.readOnly = _readOnly;
+    if (_readOnly && _titleOpen) _titleOpen = false;
     return Scaffold(
       appBar: AppBar(
-        title: Text(d?.title ?? l.navDocuments, overflow: TextOverflow.ellipsis),
+        // P06b W3 (owner UI 2): the title fills the app bar and slides when
+        // it is too long; the button beside it opens it for editing below.
+        titleSpacing: 0,
+        title: d == null
+            ? Text(l.navDocuments)
+            : Row(children: [
+                Expanded(
+                  child: ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: _title,
+                    builder: (_, v, __) => MarqueeText(v.text.trim().isEmpty ? l.docUntitled : v.text, key: const Key('doc-app-title')),
+                  ),
+                ),
+                if (!_readOnly)
+                  IconButton(
+                    key: const Key('doc-title-edit'),
+                    tooltip: _titleOpen ? l.docTitleDone : l.docTitleEdit,
+                    icon: Icon(_titleOpen ? Icons.expand_less : Icons.expand_more),
+                    onPressed: _toggleTitle,
+                  ),
+              ]),
         actions: [
-          if (d != null && !d.isUnreadable && c != null)
-            IconButton(
-              key: const Key('doc-read-aloud'),
-              tooltip: l.docReadAloud,
-              isSelected: _reader != null,
-              icon: const Icon(Icons.record_voice_over_outlined),
-              onPressed: _reader == null ? _openReader : _closeReader,
-            ),
+          if (d != null) _SaveStateIcon(doc: d, state: _state, readOnly: _viewOnly),
           // P06 T7: ask the assistant about this document.
           if (d != null && ref.watch(aiAssistantProvider) != null)
             IconButton(
@@ -457,6 +490,21 @@ class DocumentPageState extends ConsumerState<DocumentPage> {
             tooltip: d == null ? null : l.actionsForTitle(d.title),
             options: [
               if (d != null) ...[
+                // P06b W3: read aloud and the links moved here from the bar
+                // and from under the text.
+                if (!d.isUnreadable && c != null)
+                  MenuOption(
+                    key: const Key('doc-read-aloud'),
+                    label: _reader == null ? l.docReadAloud : l.docStopReading,
+                    icon: Icons.record_voice_over_outlined,
+                    onSelected: _reader == null ? _openReader : _closeReader,
+                  ),
+                MenuOption(
+                  key: const Key('doc-links'),
+                  label: l.docLinksMenu,
+                  icon: Icons.link,
+                  onSelected: () => showLinksSheet(context, d, canEdit: canEdit && !d.isTrashed),
+                ),
                 MenuOption(label: l.docHistory, onSelected: () => _act(_PageAction.history)),
                 if (canEdit && !d.isTrashed) ...[
                   MenuOption(label: l.docLinkItem, onSelected: () => _act(_PageAction.link)),
@@ -478,19 +526,22 @@ class DocumentPageState extends ConsumerState<DocumentPage> {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     if (d.isTrashed) _Banner(key: const Key('doc-in-trash'), text: l.docInTrash, action: canEdit ? _restoreAction() : null),
                     if (d.isUnreadable) _Banner(key: const Key('doc-unreadable'), text: l.docUnreadable),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                      child: TextField(
-                        key: const Key('doc-title'),
-                        controller: _title,
-                        readOnly: _readOnly,
-                        maxLength: maxDocumentTitleLength,
-                        style: Theme.of(context).textTheme.headlineSmall,
-                        decoration: InputDecoration(hintText: l.docTitleLabel, border: InputBorder.none, counterText: ''),
-                        onSubmitted: (_) => _saveSoon(),
+                    if (_titleOpen)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                        child: TextField(
+                          key: const Key('doc-title'),
+                          controller: _title,
+                          focusNode: _titleFocus,
+                          readOnly: _readOnly,
+                          maxLength: maxDocumentTitleLength,
+                          maxLines: null,
+                          textInputAction: TextInputAction.done,
+                          style: Theme.of(context).textTheme.titleLarge,
+                          decoration: InputDecoration(hintText: l.docTitleLabel, counterText: ''),
+                          onSubmitted: (_) => _toggleTitle(),
+                        ),
                       ),
-                    ),
-                    _StatusLine(doc: d, state: _state, readOnly: _viewOnly),
                     if (!_readOnly && c != null) _Toolbar(controller: c, onLink: () => _pickLink(c.selection.baseOffset, 0), onAttach: _attach),
                     const Divider(height: 1),
                     Expanded(
@@ -517,9 +568,6 @@ class DocumentPageState extends ConsumerState<DocumentPage> {
                             ),
                     ),
                     if (_reader case final r?) ReaderBar(reader: r, onClose: _closeReader),
-                    _LinksPanel(key: ValueKey('links-$_linksGeneration'), doc: d, canEdit: canEdit && !d.isTrashed, onChanged: () {
-                      setState(() => _linksGeneration++);
-                    }),
                   ]),
                 ),
     );
@@ -548,8 +596,11 @@ class _Banner extends StatelessWidget {
       );
 }
 
-class _StatusLine extends ConsumerWidget {
-  const _StatusLine({required this.doc, required this.state, required this.readOnly});
+/// P06b W3 (owner UI 2): the save state as an icon in the app bar, the
+/// words in its tooltip (and said on a tap, for touch): saved, saving, not
+/// saved yet, or view only; in a shared space also who changed it last.
+class _SaveStateIcon extends ConsumerWidget {
+  const _SaveStateIcon({required this.doc, required this.state, required this.readOnly});
   final DocumentView doc;
   final SaveState state;
   final bool readOnly;
@@ -574,9 +625,20 @@ class _StatusLine extends ConsumerWidget {
       parts.add(l.spChangedBy(names[doc.changedBy] ?? l.spSomeone,
           '${ml.formatShortDate(at)} ${ml.formatTimeOfDay(TimeOfDay.fromDateTime(at))}'));
     }
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-      child: Text(parts.join(' · '), key: const Key('doc-status'), style: Theme.of(context).textTheme.bodySmall),
+    if (parts.isEmpty) return const SizedBox.shrink();
+    final text = parts.join(' · ');
+    final icon = readOnly
+        ? Icons.visibility_outlined
+        : switch (state) {
+            SaveState.saved => Icons.cloud_done_outlined,
+            SaveState.saving => Icons.cloud_upload_outlined,
+            SaveState.unsaved => Icons.edit_note,
+          };
+    return IconButton(
+      key: const Key('doc-status'),
+      tooltip: text,
+      icon: Icon(icon, key: ValueKey('doc-status-${readOnly ? 'view' : state.name}')),
+      onPressed: () => showMessage(context, text),
     );
   }
 }
@@ -642,23 +704,33 @@ class _Toolbar extends StatelessWidget {
   }
 }
 
-// --- under the text: backlinks and linked items ------------------------------
+// --- backlinks and linked items (a sheet from the menu) ----------------------
 
-class _LinksPanel extends ConsumerStatefulWidget {
-  const _LinksPanel({super.key, required this.doc, required this.canEdit, required this.onChanged});
+/// P06b W3 (owner UI 2): the backlinks and linked items, in a sheet from the
+/// options menu instead of a panel under the text.
+Future<void> showLinksSheet(BuildContext context, DocumentView doc, {required bool canEdit}) => showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => _LinksSheet(doc: doc, canEdit: canEdit),
+    );
+
+class _LinksSheet extends ConsumerStatefulWidget {
+  const _LinksSheet({required this.doc, required this.canEdit});
   final DocumentView doc;
   final bool canEdit;
-  final VoidCallback onChanged;
 
   @override
-  ConsumerState<_LinksPanel> createState() => _LinksPanelState();
+  ConsumerState<_LinksSheet> createState() => _LinksSheetState();
 }
 
-class _LinksPanelState extends ConsumerState<_LinksPanel> {
-  late final Future<(List<BacklinkView>, List<DocumentItemLinkView>)> _links = () async {
+class _LinksSheetState extends ConsumerState<_LinksSheet> {
+  late Future<(List<BacklinkView>, List<DocumentItemLinkView>)> _links = _load();
+
+  Future<(List<BacklinkView>, List<DocumentItemLinkView>)> _load() async {
     final queries = ref.read(documentQueriesProvider);
     return (await queries.backlinks(widget.doc.id), await queries.linksOf(widget.doc.id));
-  }();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -672,16 +744,15 @@ class _LinksPanelState extends ConsumerState<_LinksPanel> {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 2),
               child: Semantics(header: true, child: Text(t, style: theme.textTheme.titleSmall)),
             );
-        return Material(
-          color: theme.colorScheme.surfaceContainerLow,
-          child: ExpansionTile(
-            key: const Key('doc-links'),
-            title: Text(l.docLinksSummary(back.length, linked.length), style: theme.textTheme.bodyMedium),
-            childrenPadding: const EdgeInsets.only(bottom: 8),
-            children: [
-              ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.4),
-                child: ListView(shrinkWrap: true, children: [
+        return SafeArea(
+          child: ConstrainedBox(
+            key: const Key('doc-links-sheet'),
+            constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.7),
+            child: ListView(shrinkWrap: true, padding: const EdgeInsets.only(bottom: 16), children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                    child: Text(l.docLinksSummary(back.length, linked.length), style: theme.textTheme.bodyMedium),
+                  ),
                   header(l.docBacklinks),
                   if (back.isEmpty) ListTile(dense: true, title: Text(l.docNoBacklinks)),
                   for (final b in back)
@@ -725,14 +796,16 @@ class _LinksPanelState extends ConsumerState<_LinksPanel> {
                               onPressed: () async {
                                 await reportResult(
                                     context, ref.read(documentServiceProvider).unlink(widget.doc.id, i.itemType, i.itemId));
-                                widget.onChanged();
+                                if (mounted) {
+                                  setState(() {
+                                    _links = _load();
+                                  });
+                                }
                               },
                             )
                           : null,
                     ),
-                ]),
-              ),
-            ],
+            ]),
           ),
         );
       },

@@ -704,6 +704,8 @@ void main() {
     await tester.pump();
     await settle(tester);
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('doc-title-edit'))); // P06b W3: the title opens under the bar
+    await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('doc-title')), 'Kế hoạch mới');
     await back();
     await tester.tap(find.text('Nhật ký'));
@@ -717,6 +719,8 @@ void main() {
     await tester.tap(find.text('Kế hoạch mới'));
     await tester.pump();
     await settle(tester);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('doc-page-menu'))); // P06b W3: the links are in the menu
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('doc-links')));
     await tester.pump();
