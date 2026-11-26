@@ -18,7 +18,8 @@ library;
 //                     SyncSetupHandler, SyncReviewHandler,
 //                     SpaceMoveHandler, MemberCardHandler,
 //                     DocumentCommandHandler, AiSessionHandler,
-//                     AiProposalHandler, AiApprovedChangeHandler
+//                     AiProposalHandler, AiApprovedChangeHandler,
+//                     ShelfCommandHandler
 import 'package:application/application.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -149,6 +150,11 @@ void main() {
   // P06 T3 (ADR-0082): the assistant's history, and an approved change (the
   // versions it holds are t1's when the proposal is made, below).
   const aiSessionHandler = AiSessionHandler();
+  // P06b W6 (ADR-0094): archive, restore from the trash, delete for good.
+  const shelfTask = ShelfCommandHandler('task');
+  const shelfList = ShelfCommandHandler('taskList');
+  const shelfEvent = ShelfCommandHandler('event');
+  const shelfDoc = ShelfCommandHandler('document');
   const aiProposalHandler = AiProposalHandler();
   final aiVersions = <RecordRef, int>{};
   final approvedHandler = AiApprovedChangeHandler(taskHandler, proposalId: 'ap1', changeId: 'c1', versions: aiVersions);
@@ -478,7 +484,56 @@ void main() {
               opId: op, expected: v)),
       ('syncSetup.undoJoin', setupHandler, 'syncSetup', 'w-acc',
           (v, op) => command(undoSyncJoinAction, {'op': 'undoJoin', 'id': 'w-acc'}, opId: op, expected: v, workspace: 'w-acc')),
-    ];
+      // P06b W6 (ADR-0094): a task, a list, an event and a document each
+      // archived and brought back, trashed and deleted for good; a task also
+      // restored from the trash.
+      ('shelf.task.create', taskHandler, 'task', 'sh1',
+          (v, op) => command('CreateTask', {'op': 'create', 'id': 'sh1', 'title': 'Shelf'}, opId: op, expected: v)),
+      ('shelf.task.sub.create', taskHandler, 'task', 'sh1b',
+          (v, op) => command('CreateTask', {'op': 'create', 'id': 'sh1b', 'title': 'Sub', 'parentId': 'sh1'}, opId: op, expected: v)),
+      ('shelf.task.archive', shelfTask, 'task', 'sh1',
+          (v, op) => command('ArchiveTask', {'op': 'archive', 'id': 'sh1'}, opId: op, expected: v)),
+      ('shelf.task.unarchive', shelfTask, 'task', 'sh1',
+          (v, op) => command('UnarchiveTask', {'op': 'unarchive', 'id': 'sh1'}, opId: op, expected: v)),
+      ('shelf.task.trash', taskHandler, 'task', 'sh1',
+          (v, op) => command('TrashTaskWithSubtasks', {'op': 'trash', 'id': 'sh1', 'cascade': 'all'}, opId: op, expected: v)),
+      ('shelf.task.restore', shelfTask, 'task', 'sh1',
+          (v, op) => command('RestoreTask', {'op': 'restore', 'id': 'sh1'}, opId: op, expected: v)),
+      ('shelf.task.trashAgain', taskHandler, 'task', 'sh1',
+          (v, op) => command('TrashTaskWithSubtasks', {'op': 'trash', 'id': 'sh1', 'cascade': 'all'}, opId: op, expected: v)),
+      ('shelf.task.purge', shelfTask, 'task', 'sh1',
+          (v, op) => command('PurgeTask', {'op': 'purge', 'id': 'sh1'}, opId: op, expected: v)),
+      ('shelf.list.create', listHandler, 'taskList', 'shl1',
+          (v, op) => command('CreateList', {'op': 'create', 'id': 'shl1', 'title': 'Shelf list'}, opId: op, expected: v)),
+      ('shelf.list.archive', shelfList, 'taskList', 'shl1',
+          (v, op) => command('ArchiveList', {'op': 'archive', 'id': 'shl1'}, opId: op, expected: v)),
+      ('shelf.list.unarchive', shelfList, 'taskList', 'shl1',
+          (v, op) => command('UnarchiveList', {'op': 'unarchive', 'id': 'shl1'}, opId: op, expected: v)),
+      ('shelf.list.trash', listHandler, 'taskList', 'shl1',
+          (v, op) => command('TrashList', {'op': 'trash', 'id': 'shl1'}, opId: op, expected: v)),
+      ('shelf.list.purge', shelfList, 'taskList', 'shl1',
+          (v, op) => command('PurgeList', {'op': 'purge', 'id': 'shl1'}, opId: op, expected: v)),
+      ('shelf.event.create', eventHandler, 'event', 'she1',
+          (v, op) => command('CreateEvent', {'op': 'create', 'id': 'she1', 'title': 'Shelf event', 'schedule': eventSchedule}, opId: op, expected: v)),
+      ('shelf.event.archive', shelfEvent, 'event', 'she1',
+          (v, op) => command('ArchiveEvent', {'op': 'archive', 'id': 'she1'}, opId: op, expected: v)),
+      ('shelf.event.unarchive', shelfEvent, 'event', 'she1',
+          (v, op) => command('UnarchiveEvent', {'op': 'unarchive', 'id': 'she1'}, opId: op, expected: v)),
+      ('shelf.event.trash', eventHandler, 'event', 'she1',
+          (v, op) => command('TrashEvent', {'op': 'trash', 'id': 'she1'}, opId: op, expected: v)),
+      ('shelf.event.purge', shelfEvent, 'event', 'she1',
+          (v, op) => command('PurgeEvent', {'op': 'purge', 'id': 'she1'}, opId: op, expected: v)),
+      ('shelf.doc.create', docHandler, 'document', 'shd1',
+          (v, op) => command('CreateDocument',
+              {'op': 'create', 'id': 'shd1', 'title': 'Shelf doc', 'revisionId': 'shr1', 'firstBlockId': 'b1'}, opId: op, expected: v)),
+      ('shelf.doc.archive', shelfDoc, 'document', 'shd1',
+          (v, op) => command('ArchiveDocument', {'op': 'archive', 'id': 'shd1'}, opId: op, expected: v)),
+      ('shelf.doc.unarchive', shelfDoc, 'document', 'shd1',
+          (v, op) => command('UnarchiveDocument', {'op': 'unarchive', 'id': 'shd1'}, opId: op, expected: v)),
+      ('shelf.doc.trash', docHandler, 'document', 'shd1',
+          (v, op) => command('TrashDocument', {'op': 'trash', 'id': 'shd1'}, opId: op, expected: v)),
+      ('shelf.doc.purge', shelfDoc, 'document', 'shd1',
+          (v, op) => command('PurgeDocument', {'op': 'purge', 'id': 'shd1'}, opId: op, expected: v)),    ];
   });
 
   test('every handler operation writes the whole atomic set, and a failure '

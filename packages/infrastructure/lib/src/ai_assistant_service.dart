@@ -119,7 +119,7 @@ class DriftAiAssistant implements AiAssistant {
   Future<List<Task>> _plannable(String ws, LocalDate date) async {
     final rows = await (db.select(db.tasks)
           ..where((t) =>
-              t.workspaceId.equals(ws) & t.deletedAt.isNull() & t.status.isIn(const ['inbox', 'todo', 'inProgress'])))
+              t.workspaceId.equals(ws) & t.deletedAt.isNull() & t.archivedAt.isNull() & t.status.isIn(const ['inbox', 'todo', 'inProgress'])))
         .get();
     final schedules = {
       for (final s in await (db.select(db.schedules)
@@ -509,12 +509,12 @@ class DriftAiAssistant implements AiAssistant {
     final changeable = <String>{
       if (taskIds.isNotEmpty && personal != null)
         for (final t in await (db.select(db.tasks)
-              ..where((t) => t.id.isIn(taskIds) & t.workspaceId.equals(personal) & t.deletedAt.isNull()))
+              ..where((t) => t.id.isIn(taskIds) & t.workspaceId.equals(personal) & t.deletedAt.isNull() & t.archivedAt.isNull()))
             .get())
           t.id,
       if (eventIds.isNotEmpty && personal != null)
         for (final e in await (db.select(db.events)
-              ..where((e) => e.id.isIn(eventIds) & e.workspaceId.equals(personal) & e.deletedAt.isNull()))
+              ..where((e) => e.id.isIn(eventIds) & e.workspaceId.equals(personal) & e.deletedAt.isNull() & e.archivedAt.isNull()))
             .get())
           // A day-long event has no time to move to.
           if (occurrences[e.id]?.any((o) => o.deviceStart?.time != null) ?? false) e.id,

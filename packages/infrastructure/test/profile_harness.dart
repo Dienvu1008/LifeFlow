@@ -97,6 +97,14 @@ class Services {
 /// Turns a current profile store back into what a build with schema [version]
 /// wrote (for migration tests). Data in the tables that remain is kept.
 Future<void> rewindProfileStore(AppDatabase db, int version) async {
+  if (version < 19) {
+    // P06b W6 (ADR-0094): nothing archived, nothing deleted for good.
+    for (final t in ['task_lists', 'tasks', 'events', 'documents']) {
+      for (final c in ['archived_at', 'purged_at']) {
+        await db.customStatement('ALTER TABLE $t DROP COLUMN $c');
+      }
+    }
+  }
   if (version < 18) {
     // P06 T3 (ADR-0082): no assistant history, no AI provenance.
     for (final t in ['ai_sessions', 'ai_messages', 'ai_proposals']) {

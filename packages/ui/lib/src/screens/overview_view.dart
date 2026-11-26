@@ -23,6 +23,7 @@ import 'focus_page.dart';
 import 'goals_screen.dart';
 import 'habit_page.dart';
 import 'schedule_editor.dart';
+import 'shelf_screens.dart' show archiveFlow;
 import 'spaces_ui.dart' show assignedTo, moveItemFlow, moveLabel;
 import 'task_page.dart';
 import 'tasks_screen.dart' show addTaskWithDialog, showTextDialog, trashTask;
@@ -619,6 +620,7 @@ class _ListHeader extends ConsumerWidget {
               _item('colour', l.ovColour),
               ..._moveItems(context, ix, list.id),
               if (moveLabel(context, ref) case final m?) _item('space', m),
+              _item('archive', l.shelfArchive),
               _item('trash', l.moveToTrash),
             ],
           ),
@@ -649,6 +651,8 @@ class _ListHeader extends ConsumerWidget {
         final c = await pickColour(context, list.colorIndex);
         if (c == null || !context.mounted) return;
         await reportResult(context, s.setListColor(list.id, c.index));
+      case 'archive':
+        await archiveFlow(context, ref, ShelfKind.list, list.id, list.title);
       case 'trash':
         final r = await reportResult(context, s.trashList(list.id));
         if (r is CommandOk && context.mounted) {
@@ -745,6 +749,7 @@ class _TaskItem extends ConsumerWidget {
             ..._moveItems(context, ix, t.id),
             if (t.parentId == null)
               if (moveLabel(context, ref) case final m?) _item('space', m),
+            _item('archive', l.shelfArchive),
             _item('trash', l.moveToTrash),
           ],
         ),
@@ -778,6 +783,8 @@ class _TaskItem extends ConsumerWidget {
         final c = await pickColour(context, t.colorIndex);
         if (c == null || !context.mounted) return;
         await reportResult(context, ref.read(overviewServiceProvider).setTaskColor(t.id, c.index));
+      case 'archive':
+        await archiveFlow(context, ref, ShelfKind.task, t.id, t.title);
       case 'trash':
         await trashTask(context, ref, row.row);
     }
@@ -826,6 +833,7 @@ class _EventItem extends ConsumerWidget {
             _item('colour', l.ovColour),
             ..._moveItems(context, ix, e.id),
             if (moveLabel(context, ref) case final m?) _item('space', m),
+            _item('archive', l.shelfArchive),
             _item('trash', l.moveToTrash),
           ],
         ),
@@ -846,6 +854,8 @@ class _EventItem extends ConsumerWidget {
         final c = await pickColour(context, e.colorIndex);
         if (c == null || !context.mounted) return;
         await reportResult(context, ref.read(overviewServiceProvider).setEventColor(e.id, c.index));
+      case 'archive':
+        await archiveFlow(context, ref, ShelfKind.event, e.id, e.title);
       case 'trash':
         final events = ref.read(eventServiceProvider);
         final r = await reportResult(context, events.trash(e.id));

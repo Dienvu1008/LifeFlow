@@ -4756,6 +4756,204 @@ abstract class AppLocalizations {
   /// **'No conversations yet.'**
   String get aiNoHistory;
 
+  /// No description provided for @navArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get navArchive;
+
+  /// No description provided for @navTrash.
+  ///
+  /// In en, this message translates to:
+  /// **'Trash'**
+  String get navTrash;
+
+  /// No description provided for @shelfArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get shelfArchive;
+
+  /// No description provided for @shelfUnarchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Unarchive'**
+  String get shelfUnarchive;
+
+  /// No description provided for @shelfArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'“{title}” archived'**
+  String shelfArchived(String title);
+
+  /// No description provided for @shelfUnarchived.
+  ///
+  /// In en, this message translates to:
+  /// **'“{title}” is back'**
+  String shelfUnarchived(String title);
+
+  /// No description provided for @shelfArchiveEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing is archived. Archive what you are done with: it is put away, not deleted.'**
+  String get shelfArchiveEmpty;
+
+  /// No description provided for @shelfTrashEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'The trash is empty.'**
+  String get shelfTrashEmpty;
+
+  /// No description provided for @shelfAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get shelfAll;
+
+  /// No description provided for @shelfTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks'**
+  String get shelfTasks;
+
+  /// No description provided for @shelfLists.
+  ///
+  /// In en, this message translates to:
+  /// **'Lists'**
+  String get shelfLists;
+
+  /// No description provided for @shelfEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'Events'**
+  String get shelfEvents;
+
+  /// No description provided for @shelfDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'Documents'**
+  String get shelfDocuments;
+
+  /// No description provided for @shelfContents.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{and 1 more} other{and {count} more}}'**
+  String shelfContents(int count);
+
+  /// No description provided for @shelfIn.
+  ///
+  /// In en, this message translates to:
+  /// **'in {place}'**
+  String shelfIn(String place);
+
+  /// No description provided for @shelfWhenArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived {date}'**
+  String shelfWhenArchived(String date);
+
+  /// No description provided for @shelfWhenTrashed.
+  ///
+  /// In en, this message translates to:
+  /// **'Trashed {date}'**
+  String shelfWhenTrashed(String date);
+
+  /// No description provided for @shelfMoveToTrash.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to trash'**
+  String get shelfMoveToTrash;
+
+  /// No description provided for @shelfRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get shelfRestore;
+
+  /// No description provided for @shelfRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'“{title}” restored'**
+  String shelfRestored(String title);
+
+  /// No description provided for @shelfDeleteForever.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete forever'**
+  String get shelfDeleteForever;
+
+  /// No description provided for @shelfDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete for good?'**
+  String get shelfDeleteTitle;
+
+  /// No description provided for @shelfDeleteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'“{title}” and what went with it will be deleted for good, on this device and on your others. This cannot be undone.'**
+  String shelfDeleteBody(String title);
+
+  /// No description provided for @shelfDeletedForever.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted for good'**
+  String get shelfDeletedForever;
+
+  /// No description provided for @shelfEmptyTrash.
+  ///
+  /// In en, this message translates to:
+  /// **'Empty trash'**
+  String get shelfEmptyTrash;
+
+  /// No description provided for @shelfEmptyTrashBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item} other{{count} items}} in the trash will be deleted for good, on this device and on your others. This cannot be undone.'**
+  String shelfEmptyTrashBody(int count);
+
+  /// No description provided for @shelfTrashEmptied.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item deleted for good} other{{count} items deleted for good}}'**
+  String shelfTrashEmptied(int count);
+
+  /// No description provided for @shelfKeepFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep trashed items for'**
+  String get shelfKeepFor;
+
+  /// No description provided for @shelfKeepHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'After that they are deleted for good.'**
+  String get shelfKeepHelp;
+
+  /// No description provided for @shelfDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{1 day} other{{days} days}}'**
+  String shelfDays(int days);
+
+  /// No description provided for @shelfNever.
+  ///
+  /// In en, this message translates to:
+  /// **'Until I empty the trash'**
+  String get shelfNever;
+
+  /// No description provided for @shelfShowScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Show archived items on the Calendar and Timeline'**
+  String get shelfShowScheduled;
+
+  /// No description provided for @shelfShowScheduledHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived tasks and events that are scheduled keep their place there. Off: they are hidden.'**
+  String get shelfShowScheduledHelp;
+
   /// No description provided for @navAssistant.
   ///
   /// In en, this message translates to:

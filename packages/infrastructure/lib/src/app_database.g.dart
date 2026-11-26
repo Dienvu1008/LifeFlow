@@ -1203,6 +1203,18 @@ class $TaskListsTable extends TaskLists
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultValue: const Constant('a0'));
+  static const VerificationMeta _archivedAtMeta =
+      const VerificationMeta('archivedAt');
+  @override
+  late final GeneratedColumn<DateTime> archivedAt = GeneratedColumn<DateTime>(
+      'archived_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _purgedAtMeta =
+      const VerificationMeta('purgedAt');
+  @override
+  late final GeneratedColumn<DateTime> purgedAt = GeneratedColumn<DateTime>(
+      'purged_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -1216,7 +1228,9 @@ class $TaskListsTable extends TaskLists
         changedBy,
         title,
         colorIndex,
-        orderKey
+        orderKey,
+        archivedAt,
+        purgedAt
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1291,6 +1305,16 @@ class $TaskListsTable extends TaskLists
       context.handle(_orderKeyMeta,
           orderKey.isAcceptableOrUnknown(data['order_key']!, _orderKeyMeta));
     }
+    if (data.containsKey('archived_at')) {
+      context.handle(
+          _archivedAtMeta,
+          archivedAt.isAcceptableOrUnknown(
+              data['archived_at']!, _archivedAtMeta));
+    }
+    if (data.containsKey('purged_at')) {
+      context.handle(_purgedAtMeta,
+          purgedAt.isAcceptableOrUnknown(data['purged_at']!, _purgedAtMeta));
+    }
     return context;
   }
 
@@ -1324,6 +1348,10 @@ class $TaskListsTable extends TaskLists
           .read(DriftSqlType.int, data['${effectivePrefix}color_index']),
       orderKey: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}order_key'])!,
+      archivedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}archived_at']),
+      purgedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}purged_at']),
     );
   }
 
@@ -1346,6 +1374,8 @@ class TaskList extends DataClass implements Insertable<TaskList> {
   final String title;
   final int? colorIndex;
   final String orderKey;
+  final DateTime? archivedAt;
+  final DateTime? purgedAt;
   const TaskList(
       {required this.id,
       required this.workspaceId,
@@ -1358,7 +1388,9 @@ class TaskList extends DataClass implements Insertable<TaskList> {
       this.changedBy,
       required this.title,
       this.colorIndex,
-      required this.orderKey});
+      required this.orderKey,
+      this.archivedAt,
+      this.purgedAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -1382,6 +1414,12 @@ class TaskList extends DataClass implements Insertable<TaskList> {
       map['color_index'] = Variable<int>(colorIndex);
     }
     map['order_key'] = Variable<String>(orderKey);
+    if (!nullToAbsent || archivedAt != null) {
+      map['archived_at'] = Variable<DateTime>(archivedAt);
+    }
+    if (!nullToAbsent || purgedAt != null) {
+      map['purged_at'] = Variable<DateTime>(purgedAt);
+    }
     return map;
   }
 
@@ -1407,6 +1445,12 @@ class TaskList extends DataClass implements Insertable<TaskList> {
           ? const Value.absent()
           : Value(colorIndex),
       orderKey: Value(orderKey),
+      archivedAt: archivedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(archivedAt),
+      purgedAt: purgedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(purgedAt),
     );
   }
 
@@ -1426,6 +1470,8 @@ class TaskList extends DataClass implements Insertable<TaskList> {
       title: serializer.fromJson<String>(json['title']),
       colorIndex: serializer.fromJson<int?>(json['colorIndex']),
       orderKey: serializer.fromJson<String>(json['orderKey']),
+      archivedAt: serializer.fromJson<DateTime?>(json['archivedAt']),
+      purgedAt: serializer.fromJson<DateTime?>(json['purgedAt']),
     );
   }
   @override
@@ -1444,6 +1490,8 @@ class TaskList extends DataClass implements Insertable<TaskList> {
       'title': serializer.toJson<String>(title),
       'colorIndex': serializer.toJson<int?>(colorIndex),
       'orderKey': serializer.toJson<String>(orderKey),
+      'archivedAt': serializer.toJson<DateTime?>(archivedAt),
+      'purgedAt': serializer.toJson<DateTime?>(purgedAt),
     };
   }
 
@@ -1459,7 +1507,9 @@ class TaskList extends DataClass implements Insertable<TaskList> {
           Value<String?> changedBy = const Value.absent(),
           String? title,
           Value<int?> colorIndex = const Value.absent(),
-          String? orderKey}) =>
+          String? orderKey,
+          Value<DateTime?> archivedAt = const Value.absent(),
+          Value<DateTime?> purgedAt = const Value.absent()}) =>
       TaskList(
         id: id ?? this.id,
         workspaceId: workspaceId ?? this.workspaceId,
@@ -1473,6 +1523,8 @@ class TaskList extends DataClass implements Insertable<TaskList> {
         title: title ?? this.title,
         colorIndex: colorIndex.present ? colorIndex.value : this.colorIndex,
         orderKey: orderKey ?? this.orderKey,
+        archivedAt: archivedAt.present ? archivedAt.value : this.archivedAt,
+        purgedAt: purgedAt.present ? purgedAt.value : this.purgedAt,
       );
   TaskList copyWithCompanion(TaskListsCompanion data) {
     return TaskList(
@@ -1490,6 +1542,9 @@ class TaskList extends DataClass implements Insertable<TaskList> {
       colorIndex:
           data.colorIndex.present ? data.colorIndex.value : this.colorIndex,
       orderKey: data.orderKey.present ? data.orderKey.value : this.orderKey,
+      archivedAt:
+          data.archivedAt.present ? data.archivedAt.value : this.archivedAt,
+      purgedAt: data.purgedAt.present ? data.purgedAt.value : this.purgedAt,
     );
   }
 
@@ -1507,14 +1562,29 @@ class TaskList extends DataClass implements Insertable<TaskList> {
           ..write('changedBy: $changedBy, ')
           ..write('title: $title, ')
           ..write('colorIndex: $colorIndex, ')
-          ..write('orderKey: $orderKey')
+          ..write('orderKey: $orderKey, ')
+          ..write('archivedAt: $archivedAt, ')
+          ..write('purgedAt: $purgedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, workspaceId, ownerId, version, createdAt,
-      updatedAt, deletedAt, deletedBy, changedBy, title, colorIndex, orderKey);
+  int get hashCode => Object.hash(
+      id,
+      workspaceId,
+      ownerId,
+      version,
+      createdAt,
+      updatedAt,
+      deletedAt,
+      deletedBy,
+      changedBy,
+      title,
+      colorIndex,
+      orderKey,
+      archivedAt,
+      purgedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1530,7 +1600,9 @@ class TaskList extends DataClass implements Insertable<TaskList> {
           other.changedBy == this.changedBy &&
           other.title == this.title &&
           other.colorIndex == this.colorIndex &&
-          other.orderKey == this.orderKey);
+          other.orderKey == this.orderKey &&
+          other.archivedAt == this.archivedAt &&
+          other.purgedAt == this.purgedAt);
 }
 
 class TaskListsCompanion extends UpdateCompanion<TaskList> {
@@ -1546,6 +1618,8 @@ class TaskListsCompanion extends UpdateCompanion<TaskList> {
   final Value<String> title;
   final Value<int?> colorIndex;
   final Value<String> orderKey;
+  final Value<DateTime?> archivedAt;
+  final Value<DateTime?> purgedAt;
   final Value<int> rowid;
   const TaskListsCompanion({
     this.id = const Value.absent(),
@@ -1560,6 +1634,8 @@ class TaskListsCompanion extends UpdateCompanion<TaskList> {
     this.title = const Value.absent(),
     this.colorIndex = const Value.absent(),
     this.orderKey = const Value.absent(),
+    this.archivedAt = const Value.absent(),
+    this.purgedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   TaskListsCompanion.insert({
@@ -1575,6 +1651,8 @@ class TaskListsCompanion extends UpdateCompanion<TaskList> {
     required String title,
     this.colorIndex = const Value.absent(),
     this.orderKey = const Value.absent(),
+    this.archivedAt = const Value.absent(),
+    this.purgedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         workspaceId = Value(workspaceId),
@@ -1595,6 +1673,8 @@ class TaskListsCompanion extends UpdateCompanion<TaskList> {
     Expression<String>? title,
     Expression<int>? colorIndex,
     Expression<String>? orderKey,
+    Expression<DateTime>? archivedAt,
+    Expression<DateTime>? purgedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1610,6 +1690,8 @@ class TaskListsCompanion extends UpdateCompanion<TaskList> {
       if (title != null) 'title': title,
       if (colorIndex != null) 'color_index': colorIndex,
       if (orderKey != null) 'order_key': orderKey,
+      if (archivedAt != null) 'archived_at': archivedAt,
+      if (purgedAt != null) 'purged_at': purgedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1627,6 +1709,8 @@ class TaskListsCompanion extends UpdateCompanion<TaskList> {
       Value<String>? title,
       Value<int?>? colorIndex,
       Value<String>? orderKey,
+      Value<DateTime?>? archivedAt,
+      Value<DateTime?>? purgedAt,
       Value<int>? rowid}) {
     return TaskListsCompanion(
       id: id ?? this.id,
@@ -1641,6 +1725,8 @@ class TaskListsCompanion extends UpdateCompanion<TaskList> {
       title: title ?? this.title,
       colorIndex: colorIndex ?? this.colorIndex,
       orderKey: orderKey ?? this.orderKey,
+      archivedAt: archivedAt ?? this.archivedAt,
+      purgedAt: purgedAt ?? this.purgedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1684,6 +1770,12 @@ class TaskListsCompanion extends UpdateCompanion<TaskList> {
     if (orderKey.present) {
       map['order_key'] = Variable<String>(orderKey.value);
     }
+    if (archivedAt.present) {
+      map['archived_at'] = Variable<DateTime>(archivedAt.value);
+    }
+    if (purgedAt.present) {
+      map['purged_at'] = Variable<DateTime>(purgedAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1705,6 +1797,8 @@ class TaskListsCompanion extends UpdateCompanion<TaskList> {
           ..write('title: $title, ')
           ..write('colorIndex: $colorIndex, ')
           ..write('orderKey: $orderKey, ')
+          ..write('archivedAt: $archivedAt, ')
+          ..write('purgedAt: $purgedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1900,6 +1994,18 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
   late final GeneratedColumn<String> assigneeId = GeneratedColumn<String>(
       'assignee_id', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _archivedAtMeta =
+      const VerificationMeta('archivedAt');
+  @override
+  late final GeneratedColumn<DateTime> archivedAt = GeneratedColumn<DateTime>(
+      'archived_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _purgedAtMeta =
+      const VerificationMeta('purgedAt');
+  @override
+  late final GeneratedColumn<DateTime> purgedAt = GeneratedColumn<DateTime>(
+      'purged_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -1929,7 +2035,9 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
         notes,
         colorIndex,
         orderKey,
-        assigneeId
+        assigneeId,
+        archivedAt,
+        purgedAt
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2084,6 +2192,16 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
           assigneeId.isAcceptableOrUnknown(
               data['assignee_id']!, _assigneeIdMeta));
     }
+    if (data.containsKey('archived_at')) {
+      context.handle(
+          _archivedAtMeta,
+          archivedAt.isAcceptableOrUnknown(
+              data['archived_at']!, _archivedAtMeta));
+    }
+    if (data.containsKey('purged_at')) {
+      context.handle(_purgedAtMeta,
+          purgedAt.isAcceptableOrUnknown(data['purged_at']!, _purgedAtMeta));
+    }
     return context;
   }
 
@@ -2149,6 +2267,10 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
           .read(DriftSqlType.string, data['${effectivePrefix}order_key'])!,
       assigneeId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}assignee_id']),
+      archivedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}archived_at']),
+      purgedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}purged_at']),
     );
   }
 
@@ -2187,6 +2309,8 @@ class Task extends DataClass implements Insertable<Task> {
   final int? colorIndex;
   final String orderKey;
   final String? assigneeId;
+  final DateTime? archivedAt;
+  final DateTime? purgedAt;
   const Task(
       {required this.id,
       required this.workspaceId,
@@ -2215,7 +2339,9 @@ class Task extends DataClass implements Insertable<Task> {
       this.notes,
       this.colorIndex,
       required this.orderKey,
-      this.assigneeId});
+      this.assigneeId,
+      this.archivedAt,
+      this.purgedAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -2273,6 +2399,12 @@ class Task extends DataClass implements Insertable<Task> {
     if (!nullToAbsent || assigneeId != null) {
       map['assignee_id'] = Variable<String>(assigneeId);
     }
+    if (!nullToAbsent || archivedAt != null) {
+      map['archived_at'] = Variable<DateTime>(archivedAt);
+    }
+    if (!nullToAbsent || purgedAt != null) {
+      map['purged_at'] = Variable<DateTime>(purgedAt);
+    }
     return map;
   }
 
@@ -2329,6 +2461,12 @@ class Task extends DataClass implements Insertable<Task> {
       assigneeId: assigneeId == null && nullToAbsent
           ? const Value.absent()
           : Value(assigneeId),
+      archivedAt: archivedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(archivedAt),
+      purgedAt: purgedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(purgedAt),
     );
   }
 
@@ -2364,6 +2502,8 @@ class Task extends DataClass implements Insertable<Task> {
       colorIndex: serializer.fromJson<int?>(json['colorIndex']),
       orderKey: serializer.fromJson<String>(json['orderKey']),
       assigneeId: serializer.fromJson<String?>(json['assigneeId']),
+      archivedAt: serializer.fromJson<DateTime?>(json['archivedAt']),
+      purgedAt: serializer.fromJson<DateTime?>(json['purgedAt']),
     );
   }
   @override
@@ -2398,6 +2538,8 @@ class Task extends DataClass implements Insertable<Task> {
       'colorIndex': serializer.toJson<int?>(colorIndex),
       'orderKey': serializer.toJson<String>(orderKey),
       'assigneeId': serializer.toJson<String?>(assigneeId),
+      'archivedAt': serializer.toJson<DateTime?>(archivedAt),
+      'purgedAt': serializer.toJson<DateTime?>(purgedAt),
     };
   }
 
@@ -2429,7 +2571,9 @@ class Task extends DataClass implements Insertable<Task> {
           Value<String?> notes = const Value.absent(),
           Value<int?> colorIndex = const Value.absent(),
           String? orderKey,
-          Value<String?> assigneeId = const Value.absent()}) =>
+          Value<String?> assigneeId = const Value.absent(),
+          Value<DateTime?> archivedAt = const Value.absent(),
+          Value<DateTime?> purgedAt = const Value.absent()}) =>
       Task(
         id: id ?? this.id,
         workspaceId: workspaceId ?? this.workspaceId,
@@ -2461,6 +2605,8 @@ class Task extends DataClass implements Insertable<Task> {
         colorIndex: colorIndex.present ? colorIndex.value : this.colorIndex,
         orderKey: orderKey ?? this.orderKey,
         assigneeId: assigneeId.present ? assigneeId.value : this.assigneeId,
+        archivedAt: archivedAt.present ? archivedAt.value : this.archivedAt,
+        purgedAt: purgedAt.present ? purgedAt.value : this.purgedAt,
       );
   Task copyWithCompanion(TasksCompanion data) {
     return Task(
@@ -2506,6 +2652,9 @@ class Task extends DataClass implements Insertable<Task> {
       orderKey: data.orderKey.present ? data.orderKey.value : this.orderKey,
       assigneeId:
           data.assigneeId.present ? data.assigneeId.value : this.assigneeId,
+      archivedAt:
+          data.archivedAt.present ? data.archivedAt.value : this.archivedAt,
+      purgedAt: data.purgedAt.present ? data.purgedAt.value : this.purgedAt,
     );
   }
 
@@ -2539,7 +2688,9 @@ class Task extends DataClass implements Insertable<Task> {
           ..write('notes: $notes, ')
           ..write('colorIndex: $colorIndex, ')
           ..write('orderKey: $orderKey, ')
-          ..write('assigneeId: $assigneeId')
+          ..write('assigneeId: $assigneeId, ')
+          ..write('archivedAt: $archivedAt, ')
+          ..write('purgedAt: $purgedAt')
           ..write(')'))
         .toString();
   }
@@ -2573,7 +2724,9 @@ class Task extends DataClass implements Insertable<Task> {
         notes,
         colorIndex,
         orderKey,
-        assigneeId
+        assigneeId,
+        archivedAt,
+        purgedAt
       ]);
   @override
   bool operator ==(Object other) =>
@@ -2606,7 +2759,9 @@ class Task extends DataClass implements Insertable<Task> {
           other.notes == this.notes &&
           other.colorIndex == this.colorIndex &&
           other.orderKey == this.orderKey &&
-          other.assigneeId == this.assigneeId);
+          other.assigneeId == this.assigneeId &&
+          other.archivedAt == this.archivedAt &&
+          other.purgedAt == this.purgedAt);
 }
 
 class TasksCompanion extends UpdateCompanion<Task> {
@@ -2638,6 +2793,8 @@ class TasksCompanion extends UpdateCompanion<Task> {
   final Value<int?> colorIndex;
   final Value<String> orderKey;
   final Value<String?> assigneeId;
+  final Value<DateTime?> archivedAt;
+  final Value<DateTime?> purgedAt;
   final Value<int> rowid;
   const TasksCompanion({
     this.id = const Value.absent(),
@@ -2668,6 +2825,8 @@ class TasksCompanion extends UpdateCompanion<Task> {
     this.colorIndex = const Value.absent(),
     this.orderKey = const Value.absent(),
     this.assigneeId = const Value.absent(),
+    this.archivedAt = const Value.absent(),
+    this.purgedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   TasksCompanion.insert({
@@ -2699,6 +2858,8 @@ class TasksCompanion extends UpdateCompanion<Task> {
     this.colorIndex = const Value.absent(),
     this.orderKey = const Value.absent(),
     this.assigneeId = const Value.absent(),
+    this.archivedAt = const Value.absent(),
+    this.purgedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         workspaceId = Value(workspaceId),
@@ -2735,6 +2896,8 @@ class TasksCompanion extends UpdateCompanion<Task> {
     Expression<int>? colorIndex,
     Expression<String>? orderKey,
     Expression<String>? assigneeId,
+    Expression<DateTime>? archivedAt,
+    Expression<DateTime>? purgedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2766,6 +2929,8 @@ class TasksCompanion extends UpdateCompanion<Task> {
       if (colorIndex != null) 'color_index': colorIndex,
       if (orderKey != null) 'order_key': orderKey,
       if (assigneeId != null) 'assignee_id': assigneeId,
+      if (archivedAt != null) 'archived_at': archivedAt,
+      if (purgedAt != null) 'purged_at': purgedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2799,6 +2964,8 @@ class TasksCompanion extends UpdateCompanion<Task> {
       Value<int?>? colorIndex,
       Value<String>? orderKey,
       Value<String?>? assigneeId,
+      Value<DateTime?>? archivedAt,
+      Value<DateTime?>? purgedAt,
       Value<int>? rowid}) {
     return TasksCompanion(
       id: id ?? this.id,
@@ -2829,6 +2996,8 @@ class TasksCompanion extends UpdateCompanion<Task> {
       colorIndex: colorIndex ?? this.colorIndex,
       orderKey: orderKey ?? this.orderKey,
       assigneeId: assigneeId ?? this.assigneeId,
+      archivedAt: archivedAt ?? this.archivedAt,
+      purgedAt: purgedAt ?? this.purgedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2920,6 +3089,12 @@ class TasksCompanion extends UpdateCompanion<Task> {
     if (assigneeId.present) {
       map['assignee_id'] = Variable<String>(assigneeId.value);
     }
+    if (archivedAt.present) {
+      map['archived_at'] = Variable<DateTime>(archivedAt.value);
+    }
+    if (purgedAt.present) {
+      map['purged_at'] = Variable<DateTime>(purgedAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2957,6 +3132,8 @@ class TasksCompanion extends UpdateCompanion<Task> {
           ..write('colorIndex: $colorIndex, ')
           ..write('orderKey: $orderKey, ')
           ..write('assigneeId: $assigneeId, ')
+          ..write('archivedAt: $archivedAt, ')
+          ..write('purgedAt: $purgedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5720,6 +5897,18 @@ class $EventsTable extends Events with TableInfo<$EventsTable, Event> {
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultValue: const Constant('a0'));
+  static const VerificationMeta _archivedAtMeta =
+      const VerificationMeta('archivedAt');
+  @override
+  late final GeneratedColumn<DateTime> archivedAt = GeneratedColumn<DateTime>(
+      'archived_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _purgedAtMeta =
+      const VerificationMeta('purgedAt');
+  @override
+  late final GeneratedColumn<DateTime> purgedAt = GeneratedColumn<DateTime>(
+      'purged_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -5737,7 +5926,9 @@ class $EventsTable extends Events with TableInfo<$EventsTable, Event> {
         status,
         listId,
         colorIndex,
-        orderKey
+        orderKey,
+        archivedAt,
+        purgedAt
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -5830,6 +6021,16 @@ class $EventsTable extends Events with TableInfo<$EventsTable, Event> {
       context.handle(_orderKeyMeta,
           orderKey.isAcceptableOrUnknown(data['order_key']!, _orderKeyMeta));
     }
+    if (data.containsKey('archived_at')) {
+      context.handle(
+          _archivedAtMeta,
+          archivedAt.isAcceptableOrUnknown(
+              data['archived_at']!, _archivedAtMeta));
+    }
+    if (data.containsKey('purged_at')) {
+      context.handle(_purgedAtMeta,
+          purgedAt.isAcceptableOrUnknown(data['purged_at']!, _purgedAtMeta));
+    }
     return context;
   }
 
@@ -5871,6 +6072,10 @@ class $EventsTable extends Events with TableInfo<$EventsTable, Event> {
           .read(DriftSqlType.int, data['${effectivePrefix}color_index']),
       orderKey: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}order_key'])!,
+      archivedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}archived_at']),
+      purgedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}purged_at']),
     );
   }
 
@@ -5897,6 +6102,8 @@ class Event extends DataClass implements Insertable<Event> {
   final String? listId;
   final int? colorIndex;
   final String orderKey;
+  final DateTime? archivedAt;
+  final DateTime? purgedAt;
   const Event(
       {required this.id,
       required this.workspaceId,
@@ -5913,7 +6120,9 @@ class Event extends DataClass implements Insertable<Event> {
       required this.status,
       this.listId,
       this.colorIndex,
-      required this.orderKey});
+      required this.orderKey,
+      this.archivedAt,
+      this.purgedAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -5947,6 +6156,12 @@ class Event extends DataClass implements Insertable<Event> {
       map['color_index'] = Variable<int>(colorIndex);
     }
     map['order_key'] = Variable<String>(orderKey);
+    if (!nullToAbsent || archivedAt != null) {
+      map['archived_at'] = Variable<DateTime>(archivedAt);
+    }
+    if (!nullToAbsent || purgedAt != null) {
+      map['purged_at'] = Variable<DateTime>(purgedAt);
+    }
     return map;
   }
 
@@ -5981,6 +6196,12 @@ class Event extends DataClass implements Insertable<Event> {
           ? const Value.absent()
           : Value(colorIndex),
       orderKey: Value(orderKey),
+      archivedAt: archivedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(archivedAt),
+      purgedAt: purgedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(purgedAt),
     );
   }
 
@@ -6004,6 +6225,8 @@ class Event extends DataClass implements Insertable<Event> {
       listId: serializer.fromJson<String?>(json['listId']),
       colorIndex: serializer.fromJson<int?>(json['colorIndex']),
       orderKey: serializer.fromJson<String>(json['orderKey']),
+      archivedAt: serializer.fromJson<DateTime?>(json['archivedAt']),
+      purgedAt: serializer.fromJson<DateTime?>(json['purgedAt']),
     );
   }
   @override
@@ -6026,6 +6249,8 @@ class Event extends DataClass implements Insertable<Event> {
       'listId': serializer.toJson<String?>(listId),
       'colorIndex': serializer.toJson<int?>(colorIndex),
       'orderKey': serializer.toJson<String>(orderKey),
+      'archivedAt': serializer.toJson<DateTime?>(archivedAt),
+      'purgedAt': serializer.toJson<DateTime?>(purgedAt),
     };
   }
 
@@ -6045,7 +6270,9 @@ class Event extends DataClass implements Insertable<Event> {
           String? status,
           Value<String?> listId = const Value.absent(),
           Value<int?> colorIndex = const Value.absent(),
-          String? orderKey}) =>
+          String? orderKey,
+          Value<DateTime?> archivedAt = const Value.absent(),
+          Value<DateTime?> purgedAt = const Value.absent()}) =>
       Event(
         id: id ?? this.id,
         workspaceId: workspaceId ?? this.workspaceId,
@@ -6063,6 +6290,8 @@ class Event extends DataClass implements Insertable<Event> {
         listId: listId.present ? listId.value : this.listId,
         colorIndex: colorIndex.present ? colorIndex.value : this.colorIndex,
         orderKey: orderKey ?? this.orderKey,
+        archivedAt: archivedAt.present ? archivedAt.value : this.archivedAt,
+        purgedAt: purgedAt.present ? purgedAt.value : this.purgedAt,
       );
   Event copyWithCompanion(EventsCompanion data) {
     return Event(
@@ -6085,6 +6314,9 @@ class Event extends DataClass implements Insertable<Event> {
       colorIndex:
           data.colorIndex.present ? data.colorIndex.value : this.colorIndex,
       orderKey: data.orderKey.present ? data.orderKey.value : this.orderKey,
+      archivedAt:
+          data.archivedAt.present ? data.archivedAt.value : this.archivedAt,
+      purgedAt: data.purgedAt.present ? data.purgedAt.value : this.purgedAt,
     );
   }
 
@@ -6106,7 +6338,9 @@ class Event extends DataClass implements Insertable<Event> {
           ..write('status: $status, ')
           ..write('listId: $listId, ')
           ..write('colorIndex: $colorIndex, ')
-          ..write('orderKey: $orderKey')
+          ..write('orderKey: $orderKey, ')
+          ..write('archivedAt: $archivedAt, ')
+          ..write('purgedAt: $purgedAt')
           ..write(')'))
         .toString();
   }
@@ -6128,7 +6362,9 @@ class Event extends DataClass implements Insertable<Event> {
       status,
       listId,
       colorIndex,
-      orderKey);
+      orderKey,
+      archivedAt,
+      purgedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -6148,7 +6384,9 @@ class Event extends DataClass implements Insertable<Event> {
           other.status == this.status &&
           other.listId == this.listId &&
           other.colorIndex == this.colorIndex &&
-          other.orderKey == this.orderKey);
+          other.orderKey == this.orderKey &&
+          other.archivedAt == this.archivedAt &&
+          other.purgedAt == this.purgedAt);
 }
 
 class EventsCompanion extends UpdateCompanion<Event> {
@@ -6168,6 +6406,8 @@ class EventsCompanion extends UpdateCompanion<Event> {
   final Value<String?> listId;
   final Value<int?> colorIndex;
   final Value<String> orderKey;
+  final Value<DateTime?> archivedAt;
+  final Value<DateTime?> purgedAt;
   final Value<int> rowid;
   const EventsCompanion({
     this.id = const Value.absent(),
@@ -6186,6 +6426,8 @@ class EventsCompanion extends UpdateCompanion<Event> {
     this.listId = const Value.absent(),
     this.colorIndex = const Value.absent(),
     this.orderKey = const Value.absent(),
+    this.archivedAt = const Value.absent(),
+    this.purgedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   EventsCompanion.insert({
@@ -6205,6 +6447,8 @@ class EventsCompanion extends UpdateCompanion<Event> {
     this.listId = const Value.absent(),
     this.colorIndex = const Value.absent(),
     this.orderKey = const Value.absent(),
+    this.archivedAt = const Value.absent(),
+    this.purgedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         workspaceId = Value(workspaceId),
@@ -6229,6 +6473,8 @@ class EventsCompanion extends UpdateCompanion<Event> {
     Expression<String>? listId,
     Expression<int>? colorIndex,
     Expression<String>? orderKey,
+    Expression<DateTime>? archivedAt,
+    Expression<DateTime>? purgedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -6248,6 +6494,8 @@ class EventsCompanion extends UpdateCompanion<Event> {
       if (listId != null) 'list_id': listId,
       if (colorIndex != null) 'color_index': colorIndex,
       if (orderKey != null) 'order_key': orderKey,
+      if (archivedAt != null) 'archived_at': archivedAt,
+      if (purgedAt != null) 'purged_at': purgedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -6269,6 +6517,8 @@ class EventsCompanion extends UpdateCompanion<Event> {
       Value<String?>? listId,
       Value<int?>? colorIndex,
       Value<String>? orderKey,
+      Value<DateTime?>? archivedAt,
+      Value<DateTime?>? purgedAt,
       Value<int>? rowid}) {
     return EventsCompanion(
       id: id ?? this.id,
@@ -6287,6 +6537,8 @@ class EventsCompanion extends UpdateCompanion<Event> {
       listId: listId ?? this.listId,
       colorIndex: colorIndex ?? this.colorIndex,
       orderKey: orderKey ?? this.orderKey,
+      archivedAt: archivedAt ?? this.archivedAt,
+      purgedAt: purgedAt ?? this.purgedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -6342,6 +6594,12 @@ class EventsCompanion extends UpdateCompanion<Event> {
     if (orderKey.present) {
       map['order_key'] = Variable<String>(orderKey.value);
     }
+    if (archivedAt.present) {
+      map['archived_at'] = Variable<DateTime>(archivedAt.value);
+    }
+    if (purgedAt.present) {
+      map['purged_at'] = Variable<DateTime>(purgedAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -6367,6 +6625,8 @@ class EventsCompanion extends UpdateCompanion<Event> {
           ..write('listId: $listId, ')
           ..write('colorIndex: $colorIndex, ')
           ..write('orderKey: $orderKey, ')
+          ..write('archivedAt: $archivedAt, ')
+          ..write('purgedAt: $purgedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -17958,6 +18218,18 @@ class $DocumentsTable extends Documents
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultValue: const Constant('a0'));
+  static const VerificationMeta _archivedAtMeta =
+      const VerificationMeta('archivedAt');
+  @override
+  late final GeneratedColumn<DateTime> archivedAt = GeneratedColumn<DateTime>(
+      'archived_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _purgedAtMeta =
+      const VerificationMeta('purgedAt');
+  @override
+  late final GeneratedColumn<DateTime> purgedAt = GeneratedColumn<DateTime>(
+      'purged_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -17972,7 +18244,9 @@ class $DocumentsTable extends Documents
         parentId,
         title,
         body,
-        orderKey
+        orderKey,
+        archivedAt,
+        purgedAt
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -18051,6 +18325,16 @@ class $DocumentsTable extends Documents
       context.handle(_orderKeyMeta,
           orderKey.isAcceptableOrUnknown(data['order_key']!, _orderKeyMeta));
     }
+    if (data.containsKey('archived_at')) {
+      context.handle(
+          _archivedAtMeta,
+          archivedAt.isAcceptableOrUnknown(
+              data['archived_at']!, _archivedAtMeta));
+    }
+    if (data.containsKey('purged_at')) {
+      context.handle(_purgedAtMeta,
+          purgedAt.isAcceptableOrUnknown(data['purged_at']!, _purgedAtMeta));
+    }
     return context;
   }
 
@@ -18086,6 +18370,10 @@ class $DocumentsTable extends Documents
           .read(DriftSqlType.string, data['${effectivePrefix}body'])!,
       orderKey: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}order_key'])!,
+      archivedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}archived_at']),
+      purgedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}purged_at']),
     );
   }
 
@@ -18111,6 +18399,8 @@ class DocumentRow extends DataClass implements Insertable<DocumentRow> {
   final String title;
   final String body;
   final String orderKey;
+  final DateTime? archivedAt;
+  final DateTime? purgedAt;
   const DocumentRow(
       {required this.id,
       required this.workspaceId,
@@ -18124,7 +18414,9 @@ class DocumentRow extends DataClass implements Insertable<DocumentRow> {
       this.parentId,
       required this.title,
       required this.body,
-      required this.orderKey});
+      required this.orderKey,
+      this.archivedAt,
+      this.purgedAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -18149,6 +18441,12 @@ class DocumentRow extends DataClass implements Insertable<DocumentRow> {
     map['title'] = Variable<String>(title);
     map['body'] = Variable<String>(body);
     map['order_key'] = Variable<String>(orderKey);
+    if (!nullToAbsent || archivedAt != null) {
+      map['archived_at'] = Variable<DateTime>(archivedAt);
+    }
+    if (!nullToAbsent || purgedAt != null) {
+      map['purged_at'] = Variable<DateTime>(purgedAt);
+    }
     return map;
   }
 
@@ -18175,6 +18473,12 @@ class DocumentRow extends DataClass implements Insertable<DocumentRow> {
       title: Value(title),
       body: Value(body),
       orderKey: Value(orderKey),
+      archivedAt: archivedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(archivedAt),
+      purgedAt: purgedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(purgedAt),
     );
   }
 
@@ -18195,6 +18499,8 @@ class DocumentRow extends DataClass implements Insertable<DocumentRow> {
       title: serializer.fromJson<String>(json['title']),
       body: serializer.fromJson<String>(json['body']),
       orderKey: serializer.fromJson<String>(json['orderKey']),
+      archivedAt: serializer.fromJson<DateTime?>(json['archivedAt']),
+      purgedAt: serializer.fromJson<DateTime?>(json['purgedAt']),
     );
   }
   @override
@@ -18214,6 +18520,8 @@ class DocumentRow extends DataClass implements Insertable<DocumentRow> {
       'title': serializer.toJson<String>(title),
       'body': serializer.toJson<String>(body),
       'orderKey': serializer.toJson<String>(orderKey),
+      'archivedAt': serializer.toJson<DateTime?>(archivedAt),
+      'purgedAt': serializer.toJson<DateTime?>(purgedAt),
     };
   }
 
@@ -18230,7 +18538,9 @@ class DocumentRow extends DataClass implements Insertable<DocumentRow> {
           Value<String?> parentId = const Value.absent(),
           String? title,
           String? body,
-          String? orderKey}) =>
+          String? orderKey,
+          Value<DateTime?> archivedAt = const Value.absent(),
+          Value<DateTime?> purgedAt = const Value.absent()}) =>
       DocumentRow(
         id: id ?? this.id,
         workspaceId: workspaceId ?? this.workspaceId,
@@ -18245,6 +18555,8 @@ class DocumentRow extends DataClass implements Insertable<DocumentRow> {
         title: title ?? this.title,
         body: body ?? this.body,
         orderKey: orderKey ?? this.orderKey,
+        archivedAt: archivedAt.present ? archivedAt.value : this.archivedAt,
+        purgedAt: purgedAt.present ? purgedAt.value : this.purgedAt,
       );
   DocumentRow copyWithCompanion(DocumentsCompanion data) {
     return DocumentRow(
@@ -18262,6 +18574,9 @@ class DocumentRow extends DataClass implements Insertable<DocumentRow> {
       title: data.title.present ? data.title.value : this.title,
       body: data.body.present ? data.body.value : this.body,
       orderKey: data.orderKey.present ? data.orderKey.value : this.orderKey,
+      archivedAt:
+          data.archivedAt.present ? data.archivedAt.value : this.archivedAt,
+      purgedAt: data.purgedAt.present ? data.purgedAt.value : this.purgedAt,
     );
   }
 
@@ -18280,7 +18595,9 @@ class DocumentRow extends DataClass implements Insertable<DocumentRow> {
           ..write('parentId: $parentId, ')
           ..write('title: $title, ')
           ..write('body: $body, ')
-          ..write('orderKey: $orderKey')
+          ..write('orderKey: $orderKey, ')
+          ..write('archivedAt: $archivedAt, ')
+          ..write('purgedAt: $purgedAt')
           ..write(')'))
         .toString();
   }
@@ -18299,7 +18616,9 @@ class DocumentRow extends DataClass implements Insertable<DocumentRow> {
       parentId,
       title,
       body,
-      orderKey);
+      orderKey,
+      archivedAt,
+      purgedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -18316,7 +18635,9 @@ class DocumentRow extends DataClass implements Insertable<DocumentRow> {
           other.parentId == this.parentId &&
           other.title == this.title &&
           other.body == this.body &&
-          other.orderKey == this.orderKey);
+          other.orderKey == this.orderKey &&
+          other.archivedAt == this.archivedAt &&
+          other.purgedAt == this.purgedAt);
 }
 
 class DocumentsCompanion extends UpdateCompanion<DocumentRow> {
@@ -18333,6 +18654,8 @@ class DocumentsCompanion extends UpdateCompanion<DocumentRow> {
   final Value<String> title;
   final Value<String> body;
   final Value<String> orderKey;
+  final Value<DateTime?> archivedAt;
+  final Value<DateTime?> purgedAt;
   final Value<int> rowid;
   const DocumentsCompanion({
     this.id = const Value.absent(),
@@ -18348,6 +18671,8 @@ class DocumentsCompanion extends UpdateCompanion<DocumentRow> {
     this.title = const Value.absent(),
     this.body = const Value.absent(),
     this.orderKey = const Value.absent(),
+    this.archivedAt = const Value.absent(),
+    this.purgedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   DocumentsCompanion.insert({
@@ -18364,6 +18689,8 @@ class DocumentsCompanion extends UpdateCompanion<DocumentRow> {
     required String title,
     required String body,
     this.orderKey = const Value.absent(),
+    this.archivedAt = const Value.absent(),
+    this.purgedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         workspaceId = Value(workspaceId),
@@ -18386,6 +18713,8 @@ class DocumentsCompanion extends UpdateCompanion<DocumentRow> {
     Expression<String>? title,
     Expression<String>? body,
     Expression<String>? orderKey,
+    Expression<DateTime>? archivedAt,
+    Expression<DateTime>? purgedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -18402,6 +18731,8 @@ class DocumentsCompanion extends UpdateCompanion<DocumentRow> {
       if (title != null) 'title': title,
       if (body != null) 'body': body,
       if (orderKey != null) 'order_key': orderKey,
+      if (archivedAt != null) 'archived_at': archivedAt,
+      if (purgedAt != null) 'purged_at': purgedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -18420,6 +18751,8 @@ class DocumentsCompanion extends UpdateCompanion<DocumentRow> {
       Value<String>? title,
       Value<String>? body,
       Value<String>? orderKey,
+      Value<DateTime?>? archivedAt,
+      Value<DateTime?>? purgedAt,
       Value<int>? rowid}) {
     return DocumentsCompanion(
       id: id ?? this.id,
@@ -18435,6 +18768,8 @@ class DocumentsCompanion extends UpdateCompanion<DocumentRow> {
       title: title ?? this.title,
       body: body ?? this.body,
       orderKey: orderKey ?? this.orderKey,
+      archivedAt: archivedAt ?? this.archivedAt,
+      purgedAt: purgedAt ?? this.purgedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -18481,6 +18816,12 @@ class DocumentsCompanion extends UpdateCompanion<DocumentRow> {
     if (orderKey.present) {
       map['order_key'] = Variable<String>(orderKey.value);
     }
+    if (archivedAt.present) {
+      map['archived_at'] = Variable<DateTime>(archivedAt.value);
+    }
+    if (purgedAt.present) {
+      map['purged_at'] = Variable<DateTime>(purgedAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -18503,6 +18844,8 @@ class DocumentsCompanion extends UpdateCompanion<DocumentRow> {
           ..write('title: $title, ')
           ..write('body: $body, ')
           ..write('orderKey: $orderKey, ')
+          ..write('archivedAt: $archivedAt, ')
+          ..write('purgedAt: $purgedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -23404,6 +23747,8 @@ typedef $$TaskListsTableCreateCompanionBuilder = TaskListsCompanion Function({
   required String title,
   Value<int?> colorIndex,
   Value<String> orderKey,
+  Value<DateTime?> archivedAt,
+  Value<DateTime?> purgedAt,
   Value<int> rowid,
 });
 typedef $$TaskListsTableUpdateCompanionBuilder = TaskListsCompanion Function({
@@ -23419,6 +23764,8 @@ typedef $$TaskListsTableUpdateCompanionBuilder = TaskListsCompanion Function({
   Value<String> title,
   Value<int?> colorIndex,
   Value<String> orderKey,
+  Value<DateTime?> archivedAt,
+  Value<DateTime?> purgedAt,
   Value<int> rowid,
 });
 
@@ -23466,6 +23813,12 @@ class $$TaskListsTableFilterComposer
 
   ColumnFilters<String> get orderKey => $composableBuilder(
       column: $table.orderKey, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get archivedAt => $composableBuilder(
+      column: $table.archivedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get purgedAt => $composableBuilder(
+      column: $table.purgedAt, builder: (column) => ColumnFilters(column));
 }
 
 class $$TaskListsTableOrderingComposer
@@ -23512,6 +23865,12 @@ class $$TaskListsTableOrderingComposer
 
   ColumnOrderings<String> get orderKey => $composableBuilder(
       column: $table.orderKey, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get archivedAt => $composableBuilder(
+      column: $table.archivedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get purgedAt => $composableBuilder(
+      column: $table.purgedAt, builder: (column) => ColumnOrderings(column));
 }
 
 class $$TaskListsTableAnnotationComposer
@@ -23558,6 +23917,12 @@ class $$TaskListsTableAnnotationComposer
 
   GeneratedColumn<String> get orderKey =>
       $composableBuilder(column: $table.orderKey, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get archivedAt => $composableBuilder(
+      column: $table.archivedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get purgedAt =>
+      $composableBuilder(column: $table.purgedAt, builder: (column) => column);
 }
 
 class $$TaskListsTableTableManager extends RootTableManager<
@@ -23595,6 +23960,8 @@ class $$TaskListsTableTableManager extends RootTableManager<
             Value<String> title = const Value.absent(),
             Value<int?> colorIndex = const Value.absent(),
             Value<String> orderKey = const Value.absent(),
+            Value<DateTime?> archivedAt = const Value.absent(),
+            Value<DateTime?> purgedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               TaskListsCompanion(
@@ -23610,6 +23977,8 @@ class $$TaskListsTableTableManager extends RootTableManager<
             title: title,
             colorIndex: colorIndex,
             orderKey: orderKey,
+            archivedAt: archivedAt,
+            purgedAt: purgedAt,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -23625,6 +23994,8 @@ class $$TaskListsTableTableManager extends RootTableManager<
             required String title,
             Value<int?> colorIndex = const Value.absent(),
             Value<String> orderKey = const Value.absent(),
+            Value<DateTime?> archivedAt = const Value.absent(),
+            Value<DateTime?> purgedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               TaskListsCompanion.insert(
@@ -23640,6 +24011,8 @@ class $$TaskListsTableTableManager extends RootTableManager<
             title: title,
             colorIndex: colorIndex,
             orderKey: orderKey,
+            archivedAt: archivedAt,
+            purgedAt: purgedAt,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
@@ -23694,6 +24067,8 @@ typedef $$TasksTableCreateCompanionBuilder = TasksCompanion Function({
   Value<int?> colorIndex,
   Value<String> orderKey,
   Value<String?> assigneeId,
+  Value<DateTime?> archivedAt,
+  Value<DateTime?> purgedAt,
   Value<int> rowid,
 });
 typedef $$TasksTableUpdateCompanionBuilder = TasksCompanion Function({
@@ -23725,6 +24100,8 @@ typedef $$TasksTableUpdateCompanionBuilder = TasksCompanion Function({
   Value<int?> colorIndex,
   Value<String> orderKey,
   Value<String?> assigneeId,
+  Value<DateTime?> archivedAt,
+  Value<DateTime?> purgedAt,
   Value<int> rowid,
 });
 
@@ -23821,6 +24198,12 @@ class $$TasksTableFilterComposer extends Composer<_$AppDatabase, $TasksTable> {
 
   ColumnFilters<String> get assigneeId => $composableBuilder(
       column: $table.assigneeId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get archivedAt => $composableBuilder(
+      column: $table.archivedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get purgedAt => $composableBuilder(
+      column: $table.purgedAt, builder: (column) => ColumnFilters(column));
 }
 
 class $$TasksTableOrderingComposer
@@ -23919,6 +24302,12 @@ class $$TasksTableOrderingComposer
 
   ColumnOrderings<String> get assigneeId => $composableBuilder(
       column: $table.assigneeId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get archivedAt => $composableBuilder(
+      column: $table.archivedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get purgedAt => $composableBuilder(
+      column: $table.purgedAt, builder: (column) => ColumnOrderings(column));
 }
 
 class $$TasksTableAnnotationComposer
@@ -24013,6 +24402,12 @@ class $$TasksTableAnnotationComposer
 
   GeneratedColumn<String> get assigneeId => $composableBuilder(
       column: $table.assigneeId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get archivedAt => $composableBuilder(
+      column: $table.archivedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get purgedAt =>
+      $composableBuilder(column: $table.purgedAt, builder: (column) => column);
 }
 
 class $$TasksTableTableManager extends RootTableManager<
@@ -24066,6 +24461,8 @@ class $$TasksTableTableManager extends RootTableManager<
             Value<int?> colorIndex = const Value.absent(),
             Value<String> orderKey = const Value.absent(),
             Value<String?> assigneeId = const Value.absent(),
+            Value<DateTime?> archivedAt = const Value.absent(),
+            Value<DateTime?> purgedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               TasksCompanion(
@@ -24097,6 +24494,8 @@ class $$TasksTableTableManager extends RootTableManager<
             colorIndex: colorIndex,
             orderKey: orderKey,
             assigneeId: assigneeId,
+            archivedAt: archivedAt,
+            purgedAt: purgedAt,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -24128,6 +24527,8 @@ class $$TasksTableTableManager extends RootTableManager<
             Value<int?> colorIndex = const Value.absent(),
             Value<String> orderKey = const Value.absent(),
             Value<String?> assigneeId = const Value.absent(),
+            Value<DateTime?> archivedAt = const Value.absent(),
+            Value<DateTime?> purgedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               TasksCompanion.insert(
@@ -24159,6 +24560,8 @@ class $$TasksTableTableManager extends RootTableManager<
             colorIndex: colorIndex,
             orderKey: orderKey,
             assigneeId: assigneeId,
+            archivedAt: archivedAt,
+            purgedAt: purgedAt,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
@@ -25500,6 +25903,8 @@ typedef $$EventsTableCreateCompanionBuilder = EventsCompanion Function({
   Value<String?> listId,
   Value<int?> colorIndex,
   Value<String> orderKey,
+  Value<DateTime?> archivedAt,
+  Value<DateTime?> purgedAt,
   Value<int> rowid,
 });
 typedef $$EventsTableUpdateCompanionBuilder = EventsCompanion Function({
@@ -25519,6 +25924,8 @@ typedef $$EventsTableUpdateCompanionBuilder = EventsCompanion Function({
   Value<String?> listId,
   Value<int?> colorIndex,
   Value<String> orderKey,
+  Value<DateTime?> archivedAt,
+  Value<DateTime?> purgedAt,
   Value<int> rowid,
 });
 
@@ -25578,6 +25985,12 @@ class $$EventsTableFilterComposer
 
   ColumnFilters<String> get orderKey => $composableBuilder(
       column: $table.orderKey, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get archivedAt => $composableBuilder(
+      column: $table.archivedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get purgedAt => $composableBuilder(
+      column: $table.purgedAt, builder: (column) => ColumnFilters(column));
 }
 
 class $$EventsTableOrderingComposer
@@ -25636,6 +26049,12 @@ class $$EventsTableOrderingComposer
 
   ColumnOrderings<String> get orderKey => $composableBuilder(
       column: $table.orderKey, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get archivedAt => $composableBuilder(
+      column: $table.archivedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get purgedAt => $composableBuilder(
+      column: $table.purgedAt, builder: (column) => ColumnOrderings(column));
 }
 
 class $$EventsTableAnnotationComposer
@@ -25694,6 +26113,12 @@ class $$EventsTableAnnotationComposer
 
   GeneratedColumn<String> get orderKey =>
       $composableBuilder(column: $table.orderKey, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get archivedAt => $composableBuilder(
+      column: $table.archivedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get purgedAt =>
+      $composableBuilder(column: $table.purgedAt, builder: (column) => column);
 }
 
 class $$EventsTableTableManager extends RootTableManager<
@@ -25735,6 +26160,8 @@ class $$EventsTableTableManager extends RootTableManager<
             Value<String?> listId = const Value.absent(),
             Value<int?> colorIndex = const Value.absent(),
             Value<String> orderKey = const Value.absent(),
+            Value<DateTime?> archivedAt = const Value.absent(),
+            Value<DateTime?> purgedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               EventsCompanion(
@@ -25754,6 +26181,8 @@ class $$EventsTableTableManager extends RootTableManager<
             listId: listId,
             colorIndex: colorIndex,
             orderKey: orderKey,
+            archivedAt: archivedAt,
+            purgedAt: purgedAt,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -25773,6 +26202,8 @@ class $$EventsTableTableManager extends RootTableManager<
             Value<String?> listId = const Value.absent(),
             Value<int?> colorIndex = const Value.absent(),
             Value<String> orderKey = const Value.absent(),
+            Value<DateTime?> archivedAt = const Value.absent(),
+            Value<DateTime?> purgedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               EventsCompanion.insert(
@@ -25792,6 +26223,8 @@ class $$EventsTableTableManager extends RootTableManager<
             listId: listId,
             colorIndex: colorIndex,
             orderKey: orderKey,
+            archivedAt: archivedAt,
+            purgedAt: purgedAt,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
@@ -31172,6 +31605,8 @@ typedef $$DocumentsTableCreateCompanionBuilder = DocumentsCompanion Function({
   required String title,
   required String body,
   Value<String> orderKey,
+  Value<DateTime?> archivedAt,
+  Value<DateTime?> purgedAt,
   Value<int> rowid,
 });
 typedef $$DocumentsTableUpdateCompanionBuilder = DocumentsCompanion Function({
@@ -31188,6 +31623,8 @@ typedef $$DocumentsTableUpdateCompanionBuilder = DocumentsCompanion Function({
   Value<String> title,
   Value<String> body,
   Value<String> orderKey,
+  Value<DateTime?> archivedAt,
+  Value<DateTime?> purgedAt,
   Value<int> rowid,
 });
 
@@ -31238,6 +31675,12 @@ class $$DocumentsTableFilterComposer
 
   ColumnFilters<String> get orderKey => $composableBuilder(
       column: $table.orderKey, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get archivedAt => $composableBuilder(
+      column: $table.archivedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get purgedAt => $composableBuilder(
+      column: $table.purgedAt, builder: (column) => ColumnFilters(column));
 }
 
 class $$DocumentsTableOrderingComposer
@@ -31287,6 +31730,12 @@ class $$DocumentsTableOrderingComposer
 
   ColumnOrderings<String> get orderKey => $composableBuilder(
       column: $table.orderKey, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get archivedAt => $composableBuilder(
+      column: $table.archivedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get purgedAt => $composableBuilder(
+      column: $table.purgedAt, builder: (column) => ColumnOrderings(column));
 }
 
 class $$DocumentsTableAnnotationComposer
@@ -31336,6 +31785,12 @@ class $$DocumentsTableAnnotationComposer
 
   GeneratedColumn<String> get orderKey =>
       $composableBuilder(column: $table.orderKey, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get archivedAt => $composableBuilder(
+      column: $table.archivedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get purgedAt =>
+      $composableBuilder(column: $table.purgedAt, builder: (column) => column);
 }
 
 class $$DocumentsTableTableManager extends RootTableManager<
@@ -31374,6 +31829,8 @@ class $$DocumentsTableTableManager extends RootTableManager<
             Value<String> title = const Value.absent(),
             Value<String> body = const Value.absent(),
             Value<String> orderKey = const Value.absent(),
+            Value<DateTime?> archivedAt = const Value.absent(),
+            Value<DateTime?> purgedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               DocumentsCompanion(
@@ -31390,6 +31847,8 @@ class $$DocumentsTableTableManager extends RootTableManager<
             title: title,
             body: body,
             orderKey: orderKey,
+            archivedAt: archivedAt,
+            purgedAt: purgedAt,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -31406,6 +31865,8 @@ class $$DocumentsTableTableManager extends RootTableManager<
             required String title,
             required String body,
             Value<String> orderKey = const Value.absent(),
+            Value<DateTime?> archivedAt = const Value.absent(),
+            Value<DateTime?> purgedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               DocumentsCompanion.insert(
@@ -31422,6 +31883,8 @@ class $$DocumentsTableTableManager extends RootTableManager<
             title: title,
             body: body,
             orderKey: orderKey,
+            archivedAt: archivedAt,
+            purgedAt: purgedAt,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0

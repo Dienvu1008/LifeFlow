@@ -238,7 +238,7 @@ class DriftCalendarQueries implements CalendarQueries {
     final taskAgenda = await agenda.range(from, to);
 
     final events = {
-      for (final e in await (db.select(db.events)..where((e) => e.workspaceId.equals(ws) & e.deletedAt.isNull())).get())
+      for (final e in await (db.select(db.events)..where((e) => e.workspaceId.equals(ws) & e.deletedAt.isNull() & (agenda.showArchived() ? const Constant(true) : e.archivedAt.isNull()))).get())
         e.id: e,
     };
     final f = '$from', t = '$to';

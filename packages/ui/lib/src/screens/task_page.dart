@@ -20,6 +20,7 @@ import 'focus_page.dart';
 import 'goals_screen.dart';
 import 'habit_page.dart';
 import 'overview_view.dart' show colourName, pickColour, pickList, runMove;
+import 'shelf_screens.dart' show archiveFlow;
 import 'schedule_editor.dart';
 import 'tasks_screen.dart' show addTaskWithDialog, showTextDialog, trashTask;
 
@@ -160,6 +161,16 @@ class _TaskPageState extends ConsumerState<TaskPage> {
               icon: const Icon(Icons.timer_outlined),
               onPressed: () => startFocus(context, ref, taskId: t.id, taskTitle: t.title),
             ),
+          // P06b W6 (ADR-0094): put away, not deleted.
+          IconButton(
+            key: const Key('task-page-archive'),
+            tooltip: l.shelfArchive,
+            icon: const Icon(Icons.archive_outlined),
+            onPressed: () async {
+              final navigator = Navigator.of(context);
+              if (await archiveFlow(context, ref, ShelfKind.task, t.id, t.title) && mounted) navigator.pop();
+            },
+          ),
           IconButton(
             key: const Key('task-page-trash'),
             tooltip: l.tpTrash,

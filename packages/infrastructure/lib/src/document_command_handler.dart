@@ -199,7 +199,7 @@ class DocumentCommandHandler implements CommandHandler {
     if (doc == null || doc.workspaceId != ws) throw DomainRejection('document not found');
 
     if (op == 'restore') {
-      if (doc.deletedAt == null) throw DomainRejection('the document is not in the trash');
+      if (doc.deletedAt == null || doc.purgedAt != null) throw DomainRejection('the document is not in the trash');
       final gone = await _subtree(db, doc, trashedAt: doc.deletedAt);
       // Back where it was, unless its parent is not live: then at the top.
       String? parentId = doc.parentId;

@@ -139,6 +139,7 @@ class EventCommandHandler implements CommandHandler {
       case 'restore':
         if (existing == null) throw DomainRejection('event not found');
         final trash = op == 'trash';
+        if (!trash && existing.purgedAt != null) throw DomainRejection('the event is not in the trash');
         if ((existing.deletedAt != null) == trash) {
           throw DomainRejection(trash ? 'the event is already in the trash' : 'the event is not in the trash');
         }

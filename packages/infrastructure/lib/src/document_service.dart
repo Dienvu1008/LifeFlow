@@ -192,7 +192,7 @@ class DriftDocumentQueries implements DocumentQueries {
   Future<List<DocumentNodeView>> _tree() async {
     final ws = await _workspace();
     if (ws == null) return const [];
-    final rows = await (db.select(db.documents)..where((d) => d.workspaceId.equals(ws) & d.deletedAt.isNull())).get();
+    final rows = await (db.select(db.documents)..where((d) => d.workspaceId.equals(ws) & d.deletedAt.isNull() & d.archivedAt.isNull())).get();
     return _treeOrder(rows);
   }
 
@@ -367,7 +367,7 @@ class DriftDocumentQueries implements DocumentQueries {
     const most = 20;
     if (typed.trim().isEmpty) {
       final rows = await (db.select(db.documents)
-            ..where((d) => d.workspaceId.equals(ws) & d.deletedAt.isNull() & d.id.equals(excludeId ?? '').not())
+            ..where((d) => d.workspaceId.equals(ws) & d.deletedAt.isNull() & d.archivedAt.isNull() & d.id.equals(excludeId ?? '').not())
             ..orderBy([(d) => OrderingTerm.desc(d.updatedAt), (d) => OrderingTerm(expression: d.id)])
             ..limit(most))
           .get();
@@ -385,7 +385,7 @@ class DriftDocumentQueries implements DocumentQueries {
   Future<List<DocumentNodeView>> trashed() async {
     final ws = await _workspace();
     if (ws == null) return const [];
-    final rows = await (db.select(db.documents)..where((d) => d.workspaceId.equals(ws) & d.deletedAt.isNotNull())).get();
+    final rows = await (db.select(db.documents)..where((d) => d.workspaceId.equals(ws) & d.deletedAt.isNotNull() & d.purgedAt.isNull())).get();
     // Only what was trashed on its own: a subdocument that went with its
     // parent comes back with it.
     final byId = {for (final d in rows) d.id: d};

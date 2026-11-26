@@ -34,6 +34,7 @@ import '../providers.dart';
 import '../screens/goals_screen.dart' show openGoalPage;
 import '../screens/spaces_ui.dart' show moveItemFlow, moveLabel;
 import '../screens/task_page.dart' show openTaskPage;
+import '../screens/shelf_screens.dart' show archiveFlow;
 import '../task_actions.dart' show reportResult, showMessage;
 import '../widgets/marquee_text.dart';
 import '../widgets/options_menu.dart';
@@ -55,7 +56,7 @@ String formatBytes(int n) {
 
 enum SaveState { saved, saving, unsaved }
 
-enum _PageAction { history, link, moveUnder, space, trash }
+enum _PageAction { history, link, moveUnder, space, archive, trash }
 
 class DocumentPage extends ConsumerStatefulWidget {
   const DocumentPage({super.key, required this.documentId});
@@ -419,6 +420,13 @@ class DocumentPageState extends ConsumerState<DocumentPage> {
 
   // --- the page -----------------------------------------------------------------
 
+  /// Archives the document (what was typed is saved first).
+  Future<bool> _archive(DocumentView d) async {
+    await _save();
+    if (!mounted) return false;
+    return archiveFlow(context, ref, ShelfKind.document, d.id, d.title);
+  }
+
   Future<void> _act(_PageAction a) async {
     final d = _doc;
     if (d == null) return;
@@ -439,6 +447,8 @@ class DocumentPageState extends ConsumerState<DocumentPage> {
       case _PageAction.space:
         await moveItemFlow(context, ref, kind: 'document', id: d.id);
         if (mounted) await _load();
+      case _PageAction.archive:
+        if (await _archive(d) && mounted) Navigator.of(context).pop();
       case _PageAction.trash:
         if (await trashDocumentFlow(context, ref, d.id, d.title) && mounted) Navigator.of(context).pop();
     }
@@ -510,6 +520,7 @@ class DocumentPageState extends ConsumerState<DocumentPage> {
                   MenuOption(label: l.docLinkItem, onSelected: () => _act(_PageAction.link)),
                   MenuOption(label: l.docMoveUnder, onSelected: () => _act(_PageAction.moveUnder)),
                   if (moveLabel(context, ref) case final m?) MenuOption(label: m, onSelected: () => _act(_PageAction.space)),
+                  MenuOption(label: l.shelfArchive, onSelected: () => _act(_PageAction.archive)),
                   MenuOption(label: l.moveToTrash, onSelected: () => _act(_PageAction.trash)),
                 ],
               ],

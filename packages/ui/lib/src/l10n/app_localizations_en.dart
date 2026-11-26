@@ -2877,6 +2877,154 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiNoHistory => 'No conversations yet.';
 
   @override
+  String get navArchive => 'Archive';
+
+  @override
+  String get navTrash => 'Trash';
+
+  @override
+  String get shelfArchive => 'Archive';
+
+  @override
+  String get shelfUnarchive => 'Unarchive';
+
+  @override
+  String shelfArchived(String title) {
+    return '“$title” archived';
+  }
+
+  @override
+  String shelfUnarchived(String title) {
+    return '“$title” is back';
+  }
+
+  @override
+  String get shelfArchiveEmpty =>
+      'Nothing is archived. Archive what you are done with: it is put away, not deleted.';
+
+  @override
+  String get shelfTrashEmpty => 'The trash is empty.';
+
+  @override
+  String get shelfAll => 'All';
+
+  @override
+  String get shelfTasks => 'Tasks';
+
+  @override
+  String get shelfLists => 'Lists';
+
+  @override
+  String get shelfEvents => 'Events';
+
+  @override
+  String get shelfDocuments => 'Documents';
+
+  @override
+  String shelfContents(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'and $count more',
+      one: 'and 1 more',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String shelfIn(String place) {
+    return 'in $place';
+  }
+
+  @override
+  String shelfWhenArchived(String date) {
+    return 'Archived $date';
+  }
+
+  @override
+  String shelfWhenTrashed(String date) {
+    return 'Trashed $date';
+  }
+
+  @override
+  String get shelfMoveToTrash => 'Move to trash';
+
+  @override
+  String get shelfRestore => 'Restore';
+
+  @override
+  String shelfRestored(String title) {
+    return '“$title” restored';
+  }
+
+  @override
+  String get shelfDeleteForever => 'Delete forever';
+
+  @override
+  String get shelfDeleteTitle => 'Delete for good?';
+
+  @override
+  String shelfDeleteBody(String title) {
+    return '“$title” and what went with it will be deleted for good, on this device and on your others. This cannot be undone.';
+  }
+
+  @override
+  String get shelfDeletedForever => 'Deleted for good';
+
+  @override
+  String get shelfEmptyTrash => 'Empty trash';
+
+  @override
+  String shelfEmptyTrashBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items',
+      one: '1 item',
+    );
+    return '$_temp0 in the trash will be deleted for good, on this device and on your others. This cannot be undone.';
+  }
+
+  @override
+  String shelfTrashEmptied(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items deleted for good',
+      one: '1 item deleted for good',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get shelfKeepFor => 'Keep trashed items for';
+
+  @override
+  String get shelfKeepHelp => 'After that they are deleted for good.';
+
+  @override
+  String shelfDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get shelfNever => 'Until I empty the trash';
+
+  @override
+  String get shelfShowScheduled =>
+      'Show archived items on the Calendar and Timeline';
+
+  @override
+  String get shelfShowScheduledHelp =>
+      'Archived tasks and events that are scheduled keep their place there. Off: they are hidden.';
+
+  @override
   String get navAssistant => 'Assistant';
 
   @override

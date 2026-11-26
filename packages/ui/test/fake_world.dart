@@ -176,6 +176,29 @@ class FakeWorld
   @override
   Future<ThemePreference> themePreference() async => theme;
 
+  /// P06b W6 (ADR-0094): the trash's retention and whether archived items
+  /// that are scheduled show on the Calendar.
+  int retentionDays = defaultTrashRetentionDays;
+  bool showArchived = false;
+
+  @override
+  Future<int> trashRetentionDays() async => retentionDays;
+
+  @override
+  Future<void> setTrashRetentionDays(int days) async {
+    calls.add('retention:$days');
+    retentionDays = days;
+  }
+
+  @override
+  Future<bool> showArchivedScheduled() async => showArchived;
+
+  @override
+  Future<void> setShowArchivedScheduled(bool show) async {
+    calls.add('showArchived:$show');
+    showArchived = show;
+  }
+
   /// P04 T5 (D8): this device's "When to sync".
   SyncWhen syncWhenSetting = SyncWhen.automatic;
 

@@ -146,11 +146,11 @@ class DriftReminderPlanner {
     final eventIds = [for (final k in bySubject.keys) if (k.$1 == 'event') k.$2];
 
     final tasks = {
-      for (final t in await (db.select(db.tasks)..where((t) => t.id.isIn(taskIds) & t.deletedAt.isNull())).get())
+      for (final t in await (db.select(db.tasks)..where((t) => t.id.isIn(taskIds) & t.deletedAt.isNull() & t.archivedAt.isNull())).get())
         t.id: t,
     };
     final events = {
-      for (final e in await (db.select(db.events)..where((e) => e.id.isIn(eventIds) & e.deletedAt.isNull())).get())
+      for (final e in await (db.select(db.events)..where((e) => e.id.isIn(eventIds) & e.deletedAt.isNull() & e.archivedAt.isNull())).get())
         e.id: e,
     };
     final schedules = {

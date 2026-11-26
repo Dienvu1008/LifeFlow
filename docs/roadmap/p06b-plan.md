@@ -1,5 +1,5 @@
 # P06b plan: the assistant in the navigation, free chat, and five UI changes
-- Status: **Agreed by the owner 2026-11-04** (answers in §4). W1 and W2 built ([ADR-0089](../adr/0089-app-bar-options-and-one-search.md)), W3 built ([ADR-0090](../adr/0090-document-page-app-bar.md)); W1–W3 merged. W4 merged ([ADR-0091](../adr/0091-free-chat.md)). W5 merged ([ADR-0092](../adr/0092-document-drag-and-drop.md)). W4b built ([ADR-0093](../adr/0093-chat-events.md)), waiting for the owner's review. Next: W6.
+- Status: **Agreed by the owner 2026-11-04** (answers in §4). W1 and W2 built ([ADR-0089](../adr/0089-app-bar-options-and-one-search.md)), W3 built ([ADR-0090](../adr/0090-document-page-app-bar.md)); W1–W3 merged. W4 merged ([ADR-0091](../adr/0091-free-chat.md)). W5 merged ([ADR-0092](../adr/0092-document-drag-and-drop.md)). W4b merged ([ADR-0093](../adr/0093-chat-events.md)). W6 built ([ADR-0094](../adr/0094-archive-and-trash.md)), waiting for the owner's review. Next: the device check (P06 T8) and the exit gate (T9).
 - Date: 2026-11-04
 - Why: using the app, the owner could not find the assistant. The only ways in were the ✨ buttons on the Calendar, a document and a PDF, plus Settings → Assistant. He reversed P06 D1 ("no free chat") and asked for five UI changes.
 - Inputs:

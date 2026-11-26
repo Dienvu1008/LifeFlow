@@ -56,9 +56,58 @@ final calendarsProvider = StreamProvider.autoDispose<List<CalendarView>>((ref) {
 final calendarRangeProvider =
     StreamProvider.autoDispose.family<CalendarRange, ({LocalDate from, LocalDate to})>((ref, r) {
   ref.watch(activeProfileProvider);
+  ref.watch(showArchivedScheduledProvider);
   return ref.watch(calendarQueriesProvider).watchRange(r.from, r.to);
 });
 
+/// P06b W6 (ADR-0094): whether archived items that are scheduled still show on
+/// the Calendar and the Timeline (a setting of this device; no by default).
+/// Changing it re-reads the calendar's ranges and the agendas.
+final showArchivedScheduledProvider = StateNotifierProvider<ShowArchivedScheduled, bool>((ref) {
+  SettingsService? settings;
+  try {
+    settings = ref.watch(settingsServiceProvider);
+  } on UnimplementedError {
+    settings = null;
+  }
+  return ShowArchivedScheduled(settings);
+});
+
+class ShowArchivedScheduled extends StateNotifier<bool> {
+  ShowArchivedScheduled(this._settings) : super(false) {
+    _settings?.showArchivedScheduled().then((v) {
+      if (mounted && !_touched) state = v;
+    }, onError: (Object _) {});
+  }
+  final SettingsService? _settings;
+  var _touched = false;
+
+  Future<void> set(bool show) async {
+    _touched = true;
+    // The setting first: the queries read it when the ranges are asked again.
+    await _settings?.setShowArchivedScheduled(show);
+    if (mounted) state = show;
+  }
+}
+
+/// The archive and the trash of the shown space.
+final shelfServiceProvider = Provider<ShelfService>((ref) => _notWired('shelfServiceProvider'));
+final shelfQueriesProvider = Provider<ShelfQueries>((ref) => _notWired('shelfQueriesProvider'));
+
+/// What is archived, and what is in the trash. Invalidate after a change.
+final archivedEntriesProvider = FutureProvider.autoDispose<List<ShelfEntry>>((ref) {
+  ref.watch(activeProfileProvider);
+  return ref.watch(shelfQueriesProvider).archived();
+});
+final trashedEntriesProvider = FutureProvider.autoDispose<List<ShelfEntry>>((ref) {
+  ref.watch(activeProfileProvider);
+  return ref.watch(shelfQueriesProvider).trashed();
+});
+
+/// The days the trash keeps an item (a setting of this device).
+final trashRetentionDaysProvider = FutureProvider.autoDispose<int>(
+  (ref) => ref.watch(settingsServiceProvider).trashRetentionDays(),
+);
 /// The device's IANA zone: the default zone of new timed items (D10).
 final deviceZoneProvider = Provider<String>((ref) => 'UTC');
 
@@ -82,12 +131,14 @@ final nowProvider = Provider<DateTime Function()>((ref) => DateTime.now);
 /// Today's agenda of the ACTIVE profile (re-subscribed on a profile switch).
 final todayAgendaProvider = StreamProvider.autoDispose<Agenda>((ref) {
   ref.watch(activeProfileProvider);
+  ref.watch(showArchivedScheduledProvider);
   return ref.watch(agendaQueriesProvider).watchToday();
 });
 
 /// The next 14 days after today.
 final upcomingAgendaProvider = StreamProvider.autoDispose<Agenda>((ref) {
   ref.watch(activeProfileProvider);
+  ref.watch(showArchivedScheduledProvider);
   return ref.watch(agendaQueriesProvider).watchUpcoming();
 });
 

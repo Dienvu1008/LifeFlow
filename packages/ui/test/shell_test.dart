@@ -92,7 +92,7 @@ void main() {
         (tester) async {
       int? picked;
       await pumpShell(tester, width: 400, onSelected: (i) => picked = i);
-      for (final (label, index) in [('Timeline', 1), ('Calendar', 2), ('Documents', 3), ('Assistant', 4), ('Habits', 5), ('Goals', 6), ('Settings', 7), ('Overview', 0)]) {
+      for (final (label, index) in [('Timeline', 1), ('Calendar', 2), ('Documents', 3), ('Assistant', 4), ('Habits', 5), ('Goals', 6), ('Archive', 7), ('Trash', 8), ('Settings', 9), ('Overview', 0)]) {
         await tester.tap(find.byKey(const Key('nav-menu')));
         await tester.pumpAndSettle();
         await tester.tap(find.descendant(of: find.byKey(const Key('nav-drawer')), matching: find.text(label)));

@@ -144,7 +144,7 @@ class DriftHabitService implements HabitService {
     final rows = await (db.select(db.tasks)
           ..where((t) =>
               t.workspaceId.equals(ws) &
-              t.deletedAt.isNull() &
+              t.deletedAt.isNull() & t.archivedAt.isNull() &
               (t.isHabit.equals(true) | t.targetType.isNotNull()) &
               (taskId == null ? const Constant(true) : t.id.equals(taskId))))
         .get();
@@ -254,7 +254,7 @@ class DriftHabitQueries implements HabitQueries {
     final rows = await (db.select(db.tasks)
           ..where((t) =>
               t.workspaceId.equals(profile.activeWorkspaceId.value) &
-              t.deletedAt.isNull() &
+              t.deletedAt.isNull() & t.archivedAt.isNull() &
               (tracked ? t.isHabit.equals(true) | t.targetType.isNotNull() : t.isHabit.equals(true)))
           ..orderBy([(t) => OrderingTerm(expression: const CustomExpression<int>('tasks.rowid'))]))
         .get();
