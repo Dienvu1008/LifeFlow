@@ -638,6 +638,7 @@
   "@calNightFold": {"placeholders": {"from": {"type": "Object"}, "to": {"type": "Object"}}},
   "calOpenTimeline": "Open the Timeline",
   "calMore": "More",
+  "moreOptions": "More options",
   "calManageCalendars": "Manage calendars",
   "calNewEvent": "New event",
   "calNewTask": "New task",

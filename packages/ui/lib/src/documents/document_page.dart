@@ -35,6 +35,7 @@ import '../screens/goals_screen.dart' show openGoalPage;
 import '../screens/spaces_ui.dart' show moveItemFlow, moveLabel;
 import '../screens/task_page.dart' show openTaskPage;
 import '../task_actions.dart' show reportResult, showMessage;
+import '../widgets/options_menu.dart';
 import 'documents_screen.dart' show moveUnderFlow, trashDocumentFlow;
 import 'pdf_page.dart' show openPdfPage;
 import 'quill_adapter.dart';
@@ -450,21 +451,22 @@ class DocumentPageState extends ConsumerState<DocumentPage> {
               icon: const Icon(Icons.auto_awesome),
               onPressed: () => showAskAssistant(context, RecordRef('document', widget.documentId)),
             ),
-          if (d != null)
-            PopupMenuButton<_PageAction>(
-              key: const Key('doc-page-menu'),
-              tooltip: l.actionsForTitle(d.title),
-              onSelected: _act,
-              itemBuilder: (_) => [
-                PopupMenuItem(value: _PageAction.history, child: Text(l.docHistory)),
+          // P06b W2: Search first, then the page's own entries.
+          OptionsMenu(
+            key: const Key('doc-page-menu'),
+            tooltip: d == null ? null : l.actionsForTitle(d.title),
+            options: [
+              if (d != null) ...[
+                MenuOption(label: l.docHistory, onSelected: () => _act(_PageAction.history)),
                 if (canEdit && !d.isTrashed) ...[
-                  PopupMenuItem(value: _PageAction.link, child: Text(l.docLinkItem)),
-                  PopupMenuItem(value: _PageAction.moveUnder, child: Text(l.docMoveUnder)),
-                  if (moveLabel(context, ref) case final m?) PopupMenuItem(value: _PageAction.space, child: Text(m)),
-                  PopupMenuItem(value: _PageAction.trash, child: Text(l.moveToTrash)),
+                  MenuOption(label: l.docLinkItem, onSelected: () => _act(_PageAction.link)),
+                  MenuOption(label: l.docMoveUnder, onSelected: () => _act(_PageAction.moveUnder)),
+                  if (moveLabel(context, ref) case final m?) MenuOption(label: m, onSelected: () => _act(_PageAction.space)),
+                  MenuOption(label: l.moveToTrash, onSelected: () => _act(_PageAction.trash)),
                 ],
               ],
-            ),
+            ],
+          ),
         ],
       ),
       body: !_loaded

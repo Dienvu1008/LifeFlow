@@ -1,9 +1,7 @@
 // P05a T8 (ADR-0073; p05-plan.md C10, C4, C12): the Documents destination,
-// after Calendar. The tree of the shown space's documents, one search over
-// documents and tasks at the top, "New document", the trash. Documents follow
+// after Calendar. The tree of the shown space's documents, "New document",
+// the trash; the search moved to the options menu (P06b W2). Documents follow
 // the shown space, as every view (P04b); a viewer adds nothing (B4).
-import 'dart:async';
-
 import 'package:application/application.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,12 +10,11 @@ import '../l10n.dart';
 import '../messages.dart';
 import '../providers.dart';
 import '../screens/spaces_ui.dart' show moveItemFlow, moveLabel;
-import '../screens/task_page.dart' show openTaskPage;
 import '../screens/tasks_screen.dart' show showTextDialog;
 import '../shell.dart' show shellMenuButton;
 import '../task_actions.dart' show reportResult, showMessage;
+import '../widgets/options_menu.dart';
 import 'document_page.dart';
-import 'pdf_page.dart' show openPdfPage;
 
 /// A document with its depth in the tree.
 typedef TreeRow = ({DocumentNodeView node, int depth, bool hasChildren});
@@ -105,48 +102,12 @@ class DocumentsScreen extends ConsumerStatefulWidget {
 }
 
 class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
-  final _query = TextEditingController();
   final _collapsed = <String>{};
-  Timer? _debounce;
-  String _searched = '';
-  Future<SearchResults>? _results;
-
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    _query.dispose();
-    super.dispose();
-  }
-
-  void _typed(String v) {
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 250), () {
-      if (!mounted) return;
-      setState(() {
-        _searched = v;
-        _results = v.trim().isEmpty ? null : ref.read(searchQueriesProvider).search(v);
-      });
-    });
-  }
-
-  /// P05b T6 (steps 14, 29, 30): the shown results are searched again when
-  /// the documents change (saved, trashed, restored, moved) or another space
-  /// is shown, so they never show what is no longer there. The old results
-  /// stay on screen until the new ones come (no flicker).
-  void _searchAgain() {
-    if (!mounted || _searched.trim().isEmpty || _results == null) return;
-    setState(() {
-      _results = ref.read(searchQueriesProvider).search(_searched);
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
     final canEdit = ref.watch(canEditShownProvider);
-    ref.listen(documentTreeProvider, (before, now) {
-      if (now.hasValue && !identical(before?.valueOrNull, now.valueOrNull)) _searchAgain();
-    });
     return Scaffold(
       appBar: AppBar(
         leading: shellMenuButton(context),
@@ -159,36 +120,10 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
             onPressed: () => Navigator.of(context, rootNavigator: true)
                 .push(MaterialPageRoute<void>(builder: (_) => const DocumentsTrashPage())),
           ),
+          // P06b W2 (owner UI 1): the search left this app bar for the
+          // options menu (and the Overview's +), to give the tree the room.
+          const OptionsMenu(),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(64),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-            child: TextField(
-              key: const Key('doc-search'),
-              controller: _query,
-              onChanged: _typed,
-              textInputAction: TextInputAction.search,
-              decoration: InputDecoration(
-                hintText: l.docSearchHint,
-                prefixIcon: const Icon(Icons.search),
-                isDense: true,
-                border: const OutlineInputBorder(),
-                suffixIcon: _query.text.isEmpty
-                    ? null
-                    : IconButton(
-                        key: const Key('doc-search-clear'),
-                        tooltip: l.close,
-                        icon: const Icon(Icons.close),
-                        onPressed: () {
-                          _query.clear();
-                          _typed('');
-                        },
-                      ),
-              ),
-            ),
-          ),
-        ),
       ),
       floatingActionButton: canEdit
           ? FloatingActionButton(
@@ -198,7 +133,7 @@ class _DocumentsScreenState extends ConsumerState<DocumentsScreen> {
               child: const Icon(Icons.add),
             )
           : null,
-      body: _results != null ? _SearchResults(query: _searched, results: _results!) : _tree(context, canEdit),
+      body: _tree(context, canEdit),
     );
   }
 
@@ -278,92 +213,6 @@ class _DocMenu extends ConsumerWidget {
       ],
     );
   }
-}
-
-class _SearchResults extends ConsumerWidget {
-  const _SearchResults({required this.query, required this.results});
-  final String query;
-  final Future<SearchResults> results;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l = context.l10n;
-    final theme = Theme.of(context);
-    return FutureBuilder<SearchResults>(
-      future: results,
-      builder: (context, snap) {
-        final r = snap.data;
-        if (r == null) {
-          return snap.hasError
-              ? Center(child: Text(l.docCouldNotLoad))
-              : Center(child: CircularProgressIndicator(semanticsLabel: l.docLoading));
-        }
-        if (r.isEmpty) {
-          return Center(child: Text(l.docNoResults(query.trim()), key: const Key('doc-no-results')));
-        }
-        Widget header(String text) => Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-              child: Semantics(header: true, child: Text(text, style: theme.textTheme.titleSmall)),
-            );
-        return ListView(
-          key: const Key('doc-results'),
-          padding: const EdgeInsets.only(bottom: 96),
-          children: [
-            if (r.documents.isNotEmpty) header(l.docResultsDocuments),
-            for (final h in r.documents)
-              ListTile(
-                key: ValueKey('doc-hit-${h.id}'),
-                leading: const Icon(Icons.description_outlined),
-                title: Text(h.title),
-                subtitle: h.passage.trim().isEmpty ? null : Text.rich(passageSpan(h.passage, h.matches, theme), maxLines: 3, overflow: TextOverflow.ellipsis),
-                onTap: () => openDocumentPage(context, h.id),
-              ),
-            // P05b T2 (ADR-0077, D3): pages of the PDFs on this device.
-            if (r.files.isNotEmpty) header(l.docResultsFiles),
-            for (final h in r.files)
-              ListTile(
-                key: ValueKey('file-hit-${h.documentId}-${h.file.hash}-${h.page}'),
-                leading: const Icon(Icons.picture_as_pdf_outlined),
-                title: Text(l.docFileHitTitle(h.file.name, h.page)),
-                subtitle: Text.rich(
-                  TextSpan(children: [
-                    TextSpan(text: '${l.docFileHitIn(h.documentTitle)}\n'),
-                    passageSpan(h.passage, h.matches, theme),
-                  ]),
-                  maxLines: 4,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                onTap: () => openPdfPage(context, h.file, ref.read(attachmentServiceProvider), page: h.page, find: query.trim()),
-              ),
-            if (r.tasks.isNotEmpty) header(l.docResultsTasks),
-            for (final t in r.tasks)
-              ListTile(
-                key: ValueKey('task-hit-${t.id}'),
-                leading: Icon(t.isDone ? Icons.check_circle_outline : Icons.radio_button_unchecked),
-                title: Text(t.title, style: t.isDone ? const TextStyle(decoration: TextDecoration.lineThrough) : null),
-                onTap: () => openTaskPage(context, t.id),
-              ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-/// A search passage with its matched words in bold.
-TextSpan passageSpan(String passage, List<SearchMatch> matches, ThemeData theme) {
-  final spans = <TextSpan>[];
-  var at = 0;
-  for (final m in matches) {
-    if (m.start < at || m.end > passage.length) continue;
-    if (m.start > at) spans.add(TextSpan(text: passage.substring(at, m.start)));
-    spans.add(TextSpan(
-        text: passage.substring(m.start, m.end),
-        style: TextStyle(fontWeight: FontWeight.w700, color: theme.colorScheme.primary)));
-    at = m.end;
-  }
-  if (at < passage.length) spans.add(TextSpan(text: passage.substring(at)));
-  return TextSpan(children: spans);
 }
 
 /// The documents in the trash: each as it was trashed (its subdocuments

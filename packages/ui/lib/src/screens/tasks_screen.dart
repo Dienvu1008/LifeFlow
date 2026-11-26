@@ -7,7 +7,9 @@ import '../messages.dart';
 import '../shell.dart' show shellMenuButton;
 import '../providers.dart';
 import '../task_actions.dart';
+import '../search/search_page.dart' show openSearch;
 import '../task_tree.dart';
+import '../widgets/options_menu.dart';
 import 'event_editor.dart';
 import 'focus_page.dart';
 import 'overview_view.dart';
@@ -65,11 +67,13 @@ class _OverviewScreenState extends ConsumerState<OverviewScreen> {
                 onPressed: () => ref.read(assignedToMeProvider.notifier).state = !ref.read(assignedToMeProvider),
               ),
             _focusAction(context, ref),
+            const OptionsMenu(),
           ],
         ),
         // P04b T13 (B4): nothing to add where the space is only viewed.
         floatingActionButton: ref.watch(canEditShownProvider)
             ? OverviewAddButton(
+                onSearch: () => openSearch(context),
                 onTask: () => _addTask(null),
                 onList: () => addList(context, ref),
                 onEvent: () => openEventEditor(context, ref),
@@ -94,7 +98,7 @@ class TimelineScreen extends ConsumerWidget {
         appBar: AppBar(
           leading: shellMenuButton(context),
           title: const TimelineTitle(),
-          actions: const [TimelineTodayButton()],
+          actions: const [TimelineTodayButton(), OptionsMenu()],
         ),
         body: const TimelineView(),
       );
@@ -108,7 +112,7 @@ class HabitsScreen extends ConsumerWidget {
         appBar: AppBar(
           leading: shellMenuButton(context),
           title: Text(context.l10n.navHabits),
-          actions: [_focusAction(context, ref)],
+          actions: [_focusAction(context, ref), const OptionsMenu()],
         ),
         floatingActionButton: FloatingActionButton(
           heroTag: 'fab-habits',

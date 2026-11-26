@@ -26,3 +26,19 @@ Future<void> goToTab(WidgetTester tester, String label) async {
   }
   await tester.pumpAndSettle();
 }
+
+/// P06b W2: opens the search from the shown screen's options menu ([menu]
+/// is the menu's key: 'screen-options' on the main screens).
+Future<void> openSearchFromMenu(WidgetTester tester, {String menu = 'screen-options'}) async {
+  await tester.tap(find.byKey(Key(menu)).hitTestable().first);
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('options-search')));
+  await tester.pumpAndSettle();
+}
+
+/// Types [text] into the search and waits for its results.
+Future<void> searchFor(WidgetTester tester, String text) async {
+  await tester.enterText(find.byKey(const Key('search-field')), text);
+  await tester.pump(const Duration(milliseconds: 300));
+  await tester.pumpAndSettle();
+}

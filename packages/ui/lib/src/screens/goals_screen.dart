@@ -18,6 +18,7 @@ import '../shell.dart' show shellMenuButton;
 import '../providers.dart';
 import '../schedule_text.dart';
 import '../task_actions.dart';
+import '../widgets/options_menu.dart';
 
 import '../l10n.dart';
 import 'schedule_editor.dart' show EditorSection;
@@ -87,6 +88,7 @@ class _GoalsScreenState extends ConsumerState<GoalsScreen> {
       appBar: AppBar(
         leading: shellMenuButton(context),
         title: Text(context.l10n.goals),
+        actions: const [OptionsMenu()],
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(56),
           child: Padding(

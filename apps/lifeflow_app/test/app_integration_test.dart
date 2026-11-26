@@ -609,12 +609,19 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Ghi chú họp'), findsOneWidget);
 
-    await tester.enterText(find.byKey(const Key('doc-search')), 'ghi chú');
+    // P06b W2: the search is in the options menu.
+    await tester.tap(find.byKey(const Key('screen-options')).hitTestable().first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('options-search')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('search-field')), 'ghi chú');
     await tester.pump(const Duration(milliseconds: 300));
     await settle(tester);
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('doc-results')), findsOneWidget);
     expect(find.descendant(of: find.byKey(const Key('doc-results')), matching: find.text('Ghi chú họp')), findsOneWidget);
+    await tester.pageBack(); // the search is a page above the shell
+    await tester.pumpAndSettle();
 
     final id = (await tester.runAsync(() => w.directory.active()))!.id;
     final rows = await tester.runAsync(() async {

@@ -17,6 +17,7 @@ import 'package:ui/src/documents/pdf_page.dart';
 
 import 'documents_flow_test.dart' show openDocuments, pumpApp, tapKey, world;
 import 'fake_world.dart';
+import 'nav.dart' show openSearchFromMenu, searchFor;
 
 final pdfBytes = Uint8List.fromList('%PDF-1.7 fake'.codeUnits);
 final pdfFile = AttachmentRef(hash: 'sha256:${'c' * 64}', name: 'hóa đơn.pdf', size: pdfBytes.length, mime: 'application/pdf');
@@ -201,9 +202,8 @@ void main() {
     });
     await tester.pageBack();
     await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(const Key('doc-search')), 'họp tổ');
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.pumpAndSettle();
+    await openSearchFromMenu(tester);
+    await searchFor(tester, 'họp tổ');
     expect(find.text('In PDF files'), findsOneWidget);
     final hit = find.byKey(ValueKey('file-hit-$d-${pdfFile.hash}-2'));
     expect(hit, findsOneWidget);
@@ -227,9 +227,8 @@ void main() {
     final (w, d) = await openDocWithPdf(tester, setUp: (w) => w.documents.pdfText[pdfFile.hash] = ['Tờ khai thuế']);
     await tester.pageBack();
     await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(const Key('doc-search')), 'khai');
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.pumpAndSettle();
+    await openSearchFromMenu(tester);
+    await searchFor(tester, 'khai');
     final hit = find.byKey(ValueKey('file-hit-$d-${pdfFile.hash}-1'));
     expect(hit, findsOneWidget);
 

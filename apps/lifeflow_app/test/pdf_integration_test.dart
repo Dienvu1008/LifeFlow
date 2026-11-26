@@ -185,7 +185,12 @@ void main() {
     // P05b T2 (ADR-0077, D3): the PDF's words are found by the one search,
     // "in file.pdf, page 2"; the hit opens at its page.
     await back(tester); // to the documents
-    await tester.enterText(find.byKey(const Key('doc-search')), 'lifeflowsecret');
+    // P06b W2: the search is in the options menu.
+    await tester.tap(find.byKey(const Key('screen-options')).hitTestable().first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('options-search')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('search-field')), 'lifeflowsecret');
     await tester.pump(const Duration(milliseconds: 400));
     await until(tester, () => find.text('hóa đơn.pdf, page 2').evaluate().isNotEmpty);
     expect(find.text('In PDF files'), findsOneWidget);
