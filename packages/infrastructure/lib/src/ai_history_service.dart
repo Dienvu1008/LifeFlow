@@ -23,6 +23,7 @@ import 'package:uuid/uuid.dart';
 
 import 'ai_history_handlers.dart';
 import 'app_database.dart';
+import 'event_command_handlers.dart' show EventCommandHandler;
 import 'profile_store.dart';
 import 'schedule_mapping.dart' show scheduleFieldsJson;
 import 'task_command_handler.dart';
@@ -119,12 +120,51 @@ class AiToolCatalog {
         arguments: {'id', 'title'},
         creates: true,
         check: (a) => _titleError(a['title'])),
+    // P06b W4b (ADR-0093): the chat may propose a new event, an event of
+    // the personal space at another time, or one occurrence of a repeating
+    // event on another day: what the Calendar's own screens send.
+    AiTool(
+        commandType: 'CreateEvent',
+        kind: 'event',
+        handler: const EventCommandHandler(),
+        op: 'create',
+        arguments: {'id', 'title', 'schedule'},
+        creates: true,
+        check: (a) => _titleError(a['title']) ?? aiScheduleArgumentError(a['id'] as String, a['schedule'])),
+    // A one-off event gets a new slot; its title, place and calendar are
+    // what they were (an update replaces them all), so they are named.
+    AiTool(
+        commandType: 'MoveEvent',
+        kind: 'event',
+        handler: const EventCommandHandler(),
+        op: 'update',
+        arguments: {'id', 'title', 'location', 'calendarId', 'schedule'},
+        check: (a) =>
+            _titleError(a['title']) ??
+            (a['location'] is String? && a['calendarId'] is String? ? null : 'a place and a calendar are text or none') ??
+            aiScheduleArgumentError(a['id'] as String, a['schedule'])),
+    AiTool(
+        commandType: 'MoveEventOccurrence',
+        kind: 'event',
+        handler: const EventCommandHandler(),
+        op: 'setException',
+        arguments: {'id', 'kind', 'originalDate', 'moveDate', 'moveTime'},
+        check: _occurrenceMoveError),
   ]);
 
-  static String? _titleError(Object? title) => switch (title) {
-        final String t when t.trim().isNotEmpty && t == t.trim() && t.length <= maxAiTitleLength => null,
-        _ => 'a title is a non-empty text without spaces around it',
-      };
+  /// Why [a] is not one occurrence of a repeating event moved to a day and a
+  /// time, or null.
+  static String? _occurrenceMoveError(Map<String, Object?> a) {
+    if (a['kind'] != 'move') return 'only moving an occurrence';
+    try {
+      LocalDate.parse(a['originalDate'] as String);
+      LocalDate.parse(a['moveDate'] as String);
+      TimeOfDayValue.parse(a['moveTime'] as String);
+      return null;
+    } on Object {
+      return 'a day and a time (HH:MM) to move it to';
+    }
+  }
 
   /// T3's tools, enough to prove the path: renaming a task, its notes.
   static final AiToolCatalog minimal = AiToolCatalog([
@@ -147,6 +187,11 @@ class AiToolCatalog {
               _ => 'notes are a text',
             }),
   ]);
+
+  static String? _titleError(Object? title) => switch (title) {
+        final String t when t.trim().isNotEmpty && t == t.trim() && t.length <= maxAiTitleLength => null,
+        _ => 'a title is a non-empty text without spaces around it',
+      };
 }
 
 class DriftAiHistoryService implements AiHistoryService {

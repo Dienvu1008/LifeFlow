@@ -131,6 +131,10 @@ void main() {
   Future<String> event(String title, int h1, int m1, int h2, int m2, {LocalDate? on}) async =>
       ok(await events.create(EventInput(title: title, start: at(on ?? day, h1, m1), end: at(on ?? day, h2, m2))));
 
+  /// The events of [d] as the Calendar shows them: title and start–end.
+  Future<Map<String, String>> eventsOnDay(LocalDate d) async =>
+      {for (final e in (await calendar.range(d, d)).events) e.title: '${e.deviceStart!.time}–${e.deviceEnd!.time}'};
+
   Future<int> versionOf(String id) async => (await recordKindByName['task']!.readOne(db, id))!['version'] as int;
 
   /// The minutes of [day] each item of the calendar takes, and its conflicts.
@@ -458,9 +462,14 @@ void main() {
     Map<String, Object?> reply(String text, [List<Map<String, Object?>> changes = const []]) => {
           'reply': text,
           'changes': [
-            for (final c in changes) {'taskId': '', 'title': '', 'date': '', 'start': '', 'minutes': 0, ...c},
+            for (final c in changes)
+              {'taskId': '', 'eventId': '', 'fromDate': '', 'title': '', 'date': '', 'start': '', 'minutes': 0, ...c},
           ],
         };
+
+    /// The events of [d] as the Calendar shows them: title and start–end.
+    Future<Map<String, String>> eventsOn(LocalDate d) async =>
+        {for (final e in (await calendar.range(d, d)).events) e.title: '${e.deviceStart!.time}–${e.deviceEnd!.time}'};
 
     test('an answer from what every space holds; the shown space\'s coming days; kept; nothing changes', () async {
       await shareSpace();
@@ -568,6 +577,96 @@ void main() {
       expect(audit.where((a) => a.aiProvenance != null), hasLength(4), reason: 'each approved change says it came from the assistant');
     });
 
+    // P06b W4b (ADR-0093): events.
+    test('a new event and a one-off event moved; approved, they run as the person; its place and length are kept', () async {
+      final meet = ok(await events.create(EventInput(
+          title: 'Họp nhóm', location: 'Phòng 3', start: at(day, 9, 0), end: at(day, 10, 30))));
+      local.plan = (r) => reply('Em đề xuất như sau.', [
+            {'action': 'createEvent', 'title': 'Sinh nhật mẹ', 'date': '$day', 'start': '18:30', 'minutes': 90},
+            {'action': 'moveEvent', 'eventId': 'event:$meet', 'date': '${day.addDays(1)}', 'start': '14:00'},
+          ]);
+      final r = await ai.chat('Tối mai sinh nhật mẹ lúc 18:30, dời họp nhóm sang chiều ngày kia');
+      expect(r.outcome, AiTurnOutcome.proposed, reason: r.reason);
+      final sent = sentText(local.asked.single);
+      expect(sent['event:$meet'], allOf(contains('changeable'), contains('on $day (thursday) at 09:00-10:30')));
+      final p = (await history.proposals(r.sessionId!)).single;
+      expect([for (final c in p.changes) c.change.commandType], ['CreateEvent', 'MoveEvent']);
+      expect([for (final c in p.changes) c.change.summary], [
+        'Sự kiện mới: "Sinh nhật mẹ", $day 18:30–20:00',
+        '"Họp nhóm": ${day.addDays(1)} 14:00–15:30',
+      ]);
+      expect(await db.select(db.events).get(), hasLength(1), reason: 'nothing before the approval (LF-INV-AI-001)');
+
+      final out = await history.approveAll(r.proposalId!);
+      expect(out.map((o) => o.status), everyElement(AiChangeStatus.applied), reason: '${out.map((o) => o.reason)}');
+      expect(await eventsOn(day), {'Sinh nhật mẹ': '18:30–20:00'});
+      expect(await eventsOn(day.addDays(1)), {'Họp nhóm': '14:00–15:30'}, reason: 'the length is kept');
+      final moved = await events.details(meet);
+      expect(moved!.input.location, 'Phòng 3', reason: 'an update replaces the place; it was named again');
+      final audit = await (db.select(db.auditLog)..where((a) => a.resourceType.equals('event'))).get();
+      expect(audit.where((a) => a.aiProvenance != null), hasLength(2));
+    });
+
+    test('an event that repeats: only the day named moves, the others stay', () async {
+      final run = ok(await events.create(EventInput(
+          title: 'Chạy bộ',
+          start: at(day.addDays(-1), 6, 0),
+          end: at(day.addDays(-1), 7, 0),
+          repeat: const RepeatInput(frequency: RepeatFrequency.daily))));
+      final d3 = day.addDays(1); // Friday the 6th
+      local.plan = (r) => reply('Em dời buổi thứ sáu.', [
+            // A day it was not shown on, and none: dropped.
+            {'action': 'moveEvent', 'eventId': run, 'fromDate': '2026-12-25', 'date': '2026-12-25', 'start': '17:30'},
+            {'action': 'moveEvent', 'eventId': run, 'fromDate': '', 'date': '$d3', 'start': '17:30'},
+            {'action': 'moveEvent', 'eventId': run, 'fromDate': '$d3', 'date': '$d3', 'start': '17:30'},
+            {'action': 'moveEvent', 'eventId': run, 'fromDate': '$day', 'date': '$day', 'start': '19:00'}, // one per event
+          ]);
+      final r = await ai.chat('Sáng thứ sáu chạy bộ buổi chiều');
+      final sent = sentText(local.asked.single);
+      expect(sent['event:$run'], allOf(contains('repeats; this one is of $day'), contains('this one is of $d3')));
+      final p = (await history.proposals(r.sessionId!)).single;
+      expect([for (final c in p.changes) (c.change.commandType, c.change.arguments['originalDate'], c.change.arguments['moveTime'])],
+          [('MoveEventOccurrence', '$d3', '17:30')]);
+      expect(p.changes.single.change.summary, '"Chạy bộ" (ngày $d3): $d3 17:30');
+      expect((await history.approveAll(r.proposalId!)).single.status, AiChangeStatus.applied);
+      expect(await eventsOn(day), {'Chạy bộ': '06:00–07:00'});
+      expect((await eventsOn(d3))['Chạy bộ']?.startsWith('17:30'), isTrue);
+      expect(await eventsOn(d3.addDays(1)), {'Chạy bộ': '06:00–07:00'});
+    });
+
+    test('what may not be proposed for events is dropped', () async {
+      await shareSpace();
+      final personal = (await ProfileStore(db).personalWorkspaceId())!;
+      final mine = ok(await events.create(EventInput(title: 'Họp', start: at(day, 9, 0), end: at(day, 10, 0))));
+      final allDay = ok(await events.create(EventInput(title: 'Nghỉ lễ', start: SchedulePointInput.date(day))));
+      final task1 = await task('Nộp báo cáo');
+      local.plan = (r) => reply('OK', [
+            {'action': 'moveEvent', 'eventId': allDay, 'date': '$day', 'start': '09:00'}, // no time to move
+            {'action': 'moveEvent', 'eventId': task1, 'date': '$day', 'start': '09:00'}, // a task's id
+            {'action': 'moveEvent', 'eventId': 'made-up', 'date': '$day', 'start': '09:00'},
+            {'action': 'moveEvent', 'eventId': mine, 'date': 'tomorrow', 'start': '09:00'},
+            {'action': 'moveEvent', 'eventId': mine, 'date': '$day', 'start': '23:50', 'minutes': 120},
+            {'action': 'createEvent', 'title': '  ', 'date': '$day', 'start': '09:00'},
+            {'action': 'createEvent', 'title': 'Không giờ', 'date': '$day', 'start': ''},
+            {'action': 'moveEvent', 'eventId': mine, 'date': '$day', 'start': '11:00', 'minutes': 30},
+          ]);
+      final r = await ai.chat('Sắp xếp lại các sự kiện');
+      expect(sentText(local.asked.single)['event:$allDay'], isNot(contains('changeable')));
+      final changes = (await history.proposals(r.sessionId!)).single.changes;
+      expect([for (final c in changes) (c.change.commandType, c.change.arguments['id'])], [('MoveEvent', mine)]);
+
+      // With a shared space shown, its events are read, not changed (an approval runs in the personal space).
+      ok(await DriftSpaceService(db, gw).show(space));
+      final shared = ok(await events.create(EventInput(title: 'Họp gia đình', start: at(day, 20, 0), end: at(day, 21, 0))));
+      local.plan = (r) => reply('OK', [
+            {'action': 'moveEvent', 'eventId': shared, 'date': '$day', 'start': '19:00'},
+          ]);
+      final s = await ai.chat('Dời họp gia đình sớm hơn');
+      expect(sentText(local.asked.last)['event:$shared'], isNot(contains('changeable')));
+      expect(s.outcome, AiTurnOutcome.answered);
+      ok(await DriftSpaceService(db, gw).show(personal));
+    });
+
     test('what may not be proposed is dropped: tasks not sent, of a shared space, invented ids, bad slots', () async {
       await shareSpace();
       final personal = (await ProfileStore(db).personalWorkspaceId())!;
@@ -670,6 +769,61 @@ void main() {
       }
       expect(out['ok'], AiChangeStatus.applied);
       expect(aiScheduleArgumentError(a, good), isNull);
+    });
+
+    test('event tools: an event that repeats, a deadline, another occurrence change or extra keys fail at approval (ADR-0093)', () async {
+      final e = ok(await events.create(EventInput(title: 'Họp', start: at(day, 9, 0), end: at(day, 10, 0))));
+      final s = await history.startSession(title: 'x', purpose: AiPurpose.chat).then(ok);
+      final v = (await recordKindByName['event']!.readOne(db, e))!['version'] as int;
+      Map<String, Object?> slot(String id, {Map<String, Object?> extra = const {}}) =>
+          {...scheduleFieldsJson('event', id, specOfInput(TaskScheduleInput(start: at(day, 14, 0), end: at(day, 15, 0))), null), ...extra};
+      final newId = '30000000-0000-4000-8000-0000000000e1';
+      // A consistent schedule that repeats: only the tool's check can refuse it.
+      Map<String, Object?> repeating(String id) => scheduleFieldsJson('event', id,
+          specOfInput(TaskScheduleInput(start: at(day, 14, 0), end: at(day, 15, 0), repeat: const RepeatInput(frequency: RepeatFrequency.daily))),
+          ruleOfInput(const RepeatInput(frequency: RepeatFrequency.daily)));
+      final changes = <ProposedChange>[
+        ProposedChange(
+            id: 'repeat', commandType: 'CreateEvent', versions: const {}, summary: '',
+            arguments: {'id': newId, 'title': 'X', 'schedule': repeating(newId)}),
+        ProposedChange(
+            id: 'extra', commandType: 'CreateEvent', versions: const {}, summary: '',
+            arguments: {'id': newId, 'title': 'X', 'schedule': slot(newId), 'calendarId': 'c1'}),
+        ProposedChange(
+            id: 'cancel', commandType: 'MoveEventOccurrence', versions: {RecordRef('event', e): v}, summary: '',
+            arguments: {'id': e, 'kind': 'cancel', 'originalDate': '$day', 'moveDate': '$day', 'moveTime': '10:00'}),
+        ProposedChange(
+            id: 'time', commandType: 'MoveEventOccurrence', versions: {RecordRef('event', e): v}, summary: '',
+            arguments: {'id': e, 'kind': 'move', 'originalDate': '$day', 'moveDate': '$day', 'moveTime': '25:00'}),
+        ProposedChange(
+            id: 'place', commandType: 'MoveEvent', versions: {RecordRef('event', e): v}, summary: '',
+            arguments: {'id': e, 'title': 'Họp', 'location': 3, 'calendarId': null, 'schedule': slot(e)}),
+        ProposedChange(
+            id: 'ok', commandType: 'MoveEvent', versions: {RecordRef('event', e): v}, summary: '',
+            arguments: {'id': e, 'title': 'Họp', 'location': null, 'calendarId': null, 'schedule': slot(e)}),
+      ];
+      final p = ok(await history.addProposal(s, model: 'm', site: AiEngineSite.device, changes: changes));
+      final out = {for (final o in await history.approveAll(p)) o.changeId: o.status};
+      expect(out, {
+        'repeat': AiChangeStatus.failed,
+        'extra': AiChangeStatus.failed,
+        'cancel': AiChangeStatus.failed,
+        'time': AiChangeStatus.failed,
+        'place': AiChangeStatus.failed,
+        'ok': AiChangeStatus.applied,
+      });
+      // Each refused by the tool itself, before any command ran.
+      final reasons = {for (final c in (await history.proposals(s)).single.changes) c.change.id: c.reason};
+      expect(reasons, {
+        'repeat': 'only a one-off slot on one day',
+        'extra': 'arguments it does not take: calendarId',
+        'cancel': 'only moving an occurrence',
+        'time': 'a day and a time (HH:MM) to move it to',
+        'place': 'a place and a calendar are text or none',
+        'ok': null,
+      });
+      expect(await db.select(db.events).get(), hasLength(1), reason: 'no event was made');
+      expect(await eventsOnDay(day), {'Họp': '14:00–15:00'});
     });
 
     test('settings stored as one value; nonsense gives the defaults', () {
