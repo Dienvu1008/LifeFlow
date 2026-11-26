@@ -14,10 +14,12 @@ import 'package:foundation/foundation.dart';
 
 import '../l10n.dart';
 import '../providers.dart';
+import 'chat_view.dart' show AiChatPage;
 
-/// Opens the assistant on [date] (today by default).
-Future<void> openAssistantPage(BuildContext context, {LocalDate? date}) => Navigator.of(context, rootNavigator: true)
-    .push(MaterialPageRoute<void>(builder: (_) => AssistantPage(date: date)));
+/// Opens the assistant on [date] (today by default); with [run], that turn
+/// starts at once (P06b W4: the chat's shortcuts).
+Future<void> openAssistantPage(BuildContext context, {LocalDate? date, AiPurpose? run}) => Navigator.of(context, rootNavigator: true)
+    .push(MaterialPageRoute<void>(builder: (_) => AssistantPage(date: date, run: run)));
 
 /// What the person chose on the consent sheet.
 enum AiConsentChoice { send, without }
@@ -80,8 +82,9 @@ String? aiOutcomeText(BuildContext context, AiTurnResult r, AiPurpose purpose) {
     case AiTurnOutcome.needsConsent:
       return null;
     case AiTurnOutcome.answered:
-      return r.proposalId == null && purpose != AiPurpose.askDocument ? l.aiNothingPlaced : null;
+      return r.proposalId == null && (purpose == AiPurpose.planDay || purpose == AiPurpose.fixConflict) ? l.aiNothingPlaced : null;
     case AiTurnOutcome.nothingToDo:
+      if (purpose == AiPurpose.chat) return null;
       return purpose == AiPurpose.fixConflict ? l.aiNoConflicts : l.aiNothingToPlan;
     case AiTurnOutcome.declined:
       final why = r.reason ?? '';
@@ -126,8 +129,11 @@ Future<AiTurnResult?> runAiTurn(
 }
 
 class AssistantPage extends ConsumerStatefulWidget {
-  const AssistantPage({super.key, this.date});
+  const AssistantPage({super.key, this.date, this.run});
   final LocalDate? date;
+
+  /// A turn to start when the page opens (plan the day, fix conflicts).
+  final AiPurpose? run;
 
   @override
   ConsumerState<AssistantPage> createState() => _AssistantPageState();
@@ -140,6 +146,12 @@ class _AssistantPageState extends ConsumerState<AssistantPage> {
   AiTurnResult? _result;
   AiPurpose _purpose = AiPurpose.planDay;
   String? _sessionId;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.run case final run?) WidgetsBinding.instance.addPostFrameCallback((_) => mounted ? _run(run) : null);
+  }
 
   @override
   void dispose() {
@@ -378,6 +390,7 @@ class AiHistoryList extends ConsumerWidget {
             AiPurpose.planDay => Icons.auto_awesome,
             AiPurpose.fixConflict => Icons.call_split,
             AiPurpose.askDocument => Icons.question_answer_outlined,
+            AiPurpose.chat => Icons.chat_bubble_outline,
           }),
           title: Text(s.title),
           subtitle: Text(MaterialLocalizations.of(context).formatMediumDate(s.updatedAt.toLocal())),
@@ -402,7 +415,9 @@ class AiHistoryList extends ConsumerWidget {
               ));
             },
           ),
-          onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => AiSessionPage(session: s))),
+          // P06b W4: a chat opens to go on with it; the other turns as they were.
+          onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+              builder: (_) => s.purpose == AiPurpose.chat ? AiChatPage(session: s) : AiSessionPage(session: s))),
         ),
     ]);
   }

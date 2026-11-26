@@ -50,6 +50,42 @@ class FakeAssistant implements AiAssistant {
     return AiTurnResult(AiTurnOutcome.answered, sessionId: r.sessionId, site: r.site, model: r.model, text: b.toString());
   }
 
+  /// P06b W4: a chat turn. A turn that answers is kept in [history] as the
+  /// real one is: the person's message, the answer, its proposal.
+  @override
+  Future<AiTurnResult> chat(String message,
+      {String? sessionId, Set<RecordRef> consented = const {}, bool withoutUnconsented = false}) async {
+    calls.add('ai.chat:$message:${sessionId ?? '-'}:${(consented.map((r) => '$r').toList()..sort()).join(',')}:$withoutUnconsented');
+    if (hold != null) await hold!.future;
+    final r = _next();
+    if (r.outcome != AiTurnOutcome.answered && r.outcome != AiTurnOutcome.proposed) return r;
+    final s = sessionId ?? r.sessionId ?? 'chat${history.sessionsList.length + 1}';
+    if (!history.sessionsList.any((x) => x.id == s)) {
+      history.sessionsList.insert(0, AiSessionView(id: s, title: message, purpose: AiPurpose.chat, updatedAt: DateTime(2026, 11, 4, 9)));
+    }
+    final list = history.messagesOf.putIfAbsent(s, () => []);
+    final n = list.length;
+    list.add(AiMessageView(id: '$s-$n', role: AiMessageRole.person, text: message, createdAt: DateTime(2026, 11, 4, 9)));
+    final answer = '$s-${n + 1}';
+    list.add(AiMessageView(
+        id: answer, role: AiMessageRole.assistant, text: r.text, createdAt: DateTime(2026, 11, 4, 9), model: r.model, site: r.site));
+    if (r.proposalId != null) {
+      history.proposalsOf.putIfAbsent(s, () => []).add(AiProposalView(
+          id: r.proposalId!,
+          sessionId: s,
+          messageId: answer,
+          model: r.model ?? 'qwen',
+          site: r.site ?? AiEngineSite.device,
+          note: r.text,
+          changes: [for (final c in chatChanges) AiChangeRecord(c)]));
+    }
+    return AiTurnResult(r.outcome,
+        sessionId: s, messageId: answer, proposalId: r.proposalId, site: r.site, model: r.model, text: r.text, lines: r.lines);
+  }
+
+  /// The changes of the next chat proposal.
+  List<ProposedChange> chatChanges = const [];
+
   @override
   Future<void> stop() async => calls.add('ai.stop');
 }

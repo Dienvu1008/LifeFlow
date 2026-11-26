@@ -2877,6 +2877,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiNoHistory => 'No conversations yet.';
 
   @override
+  String get navAssistant => 'Assistant';
+
+  @override
+  String get aiChatHint =>
+      'Ask about your plans and documents, or ask for a change';
+
+  @override
+  String get aiChatSend => 'Send';
+
+  @override
+  String get aiNewChat => 'New chat';
+
+  @override
+  String get aiChatIntro =>
+      'Ask about your tasks, events and documents in all your spaces. The assistant can also propose changes to the tasks of your personal space. Nothing changes until you approve it.';
+
+  @override
+  String get aiNotAvailable =>
+      'The assistant is not available in this version of the app.';
+
+  @override
+  String get aiSettingsMenu => 'Assistant settings';
+
+  @override
+  String get aiYou => 'You';
+
+  @override
   String get aiDeleteSession => 'Delete the conversation';
 
   @override

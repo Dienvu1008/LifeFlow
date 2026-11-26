@@ -397,3 +397,35 @@ String? searchQueryOf(String input) {
 /// Every `"` was taken out above (phrases end at one), so a word or a phrase
 /// never holds one: quoting is enough to keep FTS5's syntax out.
 String _quote(String s) => '"$s"';
+
+/// Words too common to look for when a whole question is searched (P06b
+/// W4): Vietnamese syllables and English words that say nothing of the
+/// subject. Compared in lower case.
+const _questionStopWords = {
+  // Vietnamese
+  'tôi', 'mình', 'em', 'anh', 'chị', 'bạn', 'có', 'không', 'là', 'của', 'và', 'thì', 'mà', 'với', 'cho', 'này',
+  'kia', 'đó', 'những', 'các', 'một', 'gì', 'nào', 'sao', 'được', 'đã', 'đang', 'sẽ', 'cần', 'phải', 'hãy', 'giúp',
+  'ơi', 'nhé', 'nhỉ', 'ạ', 'à', 'về', 'trong', 'ngoài', 'lúc', 'khi', 'nếu', 'hay', 'hoặc', 'thế', 'vậy', 'bao',
+  'nhiêu', 'việc', 'gồm', 'nữa', 'rồi', 'còn', 'ở', 'đâu', 'ai', 'bị', 'để', 'từ', 'ra', 'vào', 'lên', 'xuống',
+  // English
+  'the', 'a', 'an', 'and', 'or', 'of', 'to', 'in', 'on', 'at', 'for', 'is', 'are', 'was', 'be', 'do', 'does', 'did',
+  'i', 'me', 'my', 'you', 'your', 'we', 'it', 'what', 'which', 'who', 'when', 'where', 'how', 'why', 'have', 'has',
+  'can', 'could', 'should', 'would', 'will', 'please', 'about', 'with', 'this', 'that', 'there', 'any', 'some',
+};
+
+/// P06b W4: an FTS5 query for a whole question, as the assistant's chat
+/// searches it: any of its words (not every word, as a typed search), common
+/// ones and punctuation left out, at most [maxWords]. Null when no word is
+/// left. The caller normalizes [question] (NFC) as for [searchQueryOf].
+String? searchAnyQueryOf(String question, {int maxWords = 12}) {
+  final words = <String>[];
+  for (final raw in question.split(RegExp(r'[\s\p{P}\p{S}]+', unicode: true))) {
+    final w = raw.trim();
+    if (w.isEmpty || w.length < 2 && !RegExp(r'\d').hasMatch(w)) continue;
+    if (_questionStopWords.contains(w.toLowerCase())) continue;
+    if (words.any((x) => x.toLowerCase() == w.toLowerCase())) continue;
+    words.add(w);
+    if (words.length == maxWords) break;
+  }
+  return words.isEmpty ? null : words.map(_quote).join(' OR ');
+}

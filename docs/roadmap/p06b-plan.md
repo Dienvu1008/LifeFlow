@@ -1,5 +1,5 @@
 # P06b plan: the assistant in the navigation, free chat, and five UI changes
-- Status: **Agreed by the owner 2026-11-04** (answers in §4). W1 and W2 built ([ADR-0089](../adr/0089-app-bar-options-and-one-search.md)), W3 built ([ADR-0090](../adr/0090-document-page-app-bar.md)); waiting for the owner's review. Next: W4.
+- Status: **Agreed by the owner 2026-11-04** (answers in §4). W1 and W2 built ([ADR-0089](../adr/0089-app-bar-options-and-one-search.md)), W3 built ([ADR-0090](../adr/0090-document-page-app-bar.md)); W1–W3 merged. W4 built ([ADR-0091](../adr/0091-free-chat.md)), waiting for the owner's review. Next: W5.
 - Date: 2026-11-04
 - Why: using the app, the owner could not find the assistant. The only ways in were the ✨ buttons on the Calendar, a document and a PDF, plus Settings → Assistant. He reversed P06 D1 ("no free chat") and asked for five UI changes.
 - Inputs:
@@ -52,7 +52,7 @@
   - the consent sheet before anything Confidential goes to a cloud model;
   - answers stream in when the engine supports it;
   - the sessions are saved in the history and sync (D7).
-- **The chat may propose changes** (Q1): it can call the existing proposal tools (create or move tasks and events). Each change shows as a proposal card in the chat and runs only after the person approves it (D8, LF-INV-AI-001); a stale proposal is refused (LF-INV-AI-002).
+- **The chat may propose changes** (Q1): create, rename or schedule tasks of the personal space (ADR-0091; events and shared spaces' tasks are read, not changed, in W4). Each change shows as a proposal card in the chat and runs only after the person approves it (D8, LF-INV-AI-001); a stale proposal is refused (LF-INV-AI-002).
 
 ### W5. Drag and drop for documents (UI 3)
 - The Overview's drag code (drop slots, handles, long-press drag, `resolveDrop`) is private to overview_tree.dart and tied to Overview rows. It is extracted into a shared, row-agnostic widget; the Overview keeps working the same (its tests must stay green).

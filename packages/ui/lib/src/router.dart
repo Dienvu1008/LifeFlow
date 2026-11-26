@@ -2,6 +2,7 @@ import 'package:application/application.dart' show AppearanceSettings, ThemePref
 import 'package:flutter/foundation.dart' show LicenseEntryWithLineBreaks, LicenseRegistry;
 import 'package:flutter/services.dart' show rootBundle;
 import 'assistant/assistant_settings.dart';
+import 'assistant/chat_view.dart' show AssistantScreen;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -31,7 +32,7 @@ import 'shell.dart';
 /// callback) goes to the Overview, so the app never replaces itself with a
 /// "Page Not Found" screen. The old "/tasks" (P01–P03 links and the shell's
 /// first location until U6) is the Overview.
-const _knownRoots = ['/overview', '/timeline', '/calendar', '/documents', '/habits', '/goals', '/settings', '/profiles'];
+const _knownRoots = ['/overview', '/timeline', '/calendar', '/documents', '/assistant', '/habits', '/goals', '/settings', '/profiles'];
 
 String? _redirectUnknown(GoRouterState state) {
   final path = state.uri.path;
@@ -68,6 +69,7 @@ GoRouter createRouter({String initialLocation = '/overview'}) => GoRouter(
               ('/timeline', TimelineScreen()),
               ('/calendar', CalendarScreen()),
               ('/documents', DocumentsScreen()),
+              ('/assistant', AssistantScreen()),
               ('/habits', HabitsScreen()),
               ('/goals', GoalsScreen()),
               ('/settings', SettingsScreen()),
