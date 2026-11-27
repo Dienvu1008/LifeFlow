@@ -245,6 +245,47 @@ void main() {
       });
     }
 
+    test('v20 -> v21: an extra time keeps its row, and can repeat; a tick gets an extra id (ADR-0097)', () async {
+      var dir = await openDirectory(base, keys);
+      final id = (await dir.active())!.id;
+      final host = TestHost(dir);
+      await host.openActive();
+      final taskId = (await Services(host, FakeAuthGateway()).tasks.create('Study') as CommandOk).entityId;
+      final day = LocalDate(2026, 11, 12);
+      SchedulePointInput at(int h) => SchedulePointInput.at(day, TimeOfDayValue(h, 0), 'Asia/Ho_Chi_Minh');
+      final gw = DriftCommandGateway(host.db, WorkspaceOwnerAuthorization(host.db));
+      expect(await DriftExtraTimes(host.db, gw).add(ExtraTimeSubject.task, taskId, ExtraTimeInput(start: at(13), end: at(15))),
+          isA<CommandOk>());
+      await rewindProfileStore(host.db, 20);
+      await host.close();
+      await dir.close();
+
+      dir = await openDirectory(base, keys);
+      addTearDown(dir.close);
+      final store = await dir.openProfile(id);
+      addTearDown(store.db.close);
+      final db = store.db;
+      final kept = (await db.select(db.extraTimes).get()).single;
+      expect((kept.startDate, kept.firstDate, kept.lastDate, kept.frequency, kept.interval, kept.weekStart),
+          ('2026-11-12', '2026-11-12', '2026-11-12', null, 1, 1));
+      final gw2 = DriftCommandGateway(db, WorkspaceOwnerAuthorization(db));
+      final extras = DriftExtraTimes(db, gw2);
+      expect(
+          await extras.add(
+              ExtraTimeSubject.task,
+              taskId,
+              ExtraTimeInput(start: at(9), repeat: const RepeatInput(frequency: RepeatFrequency.daily))),
+          isA<CommandOk>());
+      final list = await extras.of(ExtraTimeSubject.task, taskId);
+      final endless = list.firstWhere((x) => x.isRepeating);
+      expect(await extras.setOccurrenceDone(endless.id, day, done: true), isA<CommandOk>());
+      expect((await db.select(db.occurrenceCompletions).getSingle()).extraId, endless.id);
+      expect((await db.select(db.extraTimes).get()).where((x) => x.lastDate == null), hasLength(1));
+      // The two indexes of the rebuilt table exist.
+      final idx = await db.customSelect(
+          "SELECT name FROM sqlite_master WHERE type = 'index' AND name IN ('extra_times_subject','extra_times_range')").get();
+      expect(idx, hasLength(2));
+    });
     test('v11 -> v12: the outbox keeps its rows; its key gains the kind (ADR-0058)', () async {
       var dir = await openDirectory(base, keys);
       final id = (await dir.active())!.id;

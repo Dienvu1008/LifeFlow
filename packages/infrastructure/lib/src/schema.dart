@@ -322,8 +322,20 @@ class ExtraTimes extends Table with SyncableColumns {
   TextColumn get endTime => text().nullable()();
   TextColumn get endZone => text().nullable()();
   TextColumn get firstDate => text()();
-  TextColumn get lastDate => text()();
+  // P06c E3 (schema v21, ADR-0097): null = a repeat with no end.
+  TextColumn get lastDate => text().nullable()();
   DateTimeColumn get doneAt => dateTime().nullable()();
+  // P06c E3: the extra time may repeat on its own rule (the same columns as
+  // a schedule; all null = one time). Its changes to one time are exception
+  // rows (subjectType 'extraTime') and its ticks completion rows (extraId).
+  TextColumn get frequency => text().nullable()();
+  IntColumn get interval => integer().withDefault(const Constant(1))();
+  TextColumn get weekdays => text().nullable()();
+  TextColumn get endKind => text().nullable()();
+  TextColumn get endDateRule => text().nullable()();
+  IntColumn get endCount => integer().nullable()();
+  TextColumn get monthEndRule => text().withDefault(const Constant('skip'))();
+  IntColumn get weekStart => integer().withDefault(const Constant(1))();
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -333,6 +345,9 @@ class OccurrenceCompletions extends Table with SyncableColumns {
   TextColumn get taskId => text()();
   TextColumn get originalDate => text()();
   DateTimeColumn get completedAt => dateTime()();
+  // P06c E3 (schema v21): set when the tick is of one time of a task's REPEATING
+  // extra time (id = 'extra:<extraId>@<date>'); null for the task's own rule.
+  TextColumn get extraId => text().nullable()();
   @override
   Set<Column> get primaryKey => {id};
 }

@@ -7,9 +7,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:foundation/foundation.dart';
 
 import 'habit_text.dart';
+import 'l10n.dart';
 import 'messages.dart';
 import 'providers.dart';
 import 'schedule_text.dart';
+import 'screens/extra_time_editor.dart';
 import 'screens/focus_page.dart';
 import 'screens/schedule_editor.dart';
 import 'screens/task_page.dart';
@@ -58,7 +60,7 @@ void showMessage(BuildContext context, String message, {SnackBarAction? action})
     ..showSnackBar(SnackBar(content: Text(message), action: action));
 }
 
-enum _OccurrenceAction { focus, skip, move, undoChange, schedule }
+enum _OccurrenceAction { focus, skip, move, undoChange, schedule, addExtra, changeExtra, editExtraRepeat, removeExtra }
 
 /// One occurrence of a scheduled task (Today, Upcoming, Calendar). A
 /// repeating task is ticked one occurrence at a time (D5); "only this time"
@@ -156,9 +158,20 @@ class TaskOccurrenceTile extends ConsumerWidget {
         onSelected: (a) => _onAction(context, ref, a),
         itemBuilder: (_) => [
           if (!done) const PopupMenuItem(value: _OccurrenceAction.focus, child: Text('Focus…')),
-          // P06c: an extra time can be dropped (E3 adds the change of it).
+          // P06c: an extra time is changed or dropped on its own; one that
+          // repeats has its own skip and move, like the item's rule.
           if (i.isRepeating || i.isExtra)
             const PopupMenuItem(value: _OccurrenceAction.skip, child: Text('Skip this time')),
+          if (i.isExtra && i.isRepeating) ...[
+            PopupMenuItem(value: _OccurrenceAction.move, child: Text(context.l10n.extraMove)),
+            if (i.isMoved)
+              PopupMenuItem(value: _OccurrenceAction.undoChange, child: Text(context.l10n.extraUndoChange)),
+            PopupMenuItem(value: _OccurrenceAction.editExtraRepeat, child: Text(context.l10n.extraEditRepeat)),
+            PopupMenuItem(value: _OccurrenceAction.removeExtra, child: Text(context.l10n.extraRemoveAll)),
+          ],
+          if (i.isExtra && !i.isRepeating)
+            PopupMenuItem(value: _OccurrenceAction.changeExtra, child: Text(context.l10n.extraChange)),
+          PopupMenuItem(value: _OccurrenceAction.addExtra, child: Text(context.l10n.extraAdd)),
           if (!i.isExtra) ...[
             if (i.isRepeating) ...[
               const PopupMenuItem(value: _OccurrenceAction.move, child: Text('Move this time…')),
@@ -169,16 +182,21 @@ class TaskOccurrenceTile extends ConsumerWidget {
                 value: _OccurrenceAction.schedule,
                 child: Text(i.isRepeating ? 'Edit the whole repeat…' : 'Schedule…')),
           ],
-        ]
+        ],
       ),
     );
   }
 
   Future<void> _toggle(BuildContext context, WidgetRef ref) async {
     final i = item;
-    // P06c: an extra time has its own tick.
+    // P06c: an extra time has its own tick; a repeating one, one per time.
     if (i.isExtra) {
-      await reportResult(context, ref.read(extraTimesProvider).setDone(i.extraId!, done: !i.isDone));
+      final extras = ref.read(extraTimesProvider);
+      await reportResult(
+          context,
+          i.isRepeating
+              ? extras.setOccurrenceDone(i.extraId!, i.originalDate, done: !i.isDone)
+              : extras.setDone(i.extraId!, done: !i.isDone));
       return;
     }
     // D5: a repeating task is done one occurrence at a time; it stays open.
@@ -203,7 +221,30 @@ class TaskOccurrenceTile extends ConsumerWidget {
     final i = item;
     final scheduling = ref.read(taskSchedulingProvider);
     switch (a) {
+      case _OccurrenceAction.skip when i.isExtra && i.isRepeating:
+        await reportResult(
+            context, ref.read(extraTimesProvider).changeTaskOccurrence(i.extraId!, i.originalDate, const SkipThisOccurrence()));
       case _OccurrenceAction.skip when i.isExtra:
+        await reportResult(context, ref.read(extraTimesProvider).remove(i.extraId!));
+      case _OccurrenceAction.move when i.isExtra:
+        final picked = await pickLocalDate(context, current: i.date, today: today, help: 'Move this time to');
+        if (picked == null || !context.mounted) return;
+        await reportResult(context,
+            ref.read(extraTimesProvider).changeTaskOccurrence(i.extraId!, i.originalDate, MoveThisOccurrence(picked)));
+      case _OccurrenceAction.undoChange when i.isExtra:
+        await reportResult(context, ref.read(extraTimesProvider).changeTaskOccurrence(i.extraId!, i.originalDate, null));
+      case _OccurrenceAction.addExtra:
+        await openExtraTimeEditor(context, ref,
+            subject: ExtraTimeSubject.task, subjectId: i.taskId, title: i.title, date: i.date);
+      case _OccurrenceAction.changeExtra:
+      case _OccurrenceAction.editExtraRepeat:
+        final x = (await ref.read(extraTimesProvider).of(ExtraTimeSubject.task, i.taskId))
+            .where((x) => x.id == i.extraId)
+            .firstOrNull;
+        if (x == null || !context.mounted) return;
+        await openExtraTimeEditor(context, ref,
+            subject: ExtraTimeSubject.task, subjectId: i.taskId, title: i.title, initial: x);
+      case _OccurrenceAction.removeExtra:
         await reportResult(context, ref.read(extraTimesProvider).remove(i.extraId!));
       case _OccurrenceAction.skip:
         await reportResult(context, scheduling.changeOccurrence(i.taskId, i.originalDate, const SkipThisOccurrence()));
@@ -214,7 +255,7 @@ class TaskOccurrenceTile extends ConsumerWidget {
       case _OccurrenceAction.focus:
         // D5: the session is for this occurrence of a repeating task.
         await startFocus(context, ref,
-            taskId: i.taskId, taskTitle: i.title, occurrenceDate: i.isRepeating ? i.originalDate : null);
+            taskId: i.taskId, taskTitle: i.title, occurrenceDate: i.isRepeating && !i.isExtra ? i.originalDate : null);
       case _OccurrenceAction.undoChange:
         await reportResult(context, scheduling.changeOccurrence(i.taskId, i.originalDate, null));
       case _OccurrenceAction.schedule:

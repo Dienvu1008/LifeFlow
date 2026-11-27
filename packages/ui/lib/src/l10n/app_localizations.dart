@@ -5295,6 +5295,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This is not a GGUF model file.'**
   String get aiNotGguf;
+
+  /// P06c: the section listing the times of a task or an event outside its own repeat
+  ///
+  /// In en, this message translates to:
+  /// **'Other times'**
+  String get extraOtherTimes;
+
+  /// No description provided for @extraNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No other times'**
+  String get extraNone;
+
+  /// No description provided for @extraAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add another time…'**
+  String get extraAdd;
+
+  /// No description provided for @extraAddTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Another time for {title}'**
+  String extraAddTitle(String title);
+
+  /// No description provided for @extraChangeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change this time of {title}'**
+  String extraChangeTitle(String title);
+
+  /// No description provided for @extraChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change this time…'**
+  String get extraChange;
+
+  /// No description provided for @extraEditRepeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit this repeat…'**
+  String get extraEditRepeat;
+
+  /// No description provided for @extraRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this time'**
+  String get extraRemove;
+
+  /// No description provided for @extraRemoveAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove all of these times'**
+  String get extraRemoveAll;
+
+  /// No description provided for @extraRemoveTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {what}'**
+  String extraRemoveTooltip(String what);
+
+  /// No description provided for @extraAnother.
+  ///
+  /// In en, this message translates to:
+  /// **'Another time'**
+  String get extraAnother;
+
+  /// No description provided for @extraMove.
+  ///
+  /// In en, this message translates to:
+  /// **'Move this time…'**
+  String get extraMove;
+
+  /// No description provided for @extraUndoChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo the change to this time'**
+  String get extraUndoChange;
 }
 
 class _AppLocalizationsDelegate

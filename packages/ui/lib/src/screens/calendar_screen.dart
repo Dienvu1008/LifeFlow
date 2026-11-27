@@ -26,6 +26,7 @@ import '../widgets/schedule_fields.dart';
 import 'calendars_dialog.dart';
 import 'calendar_grid_view.dart';
 import 'event_editor.dart';
+import 'extra_time_editor.dart';
 import 'tasks_screen.dart' show addTaskWithDialog, showTextDialog;
 import 'timeline_view.dart' show jumpTimelineTo;
 
@@ -732,7 +733,20 @@ Color _colorOf(WidgetRef ref, CalendarEntry e, ThemeData theme) {
   return c == null ? theme.colorScheme.primary : Color(c.color);
 }
 
-enum _EventAction { edit, skip, cancelThis, move, editThis, undoThis, cancelAll, uncancelAll, trash }
+enum _EventAction {
+  edit,
+  skip,
+  cancelThis,
+  move,
+  editThis,
+  undoThis,
+  cancelAll,
+  uncancelAll,
+  trash,
+  addExtra,
+  changeExtra,
+  removeExtra,
+}
 
 /// One occurrence of an event, with its actions: the whole event, or only
 /// this time (D4).
@@ -781,10 +795,15 @@ class EventTile extends ConsumerWidget {
         onSelected: (a) => _onAction(context, ref, a),
         itemBuilder: (_) => [
           PopupMenuItem(
-              value: _EventAction.edit, child: Text(ev.isRepeating ? 'Edit every time…' : 'Edit event…')),
+              value: _EventAction.edit, child: Text(ev.isRepeating && !ev.isExtra ? 'Edit every time…' : 'Edit event…')),
           // P06c: an extra time can be dropped (E3 adds its change).
           if (ev.isRepeating || ev.isExtra)
             const PopupMenuItem(value: _EventAction.skip, child: Text('Skip this time')),
+          if (ev.isExtra && !ev.isRepeating)
+            PopupMenuItem(value: _EventAction.changeExtra, child: Text(context.l10n.extraChange)),
+          if (ev.isExtra && ev.isRepeating)
+            PopupMenuItem(value: _EventAction.removeExtra, child: Text(context.l10n.extraRemoveAll)),
+          PopupMenuItem(value: _EventAction.addExtra, child: Text(context.l10n.extraAdd)),
           if (ev.isRepeating) ...[
             if (!ev.isCancelled)
               const PopupMenuItem(value: _EventAction.cancelThis, child: Text('Cancel this time')),
@@ -808,11 +827,26 @@ class EventTile extends ConsumerWidget {
   Future<void> _onAction(BuildContext context, WidgetRef ref, _EventAction a) async {
     final ev = event;
     final events = ref.read(eventServiceProvider);
-    Future<CommandResult> change(EventOccurrenceChange? c) => events.changeOccurrence(ev.eventId, ev.originalDate, c);
+    // P06c E3: one time of a repeating extra time is changed on the extra time.
+    Future<CommandResult> change(EventOccurrenceChange? c) => ev.isExtra
+        ? ref.read(extraTimesProvider).changeEventOccurrence(ev.extraId!, ev.originalDate, c)
+        : events.changeOccurrence(ev.eventId, ev.originalDate, c);
     switch (a) {
       case _EventAction.edit:
         await openEventEditor(context, ref, eventId: ev.eventId);
-      case _EventAction.skip when ev.isExtra:
+      case _EventAction.skip when ev.isExtra && !ev.isRepeating:
+        await reportResult(context, ref.read(extraTimesProvider).remove(ev.extraId!));
+      case _EventAction.addExtra:
+        await openExtraTimeEditor(context, ref,
+            subject: ExtraTimeSubject.event, subjectId: ev.eventId, title: ev.title, date: ev.date);
+      case _EventAction.changeExtra:
+        final x = (await ref.read(extraTimesProvider).of(ExtraTimeSubject.event, ev.eventId))
+            .where((x) => x.id == ev.extraId)
+            .firstOrNull;
+        if (x == null || !context.mounted) return;
+        await openExtraTimeEditor(context, ref,
+            subject: ExtraTimeSubject.event, subjectId: ev.eventId, title: ev.title, initial: x);
+      case _EventAction.removeExtra:
         await reportResult(context, ref.read(extraTimesProvider).remove(ev.extraId!));
       case _EventAction.skip:
         await reportResult(context, change(const SkipEventOccurrence()));

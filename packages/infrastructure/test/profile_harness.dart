@@ -97,6 +97,15 @@ class Services {
 /// Turns a current profile store back into what a build with schema [version]
 /// wrote (for migration tests). Data in the tables that remain is kept.
 Future<void> rewindProfileStore(AppDatabase db, int version) async {
+  if (version < 21) {
+    // P06c E3 (ADR-0097): extra times do not repeat; a tick has no extra id.
+    await db.customStatement('ALTER TABLE occurrence_completions DROP COLUMN extra_id');
+    if (version >= 20) {
+      for (final c in ['frequency', 'interval', 'weekdays', 'end_kind', 'end_date_rule', 'end_count', 'month_end_rule', 'week_start']) {
+        await db.customStatement('ALTER TABLE extra_times DROP COLUMN $c');
+      }
+    }
+  }
   if (version < 20) {
     // P06c E1 (ADR-0095): no extra times.
     await db.customStatement('DROP TABLE extra_times'); // drops its indexes too

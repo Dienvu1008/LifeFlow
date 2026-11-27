@@ -196,6 +196,34 @@ class EventCommandHandler implements CommandHandler {
           events: [DomainEvent(extra.event, {'id': id, 'extraId': extra.extraId})],
         );
 
+      case 'setExtraException':
+      case 'clearExtraException':
+        // P06c E3 (ADR-0097): one time of a repeating extra time.
+        if (existing == null || existing.deletedAt != null) throw DomainRejection('event not found');
+        final change = await ExtraTimeRows(db, cmd, 'event', id, existing.ownerId, now).applyException(op,
+            kindOf: (x, move) => switch (cmd.payload['kind']) {
+                  'skip' => const tk.SkipOccurrence(),
+                  'cancel' => const tk.CancelOccurrence(),
+                  'move' => move(),
+                  'edit' => () {
+                      final patch = <String, Object?>{
+                        if (cmd.payload['title'] != null) 'title': _title(cmd),
+                        if (cmd.payload.containsKey('location')) 'location': _optText(cmd, 'location'),
+                      };
+                      if (patch.isEmpty) throw DomainRejection('nothing to change');
+                      return tk.EditOccurrence(patch);
+                    }(),
+                  _ => throw DomainRejection('unknown occurrence change'),
+                });
+        await (db.update(db.events)..where((e) => e.id.equals(id)))
+            .write(EventsCompanion(version: Value(newVersion.value), updatedAt: Value(now)));
+        return HandlerOutcome(
+          entityId: id,
+          operationType: 'update',
+          changeSet: {'id': id, ...change.change},
+          events: [DomainEvent(change.event, {'id': id, 'extraId': change.extraId})],
+        );
+
       case 'setReminders':
         // P02 T7 (ADR-0034): the reminders are part of the event.
         if (existing == null || existing.deletedAt != null) throw DomainRejection('event not found');

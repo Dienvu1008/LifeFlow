@@ -11,6 +11,7 @@ import 'package:foundation/foundation.dart';
 import '../messages.dart';
 import '../providers.dart';
 import '../widgets/schedule_fields.dart';
+import 'extra_time_editor.dart';
 import 'schedule_editor.dart';
 import '../l10n.dart';
 
@@ -268,6 +269,9 @@ class _EventEditorPageState extends ConsumerState<EventEditorPage> {
           const EditorSection('Repeat'),
           RepeatFields(
               draft: _repeat, firstDayOfWeek: widget.defaults.firstDayOfWeek, today: today, anchor: _start.date),
+          // P06c: times outside its own repeat (an existing event only).
+          if (widget.existing case final e?)
+            ExtraTimesSection(subject: ExtraTimeSubject.event, subjectId: e.id, title: e.input.title),
           const EditorSection('Reminders'),
           ReminderFields(
             reminders: _reminders,

@@ -3212,4 +3212,49 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aiNotGguf => 'This is not a GGUF model file.';
+
+  @override
+  String get extraOtherTimes => 'Other times';
+
+  @override
+  String get extraNone => 'No other times';
+
+  @override
+  String get extraAdd => 'Add another time…';
+
+  @override
+  String extraAddTitle(String title) {
+    return 'Another time for $title';
+  }
+
+  @override
+  String extraChangeTitle(String title) {
+    return 'Change this time of $title';
+  }
+
+  @override
+  String get extraChange => 'Change this time…';
+
+  @override
+  String get extraEditRepeat => 'Edit this repeat…';
+
+  @override
+  String get extraRemove => 'Remove this time';
+
+  @override
+  String get extraRemoveAll => 'Remove all of these times';
+
+  @override
+  String extraRemoveTooltip(String what) {
+    return 'Remove $what';
+  }
+
+  @override
+  String get extraAnother => 'Another time';
+
+  @override
+  String get extraMove => 'Move this time…';
+
+  @override
+  String get extraUndoChange => 'Undo the change to this time';
 }

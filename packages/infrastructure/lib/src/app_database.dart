@@ -58,7 +58,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   /// The schema this build writes (and the newest export it accepts).
-  static const currentSchemaVersion = 20;
+  static const currentSchemaVersion = 21;
 
   /// The last schema that changed a synced record's shape: what a sealed
   /// record says it is (ADR-0056). v12 changed only the local outbox. v13
@@ -70,8 +70,9 @@ class AppDatabase extends _$AppDatabase {
   /// tables (the text of PDFs). v18 (ADR-0082) adds the assistant's
   /// sessions, messages and proposals. v19 (ADR-0094) adds archivedAt and
   /// purgedAt to lists, tasks, events and documents. v20 (ADR-0095) adds the
-  /// extra times of tasks and events.
-  static const recordSchemaVersion = 20;
+  /// extra times of tasks and events. v21 (ADR-0097) lets an extra time repeat (its own
+  /// rule columns, last_date may be null) and gives a done tick an extra id.
+  static const recordSchemaVersion = 21;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -216,6 +217,21 @@ class AppDatabase extends _$AppDatabase {
             }
             await _createAiIndexes();
             await m.addColumn(auditLog, auditLog.aiProvenance);
+          }
+          if (from < 21) {
+            // P06c E3 (ADR-0097): an extra time may repeat; its ticks have an extra id.
+            // last_date becomes nullable (a repeat with no end): rebuild the table.
+            if (from >= 20) {
+              await m.alterTable(TableMigration(extraTimes, newColumns: [
+                extraTimes.frequency, extraTimes.interval, extraTimes.weekdays, extraTimes.endKind,
+                extraTimes.endDateRule, extraTimes.endCount, extraTimes.monthEndRule, extraTimes.weekStart,
+              ]));
+              await customStatement('DROP INDEX IF EXISTS extra_times_subject');
+              await customStatement('DROP INDEX IF EXISTS extra_times_range');
+              await _createExtraTimeIndexes();
+            }
+            // A table made in an earlier step of this upgrade already has it.
+            if (from >= 4) await m.addColumn(occurrenceCompletions, occurrenceCompletions.extraId);
           }
           if (from < 20) {
             // P06c E1 (ADR-0095): extra times (\"Add another time\").

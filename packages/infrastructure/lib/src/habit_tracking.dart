@@ -147,7 +147,8 @@ class TrackedTask {
     };
     final done = {
       for (final c in await (db.select(db.occurrenceCompletions)
-            ..where((c) => c.taskId.equals(taskId) & c.deletedAt.isNull()))
+            // P06c E3: the ticks of the task's extra times are not its habit's.
+            ..where((c) => c.taskId.equals(taskId) & c.extraId.isNull() & c.deletedAt.isNull()))
           .get())
         LocalDate.parse(c.originalDate),
     };

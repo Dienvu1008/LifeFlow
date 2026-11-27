@@ -56,10 +56,10 @@ class DriftExtraTimes implements ExtraTimes {
 
   /// The time as schedule columns, or the failure.
   (Map<String, Object?>?, CommandFailure?) _fields(ExtraTimeSubject subject, String subjectId, ExtraTimeInput time) {
-    final input = TaskScheduleInput(start: time.start, end: time.end);
+    final input = TaskScheduleInput(start: time.start, end: time.end, repeat: time.repeat);
     final error = scheduleInputError(input);
     if (error != null) return (null, CommandFailure(CommandFailureKind.validationFailed, reason: error));
-    return (scheduleFieldsJson(subject.name, subjectId, specOfInput(input), null), null);
+    return (scheduleFieldsJson(subject.name, subjectId, specOfInput(input), ruleOfInput(time.repeat)), null);
   }
 
   @override
@@ -100,6 +100,58 @@ class DriftExtraTimes implements ExtraTimes {
   }
 
   @override
+  Future<CommandResult> changeTaskOccurrence(String extraId, LocalDate originalDate, OccurrenceChange? change) async {
+    final e = await _extra(extraId);
+    if (e == null || e.subjectType != 'task') return _notFound;
+    final base = {'extraId': extraId, 'originalDate': '$originalDate'};
+    final (verb, payload) = switch (change) {
+      null => ('ClearOccurrenceChangeOf', {...base, 'op': 'clearExtraException'}),
+      SkipThisOccurrence() => ('SkipOccurrenceOf', {...base, 'op': 'setExtraException', 'kind': 'skip'}),
+      MoveThisOccurrence(:final toDate, :final toTime) => (
+          'MoveOccurrenceOf',
+          {...base, 'op': 'setExtraException', 'kind': 'move', 'moveDate': '$toDate', 'moveTime': toTime?.toString()}
+        ),
+    };
+    return _run(ExtraTimeSubject.task, e.subjectId, verb, payload);
+  }
+
+  @override
+  Future<CommandResult> changeEventOccurrence(
+      String extraId, LocalDate originalDate, EventOccurrenceChange? change) async {
+    final e = await _extra(extraId);
+    if (e == null || e.subjectType != 'event') return _notFound;
+    final base = {'extraId': extraId, 'originalDate': '$originalDate'};
+    final (verb, payload) = switch (change) {
+      null => ('ClearOccurrenceChangeOf', {...base, 'op': 'clearExtraException'}),
+      SkipEventOccurrence() => ('SkipOccurrenceOf', {...base, 'op': 'setExtraException', 'kind': 'skip'}),
+      CancelEventOccurrence() => ('CancelOccurrenceOf', {...base, 'op': 'setExtraException', 'kind': 'cancel'}),
+      MoveEventOccurrence(:final toDate, :final toTime) => (
+          'MoveOccurrenceOf',
+          {...base, 'op': 'setExtraException', 'kind': 'move', 'moveDate': '$toDate', 'moveTime': toTime?.toString()}
+        ),
+      EditEventOccurrence(:final title, :final location) => (
+          'EditOccurrenceOf',
+          {
+            ...base,
+            'op': 'setExtraException',
+            'kind': 'edit',
+            if (title != null) 'title': title,
+            if (location != null) 'location': location,
+          }
+        ),
+    };
+    return _run(ExtraTimeSubject.event, e.subjectId, verb, payload);
+  }
+
+  @override
+  Future<CommandResult> setOccurrenceDone(String extraId, LocalDate originalDate, {required bool done}) async {
+    final e = await _extra(extraId);
+    if (e == null || e.subjectType != 'task') return _notFound;
+    return _run(ExtraTimeSubject.task, e.subjectId, done ? 'CompleteOccurrenceOf' : 'ReopenOccurrenceOf',
+        {'op': 'setExtraOccurrenceDone', 'extraId': extraId, 'originalDate': '$originalDate', 'done': done});
+  }
+
+  @override
   Future<List<ExtraTimeView>> of(ExtraTimeSubject subject, String subjectId) async {
     final rows = await (db.select(db.extraTimes)
           ..where((x) => x.subjectType.equals(subject.name) & x.subjectId.equals(subjectId) & x.deletedAt.isNull()))
@@ -126,5 +178,6 @@ ExtraTimeView extraTimeViewOf(ExtraTime r) {
     start: point(r.startDate, r.startTime, r.startZone),
     end: r.endDate == null ? null : point(r.endDate!, r.endTime, r.endZone),
     isDone: r.doneAt != null,
+    repeat: repeatOf(ruleOfExtra(r)),
   );
 }

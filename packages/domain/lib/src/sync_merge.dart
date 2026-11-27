@@ -45,7 +45,7 @@ class SyncMerge {
 const _statusRank = ['inbox', 'todo', 'inProgress', 'cancelled', 'done'];
 
 /// Kinds whose content is one value: merging halves of it is unsafe.
-const _wholeValueKinds = {'schedule', 'reminder', 'exception', 'periodResult', 'focusSession', 'workspaceSettings'};
+const _wholeValueKinds = {'schedule', 'extraTime', 'reminder', 'exception', 'periodResult', 'focusSession', 'workspaceSettings'};
 
 /// Kinds that are never changed after they are made (append-only, EXEC-001):
 /// the same id on both sides is the same fact, so either copy will do.

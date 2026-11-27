@@ -1435,6 +1435,36 @@ class FakeExtraTimes implements ExtraTimes {
     return _ok(extraId);
   }
 
+  @override
+  Future<CommandResult> changeTaskOccurrence(String extraId, LocalDate originalDate, OccurrenceChange? change) async {
+    final what = switch (change) {
+      null => 'undo',
+      SkipThisOccurrence() => 'skip',
+      MoveThisOccurrence(:final toDate) => 'move>$toDate',
+    };
+    calls.add('extra.change:$extraId@$originalDate:$what');
+    return _ok(extraId);
+  }
+
+  @override
+  Future<CommandResult> changeEventOccurrence(String extraId, LocalDate originalDate, EventOccurrenceChange? change) async {
+    final what = switch (change) {
+      null => 'undo',
+      SkipEventOccurrence() => 'skip',
+      CancelEventOccurrence() => 'cancel',
+      MoveEventOccurrence(:final toDate) => 'move>$toDate',
+      EditEventOccurrence(:final title) => 'edit>$title',
+    };
+    calls.add('extra.change:$extraId@$originalDate:$what');
+    return _ok(extraId);
+  }
+
+  @override
+  Future<CommandResult> setOccurrenceDone(String extraId, LocalDate originalDate, {required bool done}) async {
+    calls.add('extra.occurrenceDone:$extraId@$originalDate:$done');
+    return _ok(extraId);
+  }
+
   final stored = <String, List<ExtraTimeView>>{};
   @override
   Future<List<ExtraTimeView>> of(ExtraTimeSubject subject, String subjectId) async =>

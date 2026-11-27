@@ -119,6 +119,12 @@ void main() {
           start: tk.TimedPoint(ZonedWallClock(LocalDate(2026, 11, 10), TimeOfDayValue(13, 0), 'UTC')),
           end: tk.TimedPoint(ZonedWallClock(LocalDate(2026, 11, 10), TimeOfDayValue(14, 0), 'UTC'))),
       null);
+  // P06c E3 (ADR-0097): an extra time that repeats weekly (Tuesdays, 10 Nov on).
+  Map<String, Object?> repeatingExtra(String subject, String id) => scheduleFieldsJson(subject, id,
+      tk.ScheduleSpec(
+          start: tk.TimedPoint(ZonedWallClock(LocalDate(2026, 11, 10), TimeOfDayValue(13, 0), 'UTC')),
+          end: tk.TimedPoint(ZonedWallClock(LocalDate(2026, 11, 10), TimeOfDayValue(14, 0), 'UTC'))),
+      const tk.RecurrenceRule(frequency: tk.Frequency.weekly));
   Future<int> versionOf(String table, String id) async => switch (table) {
         'task' => (await (db.select(db.tasks)..where((t) => t.id.equals(id))).getSingle()).version,
         'event' => (await (db.select(db.events)..where((t) => t.id.equals(id))).getSingle()).version,
@@ -562,7 +568,50 @@ void main() {
           (v, op) => command('ChangeEventExtraTime',
               {'op': 'changeExtra', 'id': 'xv1', 'extraId': 'xe2', 'schedule': extraTime('event', 'xv1')}, opId: op, expected: v)),
       ('extra.event.remove', eventHandler, 'event', 'xv1',
-          (v, op) => command('RemoveEventExtraTime', {'op': 'removeExtra', 'id': 'xv1', 'extraId': 'xe2'}, opId: op, expected: v)),    ];
+          (v, op) => command('RemoveEventExtraTime', {'op': 'removeExtra', 'id': 'xv1', 'extraId': 'xe2'}, opId: op, expected: v)),
+      ('extra.task.repeat.add', taskHandler, 'task', 'xt1',
+          (v, op) => command('AddTaskExtraTime',
+              {'op': 'addExtra', 'id': 'xt1', 'extraId': 'xe3', 'schedule': repeatingExtra('task', 'xt1')}, opId: op, expected: v)),
+      ('extra.task.repeat.skip', taskHandler, 'task', 'xt1',
+          (v, op) => command('SkipOccurrenceOfTaskExtraTime',
+              {'op': 'setExtraException', 'id': 'xt1', 'extraId': 'xe3', 'originalDate': '2026-11-17', 'kind': 'skip'},
+              opId: op, expected: v)),
+      ('extra.task.repeat.move', taskHandler, 'task', 'xt1',
+          (v, op) => command('MoveOccurrenceOfTaskExtraTime', {
+                'op': 'setExtraException', 'id': 'xt1', 'extraId': 'xe3', 'originalDate': '2026-11-24', 'kind': 'move',
+                'moveDate': '2026-11-25', 'moveTime': null,
+              }, opId: op, expected: v)),
+      ('extra.task.repeat.clear', taskHandler, 'task', 'xt1',
+          (v, op) => command('ClearOccurrenceChangeOfTaskExtraTime',
+              {'op': 'clearExtraException', 'id': 'xt1', 'extraId': 'xe3', 'originalDate': '2026-11-17'},
+              opId: op, expected: v)),
+      ('extra.task.repeat.tick', taskHandler, 'task', 'xt1',
+          (v, op) => command('CompleteOccurrenceOfTaskExtraTime',
+              {'op': 'setExtraOccurrenceDone', 'id': 'xt1', 'extraId': 'xe3', 'originalDate': '2026-11-10', 'done': true},
+              opId: op, expected: v)),
+      ('extra.task.repeat.untick', taskHandler, 'task', 'xt1',
+          (v, op) => command('ReopenOccurrenceOfTaskExtraTime',
+              {'op': 'setExtraOccurrenceDone', 'id': 'xt1', 'extraId': 'xe3', 'originalDate': '2026-11-10', 'done': false},
+              opId: op, expected: v)),
+      ('extra.task.repeat.remove', taskHandler, 'task', 'xt1',
+          (v, op) => command('RemoveTaskExtraTime', {'op': 'removeExtra', 'id': 'xt1', 'extraId': 'xe3'}, opId: op, expected: v)),
+      ('extra.event.repeat.add', eventHandler, 'event', 'xv1',
+          (v, op) => command('AddEventExtraTime',
+              {'op': 'addExtra', 'id': 'xv1', 'extraId': 'xe4', 'schedule': repeatingExtra('event', 'xv1')}, opId: op, expected: v)),
+      ('extra.event.repeat.edit', eventHandler, 'event', 'xv1',
+          (v, op) => command('EditOccurrenceOfEventExtraTime', {
+                'op': 'setExtraException', 'id': 'xv1', 'extraId': 'xe4', 'originalDate': '2026-11-17', 'kind': 'edit',
+                'title': 'Renamed',
+              }, opId: op, expected: v)),
+      ('extra.event.repeat.cancel', eventHandler, 'event', 'xv1',
+          (v, op) => command('CancelOccurrenceOfEventExtraTime',
+              {'op': 'setExtraException', 'id': 'xv1', 'extraId': 'xe4', 'originalDate': '2026-11-24', 'kind': 'cancel'},
+              opId: op, expected: v)),
+      ('extra.event.repeat.clear', eventHandler, 'event', 'xv1',
+          (v, op) => command('ClearOccurrenceChangeOfEventExtraTime',
+              {'op': 'clearExtraException', 'id': 'xv1', 'extraId': 'xe4', 'originalDate': '2026-11-24'},
+              opId: op, expected: v)),
+    ];
   });
 
   test('every handler operation writes the whole atomic set, and a failure '

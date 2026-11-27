@@ -311,6 +311,20 @@ class ShelfCommandHandler implements CommandHandler {
           (s.id, s.version)
       ], (rid, v) => (db.update(db.extraTimes)..where((x) => x.id.equals(rid)))
           .write(ExtraTimesCompanion(deletedAt: Value(now), deletedBy: Value(by), version: Value(v), updatedAt: Value(now))));
+      // P06c E3: the changes to one time of a repeating extra time.
+      final extraIds = [
+        for (final x in await (db.select(db.extraTimes)
+              ..where((s) => s.subjectType.equals(item.kind) & s.subjectId.equals(item.id)))
+            .get())
+          x.id
+      ];
+      await tomb('exception', [
+        for (final s in await (db.select(db.occurrenceExceptions)
+              ..where((s) => s.subjectType.equals('extraTime') & s.subjectId.isIn(extraIds) & s.deletedAt.isNull()))
+            .get())
+          (s.id, s.version)
+      ], (rid, v) => (db.update(db.occurrenceExceptions)..where((x) => x.id.equals(rid))).write(OccurrenceExceptionsCompanion(
+          deletedAt: Value(now), deletedBy: Value(by), patch: const Value(null), version: Value(v), updatedAt: Value(now))));
       await tomb('exception', [
         for (final s in await (db.select(db.occurrenceExceptions)
               ..where((s) => s.subjectType.equals(item.kind) & s.subjectId.equals(item.id) & s.deletedAt.isNull()))

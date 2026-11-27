@@ -1,5 +1,5 @@
 # P06c plan: extra times ("Add another time")
-- Status: **Agreed by the owner 2026-11-04** (answers in §4). E1 merged ([ADR-0095](../adr/0095-extra-times.md)). E2 built ([ADR-0096](../adr/0096-extra-times-shown.md)): extra times are shown, in conflicts, reminders and the assistant's busy time. Next: E3.
+- Status: **Agreed by the owner 2026-11-04** (answers in §4). E1 merged ([ADR-0095](../adr/0095-extra-times.md)). E2 merged ([ADR-0096](../adr/0096-extra-times-shown.md)). E3 built ([ADR-0097](../adr/0097-repeating-extra-times.md)): an extra time may repeat (owner's choice B); the editor, Other times and the menus. Next: E4.
 - Date: 2026-11-04
 - Why: before using the app on the devices, the owner found that planning a repeating task or event is too rigid. A series changes as a whole, and the only way to depart from it is "Skip this time" or "Move this time". He wants to add times outside the rule, and to schedule from the Calendar a task that already has a schedule, and an event.
 - Inputs:
@@ -66,4 +66,4 @@ Options:
 - **B. An extra time may repeat** (its own rule, like a second schedule). Each one then needs its own skips, moves and ticks keyed by (extra, date), so the series code of tasks, events, habits, reminders and the Calendar is repeated for a second kind. Cost: large (about the size of P02 T4/T5 again), and a new schema step.
 - **C. One rule with a different time on each weekday** (Tue 9-11, Thu 13-15). Fits this example exactly, but not two series with different end dates or periods.
 
-Recommendation: **A now** (inside E3), B only if A proves too clumsy at the device check. Waiting for the owner's choice; nothing is built for it yet.
+**Decision (owner, 2026-11-04): B.** An extra time may repeat on its own rule; built in E3 ([ADR-0097](../adr/0097-repeating-extra-times.md)).

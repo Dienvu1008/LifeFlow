@@ -157,12 +157,13 @@ class ConflictView {
   String toString() => 'ConflictView($first, $second)';
 }
 
-/// An extra time (P06c, ADR-0096) has its own key, `task:<id>#<extraId>`: two
-/// extra times can be on one date, and neither is an occurrence of the rule.
+/// An extra time (P06c, ADR-0096/0097) has its own key,
+/// `task:<id>#<extraId>@<originalDate>`: two extra times can be on one date,
+/// one can repeat, and none is an occurrence of the item's rule.
 String taskOccurrenceKey(String taskId, LocalDate originalDate, {String? extraId}) =>
-    extraId == null ? 'task:$taskId@$originalDate' : 'task:$taskId#$extraId';
+    extraId == null ? 'task:$taskId@$originalDate' : 'task:$taskId#$extraId@$originalDate';
 String eventOccurrenceKey(String eventId, LocalDate originalDate, {String? extraId}) =>
-    extraId == null ? 'event:$eventId@$originalDate' : 'event:$eventId#$extraId';
+    extraId == null ? 'event:$eventId@$originalDate' : 'event:$eventId#$extraId@$originalDate';
 
 /// Everything the calendar shows for a range: events, scheduled tasks
 /// (owner decision D6: tasks stay tasks) and their conflicts.

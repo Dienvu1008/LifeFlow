@@ -180,6 +180,7 @@ const subjectKinds = {'schedule', 'extraTime', 'exception', 'reminder'};
 const referableKinds = {
   'taskList', 'task', 'event', 'calendar', 'goal', 'focusSession', 'executionRecord', 'measurement', 'document',
   'aiSession', 'aiMessage',
+  'extraTime', // P06c E3: a repeating extra time's changes and ticks point to it
 };
 
 /// The record a dependent row belongs to, as (kind, id), or null.
@@ -196,6 +197,7 @@ const referableKinds = {
 /// them. A goal link needs both its goal and its item.
 List<(String, String)> requiredRefsOf(String kind, Row r) => [
       if (subjectOf(kind, r) case final s?) s,
+      if (kind == 'completion' && r['extraId'] is String) ('extraTime', r['extraId'] as String),
       if (kind == 'goalLink') ...[('goal', r['goalId'] as String), (r['itemType'] as String, r['itemId'] as String)],
       if (kind == 'documentLink') ...[
         ('document', r['documentId'] as String),

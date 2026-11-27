@@ -269,19 +269,21 @@ class DriftCalendarQueries implements CalendarQueries {
     var truncated = taskAgenda.truncated;
     final items = <EventItem>[];
     final timed = <tk.TimedItem>[];
-    for (final s in schedules) {
-      final event = events[s.subjectId];
-      if (event == null) continue; // in the trash
-      final (spec, rule) = readSchedule(s);
+
+    // One series of an event: its own rule, or one of its extra times
+    // (P06c, ADR-0096/0097; [extraId] set).
+    void addSeries(Event event, tk.ScheduleSpec spec, tk.RecurrenceRule? rule,
+        List<tk.OccurrenceException> changes, String? extraId) {
       final r = tk.occurrencesInWindow(
-          seriesId: event.id, spec: spec, rule: rule,
-          exceptions: exceptions[event.id] ?? const [], window: window, limits: limits);
+          seriesId: extraId ?? event.id, spec: spec, rule: rule,
+          exceptions: changes, window: window, limits: limits);
       truncated |= r.truncated;
       for (final o in r.occurrences) {
         final cancelled = event.status == 'cancelled' || o.isCancelled;
         final patch = o.patch ?? const {};
         items.add(EventItem(
           eventId: event.id,
+          extraId: extraId,
           title: (patch['title'] as String?) ?? event.title,
           originalDate: o.originalDate,
           start: inputOf(o.schedule.start)!,
@@ -295,42 +297,43 @@ class DriftCalendarQueries implements CalendarQueries {
           deviceEnd: devicePointOf(o.schedule.end, agenda.time.zone()),
         ));
         if (!cancelled) {
-          final it = tk.timedItemOf(eventOccurrenceKey(event.id, o.originalDate), o.schedule);
+          final it = tk.timedItemOf(eventOccurrenceKey(event.id, o.originalDate, extraId: extraId), o.schedule);
           if (it != null) timed.add(it);
         }
       }
     }
-    // P06c (ADR-0096): extra times of events, independent of any rule.
-    for (final x in await (db.select(db.extraTimes)
+
+    for (final s in schedules) {
+      final event = events[s.subjectId];
+      if (event == null) continue; // in the trash
+      final (spec, rule) = readSchedule(s);
+      addSeries(event, spec, rule, exceptions[event.id] ?? const [], null);
+    }
+    final movedExtras = await (db.select(db.occurrenceExceptions)
+          ..where((e) =>
+              e.subjectType.equals('extraTime') & e.deletedAt.isNull() & e.kind.equals('move') &
+              e.moveDate.isBetweenValues(f, t)))
+        .get();
+    final extras = await (db.select(db.extraTimes)
           ..where((x) =>
               x.workspaceId.equals(ws) &
               x.subjectType.equals('event') &
               x.deletedAt.isNull() &
-              x.firstDate.isSmallerOrEqualValue(t) &
-              x.lastDate.isBiggerOrEqualValue(f)))
+              ((x.firstDate.isSmallerOrEqualValue(t) & (x.lastDate.isNull() | x.lastDate.isBiggerOrEqualValue(f))) |
+                  x.id.isIn(movedExtras.map((m) => m.subjectId)))))
+        .get();
+    final extraChanges = <String, List<tk.OccurrenceException>>{};
+    for (final e in await (db.select(db.occurrenceExceptions)
+          ..where((e) =>
+              e.subjectType.equals('extraTime') & e.deletedAt.isNull() & e.subjectId.isIn([for (final x in extras) x.id])))
         .get()) {
+      extraChanges.putIfAbsent(e.subjectId, () => []).add(exceptionOf(e));
+    }
+    for (final x in extras) {
       final event = events[x.subjectId];
       if (event == null) continue; // in the trash, or archived and hidden
-      final spec = specOfExtra(x);
-      final cancelled = event.status == 'cancelled';
-      items.add(EventItem(
-        eventId: event.id,
-        extraId: x.id,
-        title: event.title,
-        originalDate: spec.start!.date,
-        start: inputOf(spec.start)!,
-        end: inputOf(spec.end),
-        location: event.location,
-        calendarId: event.calendarId,
-        isRepeating: false,
-        isCancelled: cancelled,
-        deviceStart: devicePointOf(spec.start, agenda.time.zone()),
-        deviceEnd: devicePointOf(spec.end, agenda.time.zone()),
-      ));
-      if (!cancelled) {
-        final it = tk.timedItemOf(eventOccurrenceKey(event.id, spec.start!.date, extraId: x.id), spec);
-        if (it != null) timed.add(it);
-      }
+      final (spec, rule) = readExtra(x);
+      addSeries(event, spec, rule, extraChanges[x.id] ?? const [], x.id);
     }
     items.sort((a, b) {
       final c = a.date.compareTo(b.date);

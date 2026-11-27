@@ -78,14 +78,23 @@ tk.ScheduleSpec specOfExtra(ExtraTime r) => tk.ScheduleSpec(
       end: _point(r.endDate, r.endTime, r.endZone),
     );
 
+/// P06c E3 (ADR-0097): the id of the tick of one time of a repeating extra time.
+String extraCompletionIdOf(String extraId, LocalDate original) => 'extra:$extraId@$original';
+
 /// The repeat rule of a row, or null. Throws [BadScheduleRow].
-tk.RecurrenceRule? ruleOf(Schedule r) {
-  final f = r.frequency;
+tk.RecurrenceRule? ruleOf(Schedule r) => _ruleOfColumns(
+    r.frequency, r.interval, r.weekdays, r.endKind, r.endDateRule, r.endCount, r.monthEndRule, r.weekStart);
+
+/// P06c E3 (ADR-0097): the repeat rule of an extra time, or null.
+tk.RecurrenceRule? ruleOfExtra(ExtraTime r) => _ruleOfColumns(
+    r.frequency, r.interval, r.weekdays, r.endKind, r.endDateRule, r.endCount, r.monthEndRule, r.weekStart);
+
+tk.RecurrenceRule? _ruleOfColumns(String? f, int interval, String? w, String? endKind, String? endDateRule,
+    int? endCount, String monthEndRule, int weekStartIso) {
   if (f == null) return null;
   final frequency = tk.Frequency.values.where((x) => x.name == f).firstOrNull ??
       (throw BadScheduleRow('bad frequency "$f"'));
   Set<Weekday>? days;
-  final w = r.weekdays;
   if (w != null && w.isNotEmpty) {
     try {
       days = {for (final n in w.split(',')) Weekday.fromIso(int.parse(n))};
@@ -93,23 +102,23 @@ tk.RecurrenceRule? ruleOf(Schedule r) {
       throw BadScheduleRow('bad weekdays "$w"');
     }
   }
-  final tk.RecurrenceEnd end = switch (r.endKind) {
+  final tk.RecurrenceEnd end = switch (endKind) {
     null || 'never' => const tk.EndsNever(),
-    'onDate' => tk.EndsOnDate(_date(r.endDateRule) ?? (throw const BadScheduleRow('end date missing'))),
-    'afterCount' => tk.EndsAfterCount(r.endCount ?? (throw const BadScheduleRow('end count missing'))),
+    'onDate' => tk.EndsOnDate(_date(endDateRule) ?? (throw const BadScheduleRow('end date missing'))),
+    'afterCount' => tk.EndsAfterCount(endCount ?? (throw const BadScheduleRow('end count missing'))),
     final other => throw BadScheduleRow('bad end kind "$other"'),
   };
-  final monthEnd = tk.MonthEndRule.values.where((x) => x.name == r.monthEndRule).firstOrNull ??
-      (throw BadScheduleRow('bad month-end rule "${r.monthEndRule}"'));
+  final monthEnd = tk.MonthEndRule.values.where((x) => x.name == monthEndRule).firstOrNull ??
+      (throw BadScheduleRow('bad month-end rule "$monthEndRule"'));
   final Weekday weekStart;
   try {
-    weekStart = Weekday.fromIso(r.weekStart);
+    weekStart = Weekday.fromIso(weekStartIso);
   } catch (_) {
-    throw BadScheduleRow('bad week start ${r.weekStart}');
+    throw BadScheduleRow('bad week start $weekStartIso');
   }
   return tk.RecurrenceRule(
     frequency: frequency,
-    interval: r.interval,
+    interval: interval,
     byWeekday: days,
     end: end,
     monthEndRule: monthEnd,
@@ -136,6 +145,26 @@ tk.RecurrenceRule? ruleOf(Schedule r) {
   final range = dateRangeOf(spec, rule);
   if (r.firstDate != '${range.first}' || r.lastDate != range.last?.toString()) {
     throw const BadScheduleRow('stored date range does not match the schedule');
+  }
+  return (spec, rule);
+}
+
+/// Reads and fully validates a stored extra time. Throws [BadScheduleRow].
+(tk.ScheduleSpec, tk.RecurrenceRule?) readExtra(ExtraTime r) {
+  final spec = specOfExtra(r);
+  if (spec.start == null) throw const BadScheduleRow('an extra time needs a start');
+  if (tk.validateSchedule(spec) case Err(:final error)) {
+    throw BadScheduleRow('invalid time (${error.name})');
+  }
+  final rule = ruleOfExtra(r);
+  if (rule != null) {
+    if (tk.validateRule(rule, spec.start!.date) case Err(:final error)) {
+      throw BadScheduleRow('invalid repeat (${error.name})');
+    }
+  }
+  final range = dateRangeOf(spec, rule);
+  if (r.firstDate != '${range.first}' || r.lastDate != range.last?.toString()) {
+    throw const BadScheduleRow('stored date range does not match the extra time');
   }
   return (spec, rule);
 }

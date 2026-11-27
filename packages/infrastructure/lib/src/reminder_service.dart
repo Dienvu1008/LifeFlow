@@ -179,6 +179,19 @@ class DriftReminderPlanner {
         .get()) {
       extras.putIfAbsent((x.subjectType, x.subjectId), () => []).add(x);
     }
+    final extraIds = [for (final l in extras.values) for (final x in l) x.id];
+    final extraChanges = <String, List<tk.OccurrenceException>>{};
+    for (final e in await (db.select(db.occurrenceExceptions)
+          ..where((e) => e.subjectType.equals('extraTime') & e.deletedAt.isNull() & e.subjectId.isIn(extraIds)))
+        .get()) {
+      extraChanges.putIfAbsent(e.subjectId, () => []).add(exceptionOf(e));
+    }
+    final extraDone = {
+      for (final c in await (db.select(db.occurrenceCompletions)
+            ..where((c) => c.deletedAt.isNull() & c.extraId.isIn(extraIds)))
+          .get())
+        c.id,
+    };
 
     final out = <(tk.ReminderTrigger, String, String)>[]; // trigger, title, body
     for (final entry in bySubject.entries) {
@@ -226,14 +239,18 @@ class DriftReminderPlanner {
       for (final x in extras[(type, id)] ?? const <ExtraTime>[]) {
         if (type == 'task' && x.doneAt != null) continue; // a done time reminds of nothing
         final tk.ScheduleSpec xs;
+        final tk.RecurrenceRule? xr;
         try {
-          xs = specOfExtra(x);
+          (xs, xr) = readExtra(x);
         } on BadScheduleRow {
           continue;
         }
         for (final trig in tk.remindersInHorizon(
           seriesId: '$type:$id/${x.id}',
           spec: xs,
+          rule: xr,
+          exceptions: extraChanges[x.id] ?? const [],
+          include: type == 'task' ? (o) => !extraDone.contains(extraCompletionIdOf(x.id, o.originalDate)) : null,
           reminders: rules,
           now: now,
           horizon: horizon,

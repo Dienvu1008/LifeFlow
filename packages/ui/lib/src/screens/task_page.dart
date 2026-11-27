@@ -21,6 +21,7 @@ import 'goals_screen.dart';
 import 'habit_page.dart';
 import 'overview_view.dart' show colourName, pickColour, pickList, runMove;
 import 'shelf_screens.dart' show archiveFlow;
+import 'extra_time_editor.dart';
 import 'schedule_editor.dart';
 import 'tasks_screen.dart' show addTaskWithDialog, showTextDialog, trashTask;
 
@@ -303,6 +304,8 @@ class _TaskPageState extends ConsumerState<TaskPage> {
                 : describeSchedule(t.schedule!, today: today, deviceZone: zone)),
             onTap: () => openScheduleEditor(context, ref, taskId: t.id, title: t.title, initial: t.schedule),
           ),
+          // P06c: times outside its own repeat.
+          ExtraTimesSection(subject: ExtraTimeSubject.task, subjectId: t.id, title: t.title),
           ListTile(
             key: const Key('task-page-habit'),
             leading: const Icon(Icons.track_changes_outlined),

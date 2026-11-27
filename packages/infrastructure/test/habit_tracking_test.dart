@@ -125,6 +125,12 @@ void main() {
       // The tick is refused: the state is derived (D8).
       refused(await svc.tasks.complete(walk, withDescendants: false), 'derived');
       refused(await DriftTaskScheduling(host.db, gw).setOccurrenceDone(walk, day0, done: true), 'derived');
+      // P06c: nor is a time of one of its extra times, or its one-off extra time.
+      final extraTimes = DriftExtraTimes(host.db, gw);
+      ok(await extraTimes.add(ExtraTimeSubject.task, walk,
+          ExtraTimeInput(start: SchedulePointInput.at(day0, TimeOfDayValue(20, 0), 'Asia/Ho_Chi_Minh'), repeat: const RepeatInput(frequency: RepeatFrequency.daily))));
+      final xr = (await extraTimes.of(ExtraTimeSubject.task, walk)).single.id;
+      refused(await extraTimes.setOccurrenceDone(xr, day0, done: true), 'derived');
 
       // The next day the period closes as not achieved, with the target used.
       toDay(1);
@@ -276,6 +282,26 @@ void main() {
       expect((await stored(water)).firstWhere((r) => r.periodKey == '${day0.addDays(1)}').outcome, 'missed');
     });
 
+    test('P06c: the ticks of an extra time of the habit are not the habit\'s (Q3)', () async {
+      final water = await task('Warm water');
+      await repeat(water, tk.Frequency.daily);
+      ok(await habits.setHabit(water, isHabit: true));
+      final zone = 'Asia/Ho_Chi_Minh';
+      final extras = DriftExtraTimes(host.db, gw);
+      ok(await extras.add(
+          ExtraTimeSubject.task,
+          water,
+          ExtraTimeInput(
+              start: SchedulePointInput.at(day0, TimeOfDayValue(20, 0), zone),
+              repeat: const RepeatInput(frequency: RepeatFrequency.daily))));
+      final x = (await extras.of(ExtraTimeSubject.task, water)).single.id;
+      ok(await extras.setOccurrenceDone(x, day0, done: true)); // the extra time of day 0, not the habit's
+      toDay(1);
+      expect(await habits.closePeriods(), 1);
+      final v = await view(water);
+      expect([for (final r in v.results) (r.key, r.outcome)], [(day0, PeriodOutcome.missed)],
+          reason: 'the habit of day 0 was not ticked, whatever the extra time says');
+    });
     test('a one-off habit: done or missed after its date; a late completion is recorded', () async {
       final once = await task('Call grandma');
       final p = (await ProfileStore(host.db).getActiveProfile())!;

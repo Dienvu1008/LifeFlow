@@ -1275,5 +1275,22 @@
   "@aiModelsFailed": {"placeholders": {"reason": {"type": "String"}}},
   "aiDownloadFailed": "The download failed: {reason}",
   "@aiDownloadFailed": {"placeholders": {"reason": {"type": "String"}}},
-  "aiNotGguf": "This is not a GGUF model file."
+  "aiNotGguf": "This is not a GGUF model file.",
+  "extraOtherTimes": "Other times",
+  "@extraOtherTimes": {"description": "P06c: the section listing the times of a task or an event outside its own repeat"},
+  "extraNone": "No other times",
+  "extraAdd": "Add another time…",
+  "extraAddTitle": "Another time for {title}",
+  "@extraAddTitle": {"placeholders": {"title": {"type": "String"}}},
+  "extraChangeTitle": "Change this time of {title}",
+  "@extraChangeTitle": {"placeholders": {"title": {"type": "String"}}},
+  "extraChange": "Change this time…",
+  "extraEditRepeat": "Edit this repeat…",
+  "extraRemove": "Remove this time",
+  "extraRemoveAll": "Remove all of these times",
+  "extraRemoveTooltip": "Remove {what}",
+  "@extraRemoveTooltip": {"placeholders": {"what": {"type": "String"}}},
+  "extraAnother": "Another time",
+  "extraMove": "Move this time…",
+  "extraUndoChange": "Undo the change to this time"
 }

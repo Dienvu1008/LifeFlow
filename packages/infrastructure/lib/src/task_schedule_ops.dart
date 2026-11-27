@@ -72,6 +72,32 @@ Future<HandlerOutcome> applyScheduleOp(
         events: [DomainEvent(extra.event, {'id': taskId, 'extraId': extra.extraId})],
       );
 
+    case 'setExtraException':
+    case 'clearExtraException':
+      // P06c E3 (ADR-0097): one time of a repeating extra time: skip or move.
+      final change = await ExtraTimeRows(db, cmd, 'task', taskId, task.ownerId, now).applyException(op,
+          kindOf: (x, move) => switch (cmd.payload['kind']) {
+                'skip' => const tk.SkipOccurrence(),
+                'move' => move(),
+                _ => throw DomainRejection('a task occurrence can be skipped or moved'),
+              });
+      return HandlerOutcome(
+        entityId: taskId,
+        operationType: 'update',
+        changeSet: {'id': taskId, ...change.change},
+        events: [DomainEvent(change.event, {'id': taskId, 'extraId': change.extraId})],
+      );
+
+    case 'setExtraOccurrenceDone':
+      final tick = await ExtraTimeRows(db, cmd, 'task', taskId, task.ownerId, now)
+          .apply(op, automaticCompletion: task.completionPolicy == 'automatic');
+      return HandlerOutcome(
+        entityId: taskId,
+        operationType: 'update',
+        changeSet: {'id': taskId, ...tick.change},
+        events: [DomainEvent(tick.event, {'id': taskId, 'extraId': tick.extraId})],
+      );
+
     case 'setSchedule':
       final (_, _, rule, previous) =
           await rows.write((cmd.payload['schedule'] as Map).cast<String, Object?>());

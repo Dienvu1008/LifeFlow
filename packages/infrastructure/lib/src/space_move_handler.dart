@@ -263,6 +263,11 @@ Future<MoveSet> moveSetOf(AppDatabase db, String kind, String id) async {
         'SELECT id FROM extra_times WHERE subject_type = ? AND subject_id = ? AND workspace_id = ? AND deleted_at IS NULL ORDER BY rowid',
         [k, rid, ws])) {
       await add('extraTime', x);
+      for (final e in await ids(
+          'SELECT id FROM occurrence_exceptions WHERE subject_type = \'extraTime\' AND subject_id = ? AND workspace_id = ? AND deleted_at IS NULL ORDER BY rowid',
+          [x, ws])) {
+        await add('exception', e);
+      }
     }
     for (final x in await ids(
         'SELECT id FROM occurrence_exceptions WHERE subject_type = ? AND subject_id = ? AND workspace_id = ? AND deleted_at IS NULL ORDER BY rowid',

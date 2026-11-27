@@ -8089,13 +8089,67 @@ class $ExtraTimesTable extends ExtraTimes
       const VerificationMeta('lastDate');
   @override
   late final GeneratedColumn<String> lastDate = GeneratedColumn<String>(
-      'last_date', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+      'last_date', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _doneAtMeta = const VerificationMeta('doneAt');
   @override
   late final GeneratedColumn<DateTime> doneAt = GeneratedColumn<DateTime>(
       'done_at', aliasedName, true,
       type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _frequencyMeta =
+      const VerificationMeta('frequency');
+  @override
+  late final GeneratedColumn<String> frequency = GeneratedColumn<String>(
+      'frequency', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _intervalMeta =
+      const VerificationMeta('interval');
+  @override
+  late final GeneratedColumn<int> interval = GeneratedColumn<int>(
+      'interval', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
+  static const VerificationMeta _weekdaysMeta =
+      const VerificationMeta('weekdays');
+  @override
+  late final GeneratedColumn<String> weekdays = GeneratedColumn<String>(
+      'weekdays', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _endKindMeta =
+      const VerificationMeta('endKind');
+  @override
+  late final GeneratedColumn<String> endKind = GeneratedColumn<String>(
+      'end_kind', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _endDateRuleMeta =
+      const VerificationMeta('endDateRule');
+  @override
+  late final GeneratedColumn<String> endDateRule = GeneratedColumn<String>(
+      'end_date_rule', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _endCountMeta =
+      const VerificationMeta('endCount');
+  @override
+  late final GeneratedColumn<int> endCount = GeneratedColumn<int>(
+      'end_count', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _monthEndRuleMeta =
+      const VerificationMeta('monthEndRule');
+  @override
+  late final GeneratedColumn<String> monthEndRule = GeneratedColumn<String>(
+      'month_end_rule', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('skip'));
+  static const VerificationMeta _weekStartMeta =
+      const VerificationMeta('weekStart');
+  @override
+  late final GeneratedColumn<int> weekStart = GeneratedColumn<int>(
+      'week_start', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -8117,7 +8171,15 @@ class $ExtraTimesTable extends ExtraTimes
         endZone,
         firstDate,
         lastDate,
-        doneAt
+        doneAt,
+        frequency,
+        interval,
+        weekdays,
+        endKind,
+        endDateRule,
+        endCount,
+        monthEndRule,
+        weekStart
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -8225,12 +8287,46 @@ class $ExtraTimesTable extends ExtraTimes
     if (data.containsKey('last_date')) {
       context.handle(_lastDateMeta,
           lastDate.isAcceptableOrUnknown(data['last_date']!, _lastDateMeta));
-    } else if (isInserting) {
-      context.missing(_lastDateMeta);
     }
     if (data.containsKey('done_at')) {
       context.handle(_doneAtMeta,
           doneAt.isAcceptableOrUnknown(data['done_at']!, _doneAtMeta));
+    }
+    if (data.containsKey('frequency')) {
+      context.handle(_frequencyMeta,
+          frequency.isAcceptableOrUnknown(data['frequency']!, _frequencyMeta));
+    }
+    if (data.containsKey('interval')) {
+      context.handle(_intervalMeta,
+          interval.isAcceptableOrUnknown(data['interval']!, _intervalMeta));
+    }
+    if (data.containsKey('weekdays')) {
+      context.handle(_weekdaysMeta,
+          weekdays.isAcceptableOrUnknown(data['weekdays']!, _weekdaysMeta));
+    }
+    if (data.containsKey('end_kind')) {
+      context.handle(_endKindMeta,
+          endKind.isAcceptableOrUnknown(data['end_kind']!, _endKindMeta));
+    }
+    if (data.containsKey('end_date_rule')) {
+      context.handle(
+          _endDateRuleMeta,
+          endDateRule.isAcceptableOrUnknown(
+              data['end_date_rule']!, _endDateRuleMeta));
+    }
+    if (data.containsKey('end_count')) {
+      context.handle(_endCountMeta,
+          endCount.isAcceptableOrUnknown(data['end_count']!, _endCountMeta));
+    }
+    if (data.containsKey('month_end_rule')) {
+      context.handle(
+          _monthEndRuleMeta,
+          monthEndRule.isAcceptableOrUnknown(
+              data['month_end_rule']!, _monthEndRuleMeta));
+    }
+    if (data.containsKey('week_start')) {
+      context.handle(_weekStartMeta,
+          weekStart.isAcceptableOrUnknown(data['week_start']!, _weekStartMeta));
     }
     return context;
   }
@@ -8278,9 +8374,25 @@ class $ExtraTimesTable extends ExtraTimes
       firstDate: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}first_date'])!,
       lastDate: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}last_date'])!,
+          .read(DriftSqlType.string, data['${effectivePrefix}last_date']),
       doneAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}done_at']),
+      frequency: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}frequency']),
+      interval: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}interval'])!,
+      weekdays: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}weekdays']),
+      endKind: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}end_kind']),
+      endDateRule: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}end_date_rule']),
+      endCount: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}end_count']),
+      monthEndRule: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}month_end_rule'])!,
+      weekStart: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}week_start'])!,
     );
   }
 
@@ -8309,8 +8421,16 @@ class ExtraTime extends DataClass implements Insertable<ExtraTime> {
   final String? endTime;
   final String? endZone;
   final String firstDate;
-  final String lastDate;
+  final String? lastDate;
   final DateTime? doneAt;
+  final String? frequency;
+  final int interval;
+  final String? weekdays;
+  final String? endKind;
+  final String? endDateRule;
+  final int? endCount;
+  final String monthEndRule;
+  final int weekStart;
   const ExtraTime(
       {required this.id,
       required this.workspaceId,
@@ -8330,8 +8450,16 @@ class ExtraTime extends DataClass implements Insertable<ExtraTime> {
       this.endTime,
       this.endZone,
       required this.firstDate,
-      required this.lastDate,
-      this.doneAt});
+      this.lastDate,
+      this.doneAt,
+      this.frequency,
+      required this.interval,
+      this.weekdays,
+      this.endKind,
+      this.endDateRule,
+      this.endCount,
+      required this.monthEndRule,
+      required this.weekStart});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -8369,10 +8497,30 @@ class ExtraTime extends DataClass implements Insertable<ExtraTime> {
       map['end_zone'] = Variable<String>(endZone);
     }
     map['first_date'] = Variable<String>(firstDate);
-    map['last_date'] = Variable<String>(lastDate);
+    if (!nullToAbsent || lastDate != null) {
+      map['last_date'] = Variable<String>(lastDate);
+    }
     if (!nullToAbsent || doneAt != null) {
       map['done_at'] = Variable<DateTime>(doneAt);
     }
+    if (!nullToAbsent || frequency != null) {
+      map['frequency'] = Variable<String>(frequency);
+    }
+    map['interval'] = Variable<int>(interval);
+    if (!nullToAbsent || weekdays != null) {
+      map['weekdays'] = Variable<String>(weekdays);
+    }
+    if (!nullToAbsent || endKind != null) {
+      map['end_kind'] = Variable<String>(endKind);
+    }
+    if (!nullToAbsent || endDateRule != null) {
+      map['end_date_rule'] = Variable<String>(endDateRule);
+    }
+    if (!nullToAbsent || endCount != null) {
+      map['end_count'] = Variable<int>(endCount);
+    }
+    map['month_end_rule'] = Variable<String>(monthEndRule);
+    map['week_start'] = Variable<int>(weekStart);
     return map;
   }
 
@@ -8412,9 +8560,29 @@ class ExtraTime extends DataClass implements Insertable<ExtraTime> {
           ? const Value.absent()
           : Value(endZone),
       firstDate: Value(firstDate),
-      lastDate: Value(lastDate),
+      lastDate: lastDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastDate),
       doneAt:
           doneAt == null && nullToAbsent ? const Value.absent() : Value(doneAt),
+      frequency: frequency == null && nullToAbsent
+          ? const Value.absent()
+          : Value(frequency),
+      interval: Value(interval),
+      weekdays: weekdays == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weekdays),
+      endKind: endKind == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endKind),
+      endDateRule: endDateRule == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endDateRule),
+      endCount: endCount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endCount),
+      monthEndRule: Value(monthEndRule),
+      weekStart: Value(weekStart),
     );
   }
 
@@ -8440,8 +8608,16 @@ class ExtraTime extends DataClass implements Insertable<ExtraTime> {
       endTime: serializer.fromJson<String?>(json['endTime']),
       endZone: serializer.fromJson<String?>(json['endZone']),
       firstDate: serializer.fromJson<String>(json['firstDate']),
-      lastDate: serializer.fromJson<String>(json['lastDate']),
+      lastDate: serializer.fromJson<String?>(json['lastDate']),
       doneAt: serializer.fromJson<DateTime?>(json['doneAt']),
+      frequency: serializer.fromJson<String?>(json['frequency']),
+      interval: serializer.fromJson<int>(json['interval']),
+      weekdays: serializer.fromJson<String?>(json['weekdays']),
+      endKind: serializer.fromJson<String?>(json['endKind']),
+      endDateRule: serializer.fromJson<String?>(json['endDateRule']),
+      endCount: serializer.fromJson<int?>(json['endCount']),
+      monthEndRule: serializer.fromJson<String>(json['monthEndRule']),
+      weekStart: serializer.fromJson<int>(json['weekStart']),
     );
   }
   @override
@@ -8466,8 +8642,16 @@ class ExtraTime extends DataClass implements Insertable<ExtraTime> {
       'endTime': serializer.toJson<String?>(endTime),
       'endZone': serializer.toJson<String?>(endZone),
       'firstDate': serializer.toJson<String>(firstDate),
-      'lastDate': serializer.toJson<String>(lastDate),
+      'lastDate': serializer.toJson<String?>(lastDate),
       'doneAt': serializer.toJson<DateTime?>(doneAt),
+      'frequency': serializer.toJson<String?>(frequency),
+      'interval': serializer.toJson<int>(interval),
+      'weekdays': serializer.toJson<String?>(weekdays),
+      'endKind': serializer.toJson<String?>(endKind),
+      'endDateRule': serializer.toJson<String?>(endDateRule),
+      'endCount': serializer.toJson<int?>(endCount),
+      'monthEndRule': serializer.toJson<String>(monthEndRule),
+      'weekStart': serializer.toJson<int>(weekStart),
     };
   }
 
@@ -8490,8 +8674,16 @@ class ExtraTime extends DataClass implements Insertable<ExtraTime> {
           Value<String?> endTime = const Value.absent(),
           Value<String?> endZone = const Value.absent(),
           String? firstDate,
-          String? lastDate,
-          Value<DateTime?> doneAt = const Value.absent()}) =>
+          Value<String?> lastDate = const Value.absent(),
+          Value<DateTime?> doneAt = const Value.absent(),
+          Value<String?> frequency = const Value.absent(),
+          int? interval,
+          Value<String?> weekdays = const Value.absent(),
+          Value<String?> endKind = const Value.absent(),
+          Value<String?> endDateRule = const Value.absent(),
+          Value<int?> endCount = const Value.absent(),
+          String? monthEndRule,
+          int? weekStart}) =>
       ExtraTime(
         id: id ?? this.id,
         workspaceId: workspaceId ?? this.workspaceId,
@@ -8511,8 +8703,16 @@ class ExtraTime extends DataClass implements Insertable<ExtraTime> {
         endTime: endTime.present ? endTime.value : this.endTime,
         endZone: endZone.present ? endZone.value : this.endZone,
         firstDate: firstDate ?? this.firstDate,
-        lastDate: lastDate ?? this.lastDate,
+        lastDate: lastDate.present ? lastDate.value : this.lastDate,
         doneAt: doneAt.present ? doneAt.value : this.doneAt,
+        frequency: frequency.present ? frequency.value : this.frequency,
+        interval: interval ?? this.interval,
+        weekdays: weekdays.present ? weekdays.value : this.weekdays,
+        endKind: endKind.present ? endKind.value : this.endKind,
+        endDateRule: endDateRule.present ? endDateRule.value : this.endDateRule,
+        endCount: endCount.present ? endCount.value : this.endCount,
+        monthEndRule: monthEndRule ?? this.monthEndRule,
+        weekStart: weekStart ?? this.weekStart,
       );
   ExtraTime copyWithCompanion(ExtraTimesCompanion data) {
     return ExtraTime(
@@ -8538,6 +8738,17 @@ class ExtraTime extends DataClass implements Insertable<ExtraTime> {
       firstDate: data.firstDate.present ? data.firstDate.value : this.firstDate,
       lastDate: data.lastDate.present ? data.lastDate.value : this.lastDate,
       doneAt: data.doneAt.present ? data.doneAt.value : this.doneAt,
+      frequency: data.frequency.present ? data.frequency.value : this.frequency,
+      interval: data.interval.present ? data.interval.value : this.interval,
+      weekdays: data.weekdays.present ? data.weekdays.value : this.weekdays,
+      endKind: data.endKind.present ? data.endKind.value : this.endKind,
+      endDateRule:
+          data.endDateRule.present ? data.endDateRule.value : this.endDateRule,
+      endCount: data.endCount.present ? data.endCount.value : this.endCount,
+      monthEndRule: data.monthEndRule.present
+          ? data.monthEndRule.value
+          : this.monthEndRule,
+      weekStart: data.weekStart.present ? data.weekStart.value : this.weekStart,
     );
   }
 
@@ -8563,33 +8774,50 @@ class ExtraTime extends DataClass implements Insertable<ExtraTime> {
           ..write('endZone: $endZone, ')
           ..write('firstDate: $firstDate, ')
           ..write('lastDate: $lastDate, ')
-          ..write('doneAt: $doneAt')
+          ..write('doneAt: $doneAt, ')
+          ..write('frequency: $frequency, ')
+          ..write('interval: $interval, ')
+          ..write('weekdays: $weekdays, ')
+          ..write('endKind: $endKind, ')
+          ..write('endDateRule: $endDateRule, ')
+          ..write('endCount: $endCount, ')
+          ..write('monthEndRule: $monthEndRule, ')
+          ..write('weekStart: $weekStart')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
-      id,
-      workspaceId,
-      ownerId,
-      version,
-      createdAt,
-      updatedAt,
-      deletedAt,
-      deletedBy,
-      changedBy,
-      subjectType,
-      subjectId,
-      startDate,
-      startTime,
-      startZone,
-      endDate,
-      endTime,
-      endZone,
-      firstDate,
-      lastDate,
-      doneAt);
+  int get hashCode => Object.hashAll([
+        id,
+        workspaceId,
+        ownerId,
+        version,
+        createdAt,
+        updatedAt,
+        deletedAt,
+        deletedBy,
+        changedBy,
+        subjectType,
+        subjectId,
+        startDate,
+        startTime,
+        startZone,
+        endDate,
+        endTime,
+        endZone,
+        firstDate,
+        lastDate,
+        doneAt,
+        frequency,
+        interval,
+        weekdays,
+        endKind,
+        endDateRule,
+        endCount,
+        monthEndRule,
+        weekStart
+      ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -8613,7 +8841,15 @@ class ExtraTime extends DataClass implements Insertable<ExtraTime> {
           other.endZone == this.endZone &&
           other.firstDate == this.firstDate &&
           other.lastDate == this.lastDate &&
-          other.doneAt == this.doneAt);
+          other.doneAt == this.doneAt &&
+          other.frequency == this.frequency &&
+          other.interval == this.interval &&
+          other.weekdays == this.weekdays &&
+          other.endKind == this.endKind &&
+          other.endDateRule == this.endDateRule &&
+          other.endCount == this.endCount &&
+          other.monthEndRule == this.monthEndRule &&
+          other.weekStart == this.weekStart);
 }
 
 class ExtraTimesCompanion extends UpdateCompanion<ExtraTime> {
@@ -8635,8 +8871,16 @@ class ExtraTimesCompanion extends UpdateCompanion<ExtraTime> {
   final Value<String?> endTime;
   final Value<String?> endZone;
   final Value<String> firstDate;
-  final Value<String> lastDate;
+  final Value<String?> lastDate;
   final Value<DateTime?> doneAt;
+  final Value<String?> frequency;
+  final Value<int> interval;
+  final Value<String?> weekdays;
+  final Value<String?> endKind;
+  final Value<String?> endDateRule;
+  final Value<int?> endCount;
+  final Value<String> monthEndRule;
+  final Value<int> weekStart;
   final Value<int> rowid;
   const ExtraTimesCompanion({
     this.id = const Value.absent(),
@@ -8659,6 +8903,14 @@ class ExtraTimesCompanion extends UpdateCompanion<ExtraTime> {
     this.firstDate = const Value.absent(),
     this.lastDate = const Value.absent(),
     this.doneAt = const Value.absent(),
+    this.frequency = const Value.absent(),
+    this.interval = const Value.absent(),
+    this.weekdays = const Value.absent(),
+    this.endKind = const Value.absent(),
+    this.endDateRule = const Value.absent(),
+    this.endCount = const Value.absent(),
+    this.monthEndRule = const Value.absent(),
+    this.weekStart = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ExtraTimesCompanion.insert({
@@ -8680,8 +8932,16 @@ class ExtraTimesCompanion extends UpdateCompanion<ExtraTime> {
     this.endTime = const Value.absent(),
     this.endZone = const Value.absent(),
     required String firstDate,
-    required String lastDate,
+    this.lastDate = const Value.absent(),
     this.doneAt = const Value.absent(),
+    this.frequency = const Value.absent(),
+    this.interval = const Value.absent(),
+    this.weekdays = const Value.absent(),
+    this.endKind = const Value.absent(),
+    this.endDateRule = const Value.absent(),
+    this.endCount = const Value.absent(),
+    this.monthEndRule = const Value.absent(),
+    this.weekStart = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         workspaceId = Value(workspaceId),
@@ -8691,8 +8951,7 @@ class ExtraTimesCompanion extends UpdateCompanion<ExtraTime> {
         subjectType = Value(subjectType),
         subjectId = Value(subjectId),
         startDate = Value(startDate),
-        firstDate = Value(firstDate),
-        lastDate = Value(lastDate);
+        firstDate = Value(firstDate);
   static Insertable<ExtraTime> custom({
     Expression<String>? id,
     Expression<String>? workspaceId,
@@ -8714,6 +8973,14 @@ class ExtraTimesCompanion extends UpdateCompanion<ExtraTime> {
     Expression<String>? firstDate,
     Expression<String>? lastDate,
     Expression<DateTime>? doneAt,
+    Expression<String>? frequency,
+    Expression<int>? interval,
+    Expression<String>? weekdays,
+    Expression<String>? endKind,
+    Expression<String>? endDateRule,
+    Expression<int>? endCount,
+    Expression<String>? monthEndRule,
+    Expression<int>? weekStart,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -8737,6 +9004,14 @@ class ExtraTimesCompanion extends UpdateCompanion<ExtraTime> {
       if (firstDate != null) 'first_date': firstDate,
       if (lastDate != null) 'last_date': lastDate,
       if (doneAt != null) 'done_at': doneAt,
+      if (frequency != null) 'frequency': frequency,
+      if (interval != null) 'interval': interval,
+      if (weekdays != null) 'weekdays': weekdays,
+      if (endKind != null) 'end_kind': endKind,
+      if (endDateRule != null) 'end_date_rule': endDateRule,
+      if (endCount != null) 'end_count': endCount,
+      if (monthEndRule != null) 'month_end_rule': monthEndRule,
+      if (weekStart != null) 'week_start': weekStart,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -8760,8 +9035,16 @@ class ExtraTimesCompanion extends UpdateCompanion<ExtraTime> {
       Value<String?>? endTime,
       Value<String?>? endZone,
       Value<String>? firstDate,
-      Value<String>? lastDate,
+      Value<String?>? lastDate,
       Value<DateTime?>? doneAt,
+      Value<String?>? frequency,
+      Value<int>? interval,
+      Value<String?>? weekdays,
+      Value<String?>? endKind,
+      Value<String?>? endDateRule,
+      Value<int?>? endCount,
+      Value<String>? monthEndRule,
+      Value<int>? weekStart,
       Value<int>? rowid}) {
     return ExtraTimesCompanion(
       id: id ?? this.id,
@@ -8784,6 +9067,14 @@ class ExtraTimesCompanion extends UpdateCompanion<ExtraTime> {
       firstDate: firstDate ?? this.firstDate,
       lastDate: lastDate ?? this.lastDate,
       doneAt: doneAt ?? this.doneAt,
+      frequency: frequency ?? this.frequency,
+      interval: interval ?? this.interval,
+      weekdays: weekdays ?? this.weekdays,
+      endKind: endKind ?? this.endKind,
+      endDateRule: endDateRule ?? this.endDateRule,
+      endCount: endCount ?? this.endCount,
+      monthEndRule: monthEndRule ?? this.monthEndRule,
+      weekStart: weekStart ?? this.weekStart,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -8851,6 +9142,30 @@ class ExtraTimesCompanion extends UpdateCompanion<ExtraTime> {
     if (doneAt.present) {
       map['done_at'] = Variable<DateTime>(doneAt.value);
     }
+    if (frequency.present) {
+      map['frequency'] = Variable<String>(frequency.value);
+    }
+    if (interval.present) {
+      map['interval'] = Variable<int>(interval.value);
+    }
+    if (weekdays.present) {
+      map['weekdays'] = Variable<String>(weekdays.value);
+    }
+    if (endKind.present) {
+      map['end_kind'] = Variable<String>(endKind.value);
+    }
+    if (endDateRule.present) {
+      map['end_date_rule'] = Variable<String>(endDateRule.value);
+    }
+    if (endCount.present) {
+      map['end_count'] = Variable<int>(endCount.value);
+    }
+    if (monthEndRule.present) {
+      map['month_end_rule'] = Variable<String>(monthEndRule.value);
+    }
+    if (weekStart.present) {
+      map['week_start'] = Variable<int>(weekStart.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -8880,6 +9195,14 @@ class ExtraTimesCompanion extends UpdateCompanion<ExtraTime> {
           ..write('firstDate: $firstDate, ')
           ..write('lastDate: $lastDate, ')
           ..write('doneAt: $doneAt, ')
+          ..write('frequency: $frequency, ')
+          ..write('interval: $interval, ')
+          ..write('weekdays: $weekdays, ')
+          ..write('endKind: $endKind, ')
+          ..write('endDateRule: $endDateRule, ')
+          ..write('endCount: $endCount, ')
+          ..write('monthEndRule: $monthEndRule, ')
+          ..write('weekStart: $weekStart, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -9727,6 +10050,12 @@ class $OccurrenceCompletionsTable extends OccurrenceCompletions
   late final GeneratedColumn<DateTime> completedAt = GeneratedColumn<DateTime>(
       'completed_at', aliasedName, false,
       type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _extraIdMeta =
+      const VerificationMeta('extraId');
+  @override
+  late final GeneratedColumn<String> extraId = GeneratedColumn<String>(
+      'extra_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -9740,7 +10069,8 @@ class $OccurrenceCompletionsTable extends OccurrenceCompletions
         changedBy,
         taskId,
         originalDate,
-        completedAt
+        completedAt,
+        extraId
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -9822,6 +10152,10 @@ class $OccurrenceCompletionsTable extends OccurrenceCompletions
     } else if (isInserting) {
       context.missing(_completedAtMeta);
     }
+    if (data.containsKey('extra_id')) {
+      context.handle(_extraIdMeta,
+          extraId.isAcceptableOrUnknown(data['extra_id']!, _extraIdMeta));
+    }
     return context;
   }
 
@@ -9855,6 +10189,8 @@ class $OccurrenceCompletionsTable extends OccurrenceCompletions
           .read(DriftSqlType.string, data['${effectivePrefix}original_date'])!,
       completedAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}completed_at'])!,
+      extraId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}extra_id']),
     );
   }
 
@@ -9878,6 +10214,7 @@ class OccurrenceCompletion extends DataClass
   final String taskId;
   final String originalDate;
   final DateTime completedAt;
+  final String? extraId;
   const OccurrenceCompletion(
       {required this.id,
       required this.workspaceId,
@@ -9890,7 +10227,8 @@ class OccurrenceCompletion extends DataClass
       this.changedBy,
       required this.taskId,
       required this.originalDate,
-      required this.completedAt});
+      required this.completedAt,
+      this.extraId});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -9912,6 +10250,9 @@ class OccurrenceCompletion extends DataClass
     map['task_id'] = Variable<String>(taskId);
     map['original_date'] = Variable<String>(originalDate);
     map['completed_at'] = Variable<DateTime>(completedAt);
+    if (!nullToAbsent || extraId != null) {
+      map['extra_id'] = Variable<String>(extraId);
+    }
     return map;
   }
 
@@ -9935,6 +10276,9 @@ class OccurrenceCompletion extends DataClass
       taskId: Value(taskId),
       originalDate: Value(originalDate),
       completedAt: Value(completedAt),
+      extraId: extraId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(extraId),
     );
   }
 
@@ -9954,6 +10298,7 @@ class OccurrenceCompletion extends DataClass
       taskId: serializer.fromJson<String>(json['taskId']),
       originalDate: serializer.fromJson<String>(json['originalDate']),
       completedAt: serializer.fromJson<DateTime>(json['completedAt']),
+      extraId: serializer.fromJson<String?>(json['extraId']),
     );
   }
   @override
@@ -9972,6 +10317,7 @@ class OccurrenceCompletion extends DataClass
       'taskId': serializer.toJson<String>(taskId),
       'originalDate': serializer.toJson<String>(originalDate),
       'completedAt': serializer.toJson<DateTime>(completedAt),
+      'extraId': serializer.toJson<String?>(extraId),
     };
   }
 
@@ -9987,7 +10333,8 @@ class OccurrenceCompletion extends DataClass
           Value<String?> changedBy = const Value.absent(),
           String? taskId,
           String? originalDate,
-          DateTime? completedAt}) =>
+          DateTime? completedAt,
+          Value<String?> extraId = const Value.absent()}) =>
       OccurrenceCompletion(
         id: id ?? this.id,
         workspaceId: workspaceId ?? this.workspaceId,
@@ -10001,6 +10348,7 @@ class OccurrenceCompletion extends DataClass
         taskId: taskId ?? this.taskId,
         originalDate: originalDate ?? this.originalDate,
         completedAt: completedAt ?? this.completedAt,
+        extraId: extraId.present ? extraId.value : this.extraId,
       );
   OccurrenceCompletion copyWithCompanion(OccurrenceCompletionsCompanion data) {
     return OccurrenceCompletion(
@@ -10020,6 +10368,7 @@ class OccurrenceCompletion extends DataClass
           : this.originalDate,
       completedAt:
           data.completedAt.present ? data.completedAt.value : this.completedAt,
+      extraId: data.extraId.present ? data.extraId.value : this.extraId,
     );
   }
 
@@ -10037,7 +10386,8 @@ class OccurrenceCompletion extends DataClass
           ..write('changedBy: $changedBy, ')
           ..write('taskId: $taskId, ')
           ..write('originalDate: $originalDate, ')
-          ..write('completedAt: $completedAt')
+          ..write('completedAt: $completedAt, ')
+          ..write('extraId: $extraId')
           ..write(')'))
         .toString();
   }
@@ -10055,7 +10405,8 @@ class OccurrenceCompletion extends DataClass
       changedBy,
       taskId,
       originalDate,
-      completedAt);
+      completedAt,
+      extraId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -10071,7 +10422,8 @@ class OccurrenceCompletion extends DataClass
           other.changedBy == this.changedBy &&
           other.taskId == this.taskId &&
           other.originalDate == this.originalDate &&
-          other.completedAt == this.completedAt);
+          other.completedAt == this.completedAt &&
+          other.extraId == this.extraId);
 }
 
 class OccurrenceCompletionsCompanion
@@ -10088,6 +10440,7 @@ class OccurrenceCompletionsCompanion
   final Value<String> taskId;
   final Value<String> originalDate;
   final Value<DateTime> completedAt;
+  final Value<String?> extraId;
   final Value<int> rowid;
   const OccurrenceCompletionsCompanion({
     this.id = const Value.absent(),
@@ -10102,6 +10455,7 @@ class OccurrenceCompletionsCompanion
     this.taskId = const Value.absent(),
     this.originalDate = const Value.absent(),
     this.completedAt = const Value.absent(),
+    this.extraId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   OccurrenceCompletionsCompanion.insert({
@@ -10117,6 +10471,7 @@ class OccurrenceCompletionsCompanion
     required String taskId,
     required String originalDate,
     required DateTime completedAt,
+    this.extraId = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         workspaceId = Value(workspaceId),
@@ -10139,6 +10494,7 @@ class OccurrenceCompletionsCompanion
     Expression<String>? taskId,
     Expression<String>? originalDate,
     Expression<DateTime>? completedAt,
+    Expression<String>? extraId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -10154,6 +10510,7 @@ class OccurrenceCompletionsCompanion
       if (taskId != null) 'task_id': taskId,
       if (originalDate != null) 'original_date': originalDate,
       if (completedAt != null) 'completed_at': completedAt,
+      if (extraId != null) 'extra_id': extraId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -10171,6 +10528,7 @@ class OccurrenceCompletionsCompanion
       Value<String>? taskId,
       Value<String>? originalDate,
       Value<DateTime>? completedAt,
+      Value<String?>? extraId,
       Value<int>? rowid}) {
     return OccurrenceCompletionsCompanion(
       id: id ?? this.id,
@@ -10185,6 +10543,7 @@ class OccurrenceCompletionsCompanion
       taskId: taskId ?? this.taskId,
       originalDate: originalDate ?? this.originalDate,
       completedAt: completedAt ?? this.completedAt,
+      extraId: extraId ?? this.extraId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -10228,6 +10587,9 @@ class OccurrenceCompletionsCompanion
     if (completedAt.present) {
       map['completed_at'] = Variable<DateTime>(completedAt.value);
     }
+    if (extraId.present) {
+      map['extra_id'] = Variable<String>(extraId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -10249,6 +10611,7 @@ class OccurrenceCompletionsCompanion
           ..write('taskId: $taskId, ')
           ..write('originalDate: $originalDate, ')
           ..write('completedAt: $completedAt, ')
+          ..write('extraId: $extraId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -27735,8 +28098,16 @@ typedef $$ExtraTimesTableCreateCompanionBuilder = ExtraTimesCompanion Function({
   Value<String?> endTime,
   Value<String?> endZone,
   required String firstDate,
-  required String lastDate,
+  Value<String?> lastDate,
   Value<DateTime?> doneAt,
+  Value<String?> frequency,
+  Value<int> interval,
+  Value<String?> weekdays,
+  Value<String?> endKind,
+  Value<String?> endDateRule,
+  Value<int?> endCount,
+  Value<String> monthEndRule,
+  Value<int> weekStart,
   Value<int> rowid,
 });
 typedef $$ExtraTimesTableUpdateCompanionBuilder = ExtraTimesCompanion Function({
@@ -27758,8 +28129,16 @@ typedef $$ExtraTimesTableUpdateCompanionBuilder = ExtraTimesCompanion Function({
   Value<String?> endTime,
   Value<String?> endZone,
   Value<String> firstDate,
-  Value<String> lastDate,
+  Value<String?> lastDate,
   Value<DateTime?> doneAt,
+  Value<String?> frequency,
+  Value<int> interval,
+  Value<String?> weekdays,
+  Value<String?> endKind,
+  Value<String?> endDateRule,
+  Value<int?> endCount,
+  Value<String> monthEndRule,
+  Value<int> weekStart,
   Value<int> rowid,
 });
 
@@ -27831,6 +28210,30 @@ class $$ExtraTimesTableFilterComposer
 
   ColumnFilters<DateTime> get doneAt => $composableBuilder(
       column: $table.doneAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get frequency => $composableBuilder(
+      column: $table.frequency, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get interval => $composableBuilder(
+      column: $table.interval, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get weekdays => $composableBuilder(
+      column: $table.weekdays, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get endKind => $composableBuilder(
+      column: $table.endKind, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get endDateRule => $composableBuilder(
+      column: $table.endDateRule, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get endCount => $composableBuilder(
+      column: $table.endCount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get monthEndRule => $composableBuilder(
+      column: $table.monthEndRule, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get weekStart => $composableBuilder(
+      column: $table.weekStart, builder: (column) => ColumnFilters(column));
 }
 
 class $$ExtraTimesTableOrderingComposer
@@ -27901,6 +28304,31 @@ class $$ExtraTimesTableOrderingComposer
 
   ColumnOrderings<DateTime> get doneAt => $composableBuilder(
       column: $table.doneAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get frequency => $composableBuilder(
+      column: $table.frequency, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get interval => $composableBuilder(
+      column: $table.interval, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get weekdays => $composableBuilder(
+      column: $table.weekdays, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get endKind => $composableBuilder(
+      column: $table.endKind, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get endDateRule => $composableBuilder(
+      column: $table.endDateRule, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get endCount => $composableBuilder(
+      column: $table.endCount, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get monthEndRule => $composableBuilder(
+      column: $table.monthEndRule,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get weekStart => $composableBuilder(
+      column: $table.weekStart, builder: (column) => ColumnOrderings(column));
 }
 
 class $$ExtraTimesTableAnnotationComposer
@@ -27971,6 +28399,30 @@ class $$ExtraTimesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get doneAt =>
       $composableBuilder(column: $table.doneAt, builder: (column) => column);
+
+  GeneratedColumn<String> get frequency =>
+      $composableBuilder(column: $table.frequency, builder: (column) => column);
+
+  GeneratedColumn<int> get interval =>
+      $composableBuilder(column: $table.interval, builder: (column) => column);
+
+  GeneratedColumn<String> get weekdays =>
+      $composableBuilder(column: $table.weekdays, builder: (column) => column);
+
+  GeneratedColumn<String> get endKind =>
+      $composableBuilder(column: $table.endKind, builder: (column) => column);
+
+  GeneratedColumn<String> get endDateRule => $composableBuilder(
+      column: $table.endDateRule, builder: (column) => column);
+
+  GeneratedColumn<int> get endCount =>
+      $composableBuilder(column: $table.endCount, builder: (column) => column);
+
+  GeneratedColumn<String> get monthEndRule => $composableBuilder(
+      column: $table.monthEndRule, builder: (column) => column);
+
+  GeneratedColumn<int> get weekStart =>
+      $composableBuilder(column: $table.weekStart, builder: (column) => column);
 }
 
 class $$ExtraTimesTableTableManager extends RootTableManager<
@@ -28014,8 +28466,16 @@ class $$ExtraTimesTableTableManager extends RootTableManager<
             Value<String?> endTime = const Value.absent(),
             Value<String?> endZone = const Value.absent(),
             Value<String> firstDate = const Value.absent(),
-            Value<String> lastDate = const Value.absent(),
+            Value<String?> lastDate = const Value.absent(),
             Value<DateTime?> doneAt = const Value.absent(),
+            Value<String?> frequency = const Value.absent(),
+            Value<int> interval = const Value.absent(),
+            Value<String?> weekdays = const Value.absent(),
+            Value<String?> endKind = const Value.absent(),
+            Value<String?> endDateRule = const Value.absent(),
+            Value<int?> endCount = const Value.absent(),
+            Value<String> monthEndRule = const Value.absent(),
+            Value<int> weekStart = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ExtraTimesCompanion(
@@ -28039,6 +28499,14 @@ class $$ExtraTimesTableTableManager extends RootTableManager<
             firstDate: firstDate,
             lastDate: lastDate,
             doneAt: doneAt,
+            frequency: frequency,
+            interval: interval,
+            weekdays: weekdays,
+            endKind: endKind,
+            endDateRule: endDateRule,
+            endCount: endCount,
+            monthEndRule: monthEndRule,
+            weekStart: weekStart,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -28060,8 +28528,16 @@ class $$ExtraTimesTableTableManager extends RootTableManager<
             Value<String?> endTime = const Value.absent(),
             Value<String?> endZone = const Value.absent(),
             required String firstDate,
-            required String lastDate,
+            Value<String?> lastDate = const Value.absent(),
             Value<DateTime?> doneAt = const Value.absent(),
+            Value<String?> frequency = const Value.absent(),
+            Value<int> interval = const Value.absent(),
+            Value<String?> weekdays = const Value.absent(),
+            Value<String?> endKind = const Value.absent(),
+            Value<String?> endDateRule = const Value.absent(),
+            Value<int?> endCount = const Value.absent(),
+            Value<String> monthEndRule = const Value.absent(),
+            Value<int> weekStart = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ExtraTimesCompanion.insert(
@@ -28085,6 +28561,14 @@ class $$ExtraTimesTableTableManager extends RootTableManager<
             firstDate: firstDate,
             lastDate: lastDate,
             doneAt: doneAt,
+            frequency: frequency,
+            interval: interval,
+            weekdays: weekdays,
+            endKind: endKind,
+            endDateRule: endDateRule,
+            endCount: endCount,
+            monthEndRule: monthEndRule,
+            weekStart: weekStart,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
@@ -28474,6 +28958,7 @@ typedef $$OccurrenceCompletionsTableCreateCompanionBuilder
   required String taskId,
   required String originalDate,
   required DateTime completedAt,
+  Value<String?> extraId,
   Value<int> rowid,
 });
 typedef $$OccurrenceCompletionsTableUpdateCompanionBuilder
@@ -28490,6 +28975,7 @@ typedef $$OccurrenceCompletionsTableUpdateCompanionBuilder
   Value<String> taskId,
   Value<String> originalDate,
   Value<DateTime> completedAt,
+  Value<String?> extraId,
   Value<int> rowid,
 });
 
@@ -28537,6 +29023,9 @@ class $$OccurrenceCompletionsTableFilterComposer
 
   ColumnFilters<DateTime> get completedAt => $composableBuilder(
       column: $table.completedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get extraId => $composableBuilder(
+      column: $table.extraId, builder: (column) => ColumnFilters(column));
 }
 
 class $$OccurrenceCompletionsTableOrderingComposer
@@ -28584,6 +29073,9 @@ class $$OccurrenceCompletionsTableOrderingComposer
 
   ColumnOrderings<DateTime> get completedAt => $composableBuilder(
       column: $table.completedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get extraId => $composableBuilder(
+      column: $table.extraId, builder: (column) => ColumnOrderings(column));
 }
 
 class $$OccurrenceCompletionsTableAnnotationComposer
@@ -28630,6 +29122,9 @@ class $$OccurrenceCompletionsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get completedAt => $composableBuilder(
       column: $table.completedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get extraId =>
+      $composableBuilder(column: $table.extraId, builder: (column) => column);
 }
 
 class $$OccurrenceCompletionsTableTableManager extends RootTableManager<
@@ -28675,6 +29170,7 @@ class $$OccurrenceCompletionsTableTableManager extends RootTableManager<
             Value<String> taskId = const Value.absent(),
             Value<String> originalDate = const Value.absent(),
             Value<DateTime> completedAt = const Value.absent(),
+            Value<String?> extraId = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               OccurrenceCompletionsCompanion(
@@ -28690,6 +29186,7 @@ class $$OccurrenceCompletionsTableTableManager extends RootTableManager<
             taskId: taskId,
             originalDate: originalDate,
             completedAt: completedAt,
+            extraId: extraId,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -28705,6 +29202,7 @@ class $$OccurrenceCompletionsTableTableManager extends RootTableManager<
             required String taskId,
             required String originalDate,
             required DateTime completedAt,
+            Value<String?> extraId = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               OccurrenceCompletionsCompanion.insert(
@@ -28720,6 +29218,7 @@ class $$OccurrenceCompletionsTableTableManager extends RootTableManager<
             taskId: taskId,
             originalDate: originalDate,
             completedAt: completedAt,
+            extraId: extraId,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0

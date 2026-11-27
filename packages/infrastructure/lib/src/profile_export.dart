@@ -320,6 +320,14 @@ class ProfileExport {
         map.putIfAbsent(k.exportKey, () => <Object?>[]);
       }
     }
+    if (fromSchema < 21) {
+      // Schema v21 (ADR-0097): an extra time did not repeat; a tick was of the task's own rule.
+      for (final r in (map['extraTimes'] as List? ?? const []).whereType<Map>()) {
+        r.putIfAbsent('interval', () => 1);
+        r.putIfAbsent('monthEndRule', () => 'skip');
+        r.putIfAbsent('weekStart', () => 1);
+      }
+    }
     if (fromSchema < 19) {
       // Schema v19 (ADR-0094): nothing was archived or deleted for good.
       for (final key in const ['taskLists', 'tasks', 'events', 'documents']) {
@@ -572,6 +580,10 @@ class ProfileExport {
             'documentLink' => type == 'document' || type == 'task' || type == 'event' || type == 'goal',
             // P06 T3: a message and a proposal need their session.
             'aiMessage' || 'aiProposal' => type == 'aiSession',
+            // P06c E3 (ADR-0097): a change to one time of a repeating extra time
+            // points to the extra time; so does the tick of one.
+            'exception' => type == 'task' || type == 'event' || type == 'extraTime',
+            'completion' => type == 'task' || type == 'extraTime',
             _ => type == 'task' || type == 'event',
           };
           if (!allowed || !known(type, id)) bad('a ${k.name} points to an unknown item');
@@ -604,8 +616,13 @@ class ProfileExport {
         readSchedule(Schedule.fromJson(r));
         scheduled.add(r['id'] as String);
       }
+      // P06c E3: an extra time is valid as a command would have written it.
+      for (final r in records['extraTime']!) {
+        readExtra(ExtraTime.fromJson(r));
+      }
       for (final r in records['exception']!) {
         exceptionOf(OccurrenceException.fromJson(r));
+        if (r['subjectType'] == 'extraTime') continue;
         final sid = scheduleIdOf(r['subjectType'] as String, r['subjectId'] as String);
         if (!scheduled.contains(sid) && !(inSpaces['schedule']?.contains(sid) ?? false)) {
           bad('an exception belongs to an item without a schedule');
@@ -613,7 +630,8 @@ class ProfileExport {
       }
       for (final r in records['completion']!) {
         final c = OccurrenceCompletion.fromJson(r);
-        if (c.id != completionIdOf(c.taskId, LocalDate.parse(c.originalDate))) {
+        final date = LocalDate.parse(c.originalDate);
+        if (c.id != (c.extraId == null ? completionIdOf(c.taskId, date) : extraCompletionIdOf(c.extraId!, date))) {
           bad('a completion id does not match its task and date');
         }
       }
@@ -672,7 +690,8 @@ List<(String, String)> pointersOf(String kind, Row r) => [
         if (k == kind && r[field] is String) (target, r[field] as String),
       if (kind == 'task' && r['taskListId'] is String) ('taskList', r['taskListId'] as String),
       if (kind == 'task' && r['parentTaskId'] is String) ('task', r['parentTaskId'] as String),
-      if (kind == 'exception') ('schedule', scheduleIdOf(r['subjectType'] as String, r['subjectId'] as String)),
+      if (kind == 'exception' && r['subjectType'] != 'extraTime')
+        ('schedule', scheduleIdOf(r['subjectType'] as String, r['subjectId'] as String)),
     ];
 
 /// P05a T5 (ADR-0070): [records] without what points outside them (to a

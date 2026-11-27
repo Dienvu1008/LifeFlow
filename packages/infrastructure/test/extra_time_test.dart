@@ -108,12 +108,10 @@ void main() {
       expect(await db.select(db.extraTimes).get(), isEmpty);
     });
 
-    test('the command is checked again: a repeat, a deadline or no start in the payload is refused', () async {
+    test('the command is checked again: a deadline or no start in the payload is refused', () async {
       final t = ok(await tasks.create('Việc'));
       final good = scheduleFieldsJson('task', t,
           specOfInput(TaskScheduleInput(start: at(day, 9, 0), end: at(day, 10, 0))), null);
-      final repeating = scheduleFieldsJson('task', t,
-          specOfInput(TaskScheduleInput(start: at(day, 9, 0), end: at(day, 10, 0))), ruleOfInput(const RepeatInput(frequency: RepeatFrequency.daily)));
       // A start with a deadline, and an end with no start: each read fine as a schedule.
       final deadline = scheduleFieldsJson('task', t,
           specOfInput(TaskScheduleInput(start: at(day, 9, 0), deadline: at(day.addDays(1), 9, 0))), null);
@@ -133,7 +131,6 @@ void main() {
             TaskCommandHandler());
       }
 
-      expect(await send(repeating, id: 'r'), isA<CommandFailure>());
       expect(await send(deadline, id: 'd'), isA<CommandFailure>());
       expect(await send(noStart, id: 'n'), isA<CommandFailure>());
       expect(await send({...good, 'startDate': null}, id: 'm'), isA<CommandFailure>());

@@ -211,7 +211,7 @@ void main() {
       final t = await study();
       final x = await addExtra(ExtraTimeSubject.task, t, slot(mon, 10, 0, 12, 0));
       final r = await cal.range(mon, mon);
-      expect(r.conflicts, [ConflictView('task:$t#$x', taskOccurrenceKey(t, mon))]);
+      expect(r.conflicts, [ConflictView('task:$t#$x@$mon', taskOccurrenceKey(t, mon))]);
       expect(r.tasks.where((i) => i.isExtra).single.extraId, x);
     });
 
@@ -222,7 +222,7 @@ void main() {
       final x = await addExtra(ExtraTimeSubject.event, e, slot(sat, 9, 0, 10, 0));
       final y = await addExtra(ExtraTimeSubject.event, e, slot(sat, 11, 0, 12, 0));
       final keys = {for (final c in (await cal.range(sat, sat)).conflicts) c.first, for (final c in (await cal.range(sat, sat)).conflicts) c.second};
-      expect(keys, containsAll(['event:$e#$x', 'event:$e#$y']));
+      expect(keys, containsAll(['event:$e#$x@$sat', 'event:$e#$y@$sat']));
     });
 
     test('a done extra time is no conflict', () async {

@@ -224,20 +224,52 @@ class DriftAgendaQueries implements AgendaQueries {
         }
       }
     }
-    // P06c (ADR-0096): extra times of tasks, independent of any rule.
-    for (final x in await (db.select(db.extraTimes)
+    // P06c (ADR-0096, ADR-0097): extra times of tasks, independent of the
+    // task's rule; one may repeat on its own rule, with its own changes and ticks.
+    final movedExtras = await (db.select(db.occurrenceExceptions)
+          ..where((e) =>
+              e.subjectType.equals('extraTime') & e.deletedAt.isNull() & e.kind.equals('move') &
+              e.moveDate.isBetweenValues(f, t)))
+        .get();
+    final extras = await (db.select(db.extraTimes)
           ..where((x) =>
               x.workspaceId.equals(ws) &
               x.subjectType.equals('task') &
               x.deletedAt.isNull() &
-              x.firstDate.isSmallerOrEqualValue(t) &
-              x.lastDate.isBiggerOrEqualValue(f)))
+              ((x.firstDate.isSmallerOrEqualValue(t) & (x.lastDate.isNull() | x.lastDate.isBiggerOrEqualValue(f))) |
+                  x.id.isIn(movedExtras.map((m) => m.subjectId)))))
+        .get();
+    final extraIds = [for (final x in extras) x.id];
+    final extraExceptions = <String, List<tk.OccurrenceException>>{};
+    for (final e in await (db.select(db.occurrenceExceptions)
+          ..where((e) => e.subjectType.equals('extraTime') & e.deletedAt.isNull() & e.subjectId.isIn(extraIds)))
         .get()) {
+      extraExceptions.putIfAbsent(e.subjectId, () => []).add(exceptionOf(e));
+    }
+    final extraDone = <String>{
+      for (final c in await (db.select(db.occurrenceCompletions)
+            ..where((c) => c.deletedAt.isNull() & c.extraId.isIn(extraIds)))
+          .get())
+        c.id,
+    };
+    for (final x in extras) {
       final task = tasks[x.subjectId];
       if (task == null) continue;
-      final spec = specOfExtra(x);
-      final o = tk.Occurrence(seriesId: task.id, originalDate: spec.start!.date, schedule: spec);
-      items.add(_item(task, o, false, done, extraId: x.id, extraDone: x.doneAt != null));
+      final (spec, rule) = readExtra(x);
+      final r = tk.occurrencesInWindow(
+        seriesId: x.id,
+        spec: spec,
+        rule: rule,
+        exceptions: extraExceptions[x.id] ?? const [],
+        window: window,
+        limits: limits,
+      );
+      truncated |= r.truncated;
+      for (final o in r.occurrences) {
+        items.add(_item(task, o, rule != null, done,
+            extraId: x.id,
+            extraDone: rule == null ? x.doneAt != null : extraDone.contains(extraCompletionIdOf(x.id, o.originalDate))));
+      }
     }
     items.sort(_byTime);
     if (items.length > limits.maxOccurrences) {
