@@ -7970,6 +7970,922 @@ class SchedulesCompanion extends UpdateCompanion<Schedule> {
   }
 }
 
+class $ExtraTimesTable extends ExtraTimes
+    with TableInfo<$ExtraTimesTable, ExtraTime> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ExtraTimesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _workspaceIdMeta =
+      const VerificationMeta('workspaceId');
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+      'workspace_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _ownerIdMeta =
+      const VerificationMeta('ownerId');
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+      'owner_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _versionMeta =
+      const VerificationMeta('version');
+  @override
+  late final GeneratedColumn<int> version = GeneratedColumn<int>(
+      'version', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _deletedByMeta =
+      const VerificationMeta('deletedBy');
+  @override
+  late final GeneratedColumn<String> deletedBy = GeneratedColumn<String>(
+      'deleted_by', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _changedByMeta =
+      const VerificationMeta('changedBy');
+  @override
+  late final GeneratedColumn<String> changedBy = GeneratedColumn<String>(
+      'changed_by', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _subjectTypeMeta =
+      const VerificationMeta('subjectType');
+  @override
+  late final GeneratedColumn<String> subjectType = GeneratedColumn<String>(
+      'subject_type', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _subjectIdMeta =
+      const VerificationMeta('subjectId');
+  @override
+  late final GeneratedColumn<String> subjectId = GeneratedColumn<String>(
+      'subject_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _startDateMeta =
+      const VerificationMeta('startDate');
+  @override
+  late final GeneratedColumn<String> startDate = GeneratedColumn<String>(
+      'start_date', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _startTimeMeta =
+      const VerificationMeta('startTime');
+  @override
+  late final GeneratedColumn<String> startTime = GeneratedColumn<String>(
+      'start_time', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _startZoneMeta =
+      const VerificationMeta('startZone');
+  @override
+  late final GeneratedColumn<String> startZone = GeneratedColumn<String>(
+      'start_zone', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _endDateMeta =
+      const VerificationMeta('endDate');
+  @override
+  late final GeneratedColumn<String> endDate = GeneratedColumn<String>(
+      'end_date', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _endTimeMeta =
+      const VerificationMeta('endTime');
+  @override
+  late final GeneratedColumn<String> endTime = GeneratedColumn<String>(
+      'end_time', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _endZoneMeta =
+      const VerificationMeta('endZone');
+  @override
+  late final GeneratedColumn<String> endZone = GeneratedColumn<String>(
+      'end_zone', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _firstDateMeta =
+      const VerificationMeta('firstDate');
+  @override
+  late final GeneratedColumn<String> firstDate = GeneratedColumn<String>(
+      'first_date', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _lastDateMeta =
+      const VerificationMeta('lastDate');
+  @override
+  late final GeneratedColumn<String> lastDate = GeneratedColumn<String>(
+      'last_date', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _doneAtMeta = const VerificationMeta('doneAt');
+  @override
+  late final GeneratedColumn<DateTime> doneAt = GeneratedColumn<DateTime>(
+      'done_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        workspaceId,
+        ownerId,
+        version,
+        createdAt,
+        updatedAt,
+        deletedAt,
+        deletedBy,
+        changedBy,
+        subjectType,
+        subjectId,
+        startDate,
+        startTime,
+        startZone,
+        endDate,
+        endTime,
+        endZone,
+        firstDate,
+        lastDate,
+        doneAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'extra_times';
+  @override
+  VerificationContext validateIntegrity(Insertable<ExtraTime> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+          _workspaceIdMeta,
+          workspaceId.isAcceptableOrUnknown(
+              data['workspace_id']!, _workspaceIdMeta));
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(_ownerIdMeta,
+          ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta));
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('version')) {
+      context.handle(_versionMeta,
+          version.isAcceptableOrUnknown(data['version']!, _versionMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
+    if (data.containsKey('deleted_by')) {
+      context.handle(_deletedByMeta,
+          deletedBy.isAcceptableOrUnknown(data['deleted_by']!, _deletedByMeta));
+    }
+    if (data.containsKey('changed_by')) {
+      context.handle(_changedByMeta,
+          changedBy.isAcceptableOrUnknown(data['changed_by']!, _changedByMeta));
+    }
+    if (data.containsKey('subject_type')) {
+      context.handle(
+          _subjectTypeMeta,
+          subjectType.isAcceptableOrUnknown(
+              data['subject_type']!, _subjectTypeMeta));
+    } else if (isInserting) {
+      context.missing(_subjectTypeMeta);
+    }
+    if (data.containsKey('subject_id')) {
+      context.handle(_subjectIdMeta,
+          subjectId.isAcceptableOrUnknown(data['subject_id']!, _subjectIdMeta));
+    } else if (isInserting) {
+      context.missing(_subjectIdMeta);
+    }
+    if (data.containsKey('start_date')) {
+      context.handle(_startDateMeta,
+          startDate.isAcceptableOrUnknown(data['start_date']!, _startDateMeta));
+    } else if (isInserting) {
+      context.missing(_startDateMeta);
+    }
+    if (data.containsKey('start_time')) {
+      context.handle(_startTimeMeta,
+          startTime.isAcceptableOrUnknown(data['start_time']!, _startTimeMeta));
+    }
+    if (data.containsKey('start_zone')) {
+      context.handle(_startZoneMeta,
+          startZone.isAcceptableOrUnknown(data['start_zone']!, _startZoneMeta));
+    }
+    if (data.containsKey('end_date')) {
+      context.handle(_endDateMeta,
+          endDate.isAcceptableOrUnknown(data['end_date']!, _endDateMeta));
+    }
+    if (data.containsKey('end_time')) {
+      context.handle(_endTimeMeta,
+          endTime.isAcceptableOrUnknown(data['end_time']!, _endTimeMeta));
+    }
+    if (data.containsKey('end_zone')) {
+      context.handle(_endZoneMeta,
+          endZone.isAcceptableOrUnknown(data['end_zone']!, _endZoneMeta));
+    }
+    if (data.containsKey('first_date')) {
+      context.handle(_firstDateMeta,
+          firstDate.isAcceptableOrUnknown(data['first_date']!, _firstDateMeta));
+    } else if (isInserting) {
+      context.missing(_firstDateMeta);
+    }
+    if (data.containsKey('last_date')) {
+      context.handle(_lastDateMeta,
+          lastDate.isAcceptableOrUnknown(data['last_date']!, _lastDateMeta));
+    } else if (isInserting) {
+      context.missing(_lastDateMeta);
+    }
+    if (data.containsKey('done_at')) {
+      context.handle(_doneAtMeta,
+          doneAt.isAcceptableOrUnknown(data['done_at']!, _doneAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ExtraTime map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ExtraTime(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      workspaceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}workspace_id'])!,
+      ownerId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}owner_id'])!,
+      version: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}version'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
+      deletedBy: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}deleted_by']),
+      changedBy: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}changed_by']),
+      subjectType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}subject_type'])!,
+      subjectId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}subject_id'])!,
+      startDate: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}start_date'])!,
+      startTime: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}start_time']),
+      startZone: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}start_zone']),
+      endDate: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}end_date']),
+      endTime: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}end_time']),
+      endZone: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}end_zone']),
+      firstDate: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}first_date'])!,
+      lastDate: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}last_date'])!,
+      doneAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}done_at']),
+    );
+  }
+
+  @override
+  $ExtraTimesTable createAlias(String alias) {
+    return $ExtraTimesTable(attachedDatabase, alias);
+  }
+}
+
+class ExtraTime extends DataClass implements Insertable<ExtraTime> {
+  final String id;
+  final String workspaceId;
+  final String ownerId;
+  final int version;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  final String? deletedBy;
+  final String? changedBy;
+  final String subjectType;
+  final String subjectId;
+  final String startDate;
+  final String? startTime;
+  final String? startZone;
+  final String? endDate;
+  final String? endTime;
+  final String? endZone;
+  final String firstDate;
+  final String lastDate;
+  final DateTime? doneAt;
+  const ExtraTime(
+      {required this.id,
+      required this.workspaceId,
+      required this.ownerId,
+      required this.version,
+      required this.createdAt,
+      required this.updatedAt,
+      this.deletedAt,
+      this.deletedBy,
+      this.changedBy,
+      required this.subjectType,
+      required this.subjectId,
+      required this.startDate,
+      this.startTime,
+      this.startZone,
+      this.endDate,
+      this.endTime,
+      this.endZone,
+      required this.firstDate,
+      required this.lastDate,
+      this.doneAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['version'] = Variable<int>(version);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || deletedBy != null) {
+      map['deleted_by'] = Variable<String>(deletedBy);
+    }
+    if (!nullToAbsent || changedBy != null) {
+      map['changed_by'] = Variable<String>(changedBy);
+    }
+    map['subject_type'] = Variable<String>(subjectType);
+    map['subject_id'] = Variable<String>(subjectId);
+    map['start_date'] = Variable<String>(startDate);
+    if (!nullToAbsent || startTime != null) {
+      map['start_time'] = Variable<String>(startTime);
+    }
+    if (!nullToAbsent || startZone != null) {
+      map['start_zone'] = Variable<String>(startZone);
+    }
+    if (!nullToAbsent || endDate != null) {
+      map['end_date'] = Variable<String>(endDate);
+    }
+    if (!nullToAbsent || endTime != null) {
+      map['end_time'] = Variable<String>(endTime);
+    }
+    if (!nullToAbsent || endZone != null) {
+      map['end_zone'] = Variable<String>(endZone);
+    }
+    map['first_date'] = Variable<String>(firstDate);
+    map['last_date'] = Variable<String>(lastDate);
+    if (!nullToAbsent || doneAt != null) {
+      map['done_at'] = Variable<DateTime>(doneAt);
+    }
+    return map;
+  }
+
+  ExtraTimesCompanion toCompanion(bool nullToAbsent) {
+    return ExtraTimesCompanion(
+      id: Value(id),
+      workspaceId: Value(workspaceId),
+      ownerId: Value(ownerId),
+      version: Value(version),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      deletedBy: deletedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedBy),
+      changedBy: changedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(changedBy),
+      subjectType: Value(subjectType),
+      subjectId: Value(subjectId),
+      startDate: Value(startDate),
+      startTime: startTime == null && nullToAbsent
+          ? const Value.absent()
+          : Value(startTime),
+      startZone: startZone == null && nullToAbsent
+          ? const Value.absent()
+          : Value(startZone),
+      endDate: endDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endDate),
+      endTime: endTime == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endTime),
+      endZone: endZone == null && nullToAbsent
+          ? const Value.absent()
+          : Value(endZone),
+      firstDate: Value(firstDate),
+      lastDate: Value(lastDate),
+      doneAt:
+          doneAt == null && nullToAbsent ? const Value.absent() : Value(doneAt),
+    );
+  }
+
+  factory ExtraTime.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ExtraTime(
+      id: serializer.fromJson<String>(json['id']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      version: serializer.fromJson<int>(json['version']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      deletedBy: serializer.fromJson<String?>(json['deletedBy']),
+      changedBy: serializer.fromJson<String?>(json['changedBy']),
+      subjectType: serializer.fromJson<String>(json['subjectType']),
+      subjectId: serializer.fromJson<String>(json['subjectId']),
+      startDate: serializer.fromJson<String>(json['startDate']),
+      startTime: serializer.fromJson<String?>(json['startTime']),
+      startZone: serializer.fromJson<String?>(json['startZone']),
+      endDate: serializer.fromJson<String?>(json['endDate']),
+      endTime: serializer.fromJson<String?>(json['endTime']),
+      endZone: serializer.fromJson<String?>(json['endZone']),
+      firstDate: serializer.fromJson<String>(json['firstDate']),
+      lastDate: serializer.fromJson<String>(json['lastDate']),
+      doneAt: serializer.fromJson<DateTime?>(json['doneAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'version': serializer.toJson<int>(version),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'deletedBy': serializer.toJson<String?>(deletedBy),
+      'changedBy': serializer.toJson<String?>(changedBy),
+      'subjectType': serializer.toJson<String>(subjectType),
+      'subjectId': serializer.toJson<String>(subjectId),
+      'startDate': serializer.toJson<String>(startDate),
+      'startTime': serializer.toJson<String?>(startTime),
+      'startZone': serializer.toJson<String?>(startZone),
+      'endDate': serializer.toJson<String?>(endDate),
+      'endTime': serializer.toJson<String?>(endTime),
+      'endZone': serializer.toJson<String?>(endZone),
+      'firstDate': serializer.toJson<String>(firstDate),
+      'lastDate': serializer.toJson<String>(lastDate),
+      'doneAt': serializer.toJson<DateTime?>(doneAt),
+    };
+  }
+
+  ExtraTime copyWith(
+          {String? id,
+          String? workspaceId,
+          String? ownerId,
+          int? version,
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          Value<DateTime?> deletedAt = const Value.absent(),
+          Value<String?> deletedBy = const Value.absent(),
+          Value<String?> changedBy = const Value.absent(),
+          String? subjectType,
+          String? subjectId,
+          String? startDate,
+          Value<String?> startTime = const Value.absent(),
+          Value<String?> startZone = const Value.absent(),
+          Value<String?> endDate = const Value.absent(),
+          Value<String?> endTime = const Value.absent(),
+          Value<String?> endZone = const Value.absent(),
+          String? firstDate,
+          String? lastDate,
+          Value<DateTime?> doneAt = const Value.absent()}) =>
+      ExtraTime(
+        id: id ?? this.id,
+        workspaceId: workspaceId ?? this.workspaceId,
+        ownerId: ownerId ?? this.ownerId,
+        version: version ?? this.version,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+        deletedBy: deletedBy.present ? deletedBy.value : this.deletedBy,
+        changedBy: changedBy.present ? changedBy.value : this.changedBy,
+        subjectType: subjectType ?? this.subjectType,
+        subjectId: subjectId ?? this.subjectId,
+        startDate: startDate ?? this.startDate,
+        startTime: startTime.present ? startTime.value : this.startTime,
+        startZone: startZone.present ? startZone.value : this.startZone,
+        endDate: endDate.present ? endDate.value : this.endDate,
+        endTime: endTime.present ? endTime.value : this.endTime,
+        endZone: endZone.present ? endZone.value : this.endZone,
+        firstDate: firstDate ?? this.firstDate,
+        lastDate: lastDate ?? this.lastDate,
+        doneAt: doneAt.present ? doneAt.value : this.doneAt,
+      );
+  ExtraTime copyWithCompanion(ExtraTimesCompanion data) {
+    return ExtraTime(
+      id: data.id.present ? data.id.value : this.id,
+      workspaceId:
+          data.workspaceId.present ? data.workspaceId.value : this.workspaceId,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      version: data.version.present ? data.version.value : this.version,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      deletedBy: data.deletedBy.present ? data.deletedBy.value : this.deletedBy,
+      changedBy: data.changedBy.present ? data.changedBy.value : this.changedBy,
+      subjectType:
+          data.subjectType.present ? data.subjectType.value : this.subjectType,
+      subjectId: data.subjectId.present ? data.subjectId.value : this.subjectId,
+      startDate: data.startDate.present ? data.startDate.value : this.startDate,
+      startTime: data.startTime.present ? data.startTime.value : this.startTime,
+      startZone: data.startZone.present ? data.startZone.value : this.startZone,
+      endDate: data.endDate.present ? data.endDate.value : this.endDate,
+      endTime: data.endTime.present ? data.endTime.value : this.endTime,
+      endZone: data.endZone.present ? data.endZone.value : this.endZone,
+      firstDate: data.firstDate.present ? data.firstDate.value : this.firstDate,
+      lastDate: data.lastDate.present ? data.lastDate.value : this.lastDate,
+      doneAt: data.doneAt.present ? data.doneAt.value : this.doneAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ExtraTime(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('version: $version, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedBy: $deletedBy, ')
+          ..write('changedBy: $changedBy, ')
+          ..write('subjectType: $subjectType, ')
+          ..write('subjectId: $subjectId, ')
+          ..write('startDate: $startDate, ')
+          ..write('startTime: $startTime, ')
+          ..write('startZone: $startZone, ')
+          ..write('endDate: $endDate, ')
+          ..write('endTime: $endTime, ')
+          ..write('endZone: $endZone, ')
+          ..write('firstDate: $firstDate, ')
+          ..write('lastDate: $lastDate, ')
+          ..write('doneAt: $doneAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id,
+      workspaceId,
+      ownerId,
+      version,
+      createdAt,
+      updatedAt,
+      deletedAt,
+      deletedBy,
+      changedBy,
+      subjectType,
+      subjectId,
+      startDate,
+      startTime,
+      startZone,
+      endDate,
+      endTime,
+      endZone,
+      firstDate,
+      lastDate,
+      doneAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ExtraTime &&
+          other.id == this.id &&
+          other.workspaceId == this.workspaceId &&
+          other.ownerId == this.ownerId &&
+          other.version == this.version &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.deletedBy == this.deletedBy &&
+          other.changedBy == this.changedBy &&
+          other.subjectType == this.subjectType &&
+          other.subjectId == this.subjectId &&
+          other.startDate == this.startDate &&
+          other.startTime == this.startTime &&
+          other.startZone == this.startZone &&
+          other.endDate == this.endDate &&
+          other.endTime == this.endTime &&
+          other.endZone == this.endZone &&
+          other.firstDate == this.firstDate &&
+          other.lastDate == this.lastDate &&
+          other.doneAt == this.doneAt);
+}
+
+class ExtraTimesCompanion extends UpdateCompanion<ExtraTime> {
+  final Value<String> id;
+  final Value<String> workspaceId;
+  final Value<String> ownerId;
+  final Value<int> version;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<String?> deletedBy;
+  final Value<String?> changedBy;
+  final Value<String> subjectType;
+  final Value<String> subjectId;
+  final Value<String> startDate;
+  final Value<String?> startTime;
+  final Value<String?> startZone;
+  final Value<String?> endDate;
+  final Value<String?> endTime;
+  final Value<String?> endZone;
+  final Value<String> firstDate;
+  final Value<String> lastDate;
+  final Value<DateTime?> doneAt;
+  final Value<int> rowid;
+  const ExtraTimesCompanion({
+    this.id = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.version = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.deletedBy = const Value.absent(),
+    this.changedBy = const Value.absent(),
+    this.subjectType = const Value.absent(),
+    this.subjectId = const Value.absent(),
+    this.startDate = const Value.absent(),
+    this.startTime = const Value.absent(),
+    this.startZone = const Value.absent(),
+    this.endDate = const Value.absent(),
+    this.endTime = const Value.absent(),
+    this.endZone = const Value.absent(),
+    this.firstDate = const Value.absent(),
+    this.lastDate = const Value.absent(),
+    this.doneAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ExtraTimesCompanion.insert({
+    required String id,
+    required String workspaceId,
+    required String ownerId,
+    this.version = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.deletedBy = const Value.absent(),
+    this.changedBy = const Value.absent(),
+    required String subjectType,
+    required String subjectId,
+    required String startDate,
+    this.startTime = const Value.absent(),
+    this.startZone = const Value.absent(),
+    this.endDate = const Value.absent(),
+    this.endTime = const Value.absent(),
+    this.endZone = const Value.absent(),
+    required String firstDate,
+    required String lastDate,
+    this.doneAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        workspaceId = Value(workspaceId),
+        ownerId = Value(ownerId),
+        createdAt = Value(createdAt),
+        updatedAt = Value(updatedAt),
+        subjectType = Value(subjectType),
+        subjectId = Value(subjectId),
+        startDate = Value(startDate),
+        firstDate = Value(firstDate),
+        lastDate = Value(lastDate);
+  static Insertable<ExtraTime> custom({
+    Expression<String>? id,
+    Expression<String>? workspaceId,
+    Expression<String>? ownerId,
+    Expression<int>? version,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<String>? deletedBy,
+    Expression<String>? changedBy,
+    Expression<String>? subjectType,
+    Expression<String>? subjectId,
+    Expression<String>? startDate,
+    Expression<String>? startTime,
+    Expression<String>? startZone,
+    Expression<String>? endDate,
+    Expression<String>? endTime,
+    Expression<String>? endZone,
+    Expression<String>? firstDate,
+    Expression<String>? lastDate,
+    Expression<DateTime>? doneAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (version != null) 'version': version,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (deletedBy != null) 'deleted_by': deletedBy,
+      if (changedBy != null) 'changed_by': changedBy,
+      if (subjectType != null) 'subject_type': subjectType,
+      if (subjectId != null) 'subject_id': subjectId,
+      if (startDate != null) 'start_date': startDate,
+      if (startTime != null) 'start_time': startTime,
+      if (startZone != null) 'start_zone': startZone,
+      if (endDate != null) 'end_date': endDate,
+      if (endTime != null) 'end_time': endTime,
+      if (endZone != null) 'end_zone': endZone,
+      if (firstDate != null) 'first_date': firstDate,
+      if (lastDate != null) 'last_date': lastDate,
+      if (doneAt != null) 'done_at': doneAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ExtraTimesCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? workspaceId,
+      Value<String>? ownerId,
+      Value<int>? version,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<DateTime?>? deletedAt,
+      Value<String?>? deletedBy,
+      Value<String?>? changedBy,
+      Value<String>? subjectType,
+      Value<String>? subjectId,
+      Value<String>? startDate,
+      Value<String?>? startTime,
+      Value<String?>? startZone,
+      Value<String?>? endDate,
+      Value<String?>? endTime,
+      Value<String?>? endZone,
+      Value<String>? firstDate,
+      Value<String>? lastDate,
+      Value<DateTime?>? doneAt,
+      Value<int>? rowid}) {
+    return ExtraTimesCompanion(
+      id: id ?? this.id,
+      workspaceId: workspaceId ?? this.workspaceId,
+      ownerId: ownerId ?? this.ownerId,
+      version: version ?? this.version,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      deletedBy: deletedBy ?? this.deletedBy,
+      changedBy: changedBy ?? this.changedBy,
+      subjectType: subjectType ?? this.subjectType,
+      subjectId: subjectId ?? this.subjectId,
+      startDate: startDate ?? this.startDate,
+      startTime: startTime ?? this.startTime,
+      startZone: startZone ?? this.startZone,
+      endDate: endDate ?? this.endDate,
+      endTime: endTime ?? this.endTime,
+      endZone: endZone ?? this.endZone,
+      firstDate: firstDate ?? this.firstDate,
+      lastDate: lastDate ?? this.lastDate,
+      doneAt: doneAt ?? this.doneAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (version.present) {
+      map['version'] = Variable<int>(version.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (deletedBy.present) {
+      map['deleted_by'] = Variable<String>(deletedBy.value);
+    }
+    if (changedBy.present) {
+      map['changed_by'] = Variable<String>(changedBy.value);
+    }
+    if (subjectType.present) {
+      map['subject_type'] = Variable<String>(subjectType.value);
+    }
+    if (subjectId.present) {
+      map['subject_id'] = Variable<String>(subjectId.value);
+    }
+    if (startDate.present) {
+      map['start_date'] = Variable<String>(startDate.value);
+    }
+    if (startTime.present) {
+      map['start_time'] = Variable<String>(startTime.value);
+    }
+    if (startZone.present) {
+      map['start_zone'] = Variable<String>(startZone.value);
+    }
+    if (endDate.present) {
+      map['end_date'] = Variable<String>(endDate.value);
+    }
+    if (endTime.present) {
+      map['end_time'] = Variable<String>(endTime.value);
+    }
+    if (endZone.present) {
+      map['end_zone'] = Variable<String>(endZone.value);
+    }
+    if (firstDate.present) {
+      map['first_date'] = Variable<String>(firstDate.value);
+    }
+    if (lastDate.present) {
+      map['last_date'] = Variable<String>(lastDate.value);
+    }
+    if (doneAt.present) {
+      map['done_at'] = Variable<DateTime>(doneAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ExtraTimesCompanion(')
+          ..write('id: $id, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('version: $version, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('deletedBy: $deletedBy, ')
+          ..write('changedBy: $changedBy, ')
+          ..write('subjectType: $subjectType, ')
+          ..write('subjectId: $subjectId, ')
+          ..write('startDate: $startDate, ')
+          ..write('startTime: $startTime, ')
+          ..write('startZone: $startZone, ')
+          ..write('endDate: $endDate, ')
+          ..write('endTime: $endTime, ')
+          ..write('endZone: $endZone, ')
+          ..write('firstDate: $firstDate, ')
+          ..write('lastDate: $lastDate, ')
+          ..write('doneAt: $doneAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $OccurrenceExceptionsTable extends OccurrenceExceptions
     with TableInfo<$OccurrenceExceptionsTable, OccurrenceException> {
   @override
@@ -23127,6 +24043,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CalendarsTable calendars = $CalendarsTable(this);
   late final $EventsTable events = $EventsTable(this);
   late final $SchedulesTable schedules = $SchedulesTable(this);
+  late final $ExtraTimesTable extraTimes = $ExtraTimesTable(this);
   late final $OccurrenceExceptionsTable occurrenceExceptions =
       $OccurrenceExceptionsTable(this);
   late final $OccurrenceCompletionsTable occurrenceCompletions =
@@ -23178,6 +24095,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         calendars,
         events,
         schedules,
+        extraTimes,
         occurrenceExceptions,
         occurrenceCompletions,
         reminders,
@@ -26797,6 +27715,400 @@ typedef $$SchedulesTableProcessedTableManager = ProcessedTableManager<
     $$SchedulesTableUpdateCompanionBuilder,
     (Schedule, BaseReferences<_$AppDatabase, $SchedulesTable, Schedule>),
     Schedule,
+    PrefetchHooks Function()>;
+typedef $$ExtraTimesTableCreateCompanionBuilder = ExtraTimesCompanion Function({
+  required String id,
+  required String workspaceId,
+  required String ownerId,
+  Value<int> version,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String?> deletedBy,
+  Value<String?> changedBy,
+  required String subjectType,
+  required String subjectId,
+  required String startDate,
+  Value<String?> startTime,
+  Value<String?> startZone,
+  Value<String?> endDate,
+  Value<String?> endTime,
+  Value<String?> endZone,
+  required String firstDate,
+  required String lastDate,
+  Value<DateTime?> doneAt,
+  Value<int> rowid,
+});
+typedef $$ExtraTimesTableUpdateCompanionBuilder = ExtraTimesCompanion Function({
+  Value<String> id,
+  Value<String> workspaceId,
+  Value<String> ownerId,
+  Value<int> version,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<String?> deletedBy,
+  Value<String?> changedBy,
+  Value<String> subjectType,
+  Value<String> subjectId,
+  Value<String> startDate,
+  Value<String?> startTime,
+  Value<String?> startZone,
+  Value<String?> endDate,
+  Value<String?> endTime,
+  Value<String?> endZone,
+  Value<String> firstDate,
+  Value<String> lastDate,
+  Value<DateTime?> doneAt,
+  Value<int> rowid,
+});
+
+class $$ExtraTimesTableFilterComposer
+    extends Composer<_$AppDatabase, $ExtraTimesTable> {
+  $$ExtraTimesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ownerId => $composableBuilder(
+      column: $table.ownerId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deletedBy => $composableBuilder(
+      column: $table.deletedBy, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get changedBy => $composableBuilder(
+      column: $table.changedBy, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get subjectType => $composableBuilder(
+      column: $table.subjectType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get subjectId => $composableBuilder(
+      column: $table.subjectId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get startDate => $composableBuilder(
+      column: $table.startDate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get startTime => $composableBuilder(
+      column: $table.startTime, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get startZone => $composableBuilder(
+      column: $table.startZone, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get endDate => $composableBuilder(
+      column: $table.endDate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get endTime => $composableBuilder(
+      column: $table.endTime, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get endZone => $composableBuilder(
+      column: $table.endZone, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get firstDate => $composableBuilder(
+      column: $table.firstDate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get lastDate => $composableBuilder(
+      column: $table.lastDate, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get doneAt => $composableBuilder(
+      column: $table.doneAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$ExtraTimesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ExtraTimesTable> {
+  $$ExtraTimesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get ownerId => $composableBuilder(
+      column: $table.ownerId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get version => $composableBuilder(
+      column: $table.version, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deletedBy => $composableBuilder(
+      column: $table.deletedBy, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get changedBy => $composableBuilder(
+      column: $table.changedBy, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get subjectType => $composableBuilder(
+      column: $table.subjectType, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get subjectId => $composableBuilder(
+      column: $table.subjectId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get startDate => $composableBuilder(
+      column: $table.startDate, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get startTime => $composableBuilder(
+      column: $table.startTime, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get startZone => $composableBuilder(
+      column: $table.startZone, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get endDate => $composableBuilder(
+      column: $table.endDate, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get endTime => $composableBuilder(
+      column: $table.endTime, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get endZone => $composableBuilder(
+      column: $table.endZone, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get firstDate => $composableBuilder(
+      column: $table.firstDate, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get lastDate => $composableBuilder(
+      column: $table.lastDate, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get doneAt => $composableBuilder(
+      column: $table.doneAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$ExtraTimesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ExtraTimesTable> {
+  $$ExtraTimesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get workspaceId => $composableBuilder(
+      column: $table.workspaceId, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerId =>
+      $composableBuilder(column: $table.ownerId, builder: (column) => column);
+
+  GeneratedColumn<int> get version =>
+      $composableBuilder(column: $table.version, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get deletedBy =>
+      $composableBuilder(column: $table.deletedBy, builder: (column) => column);
+
+  GeneratedColumn<String> get changedBy =>
+      $composableBuilder(column: $table.changedBy, builder: (column) => column);
+
+  GeneratedColumn<String> get subjectType => $composableBuilder(
+      column: $table.subjectType, builder: (column) => column);
+
+  GeneratedColumn<String> get subjectId =>
+      $composableBuilder(column: $table.subjectId, builder: (column) => column);
+
+  GeneratedColumn<String> get startDate =>
+      $composableBuilder(column: $table.startDate, builder: (column) => column);
+
+  GeneratedColumn<String> get startTime =>
+      $composableBuilder(column: $table.startTime, builder: (column) => column);
+
+  GeneratedColumn<String> get startZone =>
+      $composableBuilder(column: $table.startZone, builder: (column) => column);
+
+  GeneratedColumn<String> get endDate =>
+      $composableBuilder(column: $table.endDate, builder: (column) => column);
+
+  GeneratedColumn<String> get endTime =>
+      $composableBuilder(column: $table.endTime, builder: (column) => column);
+
+  GeneratedColumn<String> get endZone =>
+      $composableBuilder(column: $table.endZone, builder: (column) => column);
+
+  GeneratedColumn<String> get firstDate =>
+      $composableBuilder(column: $table.firstDate, builder: (column) => column);
+
+  GeneratedColumn<String> get lastDate =>
+      $composableBuilder(column: $table.lastDate, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get doneAt =>
+      $composableBuilder(column: $table.doneAt, builder: (column) => column);
+}
+
+class $$ExtraTimesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $ExtraTimesTable,
+    ExtraTime,
+    $$ExtraTimesTableFilterComposer,
+    $$ExtraTimesTableOrderingComposer,
+    $$ExtraTimesTableAnnotationComposer,
+    $$ExtraTimesTableCreateCompanionBuilder,
+    $$ExtraTimesTableUpdateCompanionBuilder,
+    (ExtraTime, BaseReferences<_$AppDatabase, $ExtraTimesTable, ExtraTime>),
+    ExtraTime,
+    PrefetchHooks Function()> {
+  $$ExtraTimesTableTableManager(_$AppDatabase db, $ExtraTimesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ExtraTimesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ExtraTimesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ExtraTimesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> workspaceId = const Value.absent(),
+            Value<String> ownerId = const Value.absent(),
+            Value<int> version = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String?> deletedBy = const Value.absent(),
+            Value<String?> changedBy = const Value.absent(),
+            Value<String> subjectType = const Value.absent(),
+            Value<String> subjectId = const Value.absent(),
+            Value<String> startDate = const Value.absent(),
+            Value<String?> startTime = const Value.absent(),
+            Value<String?> startZone = const Value.absent(),
+            Value<String?> endDate = const Value.absent(),
+            Value<String?> endTime = const Value.absent(),
+            Value<String?> endZone = const Value.absent(),
+            Value<String> firstDate = const Value.absent(),
+            Value<String> lastDate = const Value.absent(),
+            Value<DateTime?> doneAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ExtraTimesCompanion(
+            id: id,
+            workspaceId: workspaceId,
+            ownerId: ownerId,
+            version: version,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            deletedBy: deletedBy,
+            changedBy: changedBy,
+            subjectType: subjectType,
+            subjectId: subjectId,
+            startDate: startDate,
+            startTime: startTime,
+            startZone: startZone,
+            endDate: endDate,
+            endTime: endTime,
+            endZone: endZone,
+            firstDate: firstDate,
+            lastDate: lastDate,
+            doneAt: doneAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String workspaceId,
+            required String ownerId,
+            Value<int> version = const Value.absent(),
+            required DateTime createdAt,
+            required DateTime updatedAt,
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String?> deletedBy = const Value.absent(),
+            Value<String?> changedBy = const Value.absent(),
+            required String subjectType,
+            required String subjectId,
+            required String startDate,
+            Value<String?> startTime = const Value.absent(),
+            Value<String?> startZone = const Value.absent(),
+            Value<String?> endDate = const Value.absent(),
+            Value<String?> endTime = const Value.absent(),
+            Value<String?> endZone = const Value.absent(),
+            required String firstDate,
+            required String lastDate,
+            Value<DateTime?> doneAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ExtraTimesCompanion.insert(
+            id: id,
+            workspaceId: workspaceId,
+            ownerId: ownerId,
+            version: version,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            deletedBy: deletedBy,
+            changedBy: changedBy,
+            subjectType: subjectType,
+            subjectId: subjectId,
+            startDate: startDate,
+            startTime: startTime,
+            startZone: startZone,
+            endDate: endDate,
+            endTime: endTime,
+            endZone: endZone,
+            firstDate: firstDate,
+            lastDate: lastDate,
+            doneAt: doneAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable<$ExtraTimesTable, ExtraTime>(table),
+                    BaseReferences<_$AppDatabase, $ExtraTimesTable, ExtraTime>(
+                        db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$ExtraTimesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $ExtraTimesTable,
+    ExtraTime,
+    $$ExtraTimesTableFilterComposer,
+    $$ExtraTimesTableOrderingComposer,
+    $$ExtraTimesTableAnnotationComposer,
+    $$ExtraTimesTableCreateCompanionBuilder,
+    $$ExtraTimesTableUpdateCompanionBuilder,
+    (ExtraTime, BaseReferences<_$AppDatabase, $ExtraTimesTable, ExtraTime>),
+    ExtraTime,
     PrefetchHooks Function()>;
 typedef $$OccurrenceExceptionsTableCreateCompanionBuilder
     = OccurrenceExceptionsCompanion Function({
@@ -34087,6 +35399,8 @@ class $AppDatabaseManager {
       $$EventsTableTableManager(_db, _db.events);
   $$SchedulesTableTableManager get schedules =>
       $$SchedulesTableTableManager(_db, _db.schedules);
+  $$ExtraTimesTableTableManager get extraTimes =>
+      $$ExtraTimesTableTableManager(_db, _db.extraTimes);
   $$OccurrenceExceptionsTableTableManager get occurrenceExceptions =>
       $$OccurrenceExceptionsTableTableManager(_db, _db.occurrenceExceptions);
   $$OccurrenceCompletionsTableTableManager get occurrenceCompletions =>

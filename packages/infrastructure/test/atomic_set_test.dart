@@ -113,6 +113,12 @@ void main() {
       tk.ScheduleSpec(start: tk.DatePoint(LocalDate(2026, 11, 9))),
       const tk.RecurrenceRule(frequency: tk.Frequency.weekly));
 
+  // P06c E1 (ADR-0095): one extra time, as a schedule's columns.
+  Map<String, Object?> extraTime(String subject, String id) => scheduleFieldsJson(subject, id,
+      tk.ScheduleSpec(
+          start: tk.TimedPoint(ZonedWallClock(LocalDate(2026, 11, 10), TimeOfDayValue(13, 0), 'UTC')),
+          end: tk.TimedPoint(ZonedWallClock(LocalDate(2026, 11, 10), TimeOfDayValue(14, 0), 'UTC'))),
+      null);
   Future<int> versionOf(String table, String id) async => switch (table) {
         'task' => (await (db.select(db.tasks)..where((t) => t.id.equals(id))).getSingle()).version,
         'event' => (await (db.select(db.events)..where((t) => t.id.equals(id))).getSingle()).version,
@@ -533,7 +539,30 @@ void main() {
       ('shelf.doc.trash', docHandler, 'document', 'shd1',
           (v, op) => command('TrashDocument', {'op': 'trash', 'id': 'shd1'}, opId: op, expected: v)),
       ('shelf.doc.purge', shelfDoc, 'document', 'shd1',
-          (v, op) => command('PurgeDocument', {'op': 'purge', 'id': 'shd1'}, opId: op, expected: v)),    ];
+          (v, op) => command('PurgeDocument', {'op': 'purge', 'id': 'shd1'}, opId: op, expected: v)),      // P06c E1 (ADR-0095): another time of a task and of an event, changed,
+      // ticked (a task's), and removed.
+      ('extra.task.create', taskHandler, 'task', 'xt1',
+          (v, op) => command('CreateTask', {'op': 'create', 'id': 'xt1', 'title': 'Extra'}, opId: op, expected: v)),
+      ('extra.task.add', taskHandler, 'task', 'xt1',
+          (v, op) => command('AddTaskExtraTime',
+              {'op': 'addExtra', 'id': 'xt1', 'extraId': 'xe1', 'schedule': extraTime('task', 'xt1')}, opId: op, expected: v)),
+      ('extra.task.change', taskHandler, 'task', 'xt1',
+          (v, op) => command('ChangeTaskExtraTime',
+              {'op': 'changeExtra', 'id': 'xt1', 'extraId': 'xe1', 'schedule': extraTime('task', 'xt1')}, opId: op, expected: v)),
+      ('extra.task.done', taskHandler, 'task', 'xt1',
+          (v, op) => command('CompleteTaskExtraTime', {'op': 'setExtraDone', 'id': 'xt1', 'extraId': 'xe1', 'done': true}, opId: op, expected: v)),
+      ('extra.task.remove', taskHandler, 'task', 'xt1',
+          (v, op) => command('RemoveTaskExtraTime', {'op': 'removeExtra', 'id': 'xt1', 'extraId': 'xe1'}, opId: op, expected: v)),
+      ('extra.event.create', eventHandler, 'event', 'xv1',
+          (v, op) => command('CreateEvent', {'op': 'create', 'id': 'xv1', 'title': 'Extra event', 'schedule': eventSchedule}, opId: op, expected: v)),
+      ('extra.event.add', eventHandler, 'event', 'xv1',
+          (v, op) => command('AddEventExtraTime',
+              {'op': 'addExtra', 'id': 'xv1', 'extraId': 'xe2', 'schedule': extraTime('event', 'xv1')}, opId: op, expected: v)),
+      ('extra.event.change', eventHandler, 'event', 'xv1',
+          (v, op) => command('ChangeEventExtraTime',
+              {'op': 'changeExtra', 'id': 'xv1', 'extraId': 'xe2', 'schedule': extraTime('event', 'xv1')}, opId: op, expected: v)),
+      ('extra.event.remove', eventHandler, 'event', 'xv1',
+          (v, op) => command('RemoveEventExtraTime', {'op': 'removeExtra', 'id': 'xv1', 'extraId': 'xe2'}, opId: op, expected: v)),    ];
   });
 
   test('every handler operation writes the whole atomic set, and a failure '

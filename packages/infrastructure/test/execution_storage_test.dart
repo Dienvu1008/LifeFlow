@@ -108,8 +108,8 @@ void main() {
       };
 
   test('a new store has the v5 tables; tasks default to sum and not a habit', () async {
-    expect(AppDatabase.currentSchemaVersion, 19, reason: "v19 added archive and delete for good (archivedAt, purgedAt)");
-    expect(AppDatabase.recordSchemaVersion, 19, reason: "v19 changed the shape of lists, tasks, events and documents");
+    expect(AppDatabase.currentSchemaVersion, 20, reason: "v20 added the extra times of tasks and events");
+    expect(AppDatabase.recordSchemaVersion, 20, reason: "v20 added the extra time record kind");
     final id = (await svc.tasks.create('Plain') as CommandOk).entityId;
     final t = await (host.db.select(host.db.tasks)..where((x) => x.id.equals(id))).getSingle();
     expect((t.targetAggregation, t.isHabit), ('sum', false));

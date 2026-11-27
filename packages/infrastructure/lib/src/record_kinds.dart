@@ -61,6 +61,7 @@ class RecordKind {
     'calendar': Calendar.fromJson,
     'event': Event.fromJson,
     'schedule': Schedule.fromJson,
+    'extraTime': ExtraTime.fromJson,
     'exception': OccurrenceException.fromJson,
     'completion': OccurrenceCompletion.fromJson,
     'reminder': Reminder.fromJson,
@@ -118,6 +119,8 @@ final List<RecordKind> recordKinds = [
   _kind('event', 'events', (db) => db.events, Event.fromJson, (d) => d.toCompanion(false)),
   _kind('schedule', 'schedules', (db) => db.schedules, Schedule.fromJson,
       (d) => d.toCompanion(false)),
+  // P06c E1 (schema v20, ADR-0095): after its task or event.
+  _kind('extraTime', 'extraTimes', (db) => db.extraTimes, ExtraTime.fromJson, (d) => d.toCompanion(false)),
   _kind('exception', 'occurrenceExceptions', (db) => db.occurrenceExceptions,
       OccurrenceException.fromJson, (d) => d.toCompanion(false)),
   _kind('completion', 'occurrenceCompletions', (db) => db.occurrenceCompletions,
@@ -164,14 +167,14 @@ final Map<String, RecordKind> recordKindByName = {for (final k in recordKinds) k
 /// Reminders, focus sessions, execution records, measurements and period
 /// results stay personal: a space's sync never sends or takes them.
 const sharedSpaceKinds = {
-  'taskList', 'task', 'calendar', 'event', 'schedule', 'exception', 'completion', 'goal', 'milestone', 'goalLink',
+  'taskList', 'task', 'calendar', 'event', 'schedule', 'extraTime', 'exception', 'completion', 'goal', 'milestone', 'goalLink',
   'workspaceSettings', 'memberCard',
   // P05a T5 (ADR-0070, owner's C2): documents, their history and their links.
   'document', 'documentRevision', 'documentLink',
 };
 
 /// Kinds whose rows belong to another record (a task or an event).
-const subjectKinds = {'schedule', 'exception', 'reminder'};
+const subjectKinds = {'schedule', 'extraTime', 'exception', 'reminder'};
 
 /// Kinds a row can point to, for reference checks.
 const referableKinds = {
@@ -181,7 +184,7 @@ const referableKinds = {
 
 /// The record a dependent row belongs to, as (kind, id), or null.
 (String, String)? subjectOf(String kind, Row r) => switch (kind) {
-      'schedule' || 'exception' || 'reminder' => (r['subjectType'] as String, r['subjectId'] as String),
+      'schedule' || 'extraTime' || 'exception' || 'reminder' => (r['subjectType'] as String, r['subjectId'] as String),
       'completion' || 'measurement' || 'periodResult' => ('task', r['taskId'] as String),
       'milestone' => ('goal', r['goalId'] as String),
       'documentRevision' => ('document', r['documentId'] as String),
@@ -224,6 +227,7 @@ const kindClasses = <String, DataClassification>{
   'calendar': DataClassification.personal,
   'event': DataClassification.personal,
   'schedule': DataClassification.personal,
+  'extraTime': DataClassification.personal,
   'exception': DataClassification.personal,
   'completion': DataClassification.personal,
   'reminder': DataClassification.personal,

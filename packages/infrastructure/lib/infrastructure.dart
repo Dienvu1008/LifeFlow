@@ -58,6 +58,7 @@ export 'src/organize_ops.dart';
 export 'src/organize_rows.dart';
 export 'src/overview_service.dart';
 export 'src/shelf_command_handler.dart';
+export 'src/extra_time_service.dart';
 export 'src/shelf_service.dart';
 export 'src/workspace_settings_handler.dart';
 export 'src/space_service.dart';

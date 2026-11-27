@@ -1,5 +1,5 @@
 # P06c plan: extra times ("Add another time")
-- Status: **Agreed by the owner 2026-11-04** (answers in §4). Next: E1.
+- Status: **Agreed by the owner 2026-11-04** (answers in §4). E1 built ([ADR-0095](../adr/0095-extra-times.md)), waiting for the owner's review. Next: E2.
 - Date: 2026-11-04
 - Why: before using the app on the devices, the owner found that planning a repeating task or event is too rigid. A series changes as a whole, and the only way to depart from it is "Skip this time" or "Move this time". He wants to add times outside the rule, and to schedule from the Calendar a task that already has a schedule, and an event.
 - Inputs:
