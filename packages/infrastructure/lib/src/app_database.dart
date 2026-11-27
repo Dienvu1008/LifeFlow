@@ -43,7 +43,7 @@ part 'app_database.g.dart';
   tables: [
     Profiles, Workspaces, TaskLists, Tasks, AuditLog, Outbox, EventLog,
     OpDedupe, RestoreSnapshots,
-    Calendars, Events, Schedules, OccurrenceExceptions, OccurrenceCompletions,
+    Calendars, Events, Schedules, ExtraTimes, OccurrenceExceptions, OccurrenceCompletions,
     Reminders,
     FocusSessions, ExecutionRecords, Measurements, PeriodResults, Goals,
     Milestones, GoalLinks,
@@ -58,7 +58,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   /// The schema this build writes (and the newest export it accepts).
-  static const currentSchemaVersion = 19;
+  static const currentSchemaVersion = 20;
 
   /// The last schema that changed a synced record's shape: what a sealed
   /// record says it is (ADR-0056). v12 changed only the local outbox. v13
@@ -69,8 +69,9 @@ class AppDatabase extends _$AppDatabase {
   /// their revisions and their links. v17 (ADR-0077) changes only device
   /// tables (the text of PDFs). v18 (ADR-0082) adds the assistant's
   /// sessions, messages and proposals. v19 (ADR-0094) adds archivedAt and
-  /// purgedAt to lists, tasks, events and documents.
-  static const recordSchemaVersion = 19;
+  /// purgedAt to lists, tasks, events and documents. v20 (ADR-0095) adds the
+  /// extra times of tasks and events.
+  static const recordSchemaVersion = 20;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -86,6 +87,7 @@ class AppDatabase extends _$AppDatabase {
           await _createExecutionIndexes();
           await _createSyncIndexes();
           await _createAiIndexes();
+          await _createExtraTimeIndexes();
         },
         onUpgrade: (m, from, to) async {
           if (from < 2) await m.addColumn(profiles, profiles.signedOut);
@@ -215,6 +217,11 @@ class AppDatabase extends _$AppDatabase {
             await _createAiIndexes();
             await m.addColumn(auditLog, auditLog.aiProvenance);
           }
+          if (from < 20) {
+            // P06c E1 (ADR-0095): extra times (\"Add another time\").
+            await m.createTable(extraTimes);
+            await _createExtraTimeIndexes();
+          }
           if (from < 19) {
             // P06b W6 (ADR-0094): archive and delete for good. A table made in
             // an earlier step of this upgrade already has the columns.
@@ -298,6 +305,12 @@ class AppDatabase extends _$AppDatabase {
         'CREATE INDEX completions_task ON occurrence_completions (task_id)');
     await customStatement(
         'CREATE INDEX reminders_subject ON reminders (subject_type, subject_id)');
+  }
+
+  /// P06c: an item's extra times, and a range of them.
+  Future<void> _createExtraTimeIndexes() async {
+    await customStatement('CREATE INDEX extra_times_subject ON extra_times (subject_type, subject_id)');
+    await customStatement('CREATE INDEX extra_times_range ON extra_times (workspace_id, first_date, last_date)');
   }
 
   /// P03: lookups by task, by period, by state and by goal.

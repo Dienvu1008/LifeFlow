@@ -23,6 +23,7 @@ export 'src/remote.dart';
 export 'src/remote_spaces.dart';
 export 'src/reminders.dart';
 export 'src/search.dart';
+export 'src/extra_times.dart';
 export 'src/shelf.dart';
 export 'src/spaces.dart';
 export 'src/sync.dart';

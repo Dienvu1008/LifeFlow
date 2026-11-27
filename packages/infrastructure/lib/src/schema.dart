@@ -306,6 +306,27 @@ class OccurrenceExceptions extends Table with SyncableColumns {
   Set<Column> get primaryKey => {id};
 }
 
+/// P06c E1 (schema v20, ADR-0095): a time of a task or an event outside its
+/// rule ("Add another time"). It belongs to the item (its title, list,
+/// colour and reminders) and has its own id: an occurrence of the series is
+/// known by its original date, and an extra time may fall on the same date.
+/// The time columns are those of a schedule; [firstDate] and [lastDate] let a
+/// range query find it. A task's extra time has its own tick ([doneAt]).
+class ExtraTimes extends Table with SyncableColumns {
+  TextColumn get subjectType => text()(); // task | event
+  TextColumn get subjectId => text()();
+  TextColumn get startDate => text()();
+  TextColumn get startTime => text().nullable()();
+  TextColumn get startZone => text().nullable()();
+  TextColumn get endDate => text().nullable()();
+  TextColumn get endTime => text().nullable()();
+  TextColumn get endZone => text().nullable()();
+  TextColumn get firstDate => text()();
+  TextColumn get lastDate => text()();
+  DateTimeColumn get doneAt => dateTime().nullable()();
+  @override
+  Set<Column> get primaryKey => {id};
+}
 /// One occurrence of a repeating task marked done (owner decision D5).
 /// id = 'task:<taskId>@<originalDate>'. Reopening writes a tombstone.
 class OccurrenceCompletions extends Table with SyncableColumns {

@@ -303,6 +303,14 @@ class ShelfCommandHandler implements CommandHandler {
           (s.id, s.version)
       ], (rid, v) => (db.update(db.schedules)..where((x) => x.id.equals(rid)))
           .write(SchedulesCompanion(deletedAt: Value(now), deletedBy: Value(by), version: Value(v), updatedAt: Value(now))));
+      // P06c: its extra times are tombstoned too (their content is only a time).
+      await tomb('extraTime', [
+        for (final s in await (db.select(db.extraTimes)
+              ..where((s) => s.subjectType.equals(item.kind) & s.subjectId.equals(item.id) & s.deletedAt.isNull()))
+            .get())
+          (s.id, s.version)
+      ], (rid, v) => (db.update(db.extraTimes)..where((x) => x.id.equals(rid)))
+          .write(ExtraTimesCompanion(deletedAt: Value(now), deletedBy: Value(by), version: Value(v), updatedAt: Value(now))));
       await tomb('exception', [
         for (final s in await (db.select(db.occurrenceExceptions)
               ..where((s) => s.subjectType.equals(item.kind) & s.subjectId.equals(item.id) & s.deletedAt.isNull()))

@@ -133,7 +133,7 @@ void main() {
             'outbox', 'event_log', 'op_dedupe'],
         // P02 T3 (schema v4)
         ...['calendars', 'events', 'schedules', 'occurrence_exceptions',
-            'occurrence_completions', 'reminders'],
+            'occurrence_completions', 'reminders', 'extra_times'],
         // P03 T2 (schema v5)
         ...['focus_sessions', 'execution_records', 'measurements', 'period_results',
             'goals', 'milestones', 'goal_links'],

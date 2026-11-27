@@ -19,6 +19,7 @@ import 'package:domain/domain.dart' as d;
 
 import 'app_database.dart';
 import 'execution_rows.dart';
+import 'extra_time_rows.dart';
 import 'habit_tracking.dart';
 import 'reminder_rows.dart';
 import 'schedule_mapping.dart';
@@ -31,6 +32,7 @@ const scheduleOps = {
   'clearException',
   'setOccurrenceDone',
   'setReminders',
+  ...extraTimeOps,
 };
 
 Future<HandlerOutcome> applyScheduleOp(
@@ -54,6 +56,20 @@ Future<HandlerOutcome> applyScheduleOp(
         operationType: 'update',
         changeSet: {'id': taskId, 'reminders': n},
         events: [DomainEvent('TaskRemindersChanged', {'id': taskId})],
+      );
+
+    case 'addExtra':
+    case 'changeExtra':
+    case 'removeExtra':
+    case 'setExtraDone':
+      // P06c (ADR-0095): another time of the task, outside its rule.
+      final extra = await ExtraTimeRows(db, cmd, 'task', taskId, task.ownerId, now)
+          .apply(op, automaticCompletion: task.completionPolicy == 'automatic');
+      return HandlerOutcome(
+        entityId: taskId,
+        operationType: 'update',
+        changeSet: {'id': taskId, ...extra.change},
+        events: [DomainEvent(extra.event, {'id': taskId, 'extraId': extra.extraId})],
       );
 
     case 'setSchedule':

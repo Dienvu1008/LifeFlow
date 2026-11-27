@@ -97,6 +97,10 @@ class Services {
 /// Turns a current profile store back into what a build with schema [version]
 /// wrote (for migration tests). Data in the tables that remain is kept.
 Future<void> rewindProfileStore(AppDatabase db, int version) async {
+  if (version < 20) {
+    // P06c E1 (ADR-0095): no extra times.
+    await db.customStatement('DROP TABLE extra_times'); // drops its indexes too
+  }
   if (version < 19) {
     // P06b W6 (ADR-0094): nothing archived, nothing deleted for good.
     for (final t in ['task_lists', 'tasks', 'events', 'documents']) {
@@ -168,9 +172,9 @@ Future<void> rewindProfileStore(AppDatabase db, int version) async {
     }
     await db.customStatement('ALTER TABLE tasks DROP COLUMN assignee_id');
     for (final k in recordKinds) {
-      if (const {'memberCard', 'document', 'documentRevision', 'documentLink', 'aiSession', 'aiMessage', 'aiProposal'}
+      if (const {'memberCard', 'document', 'documentRevision', 'documentLink', 'aiSession', 'aiMessage', 'aiProposal', 'extraTime'}
           .contains(k.name)) {
-        continue; // v15-v18, gone
+        continue; // v15-v20, gone
       }
       await db.customStatement('ALTER TABLE ${k.tableName} DROP COLUMN changed_by');
     }

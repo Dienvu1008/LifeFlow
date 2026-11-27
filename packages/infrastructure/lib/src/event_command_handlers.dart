@@ -23,6 +23,7 @@ import 'package:time_kernel/time_kernel.dart' as tk;
 
 import 'app_database.dart';
 import 'command_gateway.dart';
+import 'extra_time_rows.dart';
 import 'organize_ops.dart';
 import 'reminder_rows.dart';
 import 'schedule_rows.dart';
@@ -179,6 +180,21 @@ class EventCommandHandler implements CommandHandler {
         await (db.update(db.events)..where((e) => e.id.equals(id)))
             .write(EventsCompanion(colorIndex: Value(color), version: Value(newVersion.value), updatedAt: Value(now)));
         return outcome('update', 'EventUpdated', {'colorIndex': color});
+
+      case 'addExtra':
+      case 'changeExtra':
+      case 'removeExtra':
+        // P06c (ADR-0095): another time of the event, outside its rule.
+        if (existing == null || existing.deletedAt != null) throw DomainRejection('event not found');
+        final extra = await ExtraTimeRows(db, cmd, 'event', id, existing.ownerId, now).apply(op, automaticCompletion: false);
+        await (db.update(db.events)..where((e) => e.id.equals(id)))
+            .write(EventsCompanion(version: Value(newVersion.value), updatedAt: Value(now)));
+        return HandlerOutcome(
+          entityId: id,
+          operationType: 'update',
+          changeSet: {'id': id, ...extra.change},
+          events: [DomainEvent(extra.event, {'id': id, 'extraId': extra.extraId})],
+        );
 
       case 'setReminders':
         // P02 T7 (ADR-0034): the reminders are part of the event.
