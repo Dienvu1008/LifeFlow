@@ -71,6 +71,13 @@ tk.ScheduleSpec specOf(Schedule r) => tk.ScheduleSpec(
       deadline: _point(r.deadlineDate, r.deadlineTime, r.deadlineZone),
     );
 
+/// P06c E2 (ADR-0096): the time of an extra time (a start, maybe an end).
+/// Throws [BadScheduleRow].
+tk.ScheduleSpec specOfExtra(ExtraTime r) => tk.ScheduleSpec(
+      start: _point(r.startDate, r.startTime, r.startZone),
+      end: _point(r.endDate, r.endTime, r.endZone),
+    );
+
 /// The repeat rule of a row, or null. Throws [BadScheduleRow].
 tk.RecurrenceRule? ruleOf(Schedule r) {
   final f = r.frequency;

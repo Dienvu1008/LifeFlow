@@ -36,6 +36,8 @@ final reminderStatusProvider = FutureProvider.autoDispose<ReminderStatus>(
 
 final taskSchedulingProvider =
     Provider<TaskScheduling>((ref) => _notWired('taskSchedulingProvider'));
+/// P06c (ADR-0096): the extra times of tasks and events.
+final extraTimesProvider = Provider<ExtraTimes>((ref) => _notWired('extraTimesProvider'));
 final agendaQueriesProvider =
     Provider<AgendaQueries>((ref) => _notWired('agendaQueriesProvider'));
 final zoneCatalogProvider =

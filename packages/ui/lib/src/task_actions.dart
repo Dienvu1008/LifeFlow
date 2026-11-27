@@ -105,6 +105,7 @@ class TaskOccurrenceTile extends ConsumerWidget {
         'Ends ${formatTimeOnly(e, deviceZone: zone)}',
       if (d != null) 'Due ${formatPoint(d, today: today, deviceZone: zone)}',
       if (item.isRepeating) 'Repeats',
+      if (item.isExtra) 'Another time',
       if (item.isMoved) 'Moved',
     ];
     return parts.join(' · ');
@@ -118,10 +119,13 @@ class TaskOccurrenceTile extends ConsumerWidget {
     // completion the box shows the derived state and is not ticked (D8).
     final tracked = ref.watch(trackedProvider).valueOrNull?[i.taskId];
     final auto = tracked != null && tracked.completion == CompletionMode.automatic;
-    final done = auto ? isDoneAutomatically(tracked, i.originalDate) : i.isDone;
-    final period = tracked == null || !inCurrentPeriod(tracked, i.originalDate) ? null : currentPeriodLine(tracked);
+    // P06c (ADR-0096): a habit counts its periods from the rule only; an extra
+    // time is ticked on its own (never derived).
+    final done = auto && !i.isExtra ? isDoneAutomatically(tracked, i.originalDate) : i.isDone;
+    final period =
+        tracked == null || i.isExtra || !inCurrentPeriod(tracked, i.originalDate) ? null : currentPeriodLine(tracked);
     return ListTile(
-      key: ValueKey('agenda-${i.taskId}@${i.originalDate}'),
+      key: ValueKey('agenda-${i.taskId}@${i.originalDate}${i.extraId == null ? '' : '#${i.extraId}'}'),
       leading: Checkbox(
         value: done,
         semanticLabel: auto
@@ -152,22 +156,31 @@ class TaskOccurrenceTile extends ConsumerWidget {
         onSelected: (a) => _onAction(context, ref, a),
         itemBuilder: (_) => [
           if (!done) const PopupMenuItem(value: _OccurrenceAction.focus, child: Text('Focus…')),
-          if (i.isRepeating) ...[
+          // P06c: an extra time can be dropped (E3 adds the change of it).
+          if (i.isRepeating || i.isExtra)
             const PopupMenuItem(value: _OccurrenceAction.skip, child: Text('Skip this time')),
-            const PopupMenuItem(value: _OccurrenceAction.move, child: Text('Move this time…')),
-            if (i.isMoved)
-              const PopupMenuItem(value: _OccurrenceAction.undoChange, child: Text('Undo the change to this time')),
+          if (!i.isExtra) ...[
+            if (i.isRepeating) ...[
+              const PopupMenuItem(value: _OccurrenceAction.move, child: Text('Move this time…')),
+              if (i.isMoved)
+                const PopupMenuItem(value: _OccurrenceAction.undoChange, child: Text('Undo the change to this time')),
+            ],
+            PopupMenuItem(
+                value: _OccurrenceAction.schedule,
+                child: Text(i.isRepeating ? 'Edit the whole repeat…' : 'Schedule…')),
           ],
-          PopupMenuItem(
-              value: _OccurrenceAction.schedule,
-              child: Text(i.isRepeating ? 'Edit the whole repeat…' : 'Schedule…')),
-        ],
+        ]
       ),
     );
   }
 
   Future<void> _toggle(BuildContext context, WidgetRef ref) async {
     final i = item;
+    // P06c: an extra time has its own tick.
+    if (i.isExtra) {
+      await reportResult(context, ref.read(extraTimesProvider).setDone(i.extraId!, done: !i.isDone));
+      return;
+    }
     // D5: a repeating task is done one occurrence at a time; it stays open.
     if (i.isRepeating) {
       await reportResult(
@@ -190,6 +203,8 @@ class TaskOccurrenceTile extends ConsumerWidget {
     final i = item;
     final scheduling = ref.read(taskSchedulingProvider);
     switch (a) {
+      case _OccurrenceAction.skip when i.isExtra:
+        await reportResult(context, ref.read(extraTimesProvider).remove(i.extraId!));
       case _OccurrenceAction.skip:
         await reportResult(context, scheduling.changeOccurrence(i.taskId, i.originalDate, const SkipThisOccurrence()));
       case _OccurrenceAction.move:

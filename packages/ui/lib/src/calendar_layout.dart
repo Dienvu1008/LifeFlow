@@ -70,14 +70,14 @@ String periodTitle(CalendarMode mode, LocalDate anchor, Weekday first) {
 class CalendarEntry {
   CalendarEntry.event(EventItem this.event)
       : task = null,
-        key = eventOccurrenceKey(event.eventId, event.originalDate),
+        key = eventOccurrenceKey(event.eventId, event.originalDate, extraId: event.extraId),
         title = event.title,
         start = event.start,
         end = event.end;
 
   CalendarEntry.task(AgendaItem this.task)
       : event = null,
-        key = taskOccurrenceKey(task.taskId, task.originalDate),
+        key = taskOccurrenceKey(task.taskId, task.originalDate, extraId: task.extraId),
         title = task.title,
         start = task.start ?? task.end ?? task.deadline!,
         end = task.start == null ? null : task.end;
@@ -137,8 +137,8 @@ Map<LocalDate, List<CalendarEntry>> entriesByDay(CalendarRange range, LocalDate 
 /// For each entry key, the titles of the entries it overlaps (D7).
 Map<String, List<String>> conflictTitles(CalendarRange range) {
   final titles = <String, String>{
-    for (final e in range.events) eventOccurrenceKey(e.eventId, e.originalDate): e.title,
-    for (final t in range.tasks) taskOccurrenceKey(t.taskId, t.originalDate): t.title,
+    for (final e in range.events) eventOccurrenceKey(e.eventId, e.originalDate, extraId: e.extraId): e.title,
+    for (final t in range.tasks) taskOccurrenceKey(t.taskId, t.originalDate, extraId: t.extraId): t.title,
   };
   final out = <String, List<String>>{};
   for (final c in range.conflicts) {

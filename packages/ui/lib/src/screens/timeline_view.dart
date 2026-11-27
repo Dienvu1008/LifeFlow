@@ -537,7 +537,7 @@ class _EventRow extends ConsumerWidget {
       if (item.location != null) item.location!,
     ];
     return ListTile(
-      key: ValueKey('timeline-event-${item.eventId}@${item.originalDate}'),
+      key: ValueKey('timeline-event-${item.eventId}@${item.originalDate}${item.extraId == null ? '' : '#${item.extraId}'}'),
       leading: const SizedBox(width: 40, child: Icon(Icons.event_outlined)),
       title: Text(
         item.title,

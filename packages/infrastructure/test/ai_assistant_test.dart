@@ -249,6 +249,37 @@ void main() {
       expect(sentText(local.asked.single).keys, isNot(contains('event:$cancelled')));
     });
 
+    test('P06c: the extra times of tasks and events are fixed too, two on one day included', () async {
+      final study = await task('Học AI');
+      final meet = await event('Họp', 15, 0, 16, 0, on: day.addDays(1));
+      final extras = DriftExtraTimes(db, gw);
+      ok(await extras.add(ExtraTimeSubject.task, study, ExtraTimeInput(start: at(day, 9, 0), end: at(day, 10, 0))));
+      ok(await extras.add(ExtraTimeSubject.task, study, ExtraTimeInput(start: at(day, 13, 0), end: at(day, 14, 0))));
+      ok(await extras.add(ExtraTimeSubject.event, meet, ExtraTimeInput(start: at(day, 11, 0), end: at(day, 12, 0))));
+      ok(await extras.add(ExtraTimeSubject.event, meet, ExtraTimeInput(start: at(day, 17, 0), end: at(day, 18, 0))));
+      final a = await task('A');
+      final b = await task('B');
+      final c = await task('C');
+      final d = await task('D');
+      local.plan = (_) => {
+            'items': [
+              {'taskId': d, 'start': '17:00', 'minutes': 60}, // over the event's second
+              {'taskId': a, 'start': '09:00', 'minutes': 60}, // over the first extra time
+              {'taskId': b, 'start': '13:00', 'minutes': 60}, // over the second
+              {'taskId': c, 'start': '11:00', 'minutes': 60}, // over the event's
+            ],
+            'note': ''
+          };
+      final r = await ai.planDay(day);
+      expect(r.moved, unorderedEquals([a, b, c, d]), reason: 'every one runs into a fixed time');
+      final p = (await history.proposals(r.sessionId!)).single;
+      for (final ch in p.changes) {
+        expect(ch.change.summary, contains('đã chỉnh để không trùng giờ'));
+      }
+      await history.approveAll(r.proposalId!);
+      expect((await dayView()).conflicts, isEmpty);
+    });
+
     test('today: not before now; nothing to plan: said so, the model not asked', () async {
       expect((await ai.planDay(day)).outcome, AiTurnOutcome.nothingToDo);
       expect(local.asked, isEmpty);

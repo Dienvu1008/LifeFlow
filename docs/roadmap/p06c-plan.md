@@ -1,5 +1,5 @@
 # P06c plan: extra times ("Add another time")
-- Status: **Agreed by the owner 2026-11-04** (answers in §4). E1 built ([ADR-0095](../adr/0095-extra-times.md)), waiting for the owner's review. Next: E2.
+- Status: **Agreed by the owner 2026-11-04** (answers in §4). E1 merged ([ADR-0095](../adr/0095-extra-times.md)). E2 built ([ADR-0096](../adr/0096-extra-times-shown.md)): extra times are shown, in conflicts, reminders and the assistant's busy time. Next: E3.
 - Date: 2026-11-04
 - Why: before using the app on the devices, the owner found that planning a repeating task or event is too rigid. A series changes as a whole, and the only way to depart from it is "Skip this time" or "Move this time". He wants to add times outside the rule, and to schedule from the Calendar a task that already has a schedule, and an event.
 - Inputs:
@@ -57,3 +57,13 @@
 - **Q4.** **No limit** on extra times (the owner: 100 is too few). Only the existing bound on what a query returns applies, as for a long series.
 - **Q5.** \"Schedule a task here\" lists **every** task, a done one struck through; scheduling a done task makes it undone again. And an **\"Schedule an event here\"** entry, the same for events.
 - **Q6.** \"Edit the whole repeat…\" never moves extras. Yes.
+
+## 5. Open question from the owner (2026-11-04): more than one repeat on one item
+Example: a task with 9-11 on Tuesdays **and** 13-15 on Thursdays. Today an item has one repeat rule, and an extra time is a single time (no repeat), so this is not possible as one series.
+
+Options:
+- **A. Add many extra times at once.** In "Add another time", the person picks a pattern (for example every Thursday, 13-15, until a date or N times) and the app creates one independent extra time for each date. No limit applies (Q4). Each can be ticked, moved or skipped alone. Cost: small (UI over E1's commands). Drawback: the group is not a series; changing the hour of all of them means editing each, or removing and adding again.
+- **B. An extra time may repeat** (its own rule, like a second schedule). Each one then needs its own skips, moves and ticks keyed by (extra, date), so the series code of tasks, events, habits, reminders and the Calendar is repeated for a second kind. Cost: large (about the size of P02 T4/T5 again), and a new schema step.
+- **C. One rule with a different time on each weekday** (Tue 9-11, Thu 13-15). Fits this example exactly, but not two series with different end dates or periods.
+
+Recommendation: **A now** (inside E3), B only if A proves too clumsy at the device check. Waiting for the owner's choice; nothing is built for it yet.
