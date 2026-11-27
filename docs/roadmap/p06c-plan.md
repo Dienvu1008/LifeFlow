@@ -1,5 +1,5 @@
 # P06c plan: extra times ("Add another time")
-- Status: **Draft, waiting for the owner's answers** (§4). Nothing is built yet.
+- Status: **Agreed by the owner 2026-11-04** (answers in §4). Next: E1.
 - Date: 2026-11-04
 - Why: before using the app on the devices, the owner found that planning a repeating task or event is too rigid. A series changes as a whole, and the only way to depart from it is "Skip this time" or "Move this time". He wants to add times outside the rule, and to schedule from the Calendar a task that already has a schedule, and an event.
 - Inputs:
@@ -24,14 +24,16 @@
 - **Add:** "Add another time…" in the plan of the task page and in the event editor (a list "Other times" under the schedule, each with Change and Remove), and in the menu of any occurrence on the Timeline and the Calendar.
 - **Change a time:** on an extra, "Move this time" is free (date, start, end); on the series' occurrences it is what it is today (the day and time of that occurrence).
 - **Remove a time:** on an extra, "Skip this time" removes it (it is gone, not hidden).
-- **Done (tasks):** each time of a task has its own tick, as each occurrence of a repeating task has. Ticking an extra does not complete the task; completing the task in the Overview shows all its times done (see Q2).
+- **Done (tasks):** each time of a task has its own tick, as each occurrence of a repeating task has. Ticking an extra does not complete the task; completing the task in the Overview shows all its times done. Adding a time to a done task reopens it.
 - **Reminders:** an extra gets the item's reminders (offsets before its start), as an occurrence does.
 - **Conflicts:** an extra takes part in the conflict marks like any timed item.
 - **Search, archive, trash, purge, move to another space, export, sync:** an extra goes with its item, as its schedule does. A purge blanks it.
 
 ### 2.3 On the Calendar
-- Tap an empty slot → "Schedule a task here" lists **all open tasks**, each with its current schedule as the second line ("Every weekday 9:00–11:00", "5 Nov 15:00", "not scheduled"), and a field to filter by title. Unscheduled: it gets its schedule as now. Scheduled: it gets an extra time at that slot.
-- A new entry "**Add a time for an event**" lists the live events the same way; the slot becomes an extra time of that event (its length is the event's own, or an hour).
+- Tap an empty slot → **\"Schedule a task here\"** lists **every task**, each with its current schedule as the second line (\"Every weekday 9:00–11:00\", \"5 Nov 15:00\", \"not scheduled\"), and a field to filter by title. A done task is listed too, struck through; scheduling it **makes it undone again** (it is reopened, then given the time).
+  - Unscheduled: it gets its schedule, as now.
+  - Scheduled: it gets an extra time at that slot.
+- A new entry **\"Schedule an event here\"** lists the live events the same way (title, current schedule, filter); the slot becomes an extra time of that event, or its schedule if it has none; its length is the event's own, or an hour. An event that is cancelled is not listed (un-cancel it first).
 - The slot keeps its other entries (new event, new all-day event, new task).
 
 ### 2.4 What stays out of this step
@@ -48,11 +50,10 @@
 | E4 | On the Calendar | "Schedule a task here" for scheduled tasks, with filter and subtitles; "Add a time for an event" |
 - Every item: its own branch, headless tests, mutation checks, an ADR (0095), docs, CI green, a Vietnamese handoff, merge after the owner approves. The device check list (89 steps) gets a short part for this after E4.
 
-## 4. Questions for the owner
-Each has a proposal; "OK to all" is an answer.
-- **Q1. Day-long extras:** may an extra time be a whole day (no hours), as a task or an event can be? Proposal: yes.
-- **Q2. Done:** each time of a task has its own tick; completing the task from the Overview (the checkbox of the task) marks every time done. Ticking one extra only ticks that one. Proposal: yes.
-- **Q3. Habits:** a habit with a target counts its periods from the rule only; extras are extra sessions that do not change a period's result. Proposal: yes, for now.
-- **Q4. Limits:** at most 100 extra times per task or event (the series itself has its own limit). Proposal: 100.
-- **Q5. "Schedule a task here" for a done task:** open tasks only, as now. Proposal: yes.
-- **Q6. Moving the series:** "Edit the whole repeat…" never moves extras. Proposal: yes.
+## 4. The owner's answers (2026-11-04)
+- **Q1.** An extra time may be a whole day. Yes.
+- **Q2.** Each time of a task has its own tick; completing the task in the Overview marks every time done. Yes.
+- **Q3.** Habits count their periods from the rule only. Yes, for now.
+- **Q4.** **No limit** on extra times (the owner: 100 is too few). Only the existing bound on what a query returns applies, as for a long series.
+- **Q5.** \"Schedule a task here\" lists **every** task, a done one struck through; scheduling a done task makes it undone again. And an **\"Schedule an event here\"** entry, the same for events.
+- **Q6.** \"Edit the whole repeat…\" never moves extras. Yes.
