@@ -172,6 +172,14 @@ class DriftReminderPlanner {
         c.id,
     };
 
+    // P06c (ADR-0096): the extra times of these items remind like the item.
+    final extras = <(String, String), List<ExtraTime>>{};
+    for (final x in await (db.select(db.extraTimes)
+          ..where((x) => x.deletedAt.isNull() & x.subjectId.isIn([...taskIds, ...eventIds])))
+        .get()) {
+      extras.putIfAbsent((x.subjectType, x.subjectId), () => []).add(x);
+    }
+
     final out = <(tk.ReminderTrigger, String, String)>[]; // trigger, title, body
     for (final entry in bySubject.entries) {
       final (type, id) = entry.key;
@@ -214,6 +222,26 @@ class DriftReminderPlanner {
         include: include,
       )) {
         out.add((trig, title, _body(trig, zone)));
+      }
+      for (final x in extras[(type, id)] ?? const <ExtraTime>[]) {
+        if (type == 'task' && x.doneAt != null) continue; // a done time reminds of nothing
+        final tk.ScheduleSpec xs;
+        try {
+          xs = specOfExtra(x);
+        } on BadScheduleRow {
+          continue;
+        }
+        for (final trig in tk.remindersInHorizon(
+          seriesId: '$type:$id/${x.id}',
+          spec: xs,
+          reminders: rules,
+          now: now,
+          horizon: horizon,
+          deviceZone: zone,
+          allDayTime: allDayTime,
+        )) {
+          out.add((trig, title, _body(trig, zone)));
+        }
       }
     }
     out.sort((a, b) {
@@ -303,6 +331,7 @@ class ReminderSync {
     _sub = db
         .tableUpdates(TableUpdateQuery.onAllTables([
           db.tasks, db.events, db.schedules, db.occurrenceExceptions, db.occurrenceCompletions, db.reminders,
+          db.extraTimes,
           db.focusSessions, // P03 T6b: the pomodoro end (D4)
         ]))
         .listen((_) => _soon());

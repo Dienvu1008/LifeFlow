@@ -660,6 +660,9 @@ class FakeWorld
   /// Reminders and the device's notifications (P02 T7).
   late final FakeReminders reminders = FakeReminders(calls);
 
+  /// The extra times (P06c): the calls only (extra.done:<id>:<bool>, extra.remove:<id>).
+  late final FakeExtraTimes extraTimes = FakeExtraTimes(calls);
+
   /// Habits, targets and measurements (P03 T6a).
   late final FakeHabits habits = FakeHabits(calls);
 
@@ -1376,6 +1379,7 @@ Widget appWith(FakeWorld world,
         eventServiceProvider.overrideWithValue(world.calendar),
         calendarServiceProvider.overrideWithValue(world.calendar.calendarService),
         calendarQueriesProvider.overrideWithValue(world.calendar),
+        extraTimesProvider.overrideWithValue(world.extraTimes),
         reminderServiceProvider.overrideWithValue(world.reminders),
         reminderSchedulerProvider.overrideWithValue(world.reminders),
         habitServiceProvider.overrideWithValue(world.habits),
@@ -1400,6 +1404,42 @@ Widget appWith(FakeWorld world,
       ],
       child: const LifeFlowApp(),
     );
+
+/// P06c: extra times, recording the calls.
+class FakeExtraTimes implements ExtraTimes {
+  FakeExtraTimes(this.calls);
+  final List<String> calls;
+  CommandResult _ok(String id) => CommandOk(id, Version.initial, const []);
+
+  @override
+  Future<CommandResult> add(ExtraTimeSubject subject, String subjectId, ExtraTimeInput time) async {
+    calls.add('extra.add:${subject.name}:$subjectId:${describeInput(TaskScheduleInput(start: time.start, end: time.end))}');
+    return _ok(subjectId);
+  }
+
+  @override
+  Future<CommandResult> change(String extraId, ExtraTimeInput time) async {
+    calls.add('extra.change:$extraId:${describeInput(TaskScheduleInput(start: time.start, end: time.end))}');
+    return _ok(extraId);
+  }
+
+  @override
+  Future<CommandResult> remove(String extraId) async {
+    calls.add('extra.remove:$extraId');
+    return _ok(extraId);
+  }
+
+  @override
+  Future<CommandResult> setDone(String extraId, {required bool done}) async {
+    calls.add('extra.done:$extraId:$done');
+    return _ok(extraId);
+  }
+
+  final stored = <String, List<ExtraTimeView>>{};
+  @override
+  Future<List<ExtraTimeView>> of(ExtraTimeSubject subject, String subjectId) async =>
+      stored['${subject.name}:$subjectId'] ?? const [];
+}
 
 /// The Overview's ports. Order keys are positions in one global [order], so
 /// a move only repositions an id (calls: `list.*`, `task.move`, `event.move`,

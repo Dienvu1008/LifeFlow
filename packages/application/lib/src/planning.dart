@@ -129,9 +129,16 @@ class AgendaItem {
     this.isOverdue = false,
     this.deviceStart,
     this.deviceEnd,
+    this.extraId,
   });
 
   final String taskId;
+
+  /// P06c (ADR-0096): set when this is an EXTRA time of the task (a time
+  /// outside its repeat rule), not an occurrence of the rule. Then
+  /// [originalDate] is only the date it is on.
+  final String? extraId;
+  bool get isExtra => extraId != null;
   final String title;
 
   /// Identity of the occurrence within its series.

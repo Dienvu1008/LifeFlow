@@ -759,11 +759,12 @@ class EventTile extends ConsumerWidget {
       if (entry.lastDay != ev.start.date) 'Until ${formatPoint(ev.end!, today: today, deviceZone: zone)}',
       if (ev.location != null && ev.location!.isNotEmpty) ev.location!,
       if (ev.isRepeating) 'Repeats',
+      if (ev.isExtra) 'Another time',
       if (ev.isMoved) 'Moved',
       if (ev.isCancelled) 'Cancelled',
     ];
     return ListTile(
-      key: ValueKey('event-${ev.eventId}@${ev.originalDate}'),
+      key: ValueKey('event-${ev.eventId}@${ev.originalDate}${ev.extraId == null ? '' : '#${ev.extraId}'}'),
       leading: Icon(Icons.event, color: _colorOf(ref, entry, theme)),
       title: Text(ev.title,
           style: ev.isCancelled ? const TextStyle(decoration: TextDecoration.lineThrough) : null),
@@ -781,8 +782,10 @@ class EventTile extends ConsumerWidget {
         itemBuilder: (_) => [
           PopupMenuItem(
               value: _EventAction.edit, child: Text(ev.isRepeating ? 'Edit every time…' : 'Edit event…')),
-          if (ev.isRepeating) ...[
+          // P06c: an extra time can be dropped (E3 adds its change).
+          if (ev.isRepeating || ev.isExtra)
             const PopupMenuItem(value: _EventAction.skip, child: Text('Skip this time')),
+          if (ev.isRepeating) ...[
             if (!ev.isCancelled)
               const PopupMenuItem(value: _EventAction.cancelThis, child: Text('Cancel this time')),
             const PopupMenuItem(value: _EventAction.move, child: Text('Move this time…')),
@@ -809,6 +812,8 @@ class EventTile extends ConsumerWidget {
     switch (a) {
       case _EventAction.edit:
         await openEventEditor(context, ref, eventId: ev.eventId);
+      case _EventAction.skip when ev.isExtra:
+        await reportResult(context, ref.read(extraTimesProvider).remove(ev.extraId!));
       case _EventAction.skip:
         await reportResult(context, change(const SkipEventOccurrence()));
       case _EventAction.cancelThis:

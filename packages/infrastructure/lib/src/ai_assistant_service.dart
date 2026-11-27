@@ -186,16 +186,27 @@ class DriftAiAssistant implements AiAssistant {
     // What is fixed that day, from the store (never from the model).
     final busy = <String, DayInterval>{};
     final busyTitles = <String, String>{};
+    // P06c (ADR-0096): extra times are fixed too, but several can be on a day
+    // and none is the item's rule, so they only take time (no named record).
+    final extraBusy = <DayInterval>[];
     for (final e in day.events) {
       if (e.isCancelled) continue;
       final i = _interval(date, e.deviceStart, e.deviceEnd);
-      if (i != null) {
+      if (e.isExtra) {
+        if (i != null) extraBusy.add(i);
+      } else if (i != null) {
         busy['event:${e.eventId}'] = i;
         busyTitles['event:${e.eventId}'] = e.title;
       }
     }
     for (final t in day.tasks) {
-      if (t.isDone || movable.contains(t.taskId)) continue;
+      if (t.isDone) continue;
+      if (t.isExtra) {
+        final i = _interval(date, t.deviceStart, t.deviceEnd);
+        if (i != null) extraBusy.add(i);
+        continue;
+      }
+      if (movable.contains(t.taskId)) continue;
       final i = _interval(date, t.deviceStart, t.deviceEnd);
       if (i != null) busy['task:${t.taskId}'] = i;
     }
@@ -274,7 +285,7 @@ class DriftAiAssistant implements AiAssistant {
       tasks: [for (final id in sentTasks) DayPlanTask(id)],
       wishes: wishes,
       hours: hours,
-      busy: busy.values.toList(),
+      busy: [...busy.values, ...extraBusy],
       notBefore: date == today ? now : (date.isBefore(today) ? 24 * 60 : null),
     );
 

@@ -225,7 +225,8 @@ class DriftCalendarQueries implements CalendarQueries {
     yield await range(from, to);
     yield* db
         .tableUpdates(TableUpdateQuery.onAllTables([
-          db.tasks, db.events, db.calendars, db.schedules, db.occurrenceExceptions, db.occurrenceCompletions
+          db.tasks, db.events, db.calendars, db.schedules, db.occurrenceExceptions, db.occurrenceCompletions,
+          db.extraTimes
         ]))
         .asyncMap((_) => range(from, to));
   }
@@ -299,6 +300,38 @@ class DriftCalendarQueries implements CalendarQueries {
         }
       }
     }
+    // P06c (ADR-0096): extra times of events, independent of any rule.
+    for (final x in await (db.select(db.extraTimes)
+          ..where((x) =>
+              x.workspaceId.equals(ws) &
+              x.subjectType.equals('event') &
+              x.deletedAt.isNull() &
+              x.firstDate.isSmallerOrEqualValue(t) &
+              x.lastDate.isBiggerOrEqualValue(f)))
+        .get()) {
+      final event = events[x.subjectId];
+      if (event == null) continue; // in the trash, or archived and hidden
+      final spec = specOfExtra(x);
+      final cancelled = event.status == 'cancelled';
+      items.add(EventItem(
+        eventId: event.id,
+        extraId: x.id,
+        title: event.title,
+        originalDate: spec.start!.date,
+        start: inputOf(spec.start)!,
+        end: inputOf(spec.end),
+        location: event.location,
+        calendarId: event.calendarId,
+        isRepeating: false,
+        isCancelled: cancelled,
+        deviceStart: devicePointOf(spec.start, agenda.time.zone()),
+        deviceEnd: devicePointOf(spec.end, agenda.time.zone()),
+      ));
+      if (!cancelled) {
+        final it = tk.timedItemOf(eventOccurrenceKey(event.id, spec.start!.date, extraId: x.id), spec);
+        if (it != null) timed.add(it);
+      }
+    }
     items.sort((a, b) {
       final c = a.date.compareTo(b.date);
       if (c != 0) return c;
@@ -309,7 +342,7 @@ class DriftCalendarQueries implements CalendarQueries {
     // Scheduled tasks take part too (D6/D7); done ones and all-day ones do not.
     for (final i in taskAgenda.items) {
       if (i.isDone || i.isOverdue) continue;
-      final it = tk.timedItemOf(taskOccurrenceKey(i.taskId, i.originalDate),
+      final it = tk.timedItemOf(taskOccurrenceKey(i.taskId, i.originalDate, extraId: i.extraId),
           tk.ScheduleSpec(start: pointOf(i.start), end: pointOf(i.end)));
       if (it != null) timed.add(it);
     }

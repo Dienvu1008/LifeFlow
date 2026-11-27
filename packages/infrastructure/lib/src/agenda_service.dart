@@ -127,7 +127,7 @@ class DriftAgendaQueries implements AgendaQueries {
     yield await compute();
     yield* db
         .tableUpdates(TableUpdateQuery.onAllTables(
-            [db.tasks, db.schedules, db.occurrenceExceptions, db.occurrenceCompletions]))
+            [db.tasks, db.schedules, db.occurrenceExceptions, db.occurrenceCompletions, db.extraTimes]))
         .asyncMap((_) => compute());
   }
 
@@ -224,6 +224,21 @@ class DriftAgendaQueries implements AgendaQueries {
         }
       }
     }
+    // P06c (ADR-0096): extra times of tasks, independent of any rule.
+    for (final x in await (db.select(db.extraTimes)
+          ..where((x) =>
+              x.workspaceId.equals(ws) &
+              x.subjectType.equals('task') &
+              x.deletedAt.isNull() &
+              x.firstDate.isSmallerOrEqualValue(t) &
+              x.lastDate.isBiggerOrEqualValue(f)))
+        .get()) {
+      final task = tasks[x.subjectId];
+      if (task == null) continue;
+      final spec = specOfExtra(x);
+      final o = tk.Occurrence(seriesId: task.id, originalDate: spec.start!.date, schedule: spec);
+      items.add(_item(task, o, false, done, extraId: x.id, extraDone: x.doneAt != null));
+    }
     items.sort(_byTime);
     if (items.length > limits.maxOccurrences) {
       truncated = true;
@@ -232,8 +247,10 @@ class DriftAgendaQueries implements AgendaQueries {
     return Agenda(items, truncated: truncated);
   }
 
-  AgendaItem _item(Task task, tk.Occurrence o, bool repeating, Set<String> done, {bool overdue = false}) =>
+  AgendaItem _item(Task task, tk.Occurrence o, bool repeating, Set<String> done,
+          {bool overdue = false, String? extraId, bool extraDone = false}) =>
       AgendaItem(
+        extraId: extraId,
         taskId: task.id,
         title: task.title,
         originalDate: o.originalDate,
@@ -241,7 +258,11 @@ class DriftAgendaQueries implements AgendaQueries {
         end: inputOf(o.schedule.end),
         deadline: inputOf(o.schedule.deadline),
         isRepeating: repeating,
-        isDone: repeating ? done.contains(completionIdOf(task.id, o.originalDate)) : task.status == 'done',
+        isDone: extraId != null
+            ? extraDone || task.status == 'done'
+            : repeating
+                ? done.contains(completionIdOf(task.id, o.originalDate))
+                : task.status == 'done',
         isMoved: o.isException,
         isOverdue: overdue,
         deviceStart: devicePointOf(o.schedule.start ?? o.schedule.end ?? o.schedule.deadline, time.zone()),
@@ -256,6 +277,8 @@ class DriftAgendaQueries implements AgendaQueries {
     final m = minute(a).compareTo(minute(b));
     if (m != 0) return m;
     final n = a.title.compareTo(b.title);
-    return n != 0 ? n : a.taskId.compareTo(b.taskId);
+    if (n != 0) return n;
+    final k = a.taskId.compareTo(b.taskId);
+    return k != 0 ? k : (a.extraId ?? '').compareTo(b.extraId ?? '');
   }
 }

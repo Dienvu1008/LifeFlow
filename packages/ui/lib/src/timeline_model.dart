@@ -37,7 +37,7 @@ class TaskEntry extends TimelineEntry {
   @override
   SchedulePointInput? get start => item.start ?? item.end ?? item.deadline;
   @override
-  String get key => taskOccurrenceKey(item.taskId, item.originalDate);
+  String get key => taskOccurrenceKey(item.taskId, item.originalDate, extraId: item.extraId);
   @override
   String get title => item.title;
 }
@@ -50,7 +50,7 @@ class EventEntry extends TimelineEntry {
   @override
   SchedulePointInput? get start => item.start;
   @override
-  String get key => eventOccurrenceKey(item.eventId, item.originalDate);
+  String get key => eventOccurrenceKey(item.eventId, item.originalDate, extraId: item.extraId);
   @override
   String get title => item.title;
 }

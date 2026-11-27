@@ -117,8 +117,13 @@ class EventItem {
     this.isMoved = false,
     this.deviceStart,
     this.deviceEnd,
+    this.extraId,
   });
   final String eventId;
+
+  /// P06c (ADR-0096): set when this is an EXTRA time of the event.
+  final String? extraId;
+  bool get isExtra => extraId != null;
   final String title;
   final LocalDate originalDate;
   final SchedulePointInput start;
@@ -152,8 +157,12 @@ class ConflictView {
   String toString() => 'ConflictView($first, $second)';
 }
 
-String taskOccurrenceKey(String taskId, LocalDate originalDate) => 'task:$taskId@$originalDate';
-String eventOccurrenceKey(String eventId, LocalDate originalDate) => 'event:$eventId@$originalDate';
+/// An extra time (P06c, ADR-0096) has its own key, `task:<id>#<extraId>`: two
+/// extra times can be on one date, and neither is an occurrence of the rule.
+String taskOccurrenceKey(String taskId, LocalDate originalDate, {String? extraId}) =>
+    extraId == null ? 'task:$taskId@$originalDate' : 'task:$taskId#$extraId';
+String eventOccurrenceKey(String eventId, LocalDate originalDate, {String? extraId}) =>
+    extraId == null ? 'event:$eventId@$originalDate' : 'event:$eventId#$extraId';
 
 /// Everything the calendar shows for a range: events, scheduled tasks
 /// (owner decision D6: tasks stay tasks) and their conflicts.

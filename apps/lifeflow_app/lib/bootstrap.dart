@@ -337,6 +337,7 @@ Future<AppWiring> openSession({
         fileGatewayProvider.overrideWithValue(files),
         settingsServiceProvider.overrideWithValue(settings),
         taskSchedulingProvider.overrideWithValue(DriftTaskScheduling(db, gateway)),
+        extraTimesProvider.overrideWithValue(DriftExtraTimes(db, gateway)),
         agendaQueriesProvider.overrideWithValue(agenda),
         zoneCatalogProvider.overrideWithValue(zones),
         deviceZoneProvider.overrideWithValue(zone),
